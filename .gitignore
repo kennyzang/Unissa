@@ -24,7 +24,7 @@ dist/
 build/
 target/
 bin/
-lib/
+# lib/
 .m2/
 .gradle/
 *.jar
