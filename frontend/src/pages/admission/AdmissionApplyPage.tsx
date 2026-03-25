@@ -99,7 +99,7 @@ const AdmissionApplyPage: React.FC = () => {
     onError: (e: any) => addToast({ type: 'error', message: e.response?.data?.message ?? 'Submission failed' }),
   })
 
-  const form1 = useForm<Step1>({ resolver: zodResolver(step1Schema), defaultValues: { nationality: 'Brunei Darussalam', ...formData as Step1 } })
+  const form1 = useForm<Step1>({ resolver: zodResolver(step1Schema), defaultValues: { ...formData as Step1, nationality: (formData as Step1)?.nationality || 'Brunei Darussalam' } })
   const form2 = useForm<Step2>({ resolver: zodResolver(step2Schema), defaultValues: formData as Step2 })
   const form3 = useForm<Step3>({ resolver: zodResolver(step3Schema), defaultValues: formData as Step3 })
 

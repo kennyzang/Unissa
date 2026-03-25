@@ -357,7 +357,7 @@ const SettingsPage: React.FC = () => {
                 { label: 'JWT Token Expiry',       value: '4 hours',   status: 'ok' },
                 { label: 'Account Lockout',        value: '5 failed attempts → 30 min lock', status: 'ok' },
                 { label: 'Password Hashing',       value: 'bcryptjs (10 rounds)',  status: 'ok' },
-                { label: 'CORS Origin',            value: process.env.NODE_ENV ?? 'Configured', status: 'ok' },
+                { label: 'CORS Origin',            value: import.meta.env.MODE ?? 'Configured', status: 'ok' },
                 { label: 'Helmet.js Security Headers', value: 'Enabled',  status: 'ok' },
                 { label: 'SQL Injection',          value: 'Prisma ORM (parameterised queries)', status: 'ok' },
                 { label: 'Audit Logging',          value: 'All user actions logged', status: 'ok' },
