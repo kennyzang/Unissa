@@ -45,9 +45,13 @@ temp/
 .env
 .env.local
 .env.*.local
+.env.prod          # 生产环境真实配置，禁止提交
 *.secret
 *.pem
 *.key
+
+# SSL 证书（敏感文件）
+nginx/ssl/
 
 # 操作系统
 __pycache__/

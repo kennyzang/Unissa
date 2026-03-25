@@ -1,0 +1,66 @@
+# ============================================================
+# UNISSA Smart University Platform – Docker Compose
+# 生产环境部署：阿里云 + Docker + 自有域名
+#
+# 使用前请先：
+#   cp .env.production .env.prod  并填写实际配置
+# ============================================================
+
+services:
+
+  # ---- 后端 API (Express + Prisma + SQLite) ----
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: unissa-backend
+    restart: unless-stopped
+    env_file:
+      - .env.prod
+    environment:
+      NODE_ENV: production
+      PORT: 4000
+      DATABASE_URL: file:/app/data/prod.db
+    volumes:
+      - db_data:/app/data          # SQLite 数据库持久化
+      - uploads_data:/app/uploads  # 上传文件持久化
+    networks:
+      - unissa-net
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:4000/api/v1/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
+
+  # ---- Nginx + 前端静态文件 ----
+  nginx:
+    build:
+      context: .
+      dockerfile: nginx/Dockerfile
+    container_name: unissa-nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/ssl:/etc/nginx/ssl:ro          # SSL 证书目录（只读）
+      - ./nginx/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+    networks:
+      - unissa-net
+    depends_on:
+      backend:
+        condition: service_healthy
+
+# ---- 持久化卷 ----
+volumes:
+  db_data:
+    name: unissa_db_data
+  uploads_data:
+    name: unissa_uploads
+
+# ---- 内部网络 ----
+networks:
+  unissa-net:
+    name: unissa-net
+    driver: bridge
