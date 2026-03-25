@@ -1,0 +1,143 @@
+// ============================================================
+// UNISSA – Global Styles & CSS Custom Properties
+// ============================================================
+
+@use 'variables' as v;
+@use 'mixins' as m;
+
+// CSS Variables (runtime-themeable)
+:root {
+  // Brand
+  --color-primary:        #{v.$brand-primary};
+  --color-primary-5:      #{v.$brand-primary-5};
+  --color-primary-4:      #{v.$brand-primary-4};
+  --color-primary-1:      #{v.$brand-primary-1};
+  --color-brand-dark:     #{v.$brand-dark};
+  --color-brand-mid:      #{v.$brand-mid};
+  --color-brand-light:    #{v.$brand-light};
+  --color-brand-accent:   #{v.$brand-accent};
+
+  // Neutral
+  --color-gray-1:   #{v.$color-gray-1};
+  --color-gray-2:   #{v.$color-gray-2};
+  --color-gray-3:   #{v.$color-gray-3};
+  --color-gray-4:   #{v.$color-gray-4};
+  --color-gray-5:   #{v.$color-gray-5};
+  --color-gray-6:   #{v.$color-gray-6};
+  --color-gray-7:   #{v.$color-gray-7};
+  --color-gray-8:   #{v.$color-gray-8};
+
+  // Functional
+  --color-success:     #{v.$color-success};
+  --color-success-bg:  #{v.$color-success-bg};
+  --color-warning:     #{v.$color-warning};
+  --color-warning-bg:  #{v.$color-warning-bg};
+  --color-danger:      #{v.$color-danger};
+  --color-danger-bg:   #{v.$color-danger-bg};
+  --color-info:        #{v.$color-info};
+  --color-info-bg:     #{v.$color-info-bg};
+
+  // Status (SRS-aligned)
+  --status-success:  #{v.$status-success};
+  --status-warning:  #{v.$status-warning};
+  --status-danger:   #{v.$status-danger};
+  --status-info:     #{v.$status-info};
+
+  // Layout
+  --sidebar-width:     #{v.$sidebar-width};
+  --navbar-height:     #{v.$navbar-height};
+
+  // Borders & Shadows
+  --border-radius:   #{v.$border-radius};
+  --border-color:    #{v.$color-gray-3};
+  --shadow-card:     #{v.$shadow-card};
+  --shadow-md:       #{v.$shadow-md};
+
+  // Typography
+  --font-family:    #{v.$font-family};
+  --font-size-base: #{v.$font-size-base};
+  --line-height:    #{v.$line-height};
+}
+
+// Reset
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html {
+  font-size: 14px;
+  -webkit-text-size-adjust: 100%;
+  scroll-behavior: smooth;
+  width: 100%;
+  overflow-x: hidden;
+}
+
+body {
+  font-family: var(--font-family);
+  font-size: var(--font-size-base);
+  line-height: var(--line-height);
+  color: var(--color-gray-8);
+  background: var(--color-gray-1);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  width: 100%;
+  overflow-x: hidden;
+}
+
+#root { min-height: 100vh; width: 100%; overflow-x: hidden; }
+
+a {
+  color: var(--color-primary);
+  text-decoration: none;
+  &:hover { color: var(--color-primary-5); }
+}
+
+img, svg { display: block; max-width: 100%; }
+
+button { font-family: inherit; }
+input, textarea, select { font-family: inherit; }
+
+// Scrollbar
+* { @include m.scrollbar(4px); }
+
+// Typography helpers
+.text-xs     { font-size: 12px; }
+.text-sm     { font-size: 13px; }
+.text-base   { font-size: 14px; }
+.text-md     { font-size: 16px; }
+.text-lg     { font-size: 18px; }
+.text-xl     { font-size: 20px; }
+.text-2xl    { font-size: 24px; }
+
+.font-regular   { font-weight: 400; }
+.font-medium    { font-weight: 500; }
+.font-semibold  { font-weight: 600; }
+.font-bold      { font-weight: 700; }
+
+.text-primary    { color: var(--color-primary); }
+.text-secondary  { color: var(--color-gray-5); }
+.text-muted      { color: var(--color-gray-4); }
+.text-success    { color: var(--color-success); }
+.text-warning    { color: var(--color-warning); }
+.text-danger     { color: var(--color-danger); }
+
+// Utility
+.truncate { @include m.truncate(); }
+.flex-center { @include m.flex-center(); }
+.flex-between { @include m.flex-between(); }
+
+// Animation
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.5; }
+}
+
+.animate-fade-in   { animation: fadeIn 0.2s ease; }
+.animate-spin      { animation: spin 1s linear infinite; }
+.animate-pulse     { animation: pulse 2s ease infinite; }

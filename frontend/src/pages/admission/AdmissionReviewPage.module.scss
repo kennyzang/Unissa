@@ -1,0 +1,79 @@
+@use '@/styles/variables' as v;
+
+.page {
+  padding: v.$space-6;
+  display: flex;
+  flex-direction: column;
+  gap: v.$space-5;
+  animation: fadeIn 0.2s ease;
+  max-width: 100%;
+  overflow-x: hidden;
+
+  @media (max-width: v.$bp-md) {
+    padding: v.$space-4 v.$space-3;
+    gap: v.$space-4;
+  }
+}
+.header { display: flex; flex-direction: column; gap: v.$space-1; }
+.pageTitle { font-size: v.$font-size-2xl; font-weight: v.$font-weight-bold; color: var(--color-gray-8); margin: 0; }
+.pageSub { font-size: v.$font-size-sm; color: var(--color-gray-5); margin: 0; }
+
+.statsRow {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: v.$space-4;
+  @media (max-width: v.$bp-md) { grid-template-columns: repeat(2, 1fr); }
+}
+
+.searchWrap {
+  display: flex;
+  align-items: center;
+  gap: v.$space-2;
+  color: var(--color-gray-5);
+}
+
+.searchInput {
+  border: none;
+  outline: none;
+  font-size: v.$font-size-sm;
+  color: var(--color-gray-7);
+  width: 220px;
+  background: transparent;
+  &::placeholder { color: var(--color-gray-5); }
+}
+
+.refNo { font-weight: v.$font-weight-semibold; color: v.$brand-primary; font-size: v.$font-size-sm; }
+.appName { font-weight: v.$font-weight-medium; font-size: v.$font-size-sm; color: var(--color-gray-8); }
+.appEmail { font-size: v.$font-size-xs; color: var(--color-gray-5); margin-top: 1px; }
+
+.actionBtns { display: flex; gap: v.$space-1; }
+
+.detailGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: v.$space-3;
+  @media (max-width: v.$bp-sm) { grid-template-columns: 1fr; }
+}
+
+.detailRow { display: flex; flex-direction: column; gap: 2px; }
+.detailLabel { font-size: v.$font-size-xs; color: var(--color-gray-5); }
+.detailValue { font-size: v.$font-size-sm; font-weight: v.$font-weight-medium; color: var(--color-gray-8); }
+
+.modalFooter { display: flex; justify-content: flex-end; gap: v.$space-2; }
+
+.decisionText { font-size: v.$font-size-sm; color: var(--color-gray-7); margin: 0 0 v.$space-4; line-height: 1.5; }
+
+.remarksWrap { display: flex; flex-direction: column; gap: v.$space-2; }
+.remarksLabel { font-size: v.$font-size-sm; font-weight: v.$font-weight-medium; color: var(--color-gray-7); }
+.remarksInput {
+  border: 1px solid var(--color-gray-3);
+  border-radius: v.$border-radius;
+  padding: v.$space-3;
+  font-size: v.$font-size-sm;
+  resize: vertical;
+  outline: none;
+  font-family: v.$font-family;
+  &:focus { border-color: v.$brand-primary; }
+}
+
+@keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }

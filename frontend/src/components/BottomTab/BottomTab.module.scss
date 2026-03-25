@@ -1,0 +1,252 @@
+@use '@/styles/variables' as v;
+@use '@/styles/mixins' as m;
+
+$tab-h:   56px;
+$z-tab:   110; // above sidebar z-index
+
+// ── Bottom Tab Bar ──────────────────────────────────────────
+.tabBar {
+  display: none; // hidden on desktop
+
+  @include m.max-md {
+    display: flex;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: $tab-h;
+    background: #fff;
+    border-top: 1px solid v.$color-gray-3;
+    z-index: $z-tab;
+    padding-bottom: env(safe-area-inset-bottom);
+    box-shadow: 0 -2px 16px rgba(0, 0, 0, 0.07);
+  }
+}
+
+.tab {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  padding: 6px 0;
+  background: none;
+  border: none;
+  cursor: pointer;
+  text-decoration: none;
+  color: v.$color-gray-4;
+  transition: color 0.15s;
+  -webkit-tap-highlight-color: transparent;
+  outline: none;
+
+  &.active {
+    color: v.$brand-primary;
+  }
+
+  &:active { opacity: 0.7; }
+}
+
+.tabIcon {
+  font-size: 22px;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.tabLabel {
+  font-size: 10px;
+  font-weight: v.$font-weight-medium;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 64px;
+}
+
+// ── More Sheet ──────────────────────────────────────────────
+.sheetBackdrop {
+  display: none;
+
+  @include m.max-md {
+    display: block;
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.38);
+    z-index: calc($z-tab + 1);
+    animation: fadeIn 0.2s ease;
+  }
+}
+
+.sheet {
+  display: none;
+
+  @include m.max-md {
+    display: flex;
+    flex-direction: column;
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: #fff;
+    border-radius: 20px 20px 0 0;
+    z-index: calc($z-tab + 2);
+    padding-bottom: calc(env(safe-area-inset-bottom) + 12px);
+    animation: slideUp 0.28s cubic-bezier(0.34, 1.56, 0.64, 1);
+    max-height: 70vh;
+    box-shadow: 0 -4px 32px rgba(0, 0, 0, 0.14);
+  }
+}
+
+.sheetHandle {
+  width: 36px;
+  height: 4px;
+  background: v.$color-gray-3;
+  border-radius: 2px;
+  margin: 10px auto 0;
+  flex-shrink: 0;
+}
+
+.sheetHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 20px 10px;
+}
+
+.sheetTitle {
+  font-size: v.$font-size-md;
+  font-weight: v.$font-weight-semibold;
+  color: v.$color-gray-8;
+}
+
+.sheetClose {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: v.$color-gray-2;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: v.$color-gray-6;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.sheetGrid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 6px;
+  padding: 4px 16px 12px;
+  overflow-y: auto;
+}
+
+.sheetItem {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 14px 6px;
+  border-radius: v.$border-radius-xl;
+  text-decoration: none;
+  color: v.$color-gray-6;
+  transition: all 0.15s;
+  -webkit-tap-highlight-color: transparent;
+
+  &:active,
+  &.sheetActive {
+    background: v.$brand-primary-1;
+    color: v.$brand-primary;
+  }
+}
+
+.sheetIcon {
+  font-size: 26px;
+  line-height: 1;
+}
+
+.sheetLabel {
+  font-size: 10px;
+  font-weight: v.$font-weight-medium;
+  text-align: center;
+  color: inherit;
+}
+
+// ── User / Logout in sheet ──────────────────────────────────
+.sheetUser {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 20px 4px;
+  border-top: 1px solid v.$color-gray-2;
+  margin-top: 4px;
+}
+
+.sheetAvatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: v.$brand-primary;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  font-weight: 600;
+  flex-shrink: 0;
+}
+
+.sheetUserInfo {
+  flex: 1;
+  min-width: 0;
+}
+
+.sheetUserName {
+  font-size: v.$font-size-sm;
+  font-weight: v.$font-weight-medium;
+  color: v.$color-gray-8;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.sheetUserRole {
+  font-size: 10px;
+  color: v.$color-gray-4;
+  letter-spacing: 0.4px;
+}
+
+.sheetLogout {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 12px;
+  border-radius: v.$border-radius-md;
+  background: none;
+  border: 1px solid v.$color-gray-3;
+  color: v.$color-gray-5;
+  font-size: v.$font-size-sm;
+  cursor: pointer;
+  transition: all 0.15s;
+  white-space: nowrap;
+  -webkit-tap-highlight-color: transparent;
+
+  &:active {
+    border-color: v.$color-danger;
+    color: v.$color-danger;
+    background: v.$color-danger-bg;
+  }
+}
+
+// ── Animations ──────────────────────────────────────────────
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes slideUp {
+  from { transform: translateY(100%); }
+  to   { transform: translateY(0); }
+}

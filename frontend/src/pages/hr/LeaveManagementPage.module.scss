@@ -1,0 +1,157 @@
+@use '@/styles/variables' as *;
+@use '@/styles/mixins' as *;
+
+.page {
+  padding: $space-6;
+  animation: fadeIn 0.2s ease;
+  max-width: 100%;
+  overflow-x: hidden;
+
+  @media (max-width: $bp-md) {
+    padding: $space-4 $space-3;
+    gap: $space-4;
+  }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: $space-6;
+
+  @media (max-width: $bp-sm) { flex-direction: column; gap: $space-3; }
+}
+
+.pageTitle {
+  font-size: $font-size-xl;
+  font-weight: $font-weight-bold;
+  color: $color-gray-8;
+  margin: 0 0 4px;
+}
+
+.pageSub {
+  font-size: $font-size-sm;
+  color: $color-gray-5;
+  margin: 0;
+}
+
+.statsRow {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: $space-4;
+  margin-bottom: $space-5;
+
+  @media (max-width: $bp-lg) { grid-template-columns: repeat(2, 1fr); }
+  @media (max-width: $bp-sm) { grid-template-columns: 1fr; }
+}
+
+.name {
+  font-size: $font-size-sm;
+  font-weight: $font-weight-medium;
+  color: $color-gray-8;
+}
+
+.sub {
+  font-size: $font-size-xs;
+  color: $color-gray-5;
+  margin-top: 1px;
+}
+
+.reason {
+  font-size: $font-size-xs;
+  color: $color-gray-6;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  max-width: 200px;
+}
+
+.actionBtns {
+  display: flex;
+  gap: $space-2;
+}
+
+// ── Apply Form ────────────────────────────────────────────────
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: $space-4;
+}
+
+.dateRow {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: $space-3;
+}
+
+.formGroup {
+  display: flex;
+  flex-direction: column;
+  gap: $space-1;
+}
+
+.label {
+  font-size: $font-size-sm;
+  font-weight: $font-weight-medium;
+  color: $color-gray-7;
+}
+
+.input, .select, .textarea {
+  border: $border;
+  border-radius: $border-radius-md;
+  padding: $space-2 $space-3;
+  font-size: $font-size-sm;
+  font-family: $font-family;
+  outline: none;
+  color: $color-gray-8;
+  background: #fff;
+
+  &:focus { border-color: $brand-primary; }
+}
+
+.textarea { resize: vertical; line-height: 1.5; }
+
+.error {
+  font-size: $font-size-xs;
+  color: $color-danger;
+}
+
+.durationBadge {
+  display: flex;
+  align-items: center;
+  gap: $space-2;
+  background: $brand-primary-1;
+  color: $brand-primary;
+  font-size: $font-size-sm;
+  font-weight: $font-weight-medium;
+  padding: $space-2 $space-3;
+  border-radius: $border-radius-md;
+}
+
+// ── Review Info ───────────────────────────────────────────────
+.reviewInfo {
+  display: flex;
+  flex-direction: column;
+  gap: $space-2;
+  background: $color-gray-1;
+  border-radius: $border-radius-md;
+  padding: $space-4;
+  margin-bottom: $space-2;
+}
+
+.reviewRow {
+  font-size: $font-size-sm;
+  color: $color-gray-7;
+
+  span {
+    font-weight: $font-weight-medium;
+    color: $color-gray-6;
+    margin-right: $space-2;
+  }
+}

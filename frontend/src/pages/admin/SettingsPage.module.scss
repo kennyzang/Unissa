@@ -1,0 +1,397 @@
+@use '@/styles/variables' as *;
+@use '@/styles/mixins' as *;
+
+.page {
+  padding: $space-6;
+  max-width: 960px;
+  max-width: 100%;
+  overflow-x: hidden;
+
+  @media (max-width: $bp-md) {
+    padding: $space-4 $space-3;
+    gap: $space-4;
+  }
+}
+
+.header {
+  display: flex;
+  align-items: flex-start;
+  gap: $space-3;
+  margin-bottom: $space-6;
+  color: $color-gray-6;
+
+  svg { margin-top: 3px; flex-shrink: 0; }
+}
+
+.title {
+  font-size: $font-size-xl;
+  font-weight: $font-weight-bold;
+  color: $color-gray-8;
+  margin: 0 0 2px;
+}
+
+.sub {
+  font-size: $font-size-sm;
+  color: $color-gray-5;
+  margin: 0;
+}
+
+// ── Tabs ─────────────────────────────────────────────────────
+.tabs {
+  display: flex;
+  gap: 2px;
+  margin-bottom: $space-6;
+  border-bottom: 2px solid $border-color;
+}
+
+.tab {
+  display: flex;
+  align-items: center;
+  gap: $space-2;
+  padding: $space-3 $space-5;
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -2px;
+  cursor: pointer;
+  font-size: $font-size-sm;
+  color: $color-gray-5;
+  font-weight: $font-weight-medium;
+  transition: $transition-fast;
+
+  &:hover { color: $color-gray-7; }
+
+  &.tabActive {
+    color: $brand-primary;
+    border-bottom-color: $brand-primary;
+  }
+}
+
+.tabContent {
+  display: flex;
+  flex-direction: column;
+  gap: $space-5;
+}
+
+// ── Form ─────────────────────────────────────────────────────
+.configCard { max-width: 700px; }
+
+.enableRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-bottom: $space-5;
+  margin-bottom: $space-5;
+  border-bottom: $border;
+}
+
+.toggleGroup {
+  display: flex;
+  align-items: center;
+  gap: $space-3;
+}
+
+.toggle {
+  position: relative;
+  display: inline-block;
+  width: 40px;
+  height: 22px;
+  cursor: pointer;
+
+  input { opacity: 0; width: 0; height: 0; }
+}
+
+.slider {
+  position: absolute;
+  inset: 0;
+  background: $color-gray-3;
+  border-radius: 100px;
+  transition: $transition-base;
+
+  &::before {
+    content: '';
+    position: absolute;
+    width: 16px;
+    height: 16px;
+    left: 3px;
+    top: 3px;
+    background: #fff;
+    border-radius: 50%;
+    transition: $transition-base;
+  }
+
+  input:checked + & {
+    background: $brand-primary;
+    &::before { transform: translateX(18px); }
+  }
+}
+
+.toggleLabel {
+  font-size: $font-size-sm;
+  color: $color-gray-6;
+}
+
+.formGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: $space-4;
+
+  @media (max-width: $bp-md) { grid-template-columns: 1fr; }
+}
+
+.formGroup {
+  display: flex;
+  flex-direction: column;
+  gap: $space-1;
+
+  &.fullWidth { grid-column: 1 / -1; }
+}
+
+.label {
+  font-size: $font-size-sm;
+  font-weight: $font-weight-medium;
+  color: $color-gray-7;
+  display: flex;
+  align-items: center;
+  gap: $space-2;
+}
+
+.paramValue {
+  font-size: $font-size-xs;
+  background: $brand-primary-1;
+  color: $brand-primary;
+  padding: 1px 6px;
+  border-radius: 100px;
+  font-weight: $font-weight-semibold;
+}
+
+.inputGroup {
+  display: flex;
+  position: relative;
+}
+
+.input {
+  width: 100%;
+  border: $border;
+  border-radius: $border-radius-md;
+  padding: $space-2 $space-3;
+  font-size: $font-size-sm;
+  font-family: $font-family;
+  outline: none;
+  color: $color-gray-8;
+  background: #fff;
+
+  &:focus { border-color: $brand-primary; }
+  &::placeholder { color: $color-gray-4; }
+
+  .inputGroup & { padding-right: 40px; }
+}
+
+.eyeBtn {
+  position: absolute;
+  right: $space-2;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: $color-gray-5;
+  padding: 4px;
+  display: flex;
+  align-items: center;
+  &:hover { color: $color-gray-7; }
+}
+
+.select {
+  width: 100%;
+  border: $border;
+  border-radius: $border-radius-md;
+  padding: $space-2 $space-3;
+  font-size: $font-size-sm;
+  font-family: $font-family;
+  outline: none;
+  background: #fff;
+  cursor: pointer;
+
+  &:focus { border-color: $brand-primary; }
+}
+
+.range {
+  width: 100%;
+  accent-color: $brand-primary;
+}
+
+.textarea {
+  width: 100%;
+  border: $border;
+  border-radius: $border-radius-md;
+  padding: $space-3;
+  font-size: $font-size-sm;
+  font-family: $font-family;
+  outline: none;
+  resize: vertical;
+  color: $color-gray-8;
+  line-height: 1.5;
+
+  &:focus { border-color: $brand-primary; }
+  &::placeholder { color: $color-gray-4; }
+}
+
+.fieldHint {
+  font-size: $font-size-xs;
+  color: $color-gray-5;
+}
+
+// ── Test Result ───────────────────────────────────────────────
+.testResult {
+  display: flex;
+  align-items: center;
+  gap: $space-2;
+  padding: $space-3;
+  border-radius: $border-radius-md;
+  font-size: $font-size-sm;
+  margin: $space-4 0;
+
+  &.testOk   { background: $color-success-bg; color: $color-success; }
+  &.testFail { background: $color-danger-bg;  color: $color-danger;  }
+}
+
+// ── Actions ───────────────────────────────────────────────────
+.actions {
+  display: flex;
+  gap: $space-3;
+  padding-top: $space-5;
+  border-top: $border;
+  margin-top: $space-5;
+}
+
+// ── Guide Card ────────────────────────────────────────────────
+.guideCard { max-width: 700px; }
+
+.guideList {
+  display: flex;
+  flex-direction: column;
+  gap: $space-4;
+}
+
+.guideItem {
+  display: flex;
+  gap: $space-3;
+  align-items: flex-start;
+}
+
+.guideIcon {
+  font-size: 24px;
+  flex-shrink: 0;
+}
+
+.guideTitle {
+  font-size: $font-size-sm;
+  font-weight: $font-weight-semibold;
+  color: $color-gray-8;
+  margin-bottom: 2px;
+}
+
+.guideDesc {
+  font-size: $font-size-sm;
+  color: $color-gray-5;
+}
+
+// ── System Config Table ───────────────────────────────────────
+.sysTable { overflow-x: auto; }
+
+.configTable {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: $font-size-sm;
+
+  th {
+    background: $color-gray-1;
+    padding: $space-2 $space-3;
+    text-align: left;
+    font-weight: $font-weight-medium;
+    color: $color-gray-6;
+    border-bottom: $border;
+  }
+
+  td {
+    padding: $space-2 $space-3;
+    border-bottom: $border;
+    color: $color-gray-7;
+  }
+}
+
+.configKey {
+  font-family: monospace;
+  font-size: $font-size-xs;
+  color: $brand-primary !important;
+}
+
+.configDesc { color: $color-gray-6 !important; }
+
+.configVal {
+  display: flex;
+  align-items: center;
+  gap: $space-2;
+}
+
+.configBadge {
+  font-size: 10px;
+  background: $color-gray-2;
+  color: $color-gray-5;
+  padding: 1px 5px;
+  border-radius: 3px;
+  min-width: 30px;
+  text-align: center;
+}
+
+.configInput {
+  border: $border;
+  border-radius: $border-radius;
+  padding: 3px 8px;
+  font-size: $font-size-sm;
+  width: 80px;
+  background: $color-gray-1;
+  color: $color-gray-6;
+}
+
+.sysNote {
+  font-size: $font-size-xs;
+  color: $color-gray-5;
+  margin-top: $space-4;
+  padding-top: $space-4;
+  border-top: $border;
+}
+
+// ── Security List ─────────────────────────────────────────────
+.securityList {
+  display: flex;
+  flex-direction: column;
+  gap: $space-3;
+}
+
+.securityItem {
+  display: flex;
+  align-items: center;
+  gap: $space-3;
+  padding: $space-3;
+  background: $color-gray-1;
+  border-radius: $border-radius-md;
+}
+
+.secLabel {
+  font-size: $font-size-sm;
+  font-weight: $font-weight-medium;
+  color: $color-gray-7;
+  min-width: 200px;
+}
+
+.secValue {
+  flex: 1;
+  font-size: $font-size-sm;
+  color: $color-gray-5;
+}
+
+.secStatus { margin-left: auto; }
+.sec_ok    { color: $color-success; }
+.sec_warn  { color: $color-warning; }

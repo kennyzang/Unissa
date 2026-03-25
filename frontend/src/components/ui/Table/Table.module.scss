@@ -1,0 +1,52 @@
+@use '@/styles/variables' as v;
+@use '@/styles/mixins' as m;
+
+.tableWrapper {
+  width: 100%;
+  overflow-x: auto;
+  @include m.scrollbar(4px);
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: v.$font-size-base;
+  color: var(--color-gray-7);
+}
+
+.th {
+  background: var(--color-gray-1);
+  color: var(--color-gray-6);
+  font-weight: v.$font-weight-medium;
+  font-size: v.$font-size-sm;
+  border-bottom: 1px solid var(--color-gray-2);
+  white-space: nowrap;
+  user-select: none;
+}
+
+.td {
+  border-bottom: 1px solid var(--color-gray-2);
+  vertical-align: middle;
+  color: var(--color-gray-7);
+}
+
+.tr {
+  transition: background 0.15s;
+  &:hover .td { background: var(--color-gray-1); }
+  &.clickable { cursor: pointer; }
+}
+
+.table.size-md .th,
+.table.size-md .td { padding: 12px 16px; }
+
+.table.size-sm .th,
+.table.size-sm .td { padding: 8px 12px; font-size: v.$font-size-sm; }
+
+.table.striped tr:nth-child(even) .td { background: var(--color-gray-1); }
+
+.empty, .loading {
+  text-align: center;
+  color: var(--color-gray-4);
+  padding: 40px 16px;
+  font-size: v.$font-size-base;
+}

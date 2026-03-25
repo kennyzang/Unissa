@@ -1,0 +1,43 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(export PNPM_HOME=\"/Users/xiex/Library/pnpm\")",
+      "Bash(export PATH=\"$PNPM_HOME:$PATH\")",
+      "Bash(pnpm exec:*)",
+      "Bash(curl -s -X POST http://localhost:4000/api/v1/auth/login -H \"Content-Type: application/json\" -d '{\"\"\"\"username\"\"\"\":\"\"\"\"admin\"\"\"\",\"\"\"\"password\"\"\"\":\"\"\"\"Demo@2026\"\"\"\"}')",
+      "Bash(python3 -m json.tool)",
+      "Bash(pnpm install:*)",
+      "Bash(chmod +x /Users/xiex/Documents/OverseaBU/project/UNISSA-POC/start.sh)",
+      "Bash(pnpm build:*)",
+      "Bash(export PATH=\"$HOME/Library/pnpm:$PATH\")",
+      "Bash(pnpm approve-builds:*)",
+      "Bash(timeout 10 pnpm run dev)",
+      "Bash(mysql --version)",
+      "Bash(brew services:*)",
+      "Bash(brew list:*)",
+      "Bash(docker --version)",
+      "Bash(brew --version)",
+      "Bash(sed -i '' 's/ @db\\\\.Text//g' /Users/xiex/Documents/OverseaBU/project/UNISSA-POC/backend/prisma/schema.prisma)",
+      "Bash(sed -i '' 's/ @db\\\\.VarChar\\([0-9][0-9]*\\)//g' /Users/xiex/Documents/OverseaBU/project/UNISSA-POC/backend/prisma/schema.prisma)",
+      "Bash(lsof -ti:4000 -ti:5173)",
+      "Bash(xargs kill:*)",
+      "Bash(rm -f prisma/dev.db)",
+      "Bash(rm -rf prisma/migrations)",
+      "Bash(grep -rn \"position.*fixed\\\\|\\\\.fab\" /Users/xiex/Documents/OverseaBU/project/UNISSA-POC/frontend/src --include=*.scss)",
+      "Bash(node generate-icons.js)",
+      "Bash(node /Users/xiex/Documents/OverseaBU/project/UNISSA-POC/frontend/generate-icons.cjs)",
+      "Bash(pnpm --filter frontend build)",
+      "Bash(grep -o \"\"icons/icon-.*.png\"\" dist/manifest.webmanifest)",
+      "Bash(python3 -c \"import sys,json; m=json.load\\(sys.stdin\\); print\\([i[''''src''''] for i in m[''''icons'''']]\\)\")",
+      "Bash(pnpm --filter frontend tsc --noEmit)",
+      "Bash(npx tsc:*)",
+      "Bash(python3 -c \":*)",
+      "Bash(pnpm add:*)",
+      "Bash(grep -l \"padding: v\\\\.$space-6\\\\|padding: $space-6\" /Users/xiex/Documents/OverseaBU/project/UNISSA-POC/frontend/src/pages/**/*.module.scss)",
+      "Bash(find /Users/xiex/Documents/OverseaBU/project/UNISSA-POC -name package.json -path */dayjs/package.json)",
+      "Bash(npx vite:*)",
+      "Bash(for f:*)",
+      "Bash(do grep:*)"
+    ]
+  }
+}

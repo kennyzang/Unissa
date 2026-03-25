@@ -1,0 +1,93 @@
+@use '@/styles/variables' as v;
+
+.page {
+  padding: v.$space-6;
+  max-width: 860px;
+  display: flex;
+  flex-direction: column;
+  gap: v.$space-6;
+  animation: fadeIn 0.2s ease;
+  overflow-x: hidden;
+
+  @media (max-width: v.$bp-md) {
+    padding: v.$space-4 v.$space-3;
+    gap: v.$space-4;
+  }
+}
+
+.header { display: flex; flex-direction: column; gap: v.$space-1; }
+.pageTitle { font-size: v.$font-size-2xl; font-weight: v.$font-weight-bold; color: var(--color-gray-8); margin: 0; }
+.pageSub { font-size: v.$font-size-sm; color: var(--color-gray-5); margin: 0; }
+
+.stepperCard {
+  background: white;
+  // Ant Design Steps handles responsive display
+}
+
+.formCard { width: 100%; }
+
+.formGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: v.$space-4;
+  @media (max-width: v.$bp-md) { grid-template-columns: 1fr; }
+}
+
+.fullWidth { grid-column: 1 / -1; }
+
+.formActions {
+  display: flex;
+  justify-content: flex-end;
+  padding-top: v.$space-4;
+  border-top: 1px solid var(--color-gray-3);
+  margin-top: v.$space-2;
+}
+
+// Review section handled by Ant Design Descriptions
+
+.successWrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 60vh;
+  padding: v.$space-6;
+}
+
+.successCard {
+  background: white;
+  border: 1px solid var(--color-gray-3);
+  border-radius: v.$border-radius-xl;
+  padding: v.$space-10;
+  text-align: center;
+  max-width: 480px;
+  width: 100%;
+  box-shadow: v.$shadow-lg;
+
+  @media (max-width: v.$bp-sm) { padding: v.$space-6 v.$space-4; }
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: v.$space-3;
+
+  h2 { font-size: v.$font-size-2xl; font-weight: v.$font-weight-bold; color: var(--color-gray-8); margin: 0; }
+  p { font-size: v.$font-size-sm; color: var(--color-gray-6); margin: 0; }
+}
+
+.successIcon { color: v.$color-success; }
+
+.refNo {
+  font-size: v.$font-size-xl;
+  font-weight: v.$font-weight-bold;
+  color: v.$brand-primary;
+  background: v.$brand-primary-1;
+  border-radius: v.$border-radius-md;
+  padding: v.$space-3 v.$space-6;
+  letter-spacing: 0.05em;
+}
+
+.successSub { font-size: v.$font-size-xs !important; color: var(--color-gray-5) !important; }
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}

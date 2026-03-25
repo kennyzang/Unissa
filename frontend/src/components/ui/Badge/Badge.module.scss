@@ -1,0 +1,28 @@
+@use '@/styles/variables' as v;
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  border-radius: 2px;
+  font-weight: v.$font-weight-medium;
+  white-space: nowrap;
+
+  &.size-md { padding: 2px 8px; font-size: v.$font-size-xs; }
+  &.size-sm { padding: 1px 6px; font-size: 11px; }
+
+  .dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: currentColor;
+    flex-shrink: 0;
+  }
+
+  &.blue   { color: #165DFF; background: #E8F3FF; }
+  &.green  { color: #00B42A; background: #E8FFEA; }
+  &.red    { color: #F53F3F; background: #FFECE8; }
+  &.orange { color: #FF7D00; background: #FFF7E8; }
+  &.gray   { color: #4E5969; background: #F2F3F5; }
+  &.purple { color: #7816FF; background: #F5EEFF; }
+  &.cyan   { color: #0FC6C2; background: #E8FFFB; }
+}

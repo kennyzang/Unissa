@@ -1,0 +1,102 @@
+// ============================================================
+// UNISSA Design System – SCSS Mixins
+// ============================================================
+
+@use 'variables' as v;
+
+// Responsive breakpoints
+@mixin sm { @media (min-width: #{v.$bp-sm}) { @content; } }
+@mixin md { @media (min-width: #{v.$bp-md}) { @content; } }
+@mixin lg { @media (min-width: #{v.$bp-lg}) { @content; } }
+@mixin xl { @media (min-width: #{v.$bp-xl}) { @content; } }
+@mixin max-sm { @media (max-width: #{v.$bp-sm - 1px}) { @content; } }
+@mixin max-md { @media (max-width: #{v.$bp-md - 1px}) { @content; } }
+
+// Flex utilities
+@mixin flex-center { display: flex; align-items: center; justify-content: center; }
+@mixin flex-between { display: flex; align-items: center; justify-content: space-between; }
+@mixin flex-start { display: flex; align-items: center; justify-content: flex-start; }
+@mixin flex-col { display: flex; flex-direction: column; }
+
+// Truncate text
+@mixin truncate {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+@mixin line-clamp($lines: 2) {
+  display: -webkit-box;
+  -webkit-line-clamp: $lines;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+// Card style
+@mixin card {
+  background: #fff;
+  border: v.$border;
+  border-radius: v.$border-radius-lg;
+  box-shadow: v.$shadow-card;
+}
+
+// Button base
+@mixin btn-base {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: v.$space-2;
+  padding: 5px v.$space-4;
+  font-size: v.$font-size-base;
+  font-weight: v.$font-weight-medium;
+  line-height: v.$line-height;
+  border-radius: v.$border-radius;
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: v.$transition-fast;
+  outline: none;
+  white-space: nowrap;
+  user-select: none;
+  &:disabled { opacity: 0.5; cursor: not-allowed; }
+}
+
+// Input base
+@mixin input-base {
+  width: 100%;
+  padding: 5px v.$space-3;
+  font-size: v.$font-size-base;
+  line-height: v.$line-height;
+  color: v.$color-gray-8;
+  background: #fff;
+  border: 1px solid v.$color-gray-3;
+  border-radius: v.$border-radius;
+  transition: v.$transition-fast;
+  outline: none;
+  &:hover { border-color: v.$color-gray-4; }
+  &:focus { border-color: v.$brand-primary; box-shadow: 0 0 0 2px rgba(v.$brand-primary, 0.15); }
+  &::placeholder { color: v.$color-gray-4; }
+  &:disabled { background: v.$color-gray-1; cursor: not-allowed; }
+}
+
+// Scrollbar
+@mixin scrollbar($width: 4px) {
+  &::-webkit-scrollbar { width: $width; height: $width; }
+  &::-webkit-scrollbar-track { background: transparent; }
+  &::-webkit-scrollbar-thumb { background: v.$color-gray-3; border-radius: 9999px; }
+  &::-webkit-scrollbar-thumb:hover { background: v.$color-gray-4; }
+}
+
+// Status badge colors
+@mixin status-badge($color, $bg) {
+  color: $color;
+  background: $bg;
+  border: 1px solid rgba($color, 0.2);
+}
+
+// Typography scale
+@mixin heading-1 { font-size: v.$font-size-3xl; font-weight: v.$font-weight-bold; line-height: 1.2; }
+@mixin heading-2 { font-size: v.$font-size-2xl; font-weight: v.$font-weight-semibold; line-height: 1.3; }
+@mixin heading-3 { font-size: v.$font-size-xl; font-weight: v.$font-weight-semibold; line-height: 1.4; }
+@mixin heading-4 { font-size: v.$font-size-lg; font-weight: v.$font-weight-medium; line-height: 1.4; }
+@mixin body-sm   { font-size: v.$font-size-sm; line-height: v.$line-height; }
+@mixin body-xs   { font-size: v.$font-size-xs; line-height: v.$line-height; }

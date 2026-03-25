@@ -1,0 +1,207 @@
+@use '@/styles/variables' as *;
+@use '@/styles/mixins' as *;
+
+.page {
+  padding: $space-6;
+  animation: fadeIn 0.2s ease;
+  max-width: 100%;
+  overflow-x: hidden;
+
+  @media (max-width: $bp-md) {
+    padding: $space-4 $space-3;
+    gap: $space-4;
+  }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: $space-6;
+
+  @media (max-width: $bp-sm) { flex-direction: column; gap: $space-3; }
+}
+
+.pageTitle {
+  font-size: $font-size-xl;
+  font-weight: $font-weight-bold;
+  color: $color-gray-8;
+  margin: 0 0 4px;
+}
+
+.pageSub {
+  font-size: $font-size-sm;
+  color: $color-gray-5;
+  margin: 0;
+}
+
+.statsRow {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: $space-4;
+  margin-bottom: $space-5;
+
+  @media (max-width: $bp-lg) { grid-template-columns: repeat(2, 1fr); }
+  @media (max-width: $bp-sm) { grid-template-columns: 1fr; }
+}
+
+.workflowBanner {
+  display: flex;
+  align-items: center;
+  gap: $space-2;
+  background: $color-gray-1;
+  border: $border;
+  border-radius: $border-radius-lg;
+  padding: $space-3 $space-5;
+  margin-bottom: $space-5;
+  flex-wrap: wrap;
+
+  @media (max-width: $bp-sm) { display: none; }
+}
+
+.wfStep {
+  display: flex;
+  align-items: center;
+  gap: $space-2;
+  font-size: $font-size-sm;
+  color: $color-gray-6;
+}
+
+.wfNum {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: $brand-primary-1;
+  color: $brand-primary;
+  font-size: $font-size-xs;
+  font-weight: $font-weight-bold;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.wfNumGreen {
+  background: $color-success-bg;
+  color: $color-success;
+}
+
+.wfArrow { color: $color-gray-4; font-size: $font-size-lg; }
+
+.searchWrap {
+  display: flex;
+  align-items: center;
+  gap: $space-2;
+  color: $color-gray-5;
+}
+
+.searchInput {
+  border: $border;
+  border-radius: $border-radius-md;
+  padding: $space-2 $space-3;
+  font-size: $font-size-sm;
+  width: 240px;
+  outline: none;
+  &:focus { border-color: $brand-primary; }
+}
+
+.ref {
+  font-family: monospace;
+  font-size: $font-size-xs;
+  background: $color-gray-1;
+  padding: 2px 6px;
+  border-radius: 3px;
+  color: $brand-primary;
+}
+
+.grantTitle {
+  font-size: $font-size-sm;
+  font-weight: $font-weight-medium;
+  color: $color-gray-8;
+  max-width: 260px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sub { font-size: $font-size-xs; color: $color-gray-5; margin-top: 1px; }
+.actionBtns { display: flex; gap: $space-1; flex-wrap: wrap; }
+
+.form { display: flex; flex-direction: column; gap: $space-4; }
+
+.twoCol {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: $space-3;
+  @media (max-width: $bp-sm) { grid-template-columns: 1fr; }
+}
+
+.formGroup { display: flex; flex-direction: column; gap: $space-1; }
+
+.label { font-size: $font-size-sm; font-weight: $font-weight-medium; color: $color-gray-7; }
+
+.input, .textarea {
+  border: $border;
+  border-radius: $border-radius-md;
+  padding: $space-2 $space-3;
+  font-size: $font-size-sm;
+  font-family: $font-family;
+  outline: none;
+  color: $color-gray-8;
+  background: #fff;
+  &:focus { border-color: $brand-primary; }
+  &::placeholder { color: $color-gray-4; }
+}
+
+.textarea { resize: vertical; line-height: 1.5; }
+.error { font-size: $font-size-xs; color: $color-danger; }
+
+.detailBlock { margin-bottom: $space-4; }
+
+.detailTitle {
+  font-size: $font-size-md;
+  font-weight: $font-weight-semibold;
+  color: $color-gray-8;
+  margin-bottom: $space-2;
+}
+
+.detailMeta {
+  display: flex;
+  align-items: center;
+  gap: $space-2;
+  font-size: $font-size-sm;
+  color: $color-gray-5;
+}
+
+.detailGrid {
+  display: flex;
+  flex-direction: column;
+  gap: $space-2;
+  background: $color-gray-1;
+  border-radius: $border-radius-md;
+  padding: $space-4;
+  margin-bottom: $space-4;
+}
+
+.detailRow { display: flex; gap: $space-3; font-size: $font-size-sm; }
+.detailLabel { font-weight: $font-weight-medium; color: $color-gray-6; min-width: 120px; }
+.detailValue { color: $color-gray-8; }
+
+.abstractBox { border: $border; border-radius: $border-radius-md; padding: $space-4; }
+
+.abstractLabel {
+  font-size: $font-size-xs;
+  font-weight: $font-weight-semibold;
+  color: $color-gray-5;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: $space-2;
+}
+
+.abstractText { font-size: $font-size-sm; color: $color-gray-7; line-height: 1.6; margin: 0; }
+.reviewText { font-size: $font-size-sm; color: $color-gray-7; margin: 0 0 $space-3; line-height: 1.5; }
