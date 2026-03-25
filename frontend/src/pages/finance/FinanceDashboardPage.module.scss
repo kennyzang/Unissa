@@ -1,0 +1,39 @@
+@use '@/styles/variables' as v;
+
+.page {
+  padding: v.$space-6;
+  display: flex;
+  flex-direction: column;
+  gap: v.$space-5;
+  animation: fadeIn 0.2s ease;
+  max-width: 100%;
+  overflow-x: hidden;
+
+  @media (max-width: v.$bp-md) {
+    padding: v.$space-4 v.$space-3;
+    gap: v.$space-4;
+  }
+}
+.header { display: flex; flex-direction: column; gap: v.$space-1; }
+.pageTitle { font-size: v.$font-size-2xl; font-weight: v.$font-weight-bold; color: var(--color-gray-8); margin: 0; }
+.pageSub { font-size: v.$font-size-sm; color: var(--color-gray-5); margin: 0; }
+.loading { display: flex; align-items: center; justify-content: center; height: 300px; color: var(--color-gray-5); }
+
+.kpiRow { display: grid; grid-template-columns: repeat(4, 1fr); gap: v.$space-4; @media (max-width: v.$bp-md) { grid-template-columns: repeat(2, 1fr); } }
+
+.glTable {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: v.$font-size-sm;
+
+  th { background: var(--color-gray-1); padding: v.$space-3 v.$space-4; text-align: left; font-size: v.$font-size-xs; font-weight: v.$font-weight-semibold; color: var(--color-gray-5); white-space: nowrap; }
+  td { padding: v.$space-3 v.$space-4; border-bottom: 1px solid var(--color-gray-2); color: var(--color-gray-7); }
+  tr:hover td { background: var(--color-gray-1); }
+  tr:last-child td { border-bottom: none; }
+}
+
+.glCode { font-weight: v.$font-weight-semibold; color: v.$brand-primary; font-family: monospace; }
+.dept { color: var(--color-gray-5); font-size: v.$font-size-xs; }
+.lowBalance { color: v.$color-danger !important; }
+
+@keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }

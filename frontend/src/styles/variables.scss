@@ -1,0 +1,112 @@
+// ============================================================
+// UNISSA Design System – SCSS Variables
+// Aligned with LUI component library visual language
+// ============================================================
+
+// Brand Colors
+$brand-primary:    #165DFF;
+$brand-primary-6:  #165DFF;   // LUI primary-6
+$brand-primary-5:  #4080FF;
+$brand-primary-4:  #6AA1FF;
+$brand-primary-3:  #94BFFF;
+$brand-primary-2:  #BEDAFF;
+$brand-primary-1:  #E8F3FF;
+
+$brand-dark:       #1A3A5C;
+$brand-mid:        #2E6DA4;
+$brand-light:      #D5E8F0;
+$brand-accent:     #E8F4FD;
+
+// Neutral Colors (LUI grey scale)
+$color-gray-1:     #F7F8FA;
+$color-gray-2:     #F2F3F5;
+$color-gray-3:     #E5E6EB;
+$color-gray-4:     #C9CDD4;
+$color-gray-5:     #86909C;
+$color-gray-6:     #4E5969;
+$color-gray-7:     #272E3B;
+$color-gray-8:     #1D2129;
+
+// Functional Colors
+$color-success:    #00B42A;
+$color-success-bg: #E8FFEA;
+$color-warning:    #FF7D00;
+$color-warning-bg: #FFF7E8;
+$color-danger:     #F53F3F;
+$color-danger-bg:  #FFECE8;
+$color-info:       #165DFF;
+$color-info-bg:    #E8F3FF;
+
+// Status aliases (matching SRS)
+$status-success:   #16A34A;
+$status-warning:   #D97706;
+$status-danger:    #DC2626;
+$status-info:      #2563EB;
+
+// Typography
+$font-family:      'Inter', 'PingFang SC', 'Microsoft YaHei', Arial, sans-serif;
+$font-size-xs:     12px;
+$font-size-sm:     13px;
+$font-size-base:   14px;
+$font-size-md:     16px;
+$font-size-lg:     18px;
+$font-size-xl:     20px;
+$font-size-2xl:    24px;
+$font-size-3xl:    30px;
+$line-height:      1.5;
+$font-weight-regular: 400;
+$font-weight-medium:  500;
+$font-weight-semibold: 600;
+$font-weight-bold:    700;
+
+// Spacing (4px base grid)
+$space-1:  4px;
+$space-2:  8px;
+$space-3:  12px;
+$space-4:  16px;
+$space-5:  20px;
+$space-6:  24px;
+$space-8:  32px;
+$space-10: 40px;
+$space-12: 48px;
+
+// Border
+$border-radius-sm: 2px;
+$border-radius:    4px;
+$border-radius-md: 6px;
+$border-radius-lg: 8px;
+$border-radius-xl: 12px;
+$border-color:     $color-gray-3;
+$border:           1px solid $border-color;
+
+// Shadow
+$shadow-sm:  0 1px 2px rgba(0,0,0,0.05);
+$shadow:     0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.06);
+$shadow-md:  0 4px 6px -1px rgba(0,0,0,0.10), 0 2px 4px -1px rgba(0,0,0,0.06);
+$shadow-lg:  0 10px 15px -3px rgba(0,0,0,0.10), 0 4px 6px -2px rgba(0,0,0,0.05);
+$shadow-card: 0 1px 3px rgba(0,0,0,0.12);
+
+// Layout
+$sidebar-width:       220px;
+$sidebar-collapsed:   56px;
+$navbar-height:       52px;
+$content-max-width:   1440px;
+
+// Breakpoints
+$bp-sm:   640px;
+$bp-md:   768px;
+$bp-lg:   1024px;
+$bp-xl:   1280px;
+$bp-2xl:  1536px;
+
+// Transition
+$transition-base:  all 0.2s ease;
+$transition-fast:  all 0.1s ease;
+$transition-slow:  all 0.3s ease;
+
+// Z-index
+$z-sidebar:  100;
+$z-navbar:   200;
+$z-dropdown: 300;
+$z-modal:    400;
+$z-toast:    500;

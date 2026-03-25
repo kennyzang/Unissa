@@ -1,0 +1,255 @@
+@use '@/styles/variables' as v;
+@use '@/styles/mixins' as m;
+
+.navbar {
+  height: v.$navbar-height;
+  background: #fff;
+  border-bottom: 1px solid var(--color-gray-2);
+  padding: 0 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-shrink: 0;
+  position: sticky;
+  top: 0;
+  z-index: v.$z-navbar;
+  box-shadow: 0 1px 0 var(--color-gray-2);
+
+  @include m.max-md {
+    padding: 0 14px;
+    gap: 8px;
+  }
+}
+
+// Mobile brand logo (shown instead of hamburger)
+.mobileBrand {
+  display: none;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+
+  @include m.max-md { display: flex; }
+}
+
+.mobileBrandMark {
+  width: 28px;
+  height: 28px;
+  border-radius: v.$border-radius-md;
+  background: linear-gradient(135deg, v.$brand-primary, v.$brand-primary-5);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.mobileBrandName {
+  font-size: v.$font-size-base;
+  font-weight: v.$font-weight-bold;
+  color: v.$color-gray-8;
+  letter-spacing: 0.3px;
+}
+
+// Mobile page title (shown in center on mobile)
+.mobilePageTitle {
+  display: none;
+  font-size: v.$font-size-base;
+  font-weight: v.$font-weight-semibold;
+  color: v.$color-gray-8;
+  flex: 1;
+  text-align: center;
+
+  @include m.max-md { display: block; }
+}
+
+// Notification bell wrapper
+.notifWrap {
+  position: relative;
+}
+
+.notifBadge {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  background: v.$color-danger;
+  color: #fff;
+  font-size: 9px;
+  font-weight: v.$font-weight-bold;
+  min-width: 14px;
+  height: 14px;
+  border-radius: 7px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 2px;
+  pointer-events: none;
+}
+
+.notifDropdown {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  width: 320px;
+  max-width: calc(100vw - 28px);
+  background: #fff;
+  border: 1px solid v.$border-color;
+  border-radius: v.$border-radius-lg;
+  box-shadow: v.$shadow-lg;
+  z-index: v.$z-dropdown;
+  overflow: hidden;
+}
+
+.notifHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  border-bottom: 1px solid v.$border-color;
+  font-size: v.$font-size-sm;
+  font-weight: v.$font-weight-semibold;
+  color: v.$color-gray-8;
+}
+
+.unreadLabel {
+  font-size: v.$font-size-xs;
+  background: v.$brand-primary-1;
+  color: v.$brand-primary;
+  padding: 2px 8px;
+  border-radius: 100px;
+  font-weight: v.$font-weight-medium;
+}
+
+.notifList {
+  max-height: 320px;
+  overflow-y: auto;
+}
+
+.notifEmpty {
+  padding: 24px;
+  text-align: center;
+  font-size: v.$font-size-sm;
+  color: v.$color-gray-4;
+}
+
+.notifItem {
+  padding: 12px 16px;
+  border-bottom: 1px solid v.$border-color;
+  cursor: default;
+
+  &:last-child { border-bottom: none; }
+  &:hover { background: v.$color-gray-1; }
+}
+
+.notifUnread {
+  background: v.$brand-primary-1;
+  &:hover { background: v.$brand-primary-2; }
+}
+
+.notifSubject {
+  font-size: v.$font-size-sm;
+  font-weight: v.$font-weight-medium;
+  color: v.$color-gray-8;
+  margin-bottom: 2px;
+}
+
+.notifBody {
+  font-size: v.$font-size-xs;
+  color: v.$color-gray-5;
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+
+.notifTime {
+  font-size: 10px;
+  color: v.$color-gray-4;
+  margin-top: 4px;
+}
+
+.overlay {
+  position: fixed;
+  inset: 0;
+  z-index: calc(v.$z-dropdown - 1);
+}
+
+.breadcrumb {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  font-size: v.$font-size-sm;
+  flex-wrap: wrap;
+
+  // Hidden on mobile – replaced by mobilePageTitle
+  @include m.max-md { display: none; }
+}
+
+.crumbRoot { color: var(--color-gray-4); }
+.separator { color: var(--color-gray-3); margin: 0 6px; }
+.crumb     { color: var(--color-gray-5); }
+.crumbActive { color: var(--color-gray-8); font-weight: v.$font-weight-medium; }
+
+.right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.iconBtn {
+  width: 32px; height: 32px;
+  border-radius: v.$border-radius-md;
+  border: none;
+  background: none;
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 16px;
+  color: var(--color-gray-5);
+  transition: background 0.15s;
+  &:hover { background: var(--color-gray-1); color: var(--color-gray-7); }
+}
+
+.userMenu {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 8px;
+  border-radius: v.$border-radius-md;
+  cursor: default;
+}
+
+.avatar {
+  width: 28px; height: 28px;
+  border-radius: 50%;
+  background: var(--color-primary);
+  color: #fff;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 13px; font-weight: 600;
+  flex-shrink: 0;
+}
+
+.userInfo {
+  display: flex;
+  flex-direction: column;
+  @include m.max-sm { display: none; }
+}
+
+.userName { font-size: v.$font-size-sm; font-weight: v.$font-weight-medium; color: var(--color-gray-7); }
+.userRole { font-size: 11px; color: var(--color-gray-4); text-transform: capitalize; }
+
+.logoutBtn {
+  width: 28px; height: 28px;
+  border-radius: v.$border-radius;
+  border: 1px solid var(--color-gray-3);
+  background: none;
+  cursor: pointer;
+  color: var(--color-gray-5);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 14px;
+  transition: all 0.15s;
+  &:hover { border-color: var(--color-danger); color: var(--color-danger); background: var(--color-danger-bg); }
+
+  // Hidden on mobile – logout is in BottomTab More sheet
+  @include m.max-md { display: none; }
+}

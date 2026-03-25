@@ -1,0 +1,40 @@
+@use '@/styles/variables' as v;
+@use '@/styles/mixins' as m;
+
+.root {
+  display: flex;
+  min-height: 100vh;
+  width: 100%;
+  overflow-x: hidden;
+  background: var(--color-gray-1);
+  --current-sidebar: #{v.$sidebar-width};
+  transition: --current-sidebar 0.2s;
+
+  &.collapsed { --current-sidebar: #{v.$sidebar-collapsed}; }
+}
+
+.main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  margin-left: var(--current-sidebar);
+  transition: margin-left 0.2s ease;
+
+  // On mobile, sidebar is an overlay – no margin offset needed
+  @include m.max-md {
+    margin-left: 0 !important;
+  }
+}
+
+.content {
+  flex: 1;
+  padding: 20px 24px;
+  overflow-y: auto;
+  @include m.scrollbar(4px);
+
+  @include m.max-md {
+    // Extra bottom padding so content clears the fixed bottom tab bar
+    padding: 12px 12px calc(56px + env(safe-area-inset-bottom) + 12px);
+  }
+}

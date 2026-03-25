@@ -1,0 +1,58 @@
+# 系统文件
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+*~
+
+# IDE / 编辑器
+.idea/
+.vscode/
+*.iml
+*.iws
+*.ipr
+.nb-gradle/
+.settings/
+.project
+.classpath
+.c9/
+*.launch
+
+# 构建 / 依赖
+node_modules/
+dist/
+build/
+target/
+bin/
+lib/
+.m2/
+.gradle/
+*.jar
+*.war
+*.ear
+*.tar.gz
+
+# 日志 / 临时文件
+logs/
+log/
+*.log
+tmp/
+temp/
+*.tmp
+*.bak
+
+# 环境配置
+.env
+.env.local
+.env.*.local
+.env.prod          # 生产环境真实配置，禁止提交
+*.secret
+*.pem
+*.key
+
+# SSL 证书（敏感文件）
+nginx/ssl/
+
+# 操作系统
+__pycache__/
+*.py[cod]

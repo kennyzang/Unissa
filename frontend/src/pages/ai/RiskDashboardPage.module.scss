@@ -1,0 +1,77 @@
+@use '@/styles/variables' as v;
+
+.page {
+  padding: v.$space-6;
+  display: flex;
+  flex-direction: column;
+  gap: v.$space-5;
+  animation: fadeIn 0.2s ease;
+  max-width: 100%;
+  overflow-x: hidden;
+
+  @media (max-width: v.$bp-md) {
+    padding: v.$space-4 v.$space-3;
+    gap: v.$space-4;
+  }
+}
+.header { display: flex; justify-content: space-between; align-items: flex-start; gap: v.$space-4; flex-wrap: wrap; }
+.pageTitle { font-size: v.$font-size-2xl; font-weight: v.$font-weight-bold; color: var(--color-gray-8); margin: 0; }
+.pageSub { font-size: v.$font-size-sm; color: var(--color-gray-5); margin: v.$space-1 0 0; }
+
+.courseSelector { display: flex; gap: v.$space-2; flex-wrap: wrap; }
+.courseBtn { background: white; border: 1px solid var(--color-gray-3); border-radius: v.$border-radius; padding: v.$space-2 v.$space-4; font-size: v.$font-size-xs; cursor: pointer; color: var(--color-gray-6); transition: v.$transition-fast; &:hover { border-color: v.$brand-primary; color: v.$brand-primary; } }
+.activeBtn { background: v.$brand-primary !important; color: white !important; border-color: v.$brand-primary !important; }
+
+.kpiRow { display: grid; grid-template-columns: repeat(4, 1fr); gap: v.$space-4; @media (max-width: v.$bp-lg) { grid-template-columns: repeat(2, 1fr); } }
+
+.chartsRow { display: grid; grid-template-columns: 1fr 1fr; gap: v.$space-4; @media (max-width: v.$bp-md) { grid-template-columns: 1fr; } }
+.scatterLegend { display: flex; gap: v.$space-3; font-size: v.$font-size-xs; }
+
+// Risk Table
+.riskTable { overflow-x: auto; }
+.riskTableHeader {
+  display: grid;
+  grid-template-columns: 2fr 1.5fr 1.5fr 1fr 1.5fr 1fr 1fr 1fr;
+  gap: v.$space-3;
+  padding: v.$space-2 v.$space-4;
+  background: var(--color-gray-1);
+  border-radius: v.$border-radius;
+  font-size: v.$font-size-xs;
+  font-weight: v.$font-weight-semibold;
+  color: var(--color-gray-5);
+  margin-bottom: v.$space-2;
+  min-width: 800px;
+}
+
+.riskRow {
+  display: grid;
+  grid-template-columns: 2fr 1.5fr 1.5fr 1fr 1.5fr 1fr 1fr 1fr;
+  gap: v.$space-3;
+  align-items: center;
+  padding: v.$space-3 v.$space-4;
+  border-radius: v.$border-radius;
+  transition: background 0.1s;
+  min-width: 800px;
+  &:hover { background: var(--color-gray-1); }
+}
+
+.failRow { background: #{v.$color-danger}08 !important; }
+.riskRowWarning { background: #{v.$color-warning}08 !important; }
+
+.studentName { font-size: v.$font-size-sm; font-weight: v.$font-weight-medium; color: var(--color-gray-8); }
+.studentId { font-size: v.$font-size-xs; color: var(--color-gray-5); }
+
+.metricBar { height: 4px; background: var(--color-gray-2); border-radius: 2px; overflow: hidden; margin-bottom: 2px; }
+.metricFill { height: 100%; border-radius: 2px; }
+.metricGood .metricFill { background: v.$color-success; }
+.metricWarning .metricFill { background: v.$color-warning; }
+.metricDanger .metricFill { background: v.$color-danger; }
+.metricValue { font-size: v.$font-size-xs; color: var(--color-gray-6); }
+
+.riskGauge { height: 4px; background: var(--color-gray-2); border-radius: 2px; overflow: hidden; margin-bottom: 2px; }
+.riskFill { height: 100%; border-radius: 2px; transition: width 0.5s; }
+
+.confidence { font-size: v.$font-size-xs; color: var(--color-gray-5); }
+.notified { font-size: v.$font-size-xs; }
+
+@keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }

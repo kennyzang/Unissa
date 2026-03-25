@@ -1,0 +1,89 @@
+@use '@/styles/variables' as v;
+
+.page {
+  padding: v.$space-6;
+  display: flex;
+  flex-direction: column;
+  gap: v.$space-5;
+  animation: fadeIn 0.2s ease;
+  max-width: 100%;
+  overflow-x: hidden;
+
+  @media (max-width: v.$bp-md) {
+    padding: v.$space-4 v.$space-3;
+    gap: v.$space-4;
+  }
+}
+.loading { display: flex; align-items: center; justify-content: center; height: 300px; color: var(--color-gray-5); }
+
+.header { display: flex; flex-direction: column; gap: v.$space-3; }
+.backBtn { display: flex; align-items: center; gap: v.$space-2; background: none; border: none; font-size: v.$font-size-sm; color: var(--color-gray-5); cursor: pointer; padding: 0; &:hover { color: v.$brand-primary; } }
+
+.courseHero {
+  background: linear-gradient(135deg, v.$brand-dark, v.$brand-mid);
+  color: white;
+  border-radius: v.$border-radius-xl;
+  padding: v.$space-6;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: v.$space-6;
+
+  @media (max-width: v.$bp-md) {
+    flex-direction: column;
+    align-items: flex-start;
+    padding: v.$space-4;
+    gap: v.$space-4;
+  }
+}
+
+.heroLeft { display: flex; flex-direction: column; gap: v.$space-2; }
+.courseCode { font-size: v.$font-size-sm; font-weight: v.$font-weight-semibold; opacity: 0.7; }
+.courseName { font-size: v.$font-size-2xl; font-weight: v.$font-weight-bold; margin: 0; }
+.courseMeta { display: flex; gap: v.$space-4; font-size: v.$font-size-xs; opacity: 0.8; flex-wrap: wrap; }
+
+.heroStats { display: flex; gap: v.$space-6; flex-shrink: 0; }
+.heroStat { text-align: center; span { display: block; font-size: 32px; font-weight: v.$font-weight-bold; line-height: 1; } label { font-size: v.$font-size-xs; opacity: 0.7; display: block; margin-top: 2px; } }
+
+// Assignments
+.emptyAssignments { padding: v.$space-8; text-align: center; color: var(--color-gray-4); }
+.assignmentList { display: flex; flex-direction: column; gap: 0; }
+.assignmentItem {
+  display: flex;
+  align-items: center;
+  gap: v.$space-4;
+  padding: v.$space-4;
+  border-bottom: 1px solid var(--color-gray-2);
+  &:last-child { border-bottom: none; }
+  &:hover { background: var(--color-gray-1); }
+}
+.assignmentIcon { width: 36px; height: 36px; background: v.$brand-primary-1; border-radius: v.$border-radius-md; display: flex; align-items: center; justify-content: center; color: v.$brand-primary; flex-shrink: 0; }
+.assignmentInfo { flex: 1; }
+.assignmentTitle { font-size: v.$font-size-sm; font-weight: v.$font-weight-semibold; color: var(--color-gray-8); }
+.assignmentMeta { display: flex; gap: v.$space-3; font-size: v.$font-size-xs; color: var(--color-gray-5); margin-top: 3px; flex-wrap: wrap; }
+.overdue { color: v.$color-danger !important; display: flex; align-items: center; gap: 2px; }
+.dueSoon { color: v.$color-warning !important; display: flex; align-items: center; gap: 2px; }
+.assignmentActions { display: flex; gap: v.$space-2; align-items: center; }
+.gradeChip { display: flex; align-items: center; gap: 3px; font-size: v.$font-size-sm; font-weight: v.$font-weight-bold; color: v.$color-success; background: v.$color-success-bg; padding: 3px v.$space-3; border-radius: v.$border-radius; }
+
+// Demo section
+.demoSubmit { display: flex; flex-direction: column; gap: v.$space-3; }
+.demoText { font-size: v.$font-size-sm; color: var(--color-gray-6); line-height: 1.6; margin: 0; }
+
+// Submit modal
+.submitInfo { font-size: v.$font-size-sm; color: var(--color-gray-5); margin: 0 0 v.$space-3; }
+.submitLabel { display: block; font-size: v.$font-size-sm; font-weight: v.$font-weight-medium; color: var(--color-gray-7); margin-bottom: v.$space-2; }
+.submitTextarea { width: 100%; border: 1px solid var(--color-gray-3); border-radius: v.$border-radius; padding: v.$space-3; font-size: v.$font-size-sm; font-family: v.$font-family; resize: vertical; outline: none; box-sizing: border-box; &:focus { border-color: v.$brand-primary; } }
+.aiNote { font-size: v.$font-size-xs; color: var(--color-gray-5); background: var(--color-gray-1); padding: v.$space-3; border-radius: v.$border-radius; margin: v.$space-3 0 0; }
+
+// Rubric
+.rubricList { display: flex; flex-direction: column; gap: v.$space-5; }
+.rubricItem { display: flex; flex-direction: column; gap: v.$space-2; }
+.rubricHeader { display: flex; justify-content: space-between; align-items: center; }
+.rubricCriterion { font-size: v.$font-size-sm; font-weight: v.$font-weight-semibold; color: var(--color-gray-8); }
+.rubricScore { font-size: v.$font-size-sm; font-weight: v.$font-weight-bold; color: v.$brand-primary; }
+.rubricBar { height: 6px; background: var(--color-gray-2); border-radius: 3px; overflow: hidden; }
+.rubricFill { height: 100%; background: linear-gradient(90deg, v.$brand-primary, v.$brand-primary-5); border-radius: 3px; transition: width 0.5s ease; }
+.rubricComment { font-size: v.$font-size-xs; color: var(--color-gray-6); margin: 0; }
+
+@keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }

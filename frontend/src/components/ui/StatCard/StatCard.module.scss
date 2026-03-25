@@ -1,0 +1,66 @@
+@use '@/styles/variables' as v;
+
+.card {
+  background: #fff;
+  border: 1px solid var(--color-gray-2);
+  border-radius: v.$border-radius-lg;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  box-shadow: v.$shadow-card;
+  transition: box-shadow 0.2s;
+  &.clickable { cursor: pointer; &:hover { box-shadow: v.$shadow-md; } }
+}
+
+.top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.title {
+  font-size: v.$font-size-sm;
+  color: var(--color-gray-5);
+  font-weight: v.$font-weight-medium;
+  line-height: 1.4;
+}
+
+.icon {
+  width: 36px; height: 36px;
+  border-radius: v.$border-radius-md;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 18px;
+}
+
+.value {
+  font-size: 28px;
+  font-weight: v.$font-weight-bold;
+  color: var(--color-gray-8);
+  line-height: 1.2;
+}
+
+.bottom {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.sub { font-size: v.$font-size-xs; color: var(--color-gray-4); }
+
+.trend {
+  font-size: v.$font-size-xs;
+  font-weight: v.$font-weight-medium;
+  &.up   { color: var(--color-success); }
+  &.down { color: var(--color-danger); }
+}
+
+.trendLabel { font-weight: 400; color: var(--color-gray-4); }
+
+// Color accents
+.blue   .icon { background: #E8F3FF; color: #165DFF; }
+.green  .icon { background: #E8FFEA; color: #00B42A; }
+.orange .icon { background: #FFF7E8; color: #FF7D00; }
+.red    .icon { background: #FFECE8; color: #F53F3F; }
+.purple .icon { background: #F5EEFF; color: #7816FF; }

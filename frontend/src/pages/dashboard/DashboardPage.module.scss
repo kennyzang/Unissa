@@ -1,0 +1,463 @@
+@use '@/styles/variables' as v;
+
+// ── Page shell ───────────────────────────────────────────────
+.page {
+  padding: v.$space-6;
+  display: flex;
+  flex-direction: column;
+  gap: v.$space-6;
+  animation: fadeIn 0.25s ease;
+  max-width: v.$content-max-width;
+  width: 100%;
+  overflow-x: hidden;
+
+  @media (max-width: v.$bp-md) {
+    padding: v.$space-4 v.$space-3;
+    gap: v.$space-4;
+  }
+}
+
+// ── Header ───────────────────────────────────────────────────
+.header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: v.$space-4;
+
+  @media (max-width: v.$bp-md) {
+    flex-direction: column;
+    align-items: stretch;
+    gap: v.$space-2;
+  }
+}
+
+.pageTitle {
+  font-size: v.$font-size-2xl;
+  font-weight: v.$font-weight-bold;
+  color: var(--color-gray-8);
+  line-height: 1.2;
+  margin: 0;
+
+  @media (max-width: v.$bp-md) { font-size: v.$font-size-xl; }
+}
+
+.pageSub {
+  margin: v.$space-1 0 0;
+  font-size: v.$font-size-sm;
+  color: var(--color-gray-5);
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 2px;
+
+  @media (max-width: v.$bp-md) { font-size: v.$font-size-xs; }
+}
+
+.wifiIcon {
+  color: v.$color-success;
+  display: inline;
+}
+
+.refreshBtn {
+  display: flex;
+  align-items: center;
+  gap: v.$space-2;
+  padding: v.$space-2 v.$space-4;
+  border: 1px solid var(--color-gray-3);
+  background: white;
+  border-radius: v.$border-radius;
+  font-size: v.$font-size-sm;
+  color: var(--color-gray-6);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: v.$transition-fast;
+
+  &:hover {
+    border-color: v.$brand-primary;
+    color: v.$brand-primary;
+  }
+}
+
+// ── KPI Grid ─────────────────────────────────────────────────
+.kpiGrid {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: v.$space-4;
+
+  @media (max-width: v.$bp-xl) { grid-template-columns: repeat(3, 1fr); }
+  @media (max-width: v.$bp-md) {
+    grid-template-columns: repeat(2, 1fr);
+    gap: v.$space-3;
+  }
+}
+
+.kpiCard {
+  background: white;
+  border: 1px solid var(--color-gray-3);
+  border-radius: v.$border-radius-lg;
+  padding: v.$space-4;
+  display: flex;
+  flex-direction: column;
+  gap: v.$space-2;
+  position: relative;
+  overflow: hidden;
+  box-shadow: v.$shadow-sm;
+  transition: box-shadow 0.15s ease, transform 0.15s ease;
+
+  @media (max-width: v.$bp-md) {
+    padding: v.$space-3;
+    gap: v.$space-1;
+  }
+
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: var(--accent, v.$brand-primary);
+    border-radius: v.$border-radius-lg v.$border-radius-lg 0 0;
+  }
+
+  &:hover {
+    box-shadow: v.$shadow-md;
+    transform: translateY(-1px);
+  }
+}
+
+.kpiTop {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.kpiIconWrap {
+  width: 32px;
+  height: 32px;
+  border-radius: v.$border-radius-md;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.kpiValue {
+  font-size: v.$font-size-2xl;
+  font-weight: v.$font-weight-bold;
+  color: var(--color-gray-8);
+  line-height: 1.1;
+
+  @media (max-width: v.$bp-md) { font-size: v.$font-size-xl; }
+}
+
+.kpiTitle {
+  font-size: v.$font-size-sm;
+  font-weight: v.$font-weight-medium;
+  color: var(--color-gray-6);
+}
+
+.kpiSub {
+  font-size: v.$font-size-xs;
+  color: var(--color-gray-5);
+}
+
+.kpiAlert {
+  display: flex;
+  align-items: center;
+  gap: v.$space-1;
+  font-size: v.$font-size-xs;
+  color: v.$color-warning;
+  background: v.$color-warning-bg;
+  padding: 2px v.$space-2;
+  border-radius: v.$border-radius;
+}
+
+.kpiChart {
+  margin-top: v.$space-1;
+}
+
+// ── Charts Row ───────────────────────────────────────────────
+.chartsRow {
+  display: grid;
+  grid-template-columns: 2fr 1.5fr 1.5fr;
+  gap: v.$space-4;
+
+  @media (max-width: v.$bp-xl) { grid-template-columns: 1fr 1fr; }
+  @media (max-width: v.$bp-md) {
+    grid-template-columns: 1fr;
+    gap: v.$space-3;
+  }
+}
+
+.chartCard {
+  min-height: 240px;
+
+  @media (max-width: v.$bp-md) { min-height: 200px; }
+}
+
+// ── Budget card internals ─────────────────────────────────────
+.budgetSummary {
+  display: flex;
+  align-items: center;
+  gap: v.$space-6;
+  padding: v.$space-2 0;
+}
+
+.budgetDonut {
+  position: relative;
+  flex-shrink: 0;
+}
+
+.donutLabel {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+}
+
+.donutPct {
+  font-size: v.$font-size-md;
+  font-weight: v.$font-weight-bold;
+  color: v.$brand-primary;
+  line-height: 1;
+}
+
+.donutSub {
+  font-size: 9px;
+  color: var(--color-gray-5);
+  margin-top: 2px;
+}
+
+.budgetStats {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: v.$space-3;
+}
+
+.budgetRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: v.$font-size-sm;
+  padding-bottom: v.$space-2;
+  border-bottom: 1px dashed var(--color-gray-3);
+
+  &:last-child { border-bottom: none; padding-bottom: 0; }
+}
+
+.budgetLabel {
+  color: var(--color-gray-6);
+}
+
+.budgetValue {
+  font-weight: v.$font-weight-semibold;
+}
+
+// ── Live Activity ─────────────────────────────────────────────
+.liveDot {
+  display: flex;
+  align-items: center;
+  gap: v.$space-2;
+  font-size: v.$font-size-xs;
+  font-weight: v.$font-weight-semibold;
+  color: v.$color-danger;
+  letter-spacing: 0.04em;
+}
+
+.livePulse {
+  width: 7px;
+  height: 7px;
+  background: v.$color-danger;
+  border-radius: 50%;
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+.activityList {
+  display: flex;
+  flex-direction: column;
+  gap: v.$space-1;
+}
+
+.activityRow {
+  display: flex;
+  align-items: center;
+  gap: v.$space-3;
+  padding: v.$space-2 v.$space-3;
+  border-radius: v.$border-radius;
+  transition: background 0.1s;
+
+  &:hover { background: var(--color-gray-1); }
+}
+
+.activityHighlight {
+  background: v.$color-warning-bg !important;
+}
+
+.activityIcon {
+  font-size: 14px;
+  flex-shrink: 0;
+}
+
+.activityText {
+  flex: 1;
+  font-size: v.$font-size-sm;
+  color: var(--color-gray-7);
+}
+
+.activityTime {
+  font-size: v.$font-size-xs;
+  color: var(--color-gray-5);
+  white-space: nowrap;
+}
+
+// ── Insights section ─────────────────────────────────────────
+.insightsSection {
+  display: flex;
+  flex-direction: column;
+  gap: v.$space-4;
+}
+
+.sectionHeader {
+  display: flex;
+  align-items: center;
+  gap: v.$space-2;
+  color: var(--color-gray-6);
+}
+
+.sectionTitle {
+  font-size: v.$font-size-md;
+  font-weight: v.$font-weight-semibold;
+  color: var(--color-gray-7);
+  margin: 0;
+}
+
+.sectionCount {
+  background: v.$brand-primary-1;
+  color: v.$brand-primary;
+  font-size: v.$font-size-xs;
+  font-weight: v.$font-weight-semibold;
+  padding: 1px 7px;
+  border-radius: 10px;
+}
+
+.insightsGrid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: v.$space-4;
+
+  @media (max-width: v.$bp-xl) { grid-template-columns: repeat(2, 1fr); }
+  @media (max-width: v.$bp-md) {
+    grid-template-columns: 1fr 1fr;
+    gap: v.$space-3;
+  }
+  @media (max-width: v.$bp-sm) { grid-template-columns: 1fr; }
+}
+
+.insightCard {
+  background: var(--bg, #E8F3FF);
+  border-radius: v.$border-radius-lg;
+  padding: v.$space-4;
+  display: flex;
+  flex-direction: column;
+  gap: v.$space-2;
+  transition: box-shadow 0.15s;
+  border: 1px solid transparent;
+
+  &:hover {
+    box-shadow: v.$shadow-md;
+    border-color: rgba(0,0,0,0.06);
+  }
+}
+
+.insightTop {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.insightTime {
+  font-size: v.$font-size-xs;
+  color: var(--color-gray-5);
+}
+
+.insightHeadline {
+  font-size: v.$font-size-sm;
+  font-weight: v.$font-weight-semibold;
+  color: var(--color-gray-8);
+  margin: 0;
+  line-height: 1.4;
+}
+
+.insightBody {
+  font-size: v.$font-size-xs;
+  color: var(--color-gray-6);
+  line-height: 1.5;
+  margin: 0;
+  flex: 1;
+}
+
+.insightAction {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  font-size: v.$font-size-xs;
+  font-weight: v.$font-weight-medium;
+  color: v.$brand-primary;
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  margin-top: v.$space-1;
+
+  &:hover { text-decoration: underline; }
+}
+
+// ── Loading / Error states ────────────────────────────────────
+.loadingWrap,
+.errorWrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 400px;
+  gap: v.$space-4;
+  color: var(--color-gray-5);
+  font-size: v.$font-size-base;
+}
+
+.spinIcon {
+  animation: spin 1s linear infinite;
+}
+
+.retryBtn {
+  padding: v.$space-2 v.$space-5;
+  background: v.$brand-primary;
+  color: white;
+  border: none;
+  border-radius: v.$border-radius;
+  font-size: v.$font-size-sm;
+  cursor: pointer;
+
+  &:hover { background: v.$brand-primary-5; }
+}
+
+// ── Animations ───────────────────────────────────────────────
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%       { opacity: 0.5; transform: scale(1.4); }
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}

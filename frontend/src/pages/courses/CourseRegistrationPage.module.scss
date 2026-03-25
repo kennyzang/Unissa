@@ -1,0 +1,119 @@
+@use '@/styles/variables' as v;
+
+.page {
+  padding: v.$space-6;
+  display: flex;
+  flex-direction: column;
+  gap: v.$space-5;
+  animation: fadeIn 0.2s ease;
+  max-width: 100%;
+  overflow-x: hidden;
+
+  @media (max-width: v.$bp-md) {
+    padding: v.$space-4 v.$space-3;
+    gap: v.$space-4;
+  }
+}
+.header { display: flex; justify-content: space-between; align-items: flex-start; gap: v.$space-4; flex-wrap: wrap; }
+.pageTitle { font-size: v.$font-size-2xl; font-weight: v.$font-weight-bold; color: var(--color-gray-8); margin: 0; }
+.pageSub { font-size: v.$font-size-sm; color: var(--color-gray-5); margin: v.$space-1 0 0; }
+
+.chSummary { text-align: center; }
+.chCount { font-size: 48px; font-weight: v.$font-weight-bold; line-height: 1; }
+.chLabel { font-size: v.$font-size-sm; color: var(--color-gray-5); }
+.chWarning { font-size: v.$font-size-xs; color: v.$color-warning; display: flex; align-items: center; gap: 3px; justify-content: center; margin-top: 4px; }
+.chError { font-size: v.$font-size-xs; color: v.$color-danger; display: flex; align-items: center; gap: 3px; justify-content: center; margin-top: 4px; }
+
+.floatingBar {
+  position: sticky;
+  top: calc(v.$navbar-height + 12px);
+  z-index: 50;
+  background: v.$brand-dark;
+  color: white;
+  border-radius: v.$border-radius-lg;
+  padding: v.$space-3 v.$space-5;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  box-shadow: v.$shadow-lg;
+  font-size: v.$font-size-sm;
+}
+
+.barActions { display: flex; gap: v.$space-2; }
+
+.loading { text-align: center; padding: 60px; color: var(--color-gray-5); }
+
+.courseGrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: v.$space-4;
+  @media (max-width: v.$bp-xl) { grid-template-columns: repeat(2, 1fr); }
+  @media (max-width: v.$bp-md) { grid-template-columns: 1fr; }
+}
+
+.courseCard {
+  background: white;
+  border: 2px solid var(--color-gray-3);
+  border-radius: v.$border-radius-lg;
+  padding: v.$space-4;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  display: flex;
+  flex-direction: column;
+  gap: v.$space-3;
+
+  &:hover { border-color: v.$brand-primary-3; box-shadow: v.$shadow-md; }
+}
+
+.selectedCard {
+  border-color: v.$brand-primary !important;
+  background: v.$brand-primary-1 !important;
+  box-shadow: 0 0 0 3px #{v.$brand-primary}22 !important;
+}
+
+.cardTop { display: flex; justify-content: space-between; align-items: flex-start; gap: v.$space-2; }
+.courseCode { font-size: v.$font-size-xs; font-weight: v.$font-weight-semibold; color: v.$brand-primary; }
+.courseName { font-size: v.$font-size-sm; font-weight: v.$font-weight-semibold; color: var(--color-gray-8); line-height: 1.3; margin-top: 2px; }
+
+.selectToggle {
+  width: 26px; height: 26px;
+  border-radius: 50%;
+  border: 2px solid var(--color-gray-4);
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+  color: var(--color-gray-5);
+  transition: v.$transition-fast;
+  &.selected { background: v.$brand-primary; border-color: v.$brand-primary; color: white; }
+}
+
+.cardMeta { display: flex; gap: v.$space-4; font-size: v.$font-size-xs; color: var(--color-gray-6); span { display: flex; align-items: center; gap: 3px; } }
+.cardFooter { display: flex; gap: v.$space-2; flex-wrap: wrap; }
+
+// Confirm modal
+.confirmText { font-size: v.$font-size-sm; color: var(--color-gray-7); margin: 0 0 v.$space-4; }
+.confirmList { display: flex; flex-direction: column; gap: v.$space-2; margin-bottom: v.$space-4; }
+.confirmItem {
+  display: flex; justify-content: space-between; align-items: center;
+  font-size: v.$font-size-sm; padding: v.$space-2 v.$space-3;
+  background: var(--color-gray-1); border-radius: v.$border-radius;
+}
+.confirmCH { font-weight: v.$font-weight-semibold; color: v.$brand-primary; }
+.confirmNote { font-size: v.$font-size-xs; color: var(--color-gray-5); background: v.$color-info-bg; padding: v.$space-3; border-radius: v.$border-radius; line-height: 1.5; }
+
+// Success
+.successWrap { display: flex; align-items: center; justify-content: center; min-height: 70vh; }
+.successCard {
+  background: white; border: 1px solid var(--color-gray-3);
+  border-radius: v.$border-radius-xl; padding: v.$space-10;
+  text-align: center; max-width: 500px; box-shadow: v.$shadow-lg;
+  display: flex; flex-direction: column; align-items: center; gap: v.$space-3;
+  h2 { font-size: v.$font-size-2xl; font-weight: v.$font-weight-bold; margin: 0; }
+  p { font-size: v.$font-size-sm; color: var(--color-gray-6); margin: 0; }
+}
+.successIcon { color: v.$color-success; }
+.successDetails { display: flex; gap: v.$space-6; }
+.successStat { text-align: center; span { display: block; font-size: v.$font-size-xl; font-weight: v.$font-weight-bold; color: v.$brand-primary; } label { font-size: v.$font-size-xs; color: var(--color-gray-5); } }
+.campusCardMsg { font-size: v.$font-size-sm; background: v.$color-success-bg; border-radius: v.$border-radius; padding: v.$space-3; color: v.$color-success; }
+.successActions { display: flex; gap: v.$space-3; }
+
+@keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }

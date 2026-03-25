@@ -1,0 +1,66 @@
+@use '@/styles/variables' as v;
+@use '@/styles/mixins' as m;
+
+.wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: v.$space-1;
+  width: 100%;
+}
+
+.label {
+  font-size: v.$font-size-base;
+  font-weight: v.$font-weight-medium;
+  color: var(--color-gray-7);
+  .required { color: var(--color-danger); margin-left: 2px; }
+}
+
+.inputWrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+
+  .prefixIcon, .suffixIcon {
+    position: absolute;
+    color: var(--color-gray-4);
+    display: flex;
+    align-items: center;
+    pointer-events: none;
+    z-index: 1;
+  }
+  .prefixIcon { left: 10px; }
+  .suffixIcon { right: 10px; cursor: pointer; pointer-events: all; }
+}
+
+.input {
+  @include m.input-base;
+  height: 32px;
+
+  &.hasPrefix { padding-left: 30px; }
+  &.hasSuffix { padding-right: 30px; }
+  &.error { border-color: var(--color-danger) !important; }
+  &.size-lg  { height: 40px; font-size: v.$font-size-md; }
+  &.size-sm  { height: 26px; font-size: v.$font-size-sm; }
+}
+
+.textarea {
+  @include m.input-base;
+  height: auto;
+  resize: vertical;
+  min-height: 80px;
+  padding: v.$space-2 v.$space-3;
+  &.error { border-color: var(--color-danger) !important; }
+}
+
+.errorMsg {
+  font-size: v.$font-size-xs;
+  color: var(--color-danger);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.hint {
+  font-size: v.$font-size-xs;
+  color: var(--color-gray-5);
+}
