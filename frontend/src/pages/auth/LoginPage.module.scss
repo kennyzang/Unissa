@@ -114,12 +114,20 @@
   }
   td { color: var(--color-gray-7); }
   tr:last-child td { border-bottom: none; }
-  code {
-    background: var(--color-gray-2);
-    padding: 1px 5px;
-    border-radius: 2px;
-    font-family: monospace;
-  }
+}
+
+.demoRow {
+  cursor: pointer;
+  transition: background 0.1s;
+  &:hover td { background: var(--color-primary-bg, #e8f0ff); color: var(--color-primary); }
+  &:hover code { background: rgba(22, 93, 255, 0.12); }
+}
+
+.demoTable code {
+  background: var(--color-gray-2);
+  padding: 1px 5px;
+  border-radius: 2px;
+  font-family: monospace;
 }
 
 .footer {

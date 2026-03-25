@@ -1,6 +1,6 @@
 import React, { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { useForm } from 'react-hook-form'
+import { useForm, Controller } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { Plus, AlertTriangle, Eye, FileText, CheckCircle } from 'lucide-react'
@@ -83,7 +83,7 @@ const ProcurementPRPage: React.FC = () => {
     },
   })
 
-  const { register, handleSubmit, watch, reset, formState: { errors } } = useForm<PRForm>({
+  const { register, handleSubmit, watch, reset, control, formState: { errors } } = useForm<PRForm>({
     resolver: zodResolver(prSchema),
   })
 
@@ -187,15 +187,22 @@ const ProcurementPRPage: React.FC = () => {
               {total >= 2000 && <span className={styles.tenderNote}> ⚠ Amount ≥ BND 2,000 requires tender process</span>}
             </div>
           )}
-          <Select
-            label="GL Code"
-            required
-            {...register('glCodeId')}
-            error={errors.glCodeId?.message}
-            options={glCodes.map(g => ({
-              value: g.id,
-              label: `${g.code} – ${g.description} (BND ${g.availableBalance?.toLocaleString()} available)`,
-            }))}
+          <Controller
+            control={control}
+            name="glCodeId"
+            render={({ field }) => (
+              <Select
+                label="GL Code"
+                required
+                value={field.value}
+                onChange={val => field.onChange(val)}
+                error={errors.glCodeId?.message}
+                options={glCodes.map(g => ({
+                  value: g.id,
+                  label: `${g.code} – ${g.description} (BND ${g.availableBalance?.toLocaleString()} available)`,
+                }))}
+              />
+            )}
           />
           <Input label="Required By Date" type="date" required {...register('requiredByDate')} error={errors.requiredByDate?.message} />
           <div className={styles.formActions}>

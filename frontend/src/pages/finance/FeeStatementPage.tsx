@@ -1,6 +1,6 @@
 import React, { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { useForm } from 'react-hook-form'
+import { useForm, Controller } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { CreditCard, CheckCircle, AlertCircle, Receipt } from 'lucide-react'
@@ -62,7 +62,7 @@ const FeeStatementPage: React.FC = () => {
     },
   })
 
-  const { register, handleSubmit, watch, formState: { errors }, reset } = useForm<PayForm>({
+  const { register, handleSubmit, watch, control, formState: { errors }, reset } = useForm<PayForm>({
     resolver: zodResolver(paySchema),
     defaultValues: { method: 'card' },
   })
@@ -201,14 +201,21 @@ const FeeStatementPage: React.FC = () => {
           </div>
 
           <form onSubmit={onPay} className={styles.payForm}>
-            <Select
-              label="Payment Method"
-              {...register('method')}
-              options={[
-                { value: 'card', label: 'Credit / Debit Card' },
-                { value: 'online_banking', label: 'Online Banking' },
-                { value: 'e_wallet', label: 'E-Wallet' },
-              ]}
+            <Controller
+              control={control}
+              name="method"
+              render={({ field }) => (
+                <Select
+                  label="Payment Method"
+                  value={field.value}
+                  onChange={val => field.onChange(val)}
+                  options={[
+                    { value: 'card', label: 'Credit / Debit Card' },
+                    { value: 'online_banking', label: 'Online Banking' },
+                    { value: 'e_wallet', label: 'E-Wallet' },
+                  ]}
+                />
+              )}
             />
 
             {method === 'card' && (
@@ -229,15 +236,22 @@ const FeeStatementPage: React.FC = () => {
             )}
 
             {method === 'online_banking' && (
-              <Select
-                label="Bank"
-                {...register('bankName')}
-                options={[
-                  { value: 'BIBD', label: 'BIBD (Baiduri)' },
-                  { value: 'Baiduri', label: 'Baiduri Bank' },
-                  { value: 'HSBC', label: 'HSBC Brunei' },
-                  { value: 'Maybank', label: 'Maybank' },
-                ]}
+              <Controller
+                control={control}
+                name="bankName"
+                render={({ field }) => (
+                  <Select
+                    label="Bank"
+                    value={field.value}
+                    onChange={val => field.onChange(val)}
+                    options={[
+                      { value: 'BIBD', label: 'BIBD (Baiduri)' },
+                      { value: 'Baiduri', label: 'Baiduri Bank' },
+                      { value: 'HSBC', label: 'HSBC Brunei' },
+                      { value: 'Maybank', label: 'Maybank' },
+                    ]}
+                  />
+                )}
               />
             )}
 

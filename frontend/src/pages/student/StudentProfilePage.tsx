@@ -1,7 +1,8 @@
 import React, { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { useAuthStore } from '@/stores/authStore'
-import { GraduationCap, BookOpen, CreditCard, Library, Mail, MapPin, Calendar } from 'lucide-react'
+import { Tabs } from 'antd'
+import { GraduationCap, CreditCard, Library, Mail, MapPin, Calendar } from 'lucide-react'
 import { apiClient } from '@/lib/apiClient'
 import Card from '@/components/ui/Card'
 import Badge from '@/components/ui/Badge'
@@ -43,6 +44,7 @@ const STATUS_COLOR: Record<string, 'green' | 'red' | 'orange' | 'gray'> = {
 const StudentProfilePage: React.FC = () => {
   const user = useAuthStore(s => s.user)
   const [tab, setTab] = useState<'profile' | 'timetable' | 'services'>('profile')
+
 
   const studentId = user?.role === 'student' ? 'me' : '2026001'
 
@@ -124,98 +126,102 @@ const StudentProfilePage: React.FC = () => {
         </div>
       </div>
 
-      {/* Tabs */}
-      <div className={styles.tabs}>
-        {(['profile', 'timetable', 'services'] as const).map(t => (
-          <button key={t} className={`${styles.tab} ${tab === t ? styles.activeTab : ''}`} onClick={() => setTab(t)}>
-            {t === 'profile' ? 'Profile' : t === 'timetable' ? 'Timetable' : 'Campus Services'}
-          </button>
-        ))}
-      </div>
-
-      {/* Profile Tab */}
-      {tab === 'profile' && (
-        <div className={styles.profileGrid}>
-          <Card title="Academic Details">
-            <div className={styles.detailList}>
-              <DetailRow label="Student ID" value={student.studentId} />
-              <DetailRow label="Programme" value={`${student.programme.name} (${student.programme.code})`} />
-              <DetailRow label="Department" value={student.programme.department.name} />
-              <DetailRow label="Intake" value={student.intake.semester.name} />
-              <DetailRow label="Level" value={student.programme.level} />
-              <DetailRow label="Student Type" value={student.studentType} />
-              <DetailRow label="Nationality" value={student.nationality} />
-              <DetailRow label="Enrolled" value={new Date(student.enrolledAt).toLocaleDateString('en-GB')} />
-            </div>
-          </Card>
-          <Card title="Financial Summary">
-            <div className={styles.detailList}>
-              <DetailRow label="Scholarship" value={student.scholarshipPct > 0 ? `${student.scholarshipPct}%` : 'None'} />
-              <DetailRow label="Mode of Study" value={student.modeOfStudy.replace('_', ' ')} />
-              <DetailRow label="CGPA" value={student.currentCgpa.toFixed(2)} />
-              <DetailRow label="Status" value={<Badge color={STATUS_COLOR[student.status] ?? 'gray'}>{student.status}</Badge>} />
-            </div>
-          </Card>
-        </div>
-      )}
-
-      {/* Timetable Tab */}
-      {tab === 'timetable' && (
-        <Card title={`Weekly Timetable — ${totalCH} Credit Hours`}>
-          <div className={styles.timetableGrid}>
-            {byDay.map(({ day, slots }) => (
-              <div key={day} className={styles.dayCol}>
-                <div className={styles.dayHeader}>{day}</div>
-                {slots.length === 0
-                  ? <div className={styles.emptyDay}>No class</div>
-                  : slots.map(slot => (
-                    <div key={slot.id} className={styles.slotCard}>
-                      <div className={styles.slotCourse}>{slot.course?.name}</div>
-                      <div className={styles.slotCode}>{slot.course?.code} · {slot.course?.creditHours} CH</div>
-                      <div className={styles.slotTime}>{slot.startTime} – {slot.endTime}</div>
-                      <div className={styles.slotRoom}>{slot.room}</div>
-                      <div className={styles.slotLecturer}>{slot.lecturer?.user?.displayName}</div>
-                    </div>
-                  ))
-                }
+      <Tabs
+        activeKey={tab}
+        onChange={key => setTab(key as typeof tab)}
+        items={[
+          {
+            key: 'profile',
+            label: 'Profile',
+            children: (
+              <div className={styles.profileGrid}>
+                <Card title="Academic Details">
+                  <div className={styles.detailList}>
+                    <DetailRow label="Student ID" value={student.studentId} />
+                    <DetailRow label="Programme" value={`${student.programme.name} (${student.programme.code})`} />
+                    <DetailRow label="Department" value={student.programme.department.name} />
+                    <DetailRow label="Intake" value={student.intake.semester.name} />
+                    <DetailRow label="Level" value={student.programme.level} />
+                    <DetailRow label="Student Type" value={student.studentType} />
+                    <DetailRow label="Nationality" value={student.nationality} />
+                    <DetailRow label="Enrolled" value={new Date(student.enrolledAt).toLocaleDateString('en-GB')} />
+                  </div>
+                </Card>
+                <Card title="Financial Summary">
+                  <div className={styles.detailList}>
+                    <DetailRow label="Scholarship" value={student.scholarshipPct > 0 ? `${student.scholarshipPct}%` : 'None'} />
+                    <DetailRow label="Mode of Study" value={student.modeOfStudy.replace('_', ' ')} />
+                    <DetailRow label="CGPA" value={student.currentCgpa.toFixed(2)} />
+                    <DetailRow label="Status" value={<Badge color={STATUS_COLOR[student.status] ?? 'gray'}>{student.status}</Badge>} />
+                  </div>
+                </Card>
               </div>
-            ))}
-          </div>
-        </Card>
-      )}
-
-      {/* Campus Services Tab */}
-      {tab === 'services' && services && (
-        <div className={styles.servicesGrid}>
-          <ServiceCard
-            icon={<CreditCard size={28} />}
-            title="Campus Card"
-            value={services.campusCardNo ?? 'Not issued'}
-            active={!!services.campusCardNo}
-            activeLabel="Active"
-            inactiveLabel="Pending Registration"
-            color="#165DFF"
-          />
-          <ServiceCard
-            icon={<Library size={28} />}
-            title="Library Access"
-            value={services.libraryAccountActive ? 'Active' : 'Inactive'}
-            active={services.libraryAccountActive}
-            activeLabel="Books can be borrowed"
-            inactiveLabel="Register courses to activate"
-            color="#7D3FCC"
-          />
-          <ServiceCard
-            icon={<Mail size={28} />}
-            title="UNISSA Email"
-            value={services.emailAccountActive ? `${student.studentId.toLowerCase()}@student.unissa.edu.bn` : 'Not provisioned'}
-            active={services.emailAccountActive}
-            activeLabel="Email account active"
-            inactiveLabel="Register courses to activate"
-            color="#00B42A"
-          />
-        </div>
-      )}
+            ),
+          },
+          {
+            key: 'timetable',
+            label: 'Timetable',
+            children: (
+              <Card title={`Weekly Timetable — ${totalCH} Credit Hours`}>
+                <div className={styles.timetableGrid}>
+                  {byDay.map(({ day, slots }) => (
+                    <div key={day} className={styles.dayCol}>
+                      <div className={styles.dayHeader}>{day}</div>
+                      {slots.length === 0
+                        ? <div className={styles.emptyDay}>No class</div>
+                        : slots.map(slot => (
+                          <div key={slot.id} className={styles.slotCard}>
+                            <div className={styles.slotCourse}>{slot.course?.name}</div>
+                            <div className={styles.slotCode}>{slot.course?.code} · {slot.course?.creditHours} CH</div>
+                            <div className={styles.slotTime}>{slot.startTime} – {slot.endTime}</div>
+                            <div className={styles.slotRoom}>{slot.room}</div>
+                            <div className={styles.slotLecturer}>{slot.lecturer?.user?.displayName}</div>
+                          </div>
+                        ))
+                      }
+                    </div>
+                  ))}
+                </div>
+              </Card>
+            ),
+          },
+          {
+            key: 'services',
+            label: 'Campus Services',
+            children: services ? (
+              <div className={styles.servicesGrid}>
+                <ServiceCard
+                  icon={<CreditCard size={28} />}
+                  title="Campus Card"
+                  value={services.campusCardNo ?? 'Not issued'}
+                  active={!!services.campusCardNo}
+                  activeLabel="Active"
+                  inactiveLabel="Pending Registration"
+                  color="#165DFF"
+                />
+                <ServiceCard
+                  icon={<Library size={28} />}
+                  title="Library Access"
+                  value={services.libraryAccountActive ? 'Active' : 'Inactive'}
+                  active={services.libraryAccountActive}
+                  activeLabel="Books can be borrowed"
+                  inactiveLabel="Register courses to activate"
+                  color="#7D3FCC"
+                />
+                <ServiceCard
+                  icon={<Mail size={28} />}
+                  title="UNISSA Email"
+                  value={services.emailAccountActive ? `${student.studentId.toLowerCase()}@student.unissa.edu.bn` : 'Not provisioned'}
+                  active={services.emailAccountActive}
+                  activeLabel="Email account active"
+                  inactiveLabel="Register courses to activate"
+                  color="#00B42A"
+                />
+              </div>
+            ) : null,
+          },
+        ]}
+      />
     </div>
   )
 }

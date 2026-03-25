@@ -128,7 +128,7 @@ const LoginPage = () => {
 
       {/* Demo accounts hint */}
       <details className={styles.demoHint}>
-        <summary>Demo Accounts</summary>
+        <summary>Demo Accounts <span style={{ fontWeight: 400, color: 'var(--color-primary)' }}>— click row to fill</span></summary>
         <table className={styles.demoTable}>
           <thead>
             <tr><th>Role</th><th>Username</th><th>Password</th></tr>
@@ -144,7 +144,12 @@ const LoginPage = () => {
               ['Finance',    'finance',    'Demo@2026'],
               ['Admin',      'admin',      'Demo@2026'],
             ].map(([role, user, pwd]) => (
-              <tr key={user}>
+              <tr
+                key={user}
+                className={styles.demoRow}
+                onClick={() => form.setFieldsValue({ username: user, password: pwd })}
+                title={`Click to fill: ${user}`}
+              >
                 <td>{role}</td>
                 <td><code>{user}</code></td>
                 <td><code>{pwd}</code></td>
