@@ -1,5 +1,169 @@
 @use '@/styles/variables' as v;
-.page { padding: 0; animation: fadeIn 0.2s ease; }
-.title { font-size: v.$font-size-2xl; font-weight: v.$font-weight-bold; color: var(--color-gray-8); margin-bottom: 8px; }
-.coming { color: var(--color-gray-4); font-size: v.$font-size-base; }
-@keyframes fadeIn { from { opacity:0; transform:translateY(4px) } to { opacity:1; transform:translateY(0) } }
+
+.page {
+  padding: v.$space-6;
+  display: flex;
+  flex-direction: column;
+  gap: v.$space-5;
+  animation: fadeIn 0.2s ease;
+  @media (max-width: v.$bp-md) { padding: v.$space-4 v.$space-3; }
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  gap: v.$space-3;
+}
+.pageTitle { font-size: v.$font-size-2xl; font-weight: v.$font-weight-bold; color: var(--color-gray-8); margin: 0; }
+.pageSub { font-size: v.$font-size-sm; color: var(--color-gray-5); margin: v.$space-1 0 0; }
+
+.headerStatus {
+  display: flex;
+  align-items: center;
+  gap: v.$space-2;
+  font-size: v.$font-size-xs;
+  color: v.$color-success;
+  background: v.$color-success-bg;
+  padding: v.$space-2 v.$space-3;
+  border-radius: v.$border-radius-lg;
+}
+.statusDot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  background: v.$color-success;
+  animation: pulse 2s infinite;
+}
+
+.integrationBanner {
+  display: flex;
+  align-items: flex-start;
+  gap: v.$space-3;
+  padding: v.$space-3 v.$space-4;
+  background: v.$brand-primary-1;
+  border: 1px solid v.$brand-primary-3;
+  border-radius: v.$border-radius-lg;
+  font-size: v.$font-size-sm;
+
+  strong { color: v.$brand-dark; display: block; margin-bottom: 2px; }
+  p { color: var(--color-gray-6); margin: 0; font-size: v.$font-size-xs; }
+}
+.integrationIcon { font-size: 20px; flex-shrink: 0; }
+
+.serviceGrid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: v.$space-4;
+  @media (max-width: 1200px) { grid-template-columns: repeat(3, 1fr); }
+  @media (max-width: v.$bp-md) { grid-template-columns: repeat(2, 1fr); }
+  @media (max-width: v.$bp-sm) { grid-template-columns: 1fr; }
+}
+
+.serviceCard {
+  border-radius: v.$border-radius-xl;
+  padding: v.$space-4;
+  display: flex;
+  flex-direction: column;
+  gap: v.$space-2;
+  border: 2px solid;
+  transition: box-shadow 0.15s ease, transform 0.15s ease;
+
+  &:hover { box-shadow: v.$shadow-md; transform: translateY(-2px); }
+}
+
+.activeCard {
+  border-color: var(--card-color, v.$brand-primary);
+  background: white;
+}
+.inactiveCard {
+  border-color: var(--color-gray-3);
+  background: var(--color-gray-1);
+}
+
+.cardTop {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+}
+.cardIcon { transition: color 0.2s ease; }
+.cardStatus {}
+
+.cardTitle {
+  font-size: v.$font-size-sm;
+  font-weight: v.$font-weight-semibold;
+  color: var(--color-gray-8);
+  margin-top: v.$space-1;
+}
+.cardSubtitle {
+  font-size: v.$font-size-xs;
+  color: var(--color-gray-5);
+}
+.cardDetail {
+  font-size: v.$font-size-base;
+  font-weight: v.$font-weight-bold;
+  word-break: break-all;
+  margin-top: v.$space-1;
+  transition: color 0.2s ease;
+}
+.cardSubDetail {
+  font-size: v.$font-size-xs;
+  color: var(--color-gray-5);
+  line-height: 1.4;
+}
+
+.cardFooter {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: v.$space-2;
+  margin-top: v.$space-1;
+}
+
+.cardAction {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  font-size: v.$font-size-xs;
+  color: v.$brand-primary;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  text-decoration: underline;
+  &:hover { opacity: 0.8; }
+}
+
+.loading {
+  text-align: center;
+  padding: 60px;
+  color: var(--color-gray-5);
+}
+
+.demoNote {
+  font-size: v.$font-size-xs;
+  color: var(--color-gray-5);
+  background: var(--color-gray-1);
+  border: 1px dashed var(--color-gray-3);
+  border-radius: v.$border-radius-lg;
+  padding: v.$space-3 v.$space-4;
+  line-height: 1.6;
+
+  strong { color: var(--color-gray-7); }
+}
+.inlineLink {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: v.$brand-primary;
+  font-size: inherit;
+  padding: 0;
+  text-decoration: underline;
+  &:hover { opacity: 0.8; }
+}
+
+@keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}

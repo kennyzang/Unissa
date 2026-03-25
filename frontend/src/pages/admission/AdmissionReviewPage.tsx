@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next'
 import React, { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { CheckCircle, XCircle, Clock, Search, Eye, Users } from 'lucide-react'
@@ -43,6 +44,7 @@ const STATUS_BADGE: Record<string, { color: 'blue' | 'green' | 'red' | 'orange' 
 }
 
 const AdmissionReviewPage: React.FC = () => {
+  const { t } = useTranslation()
   const [search, setSearch] = useState('')
   const [selected, setSelected] = useState<Application | null>(null)
   const [decisionModal, setDecisionModal] = useState<{ app: Application; action: 'accepted' | 'rejected' | 'waitlisted' } | null>(null)
@@ -123,8 +125,8 @@ const AdmissionReviewPage: React.FC = () => {
   return (
     <div className={styles.page}>
       <div className={styles.header}>
-        <h1 className={styles.pageTitle}>Admission Review</h1>
-        <p className={styles.pageSub}>Review and process student applications</p>
+        <h1 className={styles.pageTitle}>{t('admissionReview.title')}</h1>
+        <p className={styles.pageSub}>{t('admissionReview.subtitle')}</p>
       </div>
 
       {/* Stats */}

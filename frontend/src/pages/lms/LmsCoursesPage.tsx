@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next'
 import React from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { useNavigate } from 'react-router-dom'
@@ -44,6 +45,7 @@ const GRADE_LABELS: Record<string, string> = {
 const LmsCoursesPage: React.FC = () => {
   const navigate = useNavigate()
   const user = useAuthStore(s => s.user)
+  const { t } = useTranslation()
 
   const { data: enrolments = [], isLoading } = useQuery<Enrolment[]>({
     queryKey: ['lms', 'courses', '2026001'],
@@ -56,20 +58,20 @@ const LmsCoursesPage: React.FC = () => {
   const totalCH = enrolments.reduce((s, e) => s + (e.offering?.course?.creditHours ?? 0), 0)
   const totalAssignments = enrolments.reduce((s, e) => s + (e.offering?.assignments?.length ?? 0), 0)
 
-  if (isLoading) return <div className={styles.loading}>Loading courses…</div>
+  if (isLoading) return <div className={styles.loading}>{t('lmsCourses.loading')}</div>
 
   if (enrolments.length === 0) {
     return (
       <div className={styles.page}>
         <div className={styles.header}>
-          <h1 className={styles.pageTitle}>My Courses</h1>
+          <h1 className={styles.pageTitle}>{t('lmsCourses.title')}</h1>
         </div>
         <div className={styles.emptyState}>
           <BookOpen size={40} />
-          <h3>No courses registered yet</h3>
-          <p>Register for courses to see them here.</p>
+          <h3>{t('lmsCourses.noCourses')}</h3>
+          <p>{t('lmsCourses.noCoursesNote')}</p>
           <button className={styles.emptyBtn} onClick={() => navigate('/student/courses')}>
-            Register Courses
+            {t('lmsCourses.registerCourses')}
           </button>
         </div>
       </div>
@@ -80,21 +82,21 @@ const LmsCoursesPage: React.FC = () => {
     <div className={styles.page}>
       <div className={styles.header}>
         <div>
-          <h1 className={styles.pageTitle}>My Courses</h1>
-          <p className={styles.pageSub}>Sep 2026 · {enrolments.length} courses · {totalCH} credit hours</p>
+          <h1 className={styles.pageTitle}>{t('lmsCourses.title')}</h1>
+          <p className={styles.pageSub}>{t('lmsCourses.semesterLabel')} {enrolments.length} {t('lmsCourses.courses')} {totalCH} {t('lmsCourses.creditHours')}</p>
         </div>
         <div className={styles.headerStats}>
           <div className={styles.headerStat}>
             <span>{totalCH}</span>
-            <label>Credit Hours</label>
+            <label>{t('lmsCourses.creditHours')}</label>
           </div>
           <div className={styles.headerStat}>
             <span>{totalAssignments}</span>
-            <label>Assignments</label>
+            <label>{t('lmsCourses.assignments')}</label>
           </div>
           <div className={styles.headerStat}>
             <span>{enrolments.length}</span>
-            <label>Courses</label>
+            <label>{t('nav.myCourses')}</label>
           </div>
         </div>
       </div>

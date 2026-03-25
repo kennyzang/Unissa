@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next'
 import React, { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { useAuthStore } from '@/stores/authStore'
@@ -42,6 +43,7 @@ const STATUS_COLOR: Record<string, 'green' | 'red' | 'orange' | 'gray'> = {
 }
 
 const StudentProfilePage: React.FC = () => {
+  const { t } = useTranslation()
   const user = useAuthStore(s => s.user)
   const [tab, setTab] = useState<'profile' | 'timetable' | 'services'>('profile')
 
@@ -77,7 +79,7 @@ const StudentProfilePage: React.FC = () => {
     enabled: tab === 'services',
   })
 
-  if (isLoading) return <div className={styles.loading}>Loading student profile…</div>
+  if (isLoading) return <div className={styles.loading}>{t('studentProfile.loading')}</div>
   if (!student) return <div className={styles.loading}>Student not found</div>
 
   // Group timetable by day

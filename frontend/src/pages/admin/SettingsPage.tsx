@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next'
 import React, { useState, useEffect } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import {
@@ -48,6 +49,7 @@ const PROVIDER_OPTIONS = [
 ]
 
 const SettingsPage: React.FC = () => {
+  const { t } = useTranslation()
   const [testResult, setTestResult] = useState<{ success: boolean; message: string } | null>(null)
   const addToast = useUIStore(s => s.addToast)
   const qc       = useQueryClient()
@@ -328,7 +330,7 @@ const SettingsPage: React.FC = () => {
       <div className={styles.header}>
         <Settings size={20} />
         <div>
-          <h1 className={styles.title}>System Settings</h1>
+          <h1 className={styles.title}>{t('settings.title')}</h1>
           <p className={styles.sub}>Configure AI models, system parameters, and security settings</p>
         </div>
       </div>

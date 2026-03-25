@@ -37,7 +37,12 @@
       "Bash(find /Users/xiex/Documents/OverseaBU/project/UNISSA-POC -name package.json -path */dayjs/package.json)",
       "Bash(npx vite:*)",
       "Bash(for f:*)",
-      "Bash(do grep:*)"
+      "Bash(do grep:*)",
+      "Bash(grep -r register-courses /Users/xiex/Documents/OverseaBU/project/UNISSA-POC --include=*.ts --include=*.tsx)",
+      "Bash(npm install:*)",
+      "Bash(sudo chown:*)",
+      "Bash(pnpm --filter frontend add i18next react-i18next)",
+      "Bash(pnpm --filter frontend exec tsc --noEmit)"
     ]
   }
 }

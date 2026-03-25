@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next'
 import React, { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell, ScatterChart, Scatter, ZAxis } from 'recharts'
@@ -50,6 +51,7 @@ const DEMO_COURSES = [
 
 const RiskDashboardPage: React.FC = () => {
   const [selectedCourse, setSelectedCourse] = useState(DEMO_COURSES[0])
+  const { t } = useTranslation()
 
   const { data: scores = DEMO_SCORES } = useQuery<RiskScore[]>({
     queryKey: ['ai', 'risk', selectedCourse.offeringId],
@@ -82,8 +84,8 @@ const RiskDashboardPage: React.FC = () => {
     <div className={styles.page}>
       <div className={styles.header}>
         <div>
-          <h1 className={styles.pageTitle}>AI Risk Analytics</h1>
-          <p className={styles.pageSub}>Predictive model identifies at-risk students early</p>
+          <h1 className={styles.pageTitle}>{t('aiRisk.title')}</h1>
+          <p className={styles.pageSub}>{t('aiRisk.subtitle')}</p>
         </div>
         <div className={styles.courseSelector}>
           {DEMO_COURSES.map(c => (
@@ -100,15 +102,15 @@ const RiskDashboardPage: React.FC = () => {
 
       {/* KPI row */}
       <div className={styles.kpiRow}>
-        <StatCard title="Total Students" value={displayScores.length} sub="In selected course" icon={<Users size={16} />} color="blue" />
-        <StatCard title="At Risk" value={atRiskCount} sub={`${Math.round(atRiskCount / displayScores.length * 100)}% of class`} icon={<AlertTriangle size={16} />} color="orange" trend={{ value: -8, label: 'vs last week' }} />
-        <StatCard title="Predicted Fail" value={failCount} sub="Immediate intervention needed" icon={<TrendingDown size={16} />} color="red" />
-        <StatCard title="On Track" value={passCount} sub="Likely to pass" icon={<BookOpen size={16} />} color="green" />
+        <StatCard title={t('aiRisk.totalStudents')} value={displayScores.length} sub={t('aiRisk.inSelectedCourse')} icon={<Users size={16} />} color="blue" />
+        <StatCard title={t('aiRisk.atRisk')} value={atRiskCount} sub={`${Math.round(atRiskCount / displayScores.length * 100)}% ${t('aiRisk.ofClass')}`} icon={<AlertTriangle size={16} />} color="orange" trend={{ value: -8, label: t('aiRisk.vsLastWeek') }} />
+        <StatCard title={t('aiRisk.predictedFail')} value={failCount} sub={t('aiRisk.immediateIntervention')} icon={<TrendingDown size={16} />} color="red" />
+        <StatCard title={t('aiRisk.onTrack')} value={passCount} sub={t('aiRisk.likelyToPass')} icon={<BookOpen size={16} />} color="green" />
       </div>
 
       <div className={styles.chartsRow}>
         {/* Outcome distribution */}
-        <Card title="Outcome Distribution">
+        <Card title={t('aiRisk.outcomeDistribution')}>
           <ResponsiveContainer width="100%" height={180}>
             <BarChart data={distributionData} margin={{ top: 8, right: 8, bottom: 0, left: 0 }}>
               <XAxis dataKey="label" tick={{ fontSize: 12 }} axisLine={false} tickLine={false} />
@@ -122,7 +124,7 @@ const RiskDashboardPage: React.FC = () => {
         </Card>
 
         {/* Attendance vs Quiz scatter */}
-        <Card title="Attendance vs Quiz Score" extra={<span className={styles.scatterLegend}><span style={{ color: '#F53F3F' }}>● fail</span> <span style={{ color: '#FF7D00' }}>● at_risk</span> <span style={{ color: '#00B42A' }}>● pass</span></span>}>
+        <Card title={t('aiRisk.attendanceVsQuiz')} extra={<span className={styles.scatterLegend}><span style={{ color: '#F53F3F' }}>● {t('aiRisk.predictedFail').toLowerCase()}</span> <span style={{ color: '#FF7D00' }}>● {t('aiRisk.atRisk').toLowerCase()}</span> <span style={{ color: '#00B42A' }}>● {t('aiRisk.onTrack').toLowerCase()}</span></span>}>
           <ResponsiveContainer width="100%" height={180}>
             <ScatterChart margin={{ top: 8, right: 8, bottom: 0, left: 0 }}>
               <XAxis type="number" dataKey="attendance" name="Attendance %" domain={[0, 100]} tick={{ fontSize: 11 }} label={{ value: 'Attendance %', position: 'insideBottom', offset: -2, fontSize: 11 }} />
@@ -143,17 +145,17 @@ const RiskDashboardPage: React.FC = () => {
       </div>
 
       {/* Student risk table */}
-      <Card title="Student Risk Scores">
+      <Card title={t('aiRisk.studentRiskScores')}>
         <div className={styles.riskTable}>
           <div className={styles.riskTableHeader}>
-            <span>Student</span>
-            <span>Attendance</span>
-            <span>Quiz Avg</span>
-            <span>Submission</span>
-            <span>Risk Score</span>
-            <span>Prediction</span>
-            <span>Confidence</span>
-            <span>Notified</span>
+            <span>{t('aiRisk.student')}</span>
+            <span>{t('aiRisk.attendance')}</span>
+            <span>{t('aiRisk.quizAvg')}</span>
+            <span>{t('aiRisk.submission')}</span>
+            <span>{t('aiRisk.riskScore')}</span>
+            <span>{t('aiRisk.prediction')}</span>
+            <span>{t('aiRisk.confidence')}</span>
+            <span>{t('aiRisk.notified')}</span>
           </div>
           {displayScores.map(s => (
             <div key={s.id} className={`${styles.riskRow} ${s.predictedOutcome === 'fail' ? styles.failRow : s.predictedOutcome === 'at_risk' ? styles.riskRowWarning : ''}`}>

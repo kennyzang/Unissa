@@ -1,0 +1,66 @@
+.buttons {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+}
+
+// Dark theme (default) — white text on gradient/dark backgrounds
+.btn {
+  padding: 4px 10px;
+  border-radius: 4px;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  background: transparent;
+  color: rgba(255, 255, 255, 0.75);
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.15s;
+  font-family: inherit;
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.15);
+    color: #fff;
+    border-color: rgba(255, 255, 255, 0.5);
+  }
+
+  &.active {
+    background: rgba(255, 255, 255, 0.25);
+    color: #fff;
+    border-color: rgba(255, 255, 255, 0.6);
+    font-weight: 600;
+  }
+}
+
+// Light theme — colored text on white backgrounds
+.light .btn {
+  border-color: #d9d9d9;
+  color: #595959;
+
+  &:hover {
+    background: #f0f5ff;
+    color: #165DFF;
+    border-color: #165DFF;
+  }
+
+  &.active {
+    background: #e8f0ff;
+    color: #165DFF;
+    border-color: #165DFF;
+    font-weight: 600;
+  }
+}
+
+.select {
+  padding: 4px 8px;
+  border-radius: 4px;
+  border: 1px solid #d9d9d9;
+  background: #fff;
+  color: #1a1a1a;
+  font-size: 13px;
+  cursor: pointer;
+  font-family: inherit;
+  outline: none;
+
+  &:focus {
+    border-color: #165DFF;
+  }
+}

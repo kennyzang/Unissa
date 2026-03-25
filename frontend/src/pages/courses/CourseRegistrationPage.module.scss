@@ -89,6 +89,57 @@
 .cardMeta { display: flex; gap: v.$space-4; font-size: v.$font-size-xs; color: var(--color-gray-6); span { display: flex; align-items: center; gap: 3px; } }
 .cardFooter { display: flex; gap: v.$space-2; flex-wrap: wrap; }
 
+// Conflict styles
+.conflictCard {
+  border-color: v.$color-danger !important;
+  background: #fff5f5 !important;
+}
+.selectToggle.conflict { background: v.$color-danger; border-color: v.$color-danger; color: white; }
+
+.conflictBanner {
+  display: flex; align-items: flex-start; gap: v.$space-3;
+  padding: v.$space-3 v.$space-4;
+  background: #fff5f5; border: 1px solid v.$color-danger;
+  border-radius: v.$border-radius-lg;
+  font-size: v.$font-size-sm; color: v.$color-danger;
+  line-height: 1.5;
+}
+
+.conflictBadge { color: #FF7D00; font-size: v.$font-size-xs; margin-left: 4px; }
+
+.prereqLine {
+  font-size: v.$font-size-xs; color: var(--color-gray-5);
+  span { display: flex; align-items: center; gap: 3px; }
+}
+
+// 4-system sync panel
+.syncPanel {
+  width: 100%; background: var(--color-gray-1);
+  border-radius: v.$border-radius-lg; padding: v.$space-4;
+  display: flex; flex-direction: column; gap: v.$space-3;
+}
+.syncTitle {
+  font-size: v.$font-size-sm; font-weight: v.$font-weight-semibold;
+  color: var(--color-gray-7); text-align: center;
+}
+.syncGrid {
+  display: grid; grid-template-columns: repeat(4, 1fr); gap: v.$space-3;
+  @media (max-width: v.$bp-md) { grid-template-columns: repeat(2, 1fr); }
+}
+.syncCard {
+  background: white; border: 1px solid; border-radius: v.$border-radius-lg;
+  padding: v.$space-3; text-align: center; display: flex; flex-direction: column;
+  align-items: center; gap: v.$space-1; transition: box-shadow 0.15s ease;
+  &:hover { box-shadow: v.$shadow-md; }
+}
+.syncIcon { font-size: 24px; line-height: 1; }
+.syncLabel { font-size: v.$font-size-xs; font-weight: v.$font-weight-semibold; color: var(--color-gray-7); }
+.syncDetail { font-size: v.$font-size-xs; font-weight: v.$font-weight-semibold; }
+.syncQuote {
+  font-size: v.$font-size-xs; color: var(--color-gray-5); text-align: center;
+  font-style: italic; margin: 0; padding: 0 v.$space-2;
+}
+
 // Confirm modal
 .confirmText { font-size: v.$font-size-sm; color: var(--color-gray-7); margin: 0 0 v.$space-4; }
 .confirmList { display: flex; flex-direction: column; gap: v.$space-2; margin-bottom: v.$space-4; }

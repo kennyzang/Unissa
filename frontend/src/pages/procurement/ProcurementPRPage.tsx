@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next'
 import React, { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useForm, Controller } from 'react-hook-form'
@@ -61,6 +62,7 @@ const STATUS_BADGE: Record<string, { color: 'blue' | 'green' | 'red' | 'orange' 
 const TRAFFIC_COLORS: Record<string, string> = { red: '#F53F3F', amber: '#FF7D00', green: '#00B42A' }
 
 const ProcurementPRPage: React.FC = () => {
+  const { t } = useTranslation()
   const user = useAuthStore(s => s.user)
   const addToast = useUIStore(s => s.addToast)
   const qc = useQueryClient()
@@ -140,8 +142,8 @@ const ProcurementPRPage: React.FC = () => {
     <div className={styles.page}>
       <div className={styles.header}>
         <div>
-          <h1 className={styles.pageTitle}>Purchase Requests</h1>
-          <p className={styles.pageSub}>Manage and track procurement requests</p>
+          <h1 className={styles.pageTitle}>{t('procurementPR.title')}</h1>
+          <p className={styles.pageSub}>{t('procurementPR.subtitle')}</p>
         </div>
         {canCreate && (
           <Button icon={<Plus size={16} />} onClick={() => setCreateModal(true)}>

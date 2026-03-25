@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next'
 import React, { useState } from 'react'
 import { Controller, useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -80,6 +81,7 @@ const fe = (msg?: string) => ({
 })
 
 const AdmissionApplyPage: React.FC = () => {
+  const { t } = useTranslation()
   const [step, setStep]           = useState(0)
   const [submitted, setSubmitted] = useState<{ applicationRef: string } | null>(null)
   const [formData, setFormData]   = useState<Partial<Step1 & Step2 & Step3>>({})
@@ -133,8 +135,8 @@ const AdmissionApplyPage: React.FC = () => {
   return (
     <div className={styles.page}>
       <div className={styles.header}>
-        <h1 className={styles.pageTitle}>Student Admission Application</h1>
-        <p className={styles.pageSub}>UNISSA Online Admission Portal — AY 2026/2027</p>
+        <h1 className={styles.pageTitle}>{t('admissionApply.title')}</h1>
+        <p className={styles.pageSub}>{t('admissionApply.subtitle')}</p>
       </div>
 
       {/* Steps indicator */}

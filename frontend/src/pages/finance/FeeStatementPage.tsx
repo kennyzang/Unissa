@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next'
 import React, { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useForm, Controller } from 'react-hook-form'
@@ -49,6 +50,7 @@ const STATUS_BADGE: Record<string, { color: 'green' | 'red' | 'orange' | 'gray';
 }
 
 const FeeStatementPage: React.FC = () => {
+  const { t } = useTranslation()
   const [payModal, setPayModal] = useState<Invoice | null>(null)
   const [receipt, setReceipt] = useState<any>(null)
   const addToast = useUIStore(s => s.addToast)
@@ -93,8 +95,8 @@ const FeeStatementPage: React.FC = () => {
     <div className={styles.page}>
       <div className={styles.header}>
         <div>
-          <h1 className={styles.pageTitle}>Fee Statement</h1>
-          <p className={styles.pageSub}>Student ID: 2026001 — Noor binti Abdullah</p>
+          <h1 className={styles.pageTitle}>{t('feeStatement.title')}</h1>
+          <p className={styles.pageSub}>{t('feeStatement.studentInfo')}</p>
         </div>
         {totalOutstanding > 0 && (
           <div className={styles.outstandingBadge}>
@@ -127,7 +129,7 @@ const FeeStatementPage: React.FC = () => {
 
       {/* Invoice list */}
       <div className={styles.invoiceList}>
-        {isLoading && <div className={styles.loading}>Loading invoices…</div>}
+        {isLoading && <div className={styles.loading}>{t('feeStatement.loadingInvoices')}</div>}
         {!isLoading && invoices.length === 0 && (
           <Card>
             <div className={styles.emptyState}>

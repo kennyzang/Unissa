@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next'
 import React, { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { Calendar, Plus, CheckCircle, XCircle, Clock, FileText } from 'lucide-react'
@@ -57,6 +58,7 @@ const LEAVE_TYPE_LABELS: Record<string, string> = {
 }
 
 const LeaveManagementPage: React.FC = () => {
+  const { t } = useTranslation()
   const [applyModal,  setApplyModal]  = useState(false)
   const [reviewModal, setReviewModal] = useState<{ leave: LeaveRequest; action: 'approved' | 'rejected' } | null>(null)
   const [remarks,     setRemarks]     = useState('')
@@ -159,8 +161,8 @@ const LeaveManagementPage: React.FC = () => {
     <div className={styles.page}>
       <div className={styles.header}>
         <div>
-          <h1 className={styles.pageTitle}>Leave Management</h1>
-          <p className={styles.pageSub}>{isManager ? 'Review and approve staff leave requests' : 'Apply for and track your leave requests'}</p>
+          <h1 className={styles.pageTitle}>{t('leaveManagement.title')}</h1>
+          <p className={styles.pageSub}>{isManager ? t('leaveManagement.subtitleManager') : t('leaveManagement.subtitleStaff')}</p>
         </div>
         {!isManager && (
           <Button icon={<Plus size={14} />} onClick={() => setApplyModal(true)}>Apply for Leave</Button>

@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next'
 import React, { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useForm } from 'react-hook-form'
@@ -49,6 +50,7 @@ const STATUS_BADGE: Record<string, { color: 'blue' | 'green' | 'red' | 'orange' 
 }
 
 const ResearchGrantsPage: React.FC = () => {
+  const { t } = useTranslation()
   const [search,      setSearch]      = useState('')
   const [submitModal, setSubmitModal] = useState(false)
   const [detailModal, setDetailModal] = useState<Grant | null>(null)
@@ -167,8 +169,8 @@ const ResearchGrantsPage: React.FC = () => {
     <div className={styles.page}>
       <div className={styles.header}>
         <div>
-          <h1 className={styles.pageTitle}>Research Grants</h1>
-          <p className={styles.pageSub}>Submit and manage research grant proposals</p>
+          <h1 className={styles.pageTitle}>{t('researchGrants.title')}</h1>
+          <p className={styles.pageSub}>{t('researchGrants.subtitle')}</p>
         </div>
         {isLecturer && (
           <Button icon={<Plus size={14} />} onClick={() => setSubmitModal(true)}>Submit Proposal</Button>

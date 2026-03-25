@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next'
 import React, { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { CheckCircle, XCircle, AlertTriangle, Inbox, PenLine } from 'lucide-react'
@@ -31,6 +32,7 @@ const TRAFFIC_COLORS: Record<string, string> = { red: '#F53F3F', amber: '#FF7D00
 const TRAFFIC_LABELS: Record<string, string> = { red: 'No quotes', amber: '1-2 quotes', green: '3+ quotes' }
 
 const ApprovalInboxPage: React.FC = () => {
+  const { t } = useTranslation()
   const addToast = useUIStore(s => s.addToast)
   const qc = useQueryClient()
   const [approveModal, setApproveModal] = useState<{ pr: PRItem; action: 'approve' | 'reject' } | null>(null)
@@ -64,7 +66,7 @@ const ApprovalInboxPage: React.FC = () => {
     <div className={styles.page}>
       <div className={styles.header}>
         <div>
-          <h1 className={styles.pageTitle}>Approval Inbox</h1>
+          <h1 className={styles.pageTitle}>{t('approvalInbox.title')}</h1>
           <p className={styles.pageSub}>
             {items.length} PR{items.length !== 1 ? 's' : ''} pending your approval
           </p>

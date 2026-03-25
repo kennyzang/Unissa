@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next'
 import React, { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { Users, Search, UserCheck, Calendar, Briefcase, Phone } from 'lucide-react'
@@ -47,6 +48,7 @@ const EMPLOYMENT_COLOR: Record<string, 'blue' | 'purple' | 'gray'> = {
 }
 
 const HrStaffPage: React.FC = () => {
+  const { t } = useTranslation()
   const [search,   setSearch]   = useState('')
   const [selected, setSelected] = useState<Staff | null>(null)
 
@@ -109,8 +111,8 @@ const HrStaffPage: React.FC = () => {
   return (
     <div className={styles.page}>
       <div className={styles.header}>
-        <h1 className={styles.pageTitle}>HR Staff Management</h1>
-        <p className={styles.pageSub}>Manage staff records, leave balances, and employment details</p>
+        <h1 className={styles.pageTitle}>{t('hrStaff.title')}</h1>
+        <p className={styles.pageSub}>{t('hrStaff.subtitle')}</p>
       </div>
 
       {/* Stats */}

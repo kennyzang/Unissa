@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next'
 import React, { useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
@@ -29,6 +30,7 @@ interface Submission {
 }
 
 const LmsCourseDetailPage: React.FC = () => {
+  const { t } = useTranslation()
   const { offeringId } = useParams<{ offeringId: string }>()
   const navigate = useNavigate()
   const addToast = useUIStore(s => s.addToast)
@@ -82,7 +84,7 @@ const LmsCourseDetailPage: React.FC = () => {
   if (!offering) {
     return (
       <div className={styles.page}>
-        <div className={styles.loading}>Loading course details…</div>
+        <div className={styles.loading}>{t('lmsCourseDetail.loading')}</div>
       </div>
     )
   }

@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { NavLink, useLocation } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import clsx from 'clsx'
 import { useAuthStore } from '@/stores/authStore'
 import { useUIStore } from '@/stores/uiStore'
@@ -8,7 +9,7 @@ import styles from './Sidebar.module.scss'
 
 interface NavItem {
   key: string
-  label: string
+  labelKey: string
   path: string
   icon: string
   roles: UserRole[]
@@ -16,107 +17,88 @@ interface NavItem {
 
 interface NavGroup {
   key: string
-  label: string
+  labelKey: string
   icon: string
-  roles: UserRole[]   // union of children roles – who might see this group
-  path?: string       // direct link (no children)
+  roles: UserRole[]
+  path?: string
   children?: NavItem[]
 }
 
-// ── Navigation structure ──────────────────────────────────────────
 const NAV_STRUCTURE: NavGroup[] = [
-  // Direct items (no group wrapper)
   {
-    key: 'dashboard', label: 'Command Center', icon: '🖥️',
+    key: 'dashboard', labelKey: 'nav.commandCenter', icon: '🖥️',
     path: '/dashboard', roles: ['admin', 'manager', 'finance'],
   },
-
-  // Student Affairs
   {
-    key: 'g-student', label: 'Student Affairs', icon: '🎓',
+    key: 'g-student', labelKey: 'nav.studentAffairs', icon: '🎓',
     roles: ['student', 'admissions', 'admin'],
     children: [
-      { key: 'apply',       label: 'Apply',           path: '/admission/apply',   icon: '📝', roles: ['student', 'admin'] },
-      { key: 'admission',   label: 'Applications',    path: '/admission/review',  icon: '🎓', roles: ['admissions', 'admin'] },
-      { key: 'profile',     label: 'My Profile',      path: '/student/profile',   icon: '👤', roles: ['student'] },
-      { key: 'courses-reg', label: 'Course Reg.',     path: '/student/courses',   icon: '📋', roles: ['student', 'admin'] },
-      { key: 'statement',   label: 'Fee Statement',   path: '/finance/statement', icon: '💳', roles: ['student', 'finance', 'admin'] },
-      { key: 'campus',      label: 'Campus Services', path: '/campus/services',   icon: '🏛️', roles: ['student', 'admin'] },
+      { key: 'apply',       labelKey: 'nav.apply',           path: '/admission/apply',   icon: '📝', roles: ['student', 'admin'] },
+      { key: 'admission',   labelKey: 'nav.applications',    path: '/admission/review',  icon: '🎓', roles: ['admissions', 'admin'] },
+      { key: 'profile',     labelKey: 'nav.myProfile',       path: '/student/profile',   icon: '👤', roles: ['student'] },
+      { key: 'courses-reg', labelKey: 'nav.courseReg',       path: '/student/courses',   icon: '📋', roles: ['student', 'admin'] },
+      { key: 'statement',   labelKey: 'nav.feeStatement',    path: '/finance/statement', icon: '💳', roles: ['student', 'finance', 'admin'] },
+      { key: 'campus',      labelKey: 'nav.campusServices',  path: '/campus/services',   icon: '🏛️', roles: ['student', 'admin'] },
     ],
   },
-
-  // Learning (LMS)
   {
-    key: 'g-lms', label: 'Learning', icon: '📚',
+    key: 'g-lms', labelKey: 'nav.learning', icon: '📚',
     roles: ['student', 'lecturer', 'admin'],
     children: [
-      { key: 'lms',        label: 'My Courses', path: '/lms/courses',    icon: '📚', roles: ['student', 'lecturer', 'admin'] },
-      { key: 'attendance', label: 'Attendance', path: '/lms/attendance', icon: '📸', roles: ['student', 'lecturer', 'admin'] },
+      { key: 'lms',        labelKey: 'nav.myCourses', path: '/lms/courses',    icon: '📚', roles: ['student', 'lecturer', 'admin'] },
+      { key: 'attendance', labelKey: 'nav.attendance', path: '/lms/attendance', icon: '📸', roles: ['student', 'lecturer', 'admin'] },
     ],
   },
-
-  // Finance
   {
-    key: 'g-finance', label: 'Finance', icon: '💰',
+    key: 'g-finance', labelKey: 'nav.finance', icon: '💰',
     roles: ['finance', 'admin'],
     children: [
-      { key: 'finance', label: 'Finance Dashboard', path: '/finance/dashboard', icon: '💰', roles: ['finance', 'admin'] },
+      { key: 'finance', labelKey: 'nav.financeDashboard', path: '/finance/dashboard', icon: '💰', roles: ['finance', 'admin'] },
     ],
   },
-
-  // Procurement
   {
-    key: 'g-procurement', label: 'Procurement', icon: '🛒',
+    key: 'g-procurement', labelKey: 'nav.procurement', icon: '🛒',
     roles: ['manager', 'finance', 'admin'],
     children: [
-      { key: 'pr',        label: 'Purchase Requests', path: '/procurement/requests',  icon: '🛒', roles: ['manager', 'finance', 'admin'] },
-      { key: 'approvals', label: 'Approvals',         path: '/procurement/approvals', icon: '✅', roles: ['manager', 'finance', 'admin'] },
-      { key: 'anomalies', label: 'Anomaly Detect.',   path: '/procurement/anomalies', icon: '🚨', roles: ['finance', 'admin'] },
+      { key: 'pr',        labelKey: 'nav.purchaseRequests', path: '/procurement/requests',  icon: '🛒', roles: ['manager', 'finance', 'admin'] },
+      { key: 'approvals', labelKey: 'nav.approvals',        path: '/procurement/approvals', icon: '✅', roles: ['manager', 'finance', 'admin'] },
+      { key: 'anomalies', labelKey: 'nav.anomalyDetect',    path: '/procurement/anomalies', icon: '🚨', roles: ['finance', 'admin'] },
     ],
   },
-
-  // Human Resources
   {
-    key: 'g-hr', label: 'Human Resources', icon: '👥',
+    key: 'g-hr', labelKey: 'nav.humanResources', icon: '👥',
     roles: ['lecturer', 'manager', 'admin', 'finance', 'hradmin'],
     children: [
-      { key: 'hr',       label: 'HR & Staff',       path: '/hr/staff',  icon: '👥', roles: ['manager', 'admin', 'hradmin'] },
-      { key: 'hr-leave', label: 'Leave Management', path: '/hr/leave',  icon: '🏖️', roles: ['lecturer', 'manager', 'admin', 'finance', 'hradmin'] },
+      { key: 'hr',       labelKey: 'nav.hrStaff',         path: '/hr/staff',  icon: '👥', roles: ['manager', 'admin', 'hradmin'] },
+      { key: 'hr-leave', labelKey: 'nav.leaveManagement', path: '/hr/leave',  icon: '🏖️', roles: ['lecturer', 'manager', 'admin', 'finance', 'hradmin'] },
     ],
   },
-
-  // Research
   {
-    key: 'g-research', label: 'Research', icon: '🔬',
+    key: 'g-research', labelKey: 'nav.research', icon: '🔬',
     roles: ['lecturer', 'manager', 'admin'],
     children: [
-      { key: 'research', label: 'Research Grants', path: '/research/grants', icon: '🔬', roles: ['lecturer', 'manager', 'admin'] },
+      { key: 'research', labelKey: 'nav.researchGrants', path: '/research/grants', icon: '🔬', roles: ['lecturer', 'manager', 'admin'] },
     ],
   },
-
-  // AI & Analytics
   {
-    key: 'g-ai', label: 'AI & Analytics', icon: '📊',
+    key: 'g-ai', labelKey: 'nav.aiAnalytics', icon: '📊',
     roles: ['lecturer', 'finance', 'admin'],
     children: [
-      { key: 'risk', label: 'Risk Analytics', path: '/ai/risk', icon: '📊', roles: ['lecturer', 'admin'] },
+      { key: 'risk', labelKey: 'nav.riskAnalytics', path: '/ai/risk', icon: '📊', roles: ['lecturer', 'admin'] },
     ],
   },
-
-  // System (Admin only)
   {
-    key: 'settings', label: 'Settings', icon: '⚙️',
+    key: 'settings', labelKey: 'nav.settings', icon: '⚙️',
     path: '/admin/settings', roles: ['admin'],
   },
 ]
 
-// ── Component ─────────────────────────────────────────────────────
 const Sidebar = () => {
   const { user } = useAuthStore()
   const { sidebarCollapsed, toggleSidebar, closeMobileSidebar } = useUIStore()
+  const { t } = useTranslation()
   const location = useLocation()
 
-  // All groups start expanded
   const [expanded, setExpanded] = useState<Set<string>>(
     () => new Set(NAV_STRUCTURE.filter(g => g.children).map(g => g.key))
   )
@@ -134,7 +116,6 @@ const Sidebar = () => {
   const isActive = (path: string) =>
     location.pathname === path || location.pathname.startsWith(path + '/')
 
-  // Filter groups/items visible to this user's role
   const visibleGroups = NAV_STRUCTURE
     .filter(g => g.roles.includes(user.role))
     .map(g => ({
@@ -152,7 +133,7 @@ const Sidebar = () => {
             <div className={styles.brandMark}>U</div>
             <div className={styles.brandText}>
               <div className={styles.brandName}>UNISSA</div>
-              <div className={styles.brandSub}>Smart Platform</div>
+              <div className={styles.brandSub}>{t('nav.smartPlatform')}</div>
             </div>
           </div>
         )}
@@ -165,7 +146,6 @@ const Sidebar = () => {
       {/* Navigation */}
       <nav className={styles.nav}>
         {visibleGroups.map(group => {
-          // Direct link (no children)
           if (group.path) {
             return (
               <NavLink
@@ -175,35 +155,32 @@ const Sidebar = () => {
                 className={({ isActive: a }) =>
                   clsx(styles.navItem, { [styles.active]: a || isActive(group.path!) })
                 }
-                title={sidebarCollapsed ? group.label : undefined}
+                title={sidebarCollapsed ? t(group.labelKey) : undefined}
               >
                 <span className={styles.navIcon}>{group.icon}</span>
-                {!sidebarCollapsed && <span className={styles.navLabel}>{group.label}</span>}
+                {!sidebarCollapsed && <span className={styles.navLabel}>{t(group.labelKey)}</span>}
               </NavLink>
             )
           }
 
-          // Group with children
           const children = group.children ?? []
           const isOpen = expanded.has(group.key)
           const hasActiveChild = children.some(c => isActive(c.path))
 
           return (
             <div key={group.key}>
-              {/* Group header – only shown when sidebar is not collapsed */}
               {!sidebarCollapsed && (
                 <div
                   className={clsx(styles.groupHeader, { [styles.active]: hasActiveChild && !isOpen })}
                   onClick={() => toggleGroup(group.key)}
-                  title={group.label}
+                  title={t(group.labelKey)}
                 >
                   <span className={styles.groupIcon}>{group.icon}</span>
-                  <span className={styles.groupLabel}>{group.label}</span>
+                  <span className={styles.groupLabel}>{t(group.labelKey)}</span>
                   <span className={clsx(styles.groupChevron, { [styles.open]: isOpen })}>▶</span>
                 </div>
               )}
 
-              {/* Children (or show all as flat items when sidebar is icon-only) */}
               {(isOpen || sidebarCollapsed) && children.map(item => (
                 <NavLink
                   key={item.key}
@@ -215,10 +192,10 @@ const Sidebar = () => {
                       [styles.subItem]: !sidebarCollapsed,
                     })
                   }
-                  title={sidebarCollapsed ? item.label : undefined}
+                  title={sidebarCollapsed ? t(item.labelKey) : undefined}
                 >
                   <span className={styles.navIcon}>{item.icon}</span>
-                  {!sidebarCollapsed && <span className={styles.navLabel}>{item.label}</span>}
+                  {!sidebarCollapsed && <span className={styles.navLabel}>{t(item.labelKey)}</span>}
                 </NavLink>
               ))}
             </div>

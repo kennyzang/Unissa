@@ -1,33 +1,13 @@
 import { useState } from 'react'
 import { useNavigate, useLocation, Link } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
+import { useTranslation } from 'react-i18next'
 import { Bell, Settings, LogOut } from 'lucide-react'
 import { useAuthStore } from '@/stores/authStore'
 import { useUIStore } from '@/stores/uiStore'
 import { apiClient } from '@/lib/apiClient'
+import LanguageSwitcher from '@/components/ui/LanguageSwitcher'
 import styles from './Navbar.module.scss'
-
-// Breadcrumb map
-const BREADCRUMBS: Record<string, string[]> = {
-  '/dashboard':              ['Command Center'],
-  '/admission/apply':        ['Admission', 'Apply'],
-  '/admission/review':       ['Admission', 'Applications'],
-  '/student/profile':        ['Student', 'My Profile'],
-  '/student/courses':        ['Student', 'Course Registration'],
-  '/finance/statement':      ['Finance', 'Fee Statement'],
-  '/finance/dashboard':      ['Finance', 'Dashboard'],
-  '/lms/courses':            ['LMS', 'My Courses'],
-  '/lms/attendance':         ['LMS', 'Attendance'],
-  '/procurement/requests':   ['Procurement', 'Purchase Requests'],
-  '/procurement/approvals':  ['Procurement', 'Approval Inbox'],
-  '/procurement/anomalies':  ['Procurement', 'Anomaly Detection'],
-  '/hr/staff':               ['HR', 'Staff Management'],
-  '/hr/leave':               ['HR', 'Leave Management'],
-  '/research/grants':        ['Research', 'Grants'],
-  '/ai/risk':                ['AI', 'Risk Analytics'],
-  '/campus/services':        ['Campus', 'Services'],
-  '/admin/settings':         ['Admin', 'Settings'],
-}
 
 interface Notification {
   id: string
@@ -41,13 +21,35 @@ interface Notification {
 const Navbar = () => {
   const { user, clearAuth }     = useAuthStore()
   const { addToast }            = useUIStore()
-  const navigate                              = useNavigate()
-  const location            = useLocation()
+  const { t }                   = useTranslation()
+  const navigate                = useNavigate()
+  const location                = useLocation()
   const [notifOpen, setNotifOpen] = useState(false)
+
+  // Breadcrumb map using translated labels
+  const BREADCRUMBS: Record<string, string[]> = {
+    '/dashboard':              [t('navbar.breadcrumbs.commandCenter')],
+    '/admission/apply':        [t('navbar.breadcrumbs.admission'), t('navbar.breadcrumbs.applyLabel')],
+    '/admission/review':       [t('navbar.breadcrumbs.admission'), t('navbar.breadcrumbs.applicationsLabel')],
+    '/student/profile':        [t('navbar.breadcrumbs.student'), t('navbar.breadcrumbs.myProfile')],
+    '/student/courses':        [t('navbar.breadcrumbs.student'), t('navbar.breadcrumbs.courseRegistration')],
+    '/finance/statement':      [t('navbar.breadcrumbs.finance'), t('navbar.breadcrumbs.feeStatement')],
+    '/finance/dashboard':      [t('navbar.breadcrumbs.finance'), t('navbar.breadcrumbs.dashboard')],
+    '/lms/courses':            [t('navbar.breadcrumbs.lms'), t('navbar.breadcrumbs.myCourses')],
+    '/lms/attendance':         [t('navbar.breadcrumbs.lms'), t('navbar.breadcrumbs.attendance')],
+    '/procurement/requests':   [t('navbar.breadcrumbs.procurement'), t('navbar.breadcrumbs.purchaseRequests')],
+    '/procurement/approvals':  [t('navbar.breadcrumbs.procurement'), t('navbar.breadcrumbs.approvalInbox')],
+    '/procurement/anomalies':  [t('navbar.breadcrumbs.procurement'), t('navbar.breadcrumbs.anomalyDetection')],
+    '/hr/staff':               [t('navbar.breadcrumbs.hr'), t('navbar.breadcrumbs.staffManagement')],
+    '/hr/leave':               [t('navbar.breadcrumbs.hr'), t('navbar.breadcrumbs.leaveManagement')],
+    '/research/grants':        [t('navbar.breadcrumbs.research'), t('navbar.breadcrumbs.grants')],
+    '/ai/risk':                [t('navbar.breadcrumbs.ai'), t('navbar.breadcrumbs.riskAnalytics')],
+    '/campus/services':        [t('navbar.breadcrumbs.campus'), t('navbar.breadcrumbs.services')],
+    '/admin/settings':         [t('navbar.breadcrumbs.admin'), t('navbar.breadcrumbs.settingsLabel')],
+  }
 
   const crumbs = BREADCRUMBS[location.pathname] ?? ['UNISSA']
 
-  // Load unread notifications count
   const { data: notifications = [] } = useQuery<Notification[]>({
     queryKey: ['notifications'],
     queryFn: async () => {
@@ -58,20 +60,20 @@ const Navbar = () => {
         return []
       }
     },
-    refetchInterval: 60000, // refresh every minute
+    refetchInterval: 60000,
   })
 
   const unreadCount = notifications.filter(n => !n.isRead).length
 
   const handleLogout = () => {
     clearAuth()
-    addToast({ type: 'info', message: 'You have been signed out.' })
+    addToast({ type: 'info', message: t('navbar.signedOut') })
     navigate('/login', { replace: true })
   }
 
   return (
     <header className={styles.navbar}>
-      {/* Mobile: brand logo (replaces hamburger) */}
+      {/* Mobile: brand logo */}
       <div className={styles.mobileBrand}>
         <div className={styles.mobileBrandMark}>U</div>
         <span className={styles.mobileBrandName}>UNISSA</span>
@@ -93,11 +95,14 @@ const Navbar = () => {
 
       {/* Right: user actions */}
       <div className={styles.right}>
+        {/* Language switcher */}
+        <LanguageSwitcher variant="select" />
+
         {/* Notifications Bell */}
         <div className={styles.notifWrap}>
           <button
             className={styles.iconBtn}
-            title="Notifications"
+            title={t('navbar.notifications')}
             onClick={() => setNotifOpen(o => !o)}
           >
             <Bell size={16} />
@@ -107,12 +112,12 @@ const Navbar = () => {
           {notifOpen && (
             <div className={styles.notifDropdown}>
               <div className={styles.notifHeader}>
-                <span>Notifications</span>
-                {unreadCount > 0 && <span className={styles.unreadLabel}>{unreadCount} unread</span>}
+                <span>{t('navbar.notifications')}</span>
+                {unreadCount > 0 && <span className={styles.unreadLabel}>{t('navbar.unread', { count: unreadCount })}</span>}
               </div>
               <div className={styles.notifList}>
                 {notifications.length === 0 ? (
-                  <div className={styles.notifEmpty}>No notifications</div>
+                  <div className={styles.notifEmpty}>{t('navbar.noNotifications')}</div>
                 ) : (
                   notifications.slice(0, 8).map(n => (
                     <div key={n.id} className={`${styles.notifItem} ${!n.isRead ? styles.notifUnread : ''}`}>
@@ -129,7 +134,7 @@ const Navbar = () => {
 
         {/* Settings link (admin only) */}
         {user?.role === 'admin' && (
-          <Link to="/admin/settings" className={styles.iconBtn} title="Settings">
+          <Link to="/admin/settings" className={styles.iconBtn} title={t('navbar.breadcrumbs.settingsLabel')}>
             <Settings size={16} />
           </Link>
         )}
@@ -141,7 +146,7 @@ const Navbar = () => {
               <span className={styles.userName}>{user.displayName}</span>
               <span className={styles.userRole}>{user.role}</span>
             </div>
-            <button className={styles.logoutBtn} onClick={handleLogout} title="Sign Out">
+            <button className={styles.logoutBtn} onClick={handleLogout} title={t('navbar.signOut')}>
               <LogOut size={14} />
             </button>
           </div>

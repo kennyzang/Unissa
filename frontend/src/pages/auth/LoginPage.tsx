@@ -3,9 +3,11 @@ import { useNavigate } from 'react-router-dom'
 import { useMutation } from '@tanstack/react-query'
 import { Form, Input, Button, Alert } from 'antd'
 import { UserOutlined, LockOutlined } from '@ant-design/icons'
+import { useTranslation } from 'react-i18next'
 import apiClient from '@/lib/apiClient'
 import { useAuthStore } from '@/stores/authStore'
 import { useUIStore } from '@/stores/uiStore'
+import LanguageSwitcher from '@/components/ui/LanguageSwitcher'
 import type { User } from '@/types'
 import styles from './LoginPage.module.scss'
 
@@ -27,6 +29,7 @@ const LoginPage = () => {
   const navigate = useNavigate()
   const { setAuth } = useAuthStore()
   const { addToast } = useUIStore()
+  const { t } = useTranslation()
   const [failedAttempts, setFailedAttempts] = useState(0)
   const [form] = Form.useForm<FormValues>()
 
@@ -39,12 +42,12 @@ const LoginPage = () => {
     },
     onSuccess: ({ data }) => {
       setAuth(data.user, data.token)
-      addToast({ type: 'success', message: `Welcome back, ${data.user.displayName}!` })
+      addToast({ type: 'success', message: t('login.welcomeBack', { name: data.user.displayName }) })
       const redirect = ROLE_REDIRECTS[data.user.role] ?? '/dashboard'
       navigate(redirect, { replace: true })
     },
     onError: (err: any) => {
-      const msg = err.response?.data?.message ?? 'Invalid credentials'
+      const msg = err.response?.data?.message ?? t('login.invalidCredentials')
       setFailedAttempts(p => p + 1)
       addToast({ type: 'error', message: msg })
     },
@@ -54,19 +57,24 @@ const LoginPage = () => {
 
   return (
     <div className={styles.card}>
+      {/* Language switcher */}
+      <div className={styles.langBar}>
+        <LanguageSwitcher variant="buttons" theme="light" />
+      </div>
+
       {/* Logo */}
       <div className={styles.logo}>
         <div className={styles.logoMark}>U</div>
         <div className={styles.logoText}>
           <div className={styles.logoTitle}>UNISSA</div>
-          <div className={styles.logoSub}>Smart University Platform</div>
+          <div className={styles.logoSub}>{t('login.logoSub')}</div>
         </div>
       </div>
 
       <div className={styles.divider} />
 
-      <h2 className={styles.heading}>Sign In</h2>
-      <p className={styles.subheading}>Use your demo account credentials to continue</p>
+      <h2 className={styles.heading}>{t('login.title')}</h2>
+      <p className={styles.subheading}>{t('login.subtitle')}</p>
 
       <Form
         form={form}
@@ -77,12 +85,12 @@ const LoginPage = () => {
       >
         <Form.Item
           name="username"
-          label="Username"
-          rules={[{ required: true, message: 'Username is required' }]}
+          label={t('login.username')}
+          rules={[{ required: true, message: t('login.usernameRequired') }]}
         >
           <Input
             prefix={<UserOutlined style={{ color: '#C9CDD4' }} />}
-            placeholder="e.g. noor, admin, manager"
+            placeholder={t('login.usernamePlaceholder')}
             autoComplete="username"
             autoFocus
             size="large"
@@ -91,12 +99,12 @@ const LoginPage = () => {
 
         <Form.Item
           name="password"
-          label="Password"
-          rules={[{ required: true, message: 'Password is required' }]}
+          label={t('login.password')}
+          rules={[{ required: true, message: t('login.passwordRequired') }]}
         >
           <Input.Password
             prefix={<LockOutlined style={{ color: '#C9CDD4' }} />}
-            placeholder="Demo@2026"
+            placeholder={t('login.passwordPlaceholder')}
             autoComplete="current-password"
             size="large"
           />
@@ -106,7 +114,7 @@ const LoginPage = () => {
           <Form.Item>
             <Alert
               type="warning"
-              message={`Account will be locked after ${5 - failedAttempts} more failed attempt${5 - failedAttempts !== 1 ? 's' : ''}`}
+              message={t('login.lockWarning', { count: 5 - failedAttempts })}
               showIcon
               style={{ fontSize: 13 }}
             />
@@ -121,17 +129,21 @@ const LoginPage = () => {
             loading={loginMutation.isPending}
             size="large"
           >
-            Sign In
+            {t('login.signIn')}
           </Button>
         </Form.Item>
       </Form>
 
       {/* Demo accounts hint */}
       <details className={styles.demoHint}>
-        <summary>Demo Accounts <span style={{ fontWeight: 400, color: 'var(--color-primary)' }}>— click row to fill</span></summary>
+        <summary>{t('login.demoAccounts')} <span style={{ fontWeight: 400, color: 'var(--color-primary)' }}>{t('login.demoClickFill')}</span></summary>
         <table className={styles.demoTable}>
           <thead>
-            <tr><th>Role</th><th>Username</th><th>Password</th></tr>
+            <tr>
+              <th>{t('login.demoRole')}</th>
+              <th>{t('login.demoUsername')}</th>
+              <th>{t('login.demoPassword')}</th>
+            </tr>
           </thead>
           <tbody>
             {[
@@ -160,7 +172,7 @@ const LoginPage = () => {
       </details>
 
       <div className={styles.footer}>
-        UNISSA/LTK/RKN-PTM(01)/2026 · POC Demo v5.0
+        {t('login.footer')}
       </div>
     </div>
   )

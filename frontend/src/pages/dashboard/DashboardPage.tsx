@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
+import { useTranslation } from 'react-i18next'
 import {
   AreaChart, Area, BarChart, Bar, PieChart, Pie, Cell,
   ResponsiveContainer, Tooltip, XAxis, YAxis,
@@ -107,6 +108,7 @@ const SEVERITY_MAP: Record<string, { color: 'blue' | 'green' | 'red' | 'orange' 
 const DashboardPage: React.FC = () => {
   const { data: kpi, isLoading, isError, refetch, dataUpdatedAt } = useKPI()
   const { data: insights = [] } = useInsights()
+  const { t } = useTranslation()
 
   // Live learner count oscillates ±3 around baseline for demo
   const [liveCount, setLiveCount] = useState(89)
@@ -147,7 +149,7 @@ const DashboardPage: React.FC = () => {
     return (
       <div className={styles.loadingWrap}>
         <RefreshCw size={24} className={styles.spinIcon} />
-        <span>Loading Command Center…</span>
+        <span>{t('dashboard.loadingText')}</span>
       </div>
     )
   }
@@ -156,8 +158,8 @@ const DashboardPage: React.FC = () => {
     return (
       <div className={styles.errorWrap}>
         <WifiOff size={32} />
-        <p>Failed to load dashboard data</p>
-        <button onClick={() => refetch()} className={styles.retryBtn}>Retry</button>
+        <p>{t('dashboard.loadError')}</p>
+        <button onClick={() => refetch()} className={styles.retryBtn}>{t('common.retry')}</button>
       </div>
     )
   }
@@ -167,16 +169,16 @@ const DashboardPage: React.FC = () => {
       {/* ── Header ──────────────────────────────────────── */}
       <div className={styles.header}>
         <div>
-          <h1 className={styles.pageTitle}>Command Center</h1>
+          <h1 className={styles.pageTitle}>{t('dashboard.title')}</h1>
           <p className={styles.pageSub}>
-            Real-time overview of UNISSA operations &nbsp;·&nbsp;
+            {t('dashboard.subtitle')} &nbsp;·&nbsp;
             <Wifi size={12} className={styles.wifiIcon} />
-            &nbsp;Live &nbsp;·&nbsp; Updated {lastUpdated}
+            &nbsp;{t('dashboard.live')} &nbsp;·&nbsp; {t('dashboard.updated')} {lastUpdated}
           </p>
         </div>
         <button className={styles.refreshBtn} onClick={() => refetch()}>
           <RefreshCw size={14} />
-          Refresh
+          {t('common.refresh')}
         </button>
       </div>
 
@@ -184,12 +186,12 @@ const DashboardPage: React.FC = () => {
       <div className={styles.kpiGrid}>
         {/* Enrollment */}
         <KPICard
-          title="Student Enrolment"
+          title={t('dashboard.studentEnrolment')}
           value={kpi.enrollment.totalEnrolled.toLocaleString()}
-          sub={`+${kpi.enrollment.newApplicationsToday} applications today`}
+          sub={`+${kpi.enrollment.newApplicationsToday} ${t('dashboard.applicationsToday')}`}
           icon={<Users size={18} />}
           accent="#165DFF"
-          badge={{ label: `${kpi.enrollment.acceptedToday} accepted`, color: 'blue' }}
+          badge={{ label: `${kpi.enrollment.acceptedToday} ${t('dashboard.accepted')}`, color: 'blue' }}
           chart={
             <ResponsiveContainer width="100%" height={48}>
               <AreaChart data={sparkData} margin={{ top: 2, right: 0, bottom: 0, left: 0 }}>
@@ -212,12 +214,12 @@ const DashboardPage: React.FC = () => {
 
         {/* Finance */}
         <KPICard
-          title="Budget Utilisation"
+          title={t('dashboard.budgetUtilisation')}
           value={`${kpi.finance.committedPct}%`}
-          sub={`${fmtBND(kpi.finance.committed)} committed of ${fmtBND(kpi.finance.totalBudget)}`}
+          sub={`${fmtBND(kpi.finance.committed)} ${t('dashboard.committed')} ${fmtBND(kpi.finance.totalBudget)}`}
           icon={<DollarSign size={18} />}
           accent="#00B42A"
-          badge={kpi.finance.overdueInvoices > 0 ? { label: `${kpi.finance.overdueInvoices} overdue`, color: 'red' } : undefined}
+          badge={kpi.finance.overdueInvoices > 0 ? { label: `${kpi.finance.overdueInvoices} ${t('dashboard.overdue')}`, color: 'red' } : undefined}
           chart={
             <ResponsiveContainer width="100%" height={48}>
               <PieChart>
@@ -247,22 +249,22 @@ const DashboardPage: React.FC = () => {
 
         {/* HR */}
         <KPICard
-          title="Human Resources"
+          title={t('dashboard.humanResources')}
           value={String(kpi.hr.totalStaff)}
-          sub={`${kpi.hr.onLeaveToday} on leave today`}
+          sub={`${kpi.hr.onLeaveToday} ${t('dashboard.onLeave')}`}
           icon={<Briefcase size={18} />}
           accent="#7D3FCC"
-          badge={{ label: `${kpi.hr.pendingApprovals} pending approvals`, color: 'purple' }}
+          badge={{ label: `${kpi.hr.pendingApprovals} ${t('dashboard.pendingApprovals')}`, color: 'purple' }}
         />
 
         {/* Research */}
         <KPICard
-          title="Research Grants"
+          title={t('dashboard.researchGrants')}
           value={String(kpi.research.activeGrants)}
-          sub={`Total value ${fmtBND(kpi.research.totalValue)}`}
+          sub={`${t('dashboard.totalValue')} ${fmtBND(kpi.research.totalValue)}`}
           icon={<FlaskConical size={18} />}
           accent="#FF7D00"
-          badge={{ label: `${kpi.research.utilisation}% utilised`, color: 'orange' }}
+          badge={{ label: `${kpi.research.utilisation}% ${t('dashboard.utilised')}`, color: 'orange' }}
           chart={
             <ResponsiveContainer width="100%" height={48}>
               <BarChart data={researchBar} barSize={10} margin={{ top: 4, right: 0, bottom: 0, left: 0 }}>
@@ -280,30 +282,30 @@ const DashboardPage: React.FC = () => {
 
         {/* Campus */}
         <KPICard
-          title="Campus Facilities"
+          title={t('dashboard.campusFacilities')}
           value={`${kpi.campus.roomsBookedToday}/${kpi.campus.totalRooms}`}
-          sub={`${kpi.campus.vehiclesInUse}/${kpi.campus.totalVehicles} vehicles in use`}
+          sub={`${kpi.campus.vehiclesInUse}/${kpi.campus.totalVehicles} ${t('dashboard.vehiclesInUse')}`}
           icon={<Building2 size={18} />}
           accent="#0FC6C2"
-          badge={{ label: `${kpi.campus.maintenanceTickets} maintenance`, color: kpi.campus.maintenanceTickets > 0 ? 'orange' : 'green' }}
+          badge={{ label: `${kpi.campus.maintenanceTickets} ${t('dashboard.maintenance')}`, color: kpi.campus.maintenanceTickets > 0 ? 'orange' : 'green' }}
           alert={kpi.campus.activeAlert}
         />
 
         {/* LMS */}
         <KPICard
-          title="LMS Activity"
+          title={t('dashboard.lmsActivity')}
           value={String(liveCount)}
-          sub={`${kpi.lms.avgCourseCompletion}% avg course completion`}
+          sub={`${kpi.lms.avgCourseCompletion}% ${t('dashboard.avgCompletion')}`}
           icon={<BookOpen size={18} />}
           accent={kpi.lms.atRiskFlagged > 0 ? '#F53F3F' : '#00B42A'}
-          badge={{ label: `${kpi.lms.atRiskFlagged} at-risk`, color: kpi.lms.atRiskFlagged > 0 ? 'red' : 'green' }}
+          badge={{ label: `${kpi.lms.atRiskFlagged} ${t('dashboard.atRisk')}`, color: kpi.lms.atRiskFlagged > 0 ? 'red' : 'green' }}
         />
       </div>
 
       {/* ── Charts Row ──────────────────────────────────── */}
       <div className={styles.chartsRow}>
         {/* Enrollment trend */}
-        <Card title="Enrolment Trend (7 days)" className={styles.chartCard}>
+        <Card title={t('dashboard.enrolmentTrend')} className={styles.chartCard}>
           <ResponsiveContainer width="100%" height={180}>
             <AreaChart data={sparkData} margin={{ top: 8, right: 8, bottom: 0, left: 0 }}>
               <defs>
@@ -338,7 +340,7 @@ const DashboardPage: React.FC = () => {
         </Card>
 
         {/* Budget summary */}
-        <Card title="Budget Summary" className={styles.chartCard}>
+        <Card title={t('dashboard.budgetSummary')} className={styles.chartCard}>
           <div className={styles.budgetSummary}>
             <div className={styles.budgetDonut}>
               <ResponsiveContainer width={120} height={120}>
@@ -376,11 +378,11 @@ const DashboardPage: React.FC = () => {
 
         {/* Live activity */}
         <Card
-          title="Live Activity"
+          title={t('dashboard.liveActivity')}
           extra={
             <span className={styles.liveDot}>
               <span className={styles.livePulse} />
-              LIVE
+              {t('dashboard.live')}
             </span>
           }
           className={styles.chartCard}
@@ -401,7 +403,7 @@ const DashboardPage: React.FC = () => {
         <section className={styles.insightsSection}>
           <div className={styles.sectionHeader}>
             <TrendingUp size={16} />
-            <h2 className={styles.sectionTitle}>AI Executive Insights</h2>
+            <h2 className={styles.sectionTitle}>{t('dashboard.aiInsights')}</h2>
             <span className={styles.sectionCount}>{insights.length}</span>
           </div>
           <div className={styles.insightsGrid}>
@@ -432,7 +434,7 @@ const DashboardPage: React.FC = () => {
         <section className={styles.insightsSection}>
           <div className={styles.sectionHeader}>
             <TrendingUp size={16} />
-            <h2 className={styles.sectionTitle}>AI Executive Insights</h2>
+            <h2 className={styles.sectionTitle}>{t('dashboard.aiInsights')}</h2>
           </div>
           <div className={styles.insightsGrid}>
             {DEMO_INSIGHTS.map(item => {

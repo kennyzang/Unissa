@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next'
 import React from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts'
@@ -27,6 +28,7 @@ interface GlCodeRow {
 }
 
 const FinanceDashboardPage: React.FC = () => {
+  const { t } = useTranslation()
   const { data, isLoading } = useQuery<BudgetSummary>({
     queryKey: ['finance', 'budget-summary'],
     queryFn: async () => {
@@ -35,7 +37,7 @@ const FinanceDashboardPage: React.FC = () => {
     },
   })
 
-  if (isLoading || !data) return <div className={styles.loading}>Loading finance data…</div>
+  if (isLoading || !data) return <div className={styles.loading}>{t('financeDashboard.loading')}</div>
 
   const { totalBudget, committed, spent, glCodes } = data
   const available = totalBudget - committed - spent
@@ -52,18 +54,18 @@ const FinanceDashboardPage: React.FC = () => {
   return (
     <div className={styles.page}>
       <div className={styles.header}>
-        <h1 className={styles.pageTitle}>Finance Dashboard</h1>
-        <p className={styles.pageSub}>Budget overview and GL code utilisation</p>
+        <h1 className={styles.pageTitle}>{t('financeDashboard.title')}</h1>
+        <p className={styles.pageSub}>{t('financeDashboard.subtitle')}</p>
       </div>
 
       <div className={styles.kpiRow}>
-        <StatCard title="Total Budget" value={`BND ${(totalBudget / 1000).toFixed(0)}K`} sub="Fiscal Year 2026" icon={<DollarSign size={16} />} color="blue" />
-        <StatCard title="Committed" value={`${committedPct}%`} sub={`BND ${committed.toLocaleString()}`} icon={<TrendingUp size={16} />} color="orange" trend={{ value: 3.2, label: 'vs last month' }} />
-        <StatCard title="Spent" value={`BND ${spent.toLocaleString()}`} sub={`${Math.round(spent / totalBudget * 100)}% of total`} icon={<DollarSign size={16} />} color="green" />
-        <StatCard title="Available" value={`BND ${available.toLocaleString()}`} sub="Remaining budget" icon={<AlertCircle size={16} />} color={available < 50000 ? 'red' : 'blue'} />
+        <StatCard title={t('financeDashboard.totalBudget')} value={`BND ${(totalBudget / 1000).toFixed(0)}K`} sub={t('financeDashboard.fiscalYear')} icon={<DollarSign size={16} />} color="blue" />
+        <StatCard title={t('financeDashboard.committed')} value={`${committedPct}%`} sub={`BND ${committed.toLocaleString()}`} icon={<TrendingUp size={16} />} color="orange" trend={{ value: 3.2, label: t('financeDashboard.vsLastMonth') }} />
+        <StatCard title={t('financeDashboard.spent')} value={`BND ${spent.toLocaleString()}`} sub={`${Math.round(spent / totalBudget * 100)}% ${t('financeDashboard.ofTotal')}`} icon={<DollarSign size={16} />} color="green" />
+        <StatCard title={t('financeDashboard.available')} value={`BND ${available.toLocaleString()}`} sub={t('financeDashboard.remainingBudget')} icon={<AlertCircle size={16} />} color={available < 50000 ? 'red' : 'blue'} />
       </div>
 
-      <Card title="GL Code Budget Utilisation">
+      <Card title={t('financeDashboard.glUtilisation')}>
         <ResponsiveContainer width="100%" height={240}>
           <BarChart data={chartData} margin={{ top: 8, right: 8, bottom: 0, left: 0 }}>
             <XAxis dataKey="code" tick={{ fontSize: 11 }} axisLine={false} tickLine={false} />
@@ -76,12 +78,12 @@ const FinanceDashboardPage: React.FC = () => {
         </ResponsiveContainer>
       </Card>
 
-      <Card title="GL Code Details" noPadding>
+      <Card title={t('financeDashboard.glCodeDetails')} noPadding>
         <table className={styles.glTable}>
           <thead>
             <tr>
-              <th>Code</th><th>Description</th><th>Department</th>
-              <th>Budget</th><th>Committed</th><th>Spent</th><th>Available</th><th>Status</th>
+              <th>{t('financeDashboard.code')}</th><th>{t('financeDashboard.description')}</th><th>{t('financeDashboard.department')}</th>
+              <th>{t('financeDashboard.budget')}</th><th>{t('financeDashboard.committed')}</th><th>{t('financeDashboard.spent')}</th><th>{t('financeDashboard.available')}</th><th>{t('financeDashboard.status')}</th>
             </tr>
           </thead>
           <tbody>
@@ -97,7 +99,7 @@ const FinanceDashboardPage: React.FC = () => {
                   <td>BND {g.spentAmount.toLocaleString()}</td>
                   <td className={g.availableBalance < 10000 ? styles.lowBalance : ''}><strong>BND {g.availableBalance.toLocaleString()}</strong></td>
                   <td>
-                    <Badge color={utilPct >= 90 ? 'red' : utilPct >= 70 ? 'orange' : 'green'} size="sm">{utilPct}% used</Badge>
+                    <Badge color={utilPct >= 90 ? 'red' : utilPct >= 70 ? 'orange' : 'green'} size="sm">{utilPct}% {t('financeDashboard.used')}</Badge>
                   </td>
                 </tr>
               )

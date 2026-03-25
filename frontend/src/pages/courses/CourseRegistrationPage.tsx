@@ -1,11 +1,10 @@
 import React, { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useNavigate } from 'react-router-dom'
-import { Plus, Minus, CheckCircle, AlertTriangle, BookOpen, Clock } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
+import { Plus, Minus, CheckCircle, AlertTriangle, BookOpen, Clock, AlertCircle } from 'lucide-react'
 import { apiClient } from '@/lib/apiClient'
 import { useUIStore } from '@/stores/uiStore'
-import { useAuthStore } from '@/stores/authStore'
-import Card from '@/components/ui/Card'
 import Badge from '@/components/ui/Badge'
 import Button from '@/components/ui/Button'
 import Modal from '@/components/ui/Modal'
@@ -18,76 +17,87 @@ interface Offering {
   endTime: string
   room: string
   seatsTaken: number
-  maxSeats: number
-  course: { id: string; name: string; code: string; creditHours: number; level: number; description?: string }
+  course: {
+    id: string
+    name: string
+    code: string
+    creditHours: number
+    level: number
+    maxSeats: number
+    prerequisites: { prerequisite: { id: string; code: string; name: string }; minGrade: string }[]
+  }
   lecturer: { user: { displayName: string } }
   semester: { id: string; name: string }
 }
 
-// We'll fetch available offerings (all active offerings for current semester)
+function timesOverlap(a: Offering, b: Offering): boolean {
+  return a.dayOfWeek === b.dayOfWeek && a.startTime < b.endTime && a.endTime > b.startTime
+}
+
 const CourseRegistrationPage: React.FC = () => {
   const navigate = useNavigate()
-  const user = useAuthStore(s => s.user)
   const addToast = useUIStore(s => s.addToast)
+  const { t } = useTranslation()
   const qc = useQueryClient()
 
   const [selected, setSelected] = useState<string[]>([])
   const [confirmModal, setConfirmModal] = useState(false)
   const [successData, setSuccessData] = useState<any>(null)
 
-  // Fetch all course offerings (using student timetable shows current, so we need a different endpoint)
-  // We'll use a custom query that fetches all offerings
   const { data: offerings = [], isLoading } = useQuery<Offering[]>({
-    queryKey: ['course-offerings'],
+    queryKey: ['offerings'],
     queryFn: async () => {
-      // Get available offerings via a general endpoint; fallback to student 2026001
-      const { data } = await apiClient.get('/students/2026001/timetable')
-      // If student already has offerings, show those plus some demo extras
-      // For demo: return the timetable as registered and also pull extra offerings
-      const registered = data.data as Offering[]
-      // Return all offerings - registered ones are already taken
-      return registered
-    },
-  })
-
-  // Also fetch all available offerings from DB
-  const { data: allOfferings = [] } = useQuery<Offering[]>({
-    queryKey: ['all-offerings'],
-    queryFn: async () => {
-      // Since we don't have a general /offerings endpoint, use LMS courses
-      const { data } = await apiClient.get('/lms/courses/2026001')
-      return (data.data ?? []).map((c: any) => c.offering ?? c).filter(Boolean)
+      const { data } = await apiClient.get('/students/offerings')
+      return (data.data ?? []).length > 0 ? data.data : DEMO_OFFERINGS
     },
   })
 
   const registerMutation = useMutation({
     mutationFn: async (offeringIds: string[]) => {
-      const semesterId = offerings[0]?.semester?.id ?? 'sem-1'
+      const semesterId = offerings.find(o => offeringIds.includes(o.id))?.semester?.id ?? 'sem-1'
       const { data } = await apiClient.post('/students/2026001/register-courses', { offeringIds, semesterId })
       return data
     },
     onSuccess: (data) => {
       setSuccessData(data)
       setConfirmModal(false)
-      qc.invalidateQueries({ queryKey: ['student'] })
-      addToast({ type: 'success', message: data.message ?? 'Courses registered successfully!' })
+      qc.invalidateQueries({ queryKey: ['lms'] })
+      qc.invalidateQueries({ queryKey: ['campus-services'] })
+      qc.invalidateQueries({ queryKey: ['invoices'] })
+      addToast({ type: 'success', message: data.message ?? t('courseReg.successTitle') })
     },
     onError: (e: any) => {
       setConfirmModal(false)
-      addToast({ type: 'error', message: e.response?.data?.message ?? 'Registration failed' })
+      const errData = e.response?.data
+      if (errData?.conflicts) {
+        addToast({ type: 'error', message: `Schedule conflict: ${errData.conflicts[0]?.course1} ↔ ${errData.conflicts[0]?.course2}` })
+      } else if (errData?.prereqErrors) {
+        addToast({ type: 'error', message: errData.prereqErrors[0] ?? 'Prerequisite not met' })
+      } else {
+        addToast({ type: 'error', message: errData?.message ?? 'Registration failed' })
+      }
     },
   })
 
   const toggle = (id: string) => {
-    setSelected(prev =>
-      prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]
-    )
+    setSelected(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id])
   }
 
   const selectedOfferings = offerings.filter(o => selected.includes(o.id))
   const totalCH = selectedOfferings.reduce((s, o) => s + (o.course?.creditHours ?? 0), 0)
   const maxCH = 18
   const minCH = 12
+
+  const conflictPairs: { a: string; b: string }[] = []
+  for (let i = 0; i < selectedOfferings.length; i++) {
+    for (let j = i + 1; j < selectedOfferings.length; j++) {
+      if (timesOverlap(selectedOfferings[i], selectedOfferings[j])) {
+        conflictPairs.push({ a: selectedOfferings[i].id, b: selectedOfferings[j].id })
+      }
+    }
+  }
+  const conflictingIds = new Set(conflictPairs.flatMap(p => [p.a, p.b]))
+  const hasConflicts = conflictPairs.length > 0
 
   const getAvailabilityColor = (taken: number, max: number): 'green' | 'orange' | 'red' => {
     const pct = taken / max
@@ -96,78 +106,121 @@ const CourseRegistrationPage: React.FC = () => {
     return 'green'
   }
 
+  // ── Success screen ────────────────────────────────────────────
   if (successData) {
+    const syncSystems = [
+      { icon: '📚', label: 'LMS', detail: t('campusServices.accountActivated'), color: '#165DFF', path: '/lms/courses' },
+      { icon: '📖', label: t('campusServices.librarySystem'), detail: t('campusServices.accountActivated'), color: '#00B42A', path: '/campus/services' },
+      { icon: '🎓', label: t('campusServices.campusCard'), detail: successData.data?.campusCardNo ?? 'CC-2026001', color: '#FF7D00', path: '/campus/services' },
+      { icon: '💰', label: t('nav.finance'), detail: t('campusServices.activated'), color: '#7816FF', path: '/finance/statement' },
+    ]
     return (
       <div className={styles.successWrap}>
         <div className={styles.successCard}>
           <CheckCircle size={48} className={styles.successIcon} />
-          <h2>Registration Successful!</h2>
+          <h2>{t('courseReg.successTitle')}</h2>
           <p>{successData.message}</p>
           <div className={styles.successDetails}>
             <div className={styles.successStat}>
               <span>{successData.data?.totalCH}</span>
-              <label>Credit Hours</label>
+              <label>{t('courseReg.creditHours')}</label>
             </div>
             <div className={styles.successStat}>
-              <span>{selectedOfferings.length}</span>
-              <label>Courses</label>
+              <span>{selectedOfferings.length || successData.data?.enrolments?.length}</span>
+              <label>{t('courseReg.courseCount')}</label>
             </div>
             {successData.data?.invoice && (
               <div className={styles.successStat}>
                 <span>BND {successData.data.invoice.totalAmount?.toLocaleString()}</span>
-                <label>Invoice Generated</label>
+                <label>{t('courseReg.invoiceAmount')}</label>
               </div>
             )}
           </div>
-          {successData.data?.campusCardNo && (
-            <p className={styles.campusCardMsg}>
-              🎓 Campus Card issued: <strong>{successData.data.campusCardNo}</strong>
-            </p>
-          )}
+
+          {/* 4-system sync panel */}
+          <div className={styles.syncPanel}>
+            <div className={styles.syncTitle}>{t('courseReg.systemSync')}</div>
+            <div className={styles.syncGrid}>
+              {syncSystems.map(sys => (
+                <div
+                  key={sys.label}
+                  className={styles.syncCard}
+                  style={{ borderColor: sys.color + '33', cursor: 'pointer' }}
+                  onClick={() => navigate(sys.path)}
+                >
+                  <div className={styles.syncIcon}>{sys.icon}</div>
+                  <div className={styles.syncLabel}>{sys.label}</div>
+                  <div className={styles.syncDetail} style={{ color: sys.color }}>{sys.detail}</div>
+                </div>
+              ))}
+            </div>
+            <p className={styles.syncQuote}>「{t('courseReg.syncMessage')}」</p>
+          </div>
+
           <div className={styles.successActions}>
-            <Button variant="secondary" onClick={() => navigate('/finance/statement')}>View Invoice</Button>
-            <Button onClick={() => navigate('/student/profile')}>View Profile</Button>
+            <Button variant="secondary" onClick={() => navigate('/finance/statement')}>{t('courseReg.viewInvoice')}</Button>
+            <Button variant="secondary" onClick={() => navigate('/campus/services')}>{t('courseReg.viewCampus')}</Button>
+            <Button onClick={() => navigate('/lms/courses')}>{t('courseReg.goToLms')}</Button>
           </div>
         </div>
       </div>
     )
   }
 
-  // Demo course catalogue (supplemented if offerings empty)
-  const displayOfferings = offerings.length > 0 ? offerings : DEMO_OFFERINGS
-
   return (
     <div className={styles.page}>
       <div className={styles.header}>
         <div>
-          <h1 className={styles.pageTitle}>Course Registration</h1>
-          <p className={styles.pageSub}>Semester Sep 2026 · Select {minCH}–{maxCH} credit hours</p>
+          <h1 className={styles.pageTitle}>{t('courseReg.title')}</h1>
+          <p className={styles.pageSub}>{t('courseReg.semesterLabel')} {minCH}–{maxCH} {t('courseReg.ch')}</p>
         </div>
         <div className={styles.chSummary}>
           <div className={styles.chCount} style={{ color: totalCH > maxCH ? '#F53F3F' : totalCH >= minCH ? '#00B42A' : '#FF7D00' }}>
             {totalCH}
           </div>
-          <div className={styles.chLabel}>/ {maxCH} CH selected</div>
+          <div className={styles.chLabel}>/ {maxCH} {t('courseReg.chSelected')}</div>
           {totalCH > 0 && totalCH < minCH && (
-            <div className={styles.chWarning}><AlertTriangle size={12} /> Minimum {minCH} CH required</div>
+            <div className={styles.chWarning}><AlertTriangle size={12} /> {t('courseReg.min')} {minCH} {t('courseReg.chRequired')}</div>
           )}
           {totalCH > maxCH && (
-            <div className={styles.chError}><AlertTriangle size={12} /> Maximum {maxCH} CH exceeded</div>
+            <div className={styles.chError}><AlertTriangle size={12} /> {t('courseReg.max')} {maxCH} {t('courseReg.chExceeded')}</div>
           )}
         </div>
       </div>
 
+      {/* Conflict alert banner */}
+      {hasConflicts && (
+        <div className={styles.conflictBanner}>
+          <AlertCircle size={16} />
+          <span>
+            <strong>{t('courseReg.conflictWarning')}</strong>{' '}
+            {conflictPairs.map((p, i) => {
+              const a = offerings.find(o => o.id === p.a)
+              const b = offerings.find(o => o.id === p.b)
+              return (
+                <span key={i}>
+                  {a?.course.code} {t('courseReg.conflictWith')} {b?.course.code} {t('courseReg.conflictAt')} {a?.dayOfWeek} {a?.startTime}–{a?.endTime}
+                </span>
+              )
+            })}
+            {t('courseReg.conflictRemove')}
+          </span>
+        </div>
+      )}
+
       {selected.length > 0 && (
         <div className={styles.floatingBar}>
-          <span>{selected.length} course{selected.length > 1 ? 's' : ''} selected · {totalCH} CH</span>
+          <span>{selected.length} {selected.length > 1 ? t('courseReg.coursesSelected') : t('courseReg.courseSelected')} · {totalCH} {t('courseReg.ch')}
+            {hasConflicts && <span className={styles.conflictBadge}> ⚠ {t('courseReg.conflict')}</span>}
+          </span>
           <div className={styles.barActions}>
-            <Button variant="ghost" size="sm" onClick={() => setSelected([])}>Clear</Button>
+            <Button variant="ghost" size="sm" onClick={() => setSelected([])}>{t('courseReg.clear')}</Button>
             <Button
               size="sm"
-              disabled={totalCH < minCH || totalCH > maxCH}
+              disabled={totalCH < minCH || totalCH > maxCH || hasConflicts}
               onClick={() => setConfirmModal(true)}
             >
-              Register Selected Courses
+              {t('courseReg.registerSelected')}
             </Button>
           </div>
         </div>
@@ -175,18 +228,20 @@ const CourseRegistrationPage: React.FC = () => {
 
       <div className={styles.courseGrid}>
         {isLoading ? (
-          <div className={styles.loading}>Loading available courses…</div>
+          <div className={styles.loading}>{t('courseReg.loading')}</div>
         ) : (
-          displayOfferings.map(offering => {
+          offerings.map(offering => {
             const isSelected = selected.includes(offering.id)
+            const isConflicting = isSelected && conflictingIds.has(offering.id)
             const seats = offering.seatsTaken ?? 0
-            const maxSeats = offering.maxSeats ?? 30
+            const maxSeats = offering.course?.maxSeats ?? 30
             const seatsLeft = maxSeats - seats
+            const prereqs = offering.course?.prerequisites ?? []
 
             return (
               <div
                 key={offering.id}
-                className={`${styles.courseCard} ${isSelected ? styles.selectedCard : ''}`}
+                className={`${styles.courseCard} ${isSelected ? styles.selectedCard : ''} ${isConflicting ? styles.conflictCard : ''}`}
                 onClick={() => toggle(offering.id)}
               >
                 <div className={styles.cardTop}>
@@ -194,23 +249,29 @@ const CourseRegistrationPage: React.FC = () => {
                     <div className={styles.courseCode}>{offering.course?.code}</div>
                     <div className={styles.courseName}>{offering.course?.name}</div>
                   </div>
-                  <div className={`${styles.selectToggle} ${isSelected ? styles.selected : ''}`}>
+                  <div className={`${styles.selectToggle} ${isSelected ? (isConflicting ? styles.conflict : styles.selected) : ''}`}>
                     {isSelected ? <Minus size={16} /> : <Plus size={16} />}
                   </div>
                 </div>
                 <div className={styles.cardMeta}>
-                  <span><BookOpen size={12} /> {offering.course?.creditHours} CH</span>
+                  <span><BookOpen size={12} /> {offering.course?.creditHours} {t('courseReg.ch')}</span>
                   <span><Clock size={12} /> {offering.dayOfWeek} {offering.startTime}–{offering.endTime}</span>
                 </div>
                 <div className={styles.cardMeta}>
                   <span>📍 {offering.room}</span>
                   <span>👤 {offering.lecturer?.user?.displayName ?? 'TBA'}</span>
                 </div>
+                {prereqs.length > 0 && (
+                  <div className={styles.prereqLine}>
+                    <span>{t('courseReg.prerequisites')} {prereqs.map(p => p.prerequisite.code).join(', ')}</span>
+                  </div>
+                )}
                 <div className={styles.cardFooter}>
                   <Badge color={getAvailabilityColor(seats, maxSeats)} size="sm">
-                    {seatsLeft > 0 ? `${seatsLeft} seats left` : 'Full'}
+                    {seatsLeft > 0 ? `${seatsLeft} ${t('courseReg.seatsLeft')}` : t('courseReg.full')}
                   </Badge>
                   <Badge color="gray" size="sm">Level {offering.course?.level}</Badge>
+                  {isConflicting && <Badge color="red" size="sm">⚠ {t('courseReg.conflict')}</Badge>}
                 </div>
               </div>
             )
@@ -221,50 +282,48 @@ const CourseRegistrationPage: React.FC = () => {
       {/* Confirm Modal */}
       <Modal
         open={confirmModal}
-        title="Confirm Course Registration"
+        title={t('courseReg.confirmTitle')}
         onClose={() => setConfirmModal(false)}
-        okText="Confirm Registration"
+        okText={t('common.confirm')}
         onOk={() => registerMutation.mutate(selected)}
         okLoading={registerMutation.isPending}
       >
-        <p className={styles.confirmText}>You are about to register the following {selectedOfferings.length} course{selectedOfferings.length > 1 ? 's' : ''} ({totalCH} CH total):</p>
+        <p className={styles.confirmText}>
+          {t('courseReg.confirmRegistering')} {selectedOfferings.length} {selectedOfferings.length > 1 ? t('courseReg.coursesSelected') : t('courseReg.courseSelected')} ({totalCH} {t('courseReg.chTotal')}):
+        </p>
         <div className={styles.confirmList}>
           {selectedOfferings.map(o => (
             <div key={o.id} className={styles.confirmItem}>
               <span>{o.course?.code} – {o.course?.name}</span>
-              <span className={styles.confirmCH}>{o.course?.creditHours} CH</span>
+              <span className={styles.confirmCH}>{o.course?.creditHours} {t('courseReg.ch')}</span>
             </div>
           ))}
         </div>
-        <p className={styles.confirmNote}>
-          A fee invoice will be automatically generated upon successful registration.
-          Campus card, library access, and email account will be activated.
-        </p>
+        <p className={styles.confirmNote}>{t('courseReg.syncNote')}</p>
       </Modal>
     </div>
   )
 }
 
-// Demo fallback data if API is empty
-const DEMO_OFFERINGS = [
-  { id: 'off-1', dayOfWeek: 'Monday', startTime: '08:00', endTime: '10:00', room: 'Lab 1', seatsTaken: 18, maxSeats: 30,
-    course: { id: 'c1', name: 'Introduction to Programming', code: 'IFN101', creditHours: 3, level: 1 },
+// Demo fallback
+const DEMO_OFFERINGS: Offering[] = [
+  { id: 'off-1', dayOfWeek: 'Monday', startTime: '09:00', endTime: '11:00', room: 'Lab 3', seatsTaken: 18,
+    course: { id: 'c1', name: 'Introduction to Programming', code: 'IFN101', creditHours: 3, level: 1, maxSeats: 30, prerequisites: [] },
     lecturer: { user: { displayName: 'Dr. Siti Aminah' } }, semester: { id: 'sem-1', name: 'Sep 2026' } },
-  { id: 'off-2', dayOfWeek: 'Tuesday', startTime: '10:00', endTime: '12:00', room: 'LT2', seatsTaken: 25, maxSeats: 40,
-    course: { id: 'c2', name: 'Data Structures & Algorithms', code: 'IFN102', creditHours: 3, level: 2 },
+  { id: 'off-2', dayOfWeek: 'Wednesday', startTime: '09:00', endTime: '11:00', room: 'Lab 3', seatsTaken: 25,
+    course: { id: 'c2', name: 'Data Structures & Algorithms', code: 'IFN102', creditHours: 3, level: 2, maxSeats: 30,
+      prerequisites: [{ prerequisite: { id: 'c1', code: 'IFN101', name: 'Intro to Programming' }, minGrade: 'D' }] },
+    lecturer: { user: { displayName: 'Dr. Siti Aminah' } }, semester: { id: 'sem-1', name: 'Sep 2026' } },
+  { id: 'off-3', dayOfWeek: 'Tuesday', startTime: '14:00', endTime: '16:00', room: 'Lecture Hall A', seatsTaken: 12,
+    course: { id: 'c3', name: 'Database Systems', code: 'IFN201', creditHours: 3, level: 2, maxSeats: 40, prerequisites: [] },
+    lecturer: { user: { displayName: 'Dr. Siti Aminah' } }, semester: { id: 'sem-1', name: 'Sep 2026' } },
+  { id: 'off-4', dayOfWeek: 'Thursday', startTime: '10:00', endTime: '12:00', room: 'Lecture Hall B', seatsTaken: 8,
+    course: { id: 'c4', name: 'Arabic Language I', code: 'ARA101', creditHours: 3, level: 1, maxSeats: 35, prerequisites: [] },
     lecturer: { user: { displayName: 'Dr. Ahmad Fadzil' } }, semester: { id: 'sem-1', name: 'Sep 2026' } },
-  { id: 'off-3', dayOfWeek: 'Wednesday', startTime: '14:00', endTime: '17:00', room: 'Lab 3', seatsTaken: 12, maxSeats: 20,
-    course: { id: 'c3', name: 'Database Systems', code: 'IFN201', creditHours: 3, level: 2 },
-    lecturer: { user: { displayName: 'Dr. Maria Santos' } }, semester: { id: 'sem-1', name: 'Sep 2026' } },
-  { id: 'off-4', dayOfWeek: 'Thursday', startTime: '08:00', endTime: '10:00', room: 'TR1', seatsTaken: 8, maxSeats: 35,
-    course: { id: 'c4', name: 'Web Development', code: 'IFN202', creditHours: 3, level: 2 },
-    lecturer: { user: { displayName: 'Dr. Chen Wei' } }, semester: { id: 'sem-1', name: 'Sep 2026' } },
-  { id: 'off-5', dayOfWeek: 'Friday', startTime: '10:00', endTime: '12:00', room: 'LT1', seatsTaken: 29, maxSeats: 30,
-    course: { id: 'c5', name: 'Software Engineering', code: 'IFN301', creditHours: 3, level: 3 },
-    lecturer: { user: { displayName: 'Prof. Zainudin' } }, semester: { id: 'sem-1', name: 'Sep 2026' } },
-  { id: 'off-6', dayOfWeek: 'Monday', startTime: '14:00', endTime: '16:00', room: 'Lab 2', seatsTaken: 5, maxSeats: 20,
-    course: { id: 'c6', name: 'Network Security', code: 'IFN302', creditHours: 3, level: 3 },
-    lecturer: { user: { displayName: 'Dr. Hasan Ali' } }, semester: { id: 'sem-1', name: 'Sep 2026' } },
+  { id: 'off-5', dayOfWeek: 'Wednesday', startTime: '09:00', endTime: '11:00', room: 'Lecture Hall B', seatsTaken: 5,
+    course: { id: 'c5', name: 'Arabic Language II', code: 'ARA102', creditHours: 3, level: 1, maxSeats: 35,
+      prerequisites: [{ prerequisite: { id: 'c4', code: 'ARA101', name: 'Arabic Language I' }, minGrade: 'D' }] },
+    lecturer: { user: { displayName: 'Dr. Ahmad Fadzil' } }, semester: { id: 'sem-1', name: 'Sep 2026' } },
 ]
 
 export default CourseRegistrationPage

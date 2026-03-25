@@ -76,6 +76,32 @@ router.get('/:id/campus-services', async (req: AuthRequest, res: Response) => {
   })
 })
 
+// GET /api/v1/students/offerings  — list all available offerings for current semester
+router.get('/offerings', async (_req: AuthRequest, res: Response) => {
+  const activeSemester = await prisma.semester.findFirst({
+    where: { isActive: true },
+    orderBy: { startDate: 'desc' },
+  })
+
+  const offerings = await prisma.courseOffering.findMany({
+    where: activeSemester ? { semesterId: activeSemester.id } : {},
+    include: {
+      course: {
+        include: {
+          prerequisites: {
+            include: { prerequisite: { select: { id: true, code: true, name: true } } },
+          },
+        },
+      },
+      lecturer: { include: { user: { select: { displayName: true } } } },
+      semester: { select: { id: true, name: true } },
+    },
+    orderBy: [{ course: { level: 'asc' } }, { dayOfWeek: 'asc' }],
+  })
+
+  res.json({ success: true, data: offerings })
+})
+
 // POST /api/v1/students/:id/register-courses
 router.post('/:id/register-courses', async (req: AuthRequest, res: Response) => {
   const { offeringIds, semesterId } = req.body as { offeringIds: string[]; semesterId: string }
@@ -89,10 +115,68 @@ router.post('/:id/register-courses', async (req: AuthRequest, res: Response) => 
   // Validate offerings exist
   const offerings = await prisma.courseOffering.findMany({
     where: { id: { in: offeringIds } },
-    include: { course: true },
+    include: {
+      course: {
+        include: {
+          prerequisites: {
+            include: { prerequisite: { select: { id: true, code: true, name: true } } },
+          },
+        },
+      },
+    },
   })
   if (offerings.length !== offeringIds.length) {
     res.status(400).json({ success: false, message: 'One or more course offerings not found' })
+    return
+  }
+
+  // Prerequisite check
+  const completedEnrolments = await prisma.enrolment.findMany({
+    where: { studentId: student.id, status: 'completed' },
+    include: { offering: { select: { courseId: true } } },
+  })
+  const completedCourseIds = new Set(completedEnrolments.map(e => e.offering.courseId))
+
+  const prereqErrors: string[] = []
+  for (const offering of offerings) {
+    for (const prereq of offering.course.prerequisites) {
+      if (!completedCourseIds.has(prereq.prerequisiteCourseId)) {
+        prereqErrors.push(`${offering.course.code} requires ${prereq.prerequisite.code} (min grade: ${prereq.minGrade})`)
+      }
+    }
+  }
+  if (prereqErrors.length > 0) {
+    res.status(400).json({
+      success: false,
+      message: 'Prerequisite requirements not met',
+      prereqErrors,
+    })
+    return
+  }
+
+  // Schedule conflict detection
+  type ConflictInfo = { course1: string; course2: string; day: string; time: string }
+  const conflicts: ConflictInfo[] = []
+  for (let i = 0; i < offerings.length; i++) {
+    for (let j = i + 1; j < offerings.length; j++) {
+      const a = offerings[i]
+      const b = offerings[j]
+      if (a.dayOfWeek === b.dayOfWeek && a.startTime < b.endTime && a.endTime > b.startTime) {
+        conflicts.push({
+          course1: a.course.code,
+          course2: b.course.code,
+          day: a.dayOfWeek,
+          time: `${a.startTime}–${a.endTime}`,
+        })
+      }
+    }
+  }
+  if (conflicts.length > 0) {
+    res.status(400).json({
+      success: false,
+      message: 'Schedule conflicts detected between selected courses',
+      conflicts,
+    })
     return
   }
 

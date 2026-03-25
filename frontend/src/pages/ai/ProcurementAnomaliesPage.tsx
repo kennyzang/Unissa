@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next'
 import React from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { AlertTriangle, TrendingUp, ShieldAlert, Eye } from 'lucide-react'
@@ -66,6 +67,7 @@ const DEMO_ANOMALIES: Anomaly[] = [
 ]
 
 const ProcurementAnomaliesPage: React.FC = () => {
+  const { t } = useTranslation()
   const { data: anomalies = DEMO_ANOMALIES } = useQuery<Anomaly[]>({
     queryKey: ['procurement', 'anomalies'],
     queryFn: async () => {
@@ -89,8 +91,8 @@ const ProcurementAnomaliesPage: React.FC = () => {
     <div className={styles.page}>
       <div className={styles.header}>
         <div>
-          <h1 className={styles.pageTitle}>Procurement Anomaly Detection</h1>
-          <p className={styles.pageSub}>AI-powered statistical analysis using Z-score detection</p>
+          <h1 className={styles.pageTitle}>{t('procurementAnomalies.title')}</h1>
+          <p className={styles.pageSub}>{t('procurementAnomalies.subtitle')}</p>
         </div>
         <div className={styles.aiChip}>
           <ShieldAlert size={14} />
