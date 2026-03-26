@@ -93,6 +93,96 @@
 
 .wfArrow { color: $color-gray-4; font-size: $font-size-lg; }
 
+/* Desktop/mobile visibility */
+.tableWrap {
+  display: block;
+  @media (max-width: $bp-md) { display: none; }
+}
+
+.mobileList {
+  display: none;
+  @media (max-width: $bp-md) {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+  }
+}
+
+.mobileEmpty {
+  padding: $space-6;
+  text-align: center;
+  color: $color-gray-5;
+  font-size: $font-size-sm;
+}
+
+.grantCard {
+  padding: $space-3 $space-4;
+  border-bottom: 1px solid $color-gray-2;
+  cursor: pointer;
+  transition: background 0.15s;
+
+  &:last-child { border-bottom: none; }
+  &:active { background: $color-gray-1; }
+}
+
+.grantCardTop {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: $space-1;
+}
+
+.grantCardTitle {
+  font-size: $font-size-sm;
+  font-weight: $font-weight-medium;
+  color: $color-gray-8;
+  line-height: 1.4;
+  margin-bottom: $space-1;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.grantCardMeta {
+  display: flex;
+  align-items: center;
+  gap: $space-1;
+  font-size: $font-size-xs;
+  color: $color-gray-5;
+  margin-bottom: $space-2;
+  flex-wrap: wrap;
+}
+
+.grantCardFooter {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.grantCardBudget {
+  font-size: $font-size-xs;
+  font-weight: $font-weight-semibold;
+  color: $color-gray-7;
+}
+
+.grantCardDate {
+  font-size: $font-size-xs;
+  color: $color-gray-4;
+}
+
+.grantCardActions {
+  display: flex;
+  gap: $space-2;
+  margin-top: $space-2;
+  flex-wrap: wrap;
+}
+
+.searchBar {
+  padding: $space-3 $space-5;
+  border-bottom: 1px solid var(--color-gray-2);
+}
+
 .searchWrap {
   display: flex;
   align-items: center;
@@ -105,9 +195,11 @@
   border-radius: $border-radius-md;
   padding: $space-2 $space-3;
   font-size: $font-size-sm;
-  width: 240px;
+  width: 280px;
   outline: none;
   &:focus { border-color: $brand-primary; }
+
+  @media (max-width: $bp-sm) { width: 100%; }
 }
 
 .ref {

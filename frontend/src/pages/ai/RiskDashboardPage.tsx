@@ -112,11 +112,11 @@ const RiskDashboardPage: React.FC = () => {
         {/* Outcome distribution */}
         <Card title={t('aiRisk.outcomeDistribution')}>
           <ResponsiveContainer width="100%" height={180}>
-            <BarChart data={distributionData} margin={{ top: 8, right: 8, bottom: 0, left: 0 }}>
-              <XAxis dataKey="label" tick={{ fontSize: 12 }} axisLine={false} tickLine={false} />
-              <YAxis tick={{ fontSize: 11 }} axisLine={false} tickLine={false} width={30} />
-              <Tooltip contentStyle={{ fontSize: 12, borderRadius: 4 }} />
-              <Bar dataKey="count" radius={[4, 4, 0, 0]}>
+            <BarChart data={distributionData} barSize={28} margin={{ top: 8, right: 16, bottom: 0, left: 0 }}>
+              <XAxis dataKey="label" tick={{ fontSize: 12, fill: '#86909C' }} axisLine={false} tickLine={false} />
+              <YAxis tick={{ fontSize: 11, fill: '#86909C' }} axisLine={false} tickLine={false} width={24} />
+              <Tooltip contentStyle={{ fontSize: 12, borderRadius: 4, border: '1px solid #E5E6EB' }} cursor={{ fill: 'rgba(0,0,0,0.03)' }} />
+              <Bar dataKey="count" radius={[3, 3, 0, 0]}>
                 {distributionData.map((d, i) => <Cell key={i} fill={d.fill} />)}
               </Bar>
             </BarChart>
@@ -126,17 +126,17 @@ const RiskDashboardPage: React.FC = () => {
         {/* Attendance vs Quiz scatter */}
         <Card title={t('aiRisk.attendanceVsQuiz')} extra={<span className={styles.scatterLegend}><span style={{ color: '#F53F3F' }}>● {t('aiRisk.predictedFail').toLowerCase()}</span> <span style={{ color: '#FF7D00' }}>● {t('aiRisk.atRisk').toLowerCase()}</span> <span style={{ color: '#00B42A' }}>● {t('aiRisk.onTrack').toLowerCase()}</span></span>}>
           <ResponsiveContainer width="100%" height={180}>
-            <ScatterChart margin={{ top: 8, right: 8, bottom: 0, left: 0 }}>
-              <XAxis type="number" dataKey="attendance" name="Attendance %" domain={[0, 100]} tick={{ fontSize: 11 }} label={{ value: 'Attendance %', position: 'insideBottom', offset: -2, fontSize: 11 }} />
-              <YAxis type="number" dataKey="quiz" name="Quiz Avg" domain={[0, 100]} tick={{ fontSize: 11 }} width={30} />
-              <ZAxis type="number" dataKey="risk" range={[30, 200]} />
-              <Tooltip cursor={{ strokeDasharray: '3 3' }} contentStyle={{ fontSize: 11 }} formatter={(v: any, n: string) => [v, n]} />
+            <ScatterChart margin={{ top: 8, right: 16, bottom: 16, left: 0 }}>
+              <XAxis type="number" dataKey="attendance" name="Attendance %" domain={[0, 100]} tick={{ fontSize: 11, fill: '#86909C' }} axisLine={false} tickLine={false} label={{ value: 'Attendance %', position: 'insideBottom', offset: -4, fontSize: 10, fill: '#86909C' }} />
+              <YAxis type="number" dataKey="quiz" name="Quiz Avg" domain={[0, 100]} tick={{ fontSize: 11, fill: '#86909C' }} axisLine={false} tickLine={false} width={26} />
+              <ZAxis type="number" dataKey="risk" range={[20, 80]} />
+              <Tooltip cursor={{ strokeDasharray: '3 3', stroke: '#E5E6EB' }} contentStyle={{ fontSize: 11, borderRadius: 4, border: '1px solid #E5E6EB' }} formatter={(v: any, n: string) => [v, n]} />
               <Scatter
                 data={scatterData}
                 fill="#165DFF"
                 shape={(props: any) => {
                   const { cx, cy, payload } = props
-                  return <circle cx={cx} cy={cy} r={7} fill={OUTCOME_COLOR[payload.outcome] ?? '#ccc'} fillOpacity={0.8} />
+                  return <circle cx={cx} cy={cy} r={5} fill={OUTCOME_COLOR[payload.outcome] ?? '#ccc'} fillOpacity={0.85} stroke="white" strokeWidth={1} />
                 }}
               />
             </ScatterChart>

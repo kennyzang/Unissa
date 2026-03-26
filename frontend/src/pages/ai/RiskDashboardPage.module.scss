@@ -25,7 +25,14 @@
 .kpiRow { display: grid; grid-template-columns: repeat(4, 1fr); gap: v.$space-4; @media (max-width: v.$bp-lg) { grid-template-columns: repeat(2, 1fr); } }
 
 .chartsRow { display: grid; grid-template-columns: 1fr 1fr; gap: v.$space-4; @media (max-width: v.$bp-md) { grid-template-columns: 1fr; } }
-.scatterLegend { display: flex; gap: v.$space-3; font-size: v.$font-size-xs; }
+.scatterLegend {
+  display: flex;
+  gap: v.$space-2;
+  font-size: v.$font-size-xs;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  @media (max-width: v.$bp-sm) { gap: v.$space-1; }
+}
 
 // Risk Table
 .riskTable { overflow-x: auto; }

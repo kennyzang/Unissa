@@ -209,10 +209,12 @@ const ResearchGrantsPage: React.FC = () => {
         <div className={styles.wfStep}><span className={`${styles.wfNum} ${styles.wfNumGreen}`}>✓</span><span>{t('researchGrants.funded')}</span></div>
       </div>
 
-      {/* Table */}
+      {/* Table (desktop) / Cards (mobile) */}
       <Card
         title={t('researchGrants.grantProposals')}
-        extra={
+        noPadding
+      >
+        <div className={styles.searchBar}>
           <AntInput
             className={styles.searchInput}
             placeholder={t('researchGrants.searchPlaceholder')}
@@ -221,17 +223,73 @@ const ResearchGrantsPage: React.FC = () => {
             prefix={<Search size={14} />}
             allowClear
           />
-        }
-        noPadding
-      >
-        <Table<Grant>
-          columns={columns}
-          dataSource={filtered}
-          rowKey="id"
-          loading={isLoading}
-          size="sm"
-          emptyText={t('researchGrants.noProposals')}
-        />
+        </div>
+        {/* Desktop table */}
+        <div className={styles.tableWrap}>
+          <Table<Grant>
+            columns={columns}
+            dataSource={filtered}
+            rowKey="id"
+            loading={isLoading}
+            size="sm"
+            emptyText={t('researchGrants.noProposals')}
+          />
+        </div>
+
+        {/* Mobile card list */}
+        <div className={styles.mobileList}>
+          {filtered.length === 0 && (
+            <div className={styles.mobileEmpty}>{t('researchGrants.noProposals')}</div>
+          )}
+          {filtered.map(g => (
+            <div key={g.id} className={styles.grantCard} onClick={() => setDetailModal(g)}>
+              <div className={styles.grantCardTop}>
+                <span className={styles.ref}>{g.referenceNo}</span>
+                <Badge color={STATUS_COLOR[g.status] ?? 'gray'}>{statusLabel(g.status)}</Badge>
+              </div>
+              <div className={styles.grantCardTitle}>{g.title}</div>
+              <div className={styles.grantCardMeta}>
+                <span>{g.pi.fullName}</span>
+                <span>·</span>
+                <span>{g.department.code}</span>
+                <span>·</span>
+                <span>{g.durationMonths}{t('researchGrants.months')}</span>
+              </div>
+              <div className={styles.grantCardFooter}>
+                <span className={styles.grantCardBudget}>BND {g.totalBudget.toLocaleString()}</span>
+                <span className={styles.grantCardDate}>{new Date(g.submittedAt).toLocaleDateString('en-GB')}</span>
+              </div>
+              {(isManager && g.status === 'proposal_submitted') || (isFinance && g.status === 'dept_approved') ? (
+                <div className={styles.grantCardActions} onClick={e => e.stopPropagation()}>
+                  {isManager && g.status === 'proposal_submitted' && (
+                    <>
+                      <Button size="sm" variant="ghost" icon={<CheckCircle size={13} />}
+                        onClick={() => { setReviewModal({ grant: g, type: 'dept', action: 'dept_approved' }); setRemarks('') }}>
+                        {t('researchGrants.approveBtn')}
+                      </Button>
+                      <Button size="sm" variant="danger" icon={<XCircle size={13} />}
+                        onClick={() => { setReviewModal({ grant: g, type: 'dept', action: 'rejected' }); setRemarks('') }}>
+                        {t('researchGrants.rejectBtn')}
+                      </Button>
+                    </>
+                  )}
+                  {isFinance && g.status === 'dept_approved' && (
+                    <>
+                      <Button size="sm" variant="ghost" icon={<CheckCircle size={13} />}
+                        onClick={() => { setReviewModal({ grant: g, type: 'finance', action: 'approved' }); setRemarks('') }}>
+                        {t('researchGrants.fundBtn')}
+                      </Button>
+                      <Button size="sm" variant="danger" icon={<XCircle size={13} />}
+                        onClick={() => { setReviewModal({ grant: g, type: 'finance', action: 'rejected' }); setRemarks('') }}>
+                        {t('researchGrants.rejectBtn')}
+                      </Button>
+                    </>
+                  )}
+                </div>
+              ) : null}
+            </div>
+          ))}
+        </div>
       </Card>
 
       {/* Submit Proposal Modal */}

@@ -49,8 +49,15 @@
   align-items: center;
   flex-wrap: wrap;
   gap: 2px;
+  overflow: hidden;
 
-  @media (max-width: v.$bp-md) { font-size: v.$font-size-xs; }
+  @media (max-width: v.$bp-md) {
+    font-size: v.$font-size-xs;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: block;
+  }
 }
 
 .wifiIcon {
@@ -101,11 +108,12 @@
   gap: v.$space-2;
   position: relative;
   overflow: hidden;
+  min-width: 0;
   box-shadow: v.$shadow-sm;
   transition: box-shadow 0.15s ease, transform 0.15s ease;
 
   @media (max-width: v.$bp-md) {
-    padding: v.$space-3;
+    padding: v.$space-3 v.$space-3;
     gap: v.$space-1;
   }
 
@@ -130,11 +138,29 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: v.$space-1;
+  min-width: 0;
+
+  // Badge truncation on small screens
+  > :last-child:not(:first-child) {
+    overflow: hidden;
+    max-width: 60%;
+    > span {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      display: block;
+    }
+  }
+
+  @media (max-width: v.$bp-md) {
+    align-items: flex-start;
+  }
 }
 
 .kpiIconWrap {
-  width: 32px;
-  height: 32px;
+  width: 28px;
+  height: 28px;
   border-radius: v.$border-radius-md;
   display: flex;
   align-items: center;
@@ -147,19 +173,30 @@
   font-weight: v.$font-weight-bold;
   color: var(--color-gray-8);
   line-height: 1.1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 
-  @media (max-width: v.$bp-md) { font-size: v.$font-size-xl; }
+  @media (max-width: v.$bp-md) { font-size: v.$font-size-lg; }
 }
 
 .kpiTitle {
   font-size: v.$font-size-sm;
   font-weight: v.$font-weight-medium;
   color: var(--color-gray-6);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+
+  @media (max-width: v.$bp-md) { font-size: v.$font-size-xs; }
 }
 
 .kpiSub {
   font-size: v.$font-size-xs;
   color: var(--color-gray-5);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .kpiAlert {
@@ -175,6 +212,7 @@
 
 .kpiChart {
   margin-top: v.$space-1;
+  @media (max-width: v.$bp-sm) { display: none; }
 }
 
 // ── Charts Row ───────────────────────────────────────────────
