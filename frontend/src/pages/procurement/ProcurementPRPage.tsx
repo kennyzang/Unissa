@@ -39,24 +39,24 @@ interface PR {
 
 interface GlCode { id: string; code: string; description: string; availableBalance: number }
 
-const prSchema = z.object({
-  itemDescription: z.string().min(5, 'Description required'),
-  quantity: z.coerce.number().min(1, 'Quantity must be at least 1'),
-  estimatedUnitPrice: z.coerce.number().min(0.01, 'Price required'),
-  glCodeId: z.string().min(1, 'GL code required'),
-  requiredByDate: z.string().min(1, 'Required date needed'),
-  departmentId: z.string().optional(),
-})
-type PRForm = z.infer<typeof prSchema>
+const STATUS_COLOR: Record<string, 'blue' | 'green' | 'red' | 'orange' | 'gray' | 'purple'> = {
+  draft:            'gray',
+  submitted:        'blue',
+  dept_approved:    'blue',
+  finance_approved: 'purple',
+  rector_approved:  'purple',
+  converted_to_po:  'green',
+  rejected:         'red',
+}
 
-const STATUS_BADGE: Record<string, { color: 'blue' | 'green' | 'red' | 'orange' | 'gray' | 'purple'; label: string }> = {
-  draft:            { color: 'gray',   label: 'Draft' },
-  submitted:        { color: 'blue',   label: 'Submitted' },
-  dept_approved:    { color: 'blue',   label: 'Dept Approved' },
-  finance_approved: { color: 'purple', label: 'Finance Approved' },
-  rector_approved:  { color: 'purple', label: 'Rector Approved' },
-  converted_to_po:  { color: 'green',  label: 'Converted to PO' },
-  rejected:         { color: 'red',    label: 'Rejected' },
+const STATUS_KEY: Record<string, string> = {
+  draft:            'procurementPR.draft',
+  submitted:        'procurementPR.submitted',
+  dept_approved:    'procurementPR.deptApproved',
+  finance_approved: 'procurementPR.financeApproved',
+  rector_approved:  'procurementPR.rectorApproved',
+  converted_to_po:  'procurementPR.convertedToPO',
+  rejected:         'procurementPR.rejected',
 }
 
 const TRAFFIC_COLORS: Record<string, string> = { red: '#F53F3F', amber: '#FF7D00', green: '#00B42A' }
@@ -68,6 +68,16 @@ const ProcurementPRPage: React.FC = () => {
   const qc = useQueryClient()
   const [createModal, setCreateModal] = useState(false)
   const [viewPR, setViewPR] = useState<PR | null>(null)
+
+  const prSchema = z.object({
+    itemDescription: z.string().min(5, t('procurementPR.itemDescription') + ' required'),
+    quantity: z.coerce.number().min(1, t('procurementPR.quantity') + ' must be at least 1'),
+    estimatedUnitPrice: z.coerce.number().min(0.01, t('procurementPR.unitPrice') + ' required'),
+    glCodeId: z.string().min(1, t('procurementPR.glCode') + ' required'),
+    requiredByDate: z.string().min(1, t('procurementPR.requiredBy') + ' needed'),
+    departmentId: z.string().optional(),
+  })
+  type PRForm = z.infer<typeof prSchema>
 
   const { data: prs = [], isLoading } = useQuery<PR[]>({
     queryKey: ['procurement', 'pr'],
@@ -89,54 +99,56 @@ const ProcurementPRPage: React.FC = () => {
     resolver: zodResolver(prSchema),
   })
 
-  const qty = watch('quantity') ?? 0
+  const qty   = watch('quantity') ?? 0
   const price = watch('estimatedUnitPrice') ?? 0
   const total = qty * price
 
   const createMutation = useMutation({
     mutationFn: (form: PRForm) => apiClient.post('/procurement/pr', form),
     onSuccess: (res) => {
-      addToast({ type: 'success', message: res.data.message ?? 'PR submitted' })
+      addToast({ type: 'success', message: res.data.message ?? t('procurementPR.prSubmitted') })
       setCreateModal(false)
       reset()
       qc.invalidateQueries({ queryKey: ['procurement'] })
     },
     onError: (e: any) => {
-      addToast({ type: 'error', message: e.response?.data?.message ?? 'Failed to create PR' })
+      addToast({ type: 'error', message: e.response?.data?.message ?? t('procurementPR.createFailed') })
     },
   })
 
+  const statusLabel = (status: string) => t(STATUS_KEY[status] as any ?? status, { defaultValue: status })
+
   const columns: ColumnDef<PR>[] = [
-    { key: 'prNumber', title: 'PR No.', render: v => <span className={styles.prNo}>{v.prNumber}</span> },
-    { key: 'itemDescription', title: 'Description', render: v => (
+    { key: 'prNumber',        title: t('procurementPR.prNo'),      render: v => <span className={styles.prNo}>{v.prNumber}</span> },
+    { key: 'itemDescription', title: t('procurementPR.description'), render: v => (
       <div>
         <div className={styles.prDesc}>{v.itemDescription}</div>
         <div className={styles.prDept}>{v.department?.name ?? '—'}</div>
       </div>
     )},
-    { key: 'totalAmount', title: 'Amount', render: v => (
+    { key: 'totalAmount', title: t('procurementPR.amount'), render: v => (
       <div className={styles.amountCell}>
         <span>BND {v.totalAmount.toLocaleString()}</span>
         <span className={styles.trafficLight} style={{ background: TRAFFIC_COLORS[v.quoteTrafficLight] ?? '#ccc' }} />
       </div>
     )},
-    { key: 'glCode', title: 'GL Code', render: v => <span className={styles.glCode}>{v.glCode?.code ?? '—'}</span> },
-    { key: 'status', title: 'Status', render: v => {
-      const s = STATUS_BADGE[v.status] ?? STATUS_BADGE.draft
-      return <Badge color={s.color}>{s.label}</Badge>
-    }},
-    { key: 'anomalies', title: '', render: v => (
+    { key: 'glCode',      title: t('procurementPR.glCode'),   render: v => <span className={styles.glCode}>{v.glCode?.code ?? '—'}</span> },
+    { key: 'status',      title: t('procurementPR.status'),   render: v => (
+      <Badge color={STATUS_COLOR[v.status] ?? 'gray'}>{statusLabel(v.status)}</Badge>
+    )},
+    { key: 'anomalies',   title: '', render: v => (
       v.anomalies && v.anomalies.length > 0
         ? <Badge color="red" size="sm"><AlertTriangle size={11} /> {v.anomalies.length}</Badge>
         : null
     )},
-    { key: 'submittedAt', title: 'Submitted', render: v => v.submittedAt ? new Date(v.submittedAt).toLocaleDateString('en-GB') : '—' },
-    { key: 'actions', title: '', render: v => (
-      <Button size="sm" variant="ghost" icon={<Eye size={14} />} onClick={() => setViewPR(v)}>View</Button>
+    { key: 'submittedAt', title: t('procurementPR.submitted'), render: v => v.submittedAt ? new Date(v.submittedAt).toLocaleDateString('en-GB') : '—' },
+    { key: 'actions',     title: '', render: v => (
+      <Button size="sm" variant="ghost" icon={<Eye size={14} />} onClick={() => setViewPR(v)}>{t('procurementPR.view')}</Button>
     )},
   ]
 
   const canCreate = user?.role === 'manager' || user?.role === 'admin'
+  const SUMMARY_STATUSES = ['submitted', 'dept_approved', 'finance_approved', 'converted_to_po'] as const
 
   return (
     <div className={styles.page}>
@@ -147,46 +159,45 @@ const ProcurementPRPage: React.FC = () => {
         </div>
         {canCreate && (
           <Button icon={<Plus size={16} />} onClick={() => setCreateModal(true)}>
-            New PR
+            {t('procurementPR.newPR')}
           </Button>
         )}
       </div>
 
       {/* Summary cards */}
       <div className={styles.summaryRow}>
-        {(['submitted', 'dept_approved', 'finance_approved', 'converted_to_po'] as const).map(status => {
+        {SUMMARY_STATUSES.map(status => {
           const count = prs.filter(p => p.status === status).length
-          const s = STATUS_BADGE[status]
           return (
             <div key={status} className={styles.summaryCard}>
               <div className={styles.summaryCount}>{count}</div>
-              <Badge color={s.color}>{s.label}</Badge>
+              <Badge color={STATUS_COLOR[status]}>{statusLabel(status)}</Badge>
             </div>
           )
         })}
       </div>
 
       <Card noPadding>
-        <Table<PR> columns={columns} dataSource={prs} rowKey="id" loading={isLoading} size="sm" emptyText="No purchase requests found" />
+        <Table<PR> columns={columns} dataSource={prs} rowKey="id" loading={isLoading} size="sm" emptyText={t('procurementPR.noPRFound')} />
       </Card>
 
       {/* Create PR Modal */}
       <Modal
         open={createModal}
-        title="Create Purchase Request"
+        title={t('procurementPR.createPR')}
         onClose={() => { setCreateModal(false); reset() }}
         footer={null}
       >
         <form onSubmit={handleSubmit(d => createMutation.mutate(d))} className={styles.prForm}>
-          <Input label="Item Description" required {...register('itemDescription')} error={errors.itemDescription?.message} />
+          <Input label={t('procurementPR.itemDescription')} required {...register('itemDescription')} error={errors.itemDescription?.message} />
           <div className={styles.formRow}>
-            <Input label="Quantity" type="number" required {...register('quantity')} error={errors.quantity?.message} />
-            <Input label="Unit Price (BND)" type="number" step="0.01" required {...register('estimatedUnitPrice')} error={errors.estimatedUnitPrice?.message} />
+            <Input label={t('procurementPR.quantity')} type="number" required {...register('quantity')} error={errors.quantity?.message} />
+            <Input label={t('procurementPR.unitPrice')} type="number" step="0.01" required {...register('estimatedUnitPrice')} error={errors.estimatedUnitPrice?.message} />
           </div>
           {total > 0 && (
             <div className={styles.totalPreview}>
-              Total: <strong>BND {total.toLocaleString()}</strong>
-              {total >= 2000 && <span className={styles.tenderNote}> ⚠ Amount ≥ BND 2,000 requires tender process</span>}
+              {t('procurementPR.total')} <strong>BND {total.toLocaleString()}</strong>
+              {total >= 2000 && <span className={styles.tenderNote}> ⚠ {t('procurementPR.tenderNote')}</span>}
             </div>
           )}
           <Controller
@@ -194,22 +205,22 @@ const ProcurementPRPage: React.FC = () => {
             name="glCodeId"
             render={({ field }) => (
               <Select
-                label="GL Code"
+                label={t('procurementPR.glCode')}
                 required
                 value={field.value}
                 onChange={val => field.onChange(val)}
                 error={errors.glCodeId?.message}
                 options={glCodes.map(g => ({
                   value: g.id,
-                  label: `${g.code} – ${g.description} (BND ${g.availableBalance?.toLocaleString()} available)`,
+                  label: `${g.code} – ${g.description} (BND ${g.availableBalance?.toLocaleString()} ${t('procurementPR.available')})`,
                 }))}
               />
             )}
           />
-          <Input label="Required By Date" type="date" required {...register('requiredByDate')} error={errors.requiredByDate?.message} />
+          <Input label={t('procurementPR.requiredBy')} type="date" required {...register('requiredByDate')} error={errors.requiredByDate?.message} />
           <div className={styles.formActions}>
-            <Button variant="secondary" type="button" onClick={() => { setCreateModal(false); reset() }}>Cancel</Button>
-            <Button type="submit" loading={createMutation.isPending} icon={<FileText size={14} />}>Submit PR</Button>
+            <Button variant="secondary" type="button" onClick={() => { setCreateModal(false); reset() }}>{t('procurementPR.cancelBtn')}</Button>
+            <Button type="submit" loading={createMutation.isPending} icon={<FileText size={14} />}>{t('procurementPR.submitPR')}</Button>
           </div>
         </form>
       </Modal>
@@ -220,26 +231,26 @@ const ProcurementPRPage: React.FC = () => {
           open
           title={`PR: ${viewPR.prNumber}`}
           onClose={() => setViewPR(null)}
-          footer={<Button onClick={() => setViewPR(null)}>Close</Button>}
+          footer={<Button onClick={() => setViewPR(null)}>{t('common.close')}</Button>}
         >
           <div className={styles.prDetail}>
             <div className={styles.prDetailGrid}>
-              <DetailRow label="Description" value={viewPR.itemDescription} />
-              <DetailRow label="Requestor" value={viewPR.requestor?.user?.displayName ?? '—'} />
-              <DetailRow label="Department" value={viewPR.department?.name ?? '—'} />
-              <DetailRow label="GL Code" value={`${viewPR.glCode?.code} – ${viewPR.glCode?.description}`} />
-              <DetailRow label="Quantity" value={String(viewPR.quantity)} />
-              <DetailRow label="Unit Price" value={`BND ${viewPR.estimatedUnitPrice.toLocaleString()}`} />
-              <DetailRow label="Total Amount" value={`BND ${viewPR.totalAmount.toLocaleString()}`} />
-              <DetailRow label="Required By" value={new Date(viewPR.requiredByDate).toLocaleDateString('en-GB')} />
-              <DetailRow label="Status" value={<Badge color={STATUS_BADGE[viewPR.status]?.color ?? 'gray'}>{STATUS_BADGE[viewPR.status]?.label ?? viewPR.status}</Badge>} />
+              <DetailRow label={t('procurementPR.description')}   value={viewPR.itemDescription} />
+              <DetailRow label={t('procurementPR.requestor')}     value={viewPR.requestor?.user?.displayName ?? '—'} />
+              <DetailRow label={t('procurementPR.department')}    value={viewPR.department?.name ?? '—'} />
+              <DetailRow label={t('procurementPR.glCode')}        value={`${viewPR.glCode?.code} – ${viewPR.glCode?.description}`} />
+              <DetailRow label={t('procurementPR.quantity')}      value={String(viewPR.quantity)} />
+              <DetailRow label={t('procurementPR.unitPriceLabel')} value={`BND ${viewPR.estimatedUnitPrice.toLocaleString()}`} />
+              <DetailRow label={t('procurementPR.totalAmount')}   value={`BND ${viewPR.totalAmount.toLocaleString()}`} />
+              <DetailRow label={t('procurementPR.requiredByLabel')} value={new Date(viewPR.requiredByDate).toLocaleDateString('en-GB')} />
+              <DetailRow label={t('procurementPR.status')}        value={<Badge color={STATUS_COLOR[viewPR.status] ?? 'gray'}>{statusLabel(viewPR.status)}</Badge>} />
             </div>
 
             {viewPR.anomalies && viewPR.anomalies.length > 0 && (
               <div className={styles.anomalyWarn}>
                 <AlertTriangle size={16} />
                 <div>
-                  <strong>Anomaly Detected</strong>
+                  <strong>{t('procurementPR.anomalyDetected')}</strong>
                   {viewPR.anomalies.map(a => (
                     <div key={a.id} className={styles.anomalyItem}>
                       <Badge color={a.severity === 'high' ? 'red' : a.severity === 'medium' ? 'orange' : 'gray'} size="sm">{a.severity}</Badge>
@@ -252,7 +263,7 @@ const ProcurementPRPage: React.FC = () => {
 
             {viewPR.quotes && viewPR.quotes.length > 0 && (
               <div className={styles.quotesSection}>
-                <h4 className={styles.sectionTitle}>Vendor Quotes</h4>
+                <h4 className={styles.sectionTitle}>{t('procurementPR.vendorQuotes')}</h4>
                 {viewPR.quotes.map(q => (
                   <div key={q.id} className={styles.quoteRow}>
                     <span>Quote #{q.quoteNumber}</span>
@@ -265,11 +276,11 @@ const ProcurementPRPage: React.FC = () => {
 
             {viewPR.approvals && viewPR.approvals.length > 0 && (
               <div className={styles.approvalsSection}>
-                <h4 className={styles.sectionTitle}>Approval Trail</h4>
+                <h4 className={styles.sectionTitle}>{t('procurementPR.approvalTrail')}</h4>
                 {viewPR.approvals.map((a, i) => (
                   <div key={i} className={styles.approvalRow}>
                     <CheckCircle size={14} className={a.action === 'approved' ? styles.approved : styles.rejected} />
-                    <span>Level {a.level}</span>
+                    <span>{t('procurementPR.level')} {a.level}</span>
                     <span>{a.approver?.displayName}</span>
                     <Badge color={a.action === 'approved' ? 'green' : 'red'} size="sm">{a.action}</Badge>
                     <span className={styles.approvalDate}>{new Date(a.actedAt).toLocaleDateString('en-GB')}</span>

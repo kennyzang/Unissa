@@ -4,6 +4,7 @@ import { useMutation } from '@tanstack/react-query'
 import { Form, Input, Button, Alert } from 'antd'
 import { UserOutlined, LockOutlined } from '@ant-design/icons'
 import { useTranslation } from 'react-i18next'
+import { ChevronRight, ChevronLeft, KeyRound } from 'lucide-react'
 import apiClient from '@/lib/apiClient'
 import { useAuthStore } from '@/stores/authStore'
 import { useUIStore } from '@/stores/uiStore'
@@ -25,12 +26,24 @@ const ROLE_REDIRECTS: Record<string, string> = {
   student:    '/admission/apply',
 }
 
+const DEMO_ACCOUNTS = [
+  ['Student',    'noor',       'Demo@2026'],
+  ['Admissions', 'admissions', 'Demo@2026'],
+  ['Lecturer',   'drsiti',     'Demo@2026'],
+  ['Lecturer',   'drahmad',    'Demo@2026'],
+  ['Manager',    'manager',    'Demo@2026'],
+  ['HR Admin',   'hradmin',    'Demo@2026'],
+  ['Finance',    'finance',    'Demo@2026'],
+  ['Admin',      'admin',      'Demo@2026'],
+]
+
 const LoginPage = () => {
   const navigate = useNavigate()
   const { setAuth } = useAuthStore()
   const { addToast } = useUIStore()
   const { t } = useTranslation()
   const [failedAttempts, setFailedAttempts] = useState(0)
+  const [demoOpen, setDemoOpen] = useState(false)
   const [form] = Form.useForm<FormValues>()
 
   const loginMutation = useMutation({
@@ -56,123 +69,135 @@ const LoginPage = () => {
   const onFinish = (values: FormValues) => loginMutation.mutate(values)
 
   return (
-    <div className={styles.card}>
-      {/* Language switcher */}
-      <div className={styles.langBar}>
-        <LanguageSwitcher variant="buttons" theme="light" />
-      </div>
+    <div className={styles.wrapper}>
+      {/* Login card */}
+      <div className={styles.card}>
+        {/* Language switcher */}
+        <div className={styles.langBar}>
+          <LanguageSwitcher variant="buttons" theme="light" />
+        </div>
 
-      {/* Logo */}
-      <div className={styles.logo}>
-        <div className={styles.logoMark}>U</div>
-        <div className={styles.logoText}>
-          <div className={styles.logoTitle}>UNISSA</div>
-          <div className={styles.logoSub}>{t('login.logoSub')}</div>
+        {/* Logo */}
+        <div className={styles.logo}>
+          <div className={styles.logoMark}>U</div>
+          <div className={styles.logoText}>
+            <div className={styles.logoTitle}>UNISSA</div>
+            <div className={styles.logoSub}>{t('login.logoSub')}</div>
+          </div>
+        </div>
+
+        <div className={styles.divider} />
+
+        <h2 className={styles.heading}>{t('login.title')}</h2>
+        <p className={styles.subheading}>{t('login.subtitle')}</p>
+
+        <Form
+          form={form}
+          layout="vertical"
+          onFinish={onFinish}
+          className={styles.form}
+          requiredMark={false}
+        >
+          <Form.Item
+            name="username"
+            label={t('login.username')}
+            rules={[{ required: true, message: t('login.usernameRequired') }]}
+          >
+            <Input
+              prefix={<UserOutlined style={{ color: '#C9CDD4' }} />}
+              placeholder={t('login.usernamePlaceholder')}
+              autoComplete="username"
+              autoFocus
+              size="large"
+            />
+          </Form.Item>
+
+          <Form.Item
+            name="password"
+            label={t('login.password')}
+            rules={[{ required: true, message: t('login.passwordRequired') }]}
+          >
+            <Input.Password
+              prefix={<LockOutlined style={{ color: '#C9CDD4' }} />}
+              placeholder={t('login.passwordPlaceholder')}
+              autoComplete="current-password"
+              size="large"
+            />
+          </Form.Item>
+
+          {failedAttempts >= 3 && (
+            <Form.Item>
+              <Alert
+                type="warning"
+                message={t('login.lockWarning', { count: 5 - failedAttempts })}
+                showIcon
+                style={{ fontSize: 13 }}
+              />
+            </Form.Item>
+          )}
+
+          <Form.Item style={{ marginBottom: 0 }}>
+            <Button
+              type="primary"
+              htmlType="submit"
+              block
+              loading={loginMutation.isPending}
+              size="large"
+            >
+              {t('login.signIn')}
+            </Button>
+          </Form.Item>
+        </Form>
+
+        <div className={styles.footer}>
+          {t('login.footer')}
         </div>
       </div>
 
-      <div className={styles.divider} />
-
-      <h2 className={styles.heading}>{t('login.title')}</h2>
-      <p className={styles.subheading}>{t('login.subtitle')}</p>
-
-      <Form
-        form={form}
-        layout="vertical"
-        onFinish={onFinish}
-        className={styles.form}
-        requiredMark={false}
-      >
-        <Form.Item
-          name="username"
-          label={t('login.username')}
-          rules={[{ required: true, message: t('login.usernameRequired') }]}
+      {/* Demo accounts — floating panel to the right */}
+      <div className={`${styles.demoPanel} ${demoOpen ? styles.demoPanelOpen : ''}`}>
+        <button
+          className={styles.demoPanelToggle}
+          onClick={() => setDemoOpen(v => !v)}
         >
-          <Input
-            prefix={<UserOutlined style={{ color: '#C9CDD4' }} />}
-            placeholder={t('login.usernamePlaceholder')}
-            autoComplete="username"
-            autoFocus
-            size="large"
-          />
-        </Form.Item>
+          <KeyRound size={14} />
+          <span>{t('login.demoAccounts')}</span>
+          {demoOpen
+            ? <ChevronLeft size={14} className={styles.demoChevron} />
+            : <ChevronRight size={14} className={styles.demoChevron} />
+          }
+        </button>
 
-        <Form.Item
-          name="password"
-          label={t('login.password')}
-          rules={[{ required: true, message: t('login.passwordRequired') }]}
-        >
-          <Input.Password
-            prefix={<LockOutlined style={{ color: '#C9CDD4' }} />}
-            placeholder={t('login.passwordPlaceholder')}
-            autoComplete="current-password"
-            size="large"
-          />
-        </Form.Item>
-
-        {failedAttempts >= 3 && (
-          <Form.Item>
-            <Alert
-              type="warning"
-              message={t('login.lockWarning', { count: 5 - failedAttempts })}
-              showIcon
-              style={{ fontSize: 13 }}
-            />
-          </Form.Item>
+        {demoOpen && (
+          <div className={styles.demoPanelBody}>
+            <p className={styles.demoPanelHint}>
+              {t('login.demoClickFill')}
+            </p>
+            <table className={styles.demoTable}>
+              <thead>
+                <tr>
+                  <th>{t('login.demoRole')}</th>
+                  <th>{t('login.demoUsername')}</th>
+                  <th>{t('login.demoPassword')}</th>
+                </tr>
+              </thead>
+              <tbody>
+                {DEMO_ACCOUNTS.map(([role, user, pwd]) => (
+                  <tr
+                    key={user}
+                    className={styles.demoRow}
+                    onClick={() => form.setFieldsValue({ username: user, password: pwd })}
+                    title={`Click to fill: ${user}`}
+                  >
+                    <td>{role}</td>
+                    <td><code>{user}</code></td>
+                    <td><code>{pwd}</code></td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         )}
-
-        <Form.Item style={{ marginBottom: 0 }}>
-          <Button
-            type="primary"
-            htmlType="submit"
-            block
-            loading={loginMutation.isPending}
-            size="large"
-          >
-            {t('login.signIn')}
-          </Button>
-        </Form.Item>
-      </Form>
-
-      {/* Demo accounts hint */}
-      <details className={styles.demoHint}>
-        <summary>{t('login.demoAccounts')} <span style={{ fontWeight: 400, color: 'var(--color-primary)' }}>{t('login.demoClickFill')}</span></summary>
-        <table className={styles.demoTable}>
-          <thead>
-            <tr>
-              <th>{t('login.demoRole')}</th>
-              <th>{t('login.demoUsername')}</th>
-              <th>{t('login.demoPassword')}</th>
-            </tr>
-          </thead>
-          <tbody>
-            {[
-              ['Student',    'noor',       'Demo@2026'],
-              ['Admissions', 'admissions', 'Demo@2026'],
-              ['Lecturer',   'drsiti',     'Demo@2026'],
-              ['Lecturer',   'drahmad',    'Demo@2026'],
-              ['Manager',    'manager',    'Demo@2026'],
-              ['HR Admin',   'hradmin',    'Demo@2026'],
-              ['Finance',    'finance',    'Demo@2026'],
-              ['Admin',      'admin',      'Demo@2026'],
-            ].map(([role, user, pwd]) => (
-              <tr
-                key={user}
-                className={styles.demoRow}
-                onClick={() => form.setFieldsValue({ username: user, password: pwd })}
-                title={`Click to fill: ${user}`}
-              >
-                <td>{role}</td>
-                <td><code>{user}</code></td>
-                <td><code>{pwd}</code></td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </details>
-
-      <div className={styles.footer}>
-        {t('login.footer')}
       </div>
     </div>
   )

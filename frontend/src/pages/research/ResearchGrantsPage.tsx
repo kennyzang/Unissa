@@ -41,13 +41,22 @@ interface GrantForm {
   totalBudget: number
 }
 
-const STATUS_BADGE: Record<string, { color: 'blue' | 'green' | 'red' | 'orange' | 'gray' | 'purple'; label: string }> = {
-  proposal_submitted: { color: 'blue',   label: 'Submitted' },
-  dept_approved:      { color: 'orange', label: 'Dept Approved' },
-  under_review:       { color: 'purple', label: 'Under Review' },
-  approved:           { color: 'green',  label: 'Approved' },
-  rejected:           { color: 'red',    label: 'Rejected' },
-  completed:          { color: 'gray',   label: 'Completed' },
+const STATUS_COLOR: Record<string, 'blue' | 'green' | 'red' | 'orange' | 'gray' | 'purple'> = {
+  proposal_submitted: 'blue',
+  dept_approved:      'orange',
+  under_review:       'purple',
+  approved:           'green',
+  rejected:           'red',
+  completed:          'gray',
+}
+
+const STATUS_KEY: Record<string, string> = {
+  proposal_submitted: 'researchGrants.submitted',
+  dept_approved:      'researchGrants.deptApproved',
+  under_review:       'researchGrants.underReview',
+  approved:           'researchGrants.approved',
+  rejected:           'researchGrants.rejected',
+  completed:          'researchGrants.completed',
 }
 
 const ResearchGrantsPage: React.FC = () => {
@@ -58,12 +67,12 @@ const ResearchGrantsPage: React.FC = () => {
   const [reviewModal, setReviewModal] = useState<{ grant: Grant; type: 'dept' | 'finance'; action: string } | null>(null)
   const [remarks,     setRemarks]     = useState('')
 
-  const { user }      = useAuthStore()
-  const addToast      = useUIStore(s => s.addToast)
-  const qc            = useQueryClient()
-  const isManager     = user?.role === 'manager' || user?.role === 'admin'
-  const isFinance     = user?.role === 'finance'  || user?.role === 'admin'
-  const isLecturer    = user?.role === 'lecturer'
+  const { user }   = useAuthStore()
+  const addToast   = useUIStore(s => s.addToast)
+  const qc         = useQueryClient()
+  const isManager  = user?.role === 'manager' || user?.role === 'admin'
+  const isFinance  = user?.role === 'finance'  || user?.role === 'admin'
+  const isLecturer = user?.role === 'lecturer'
 
   const { register, handleSubmit, reset, formState: { errors } } = useForm<GrantForm>()
 
@@ -87,12 +96,12 @@ const ResearchGrantsPage: React.FC = () => {
   const submitMutation = useMutation({
     mutationFn: (form: GrantForm) => apiClient.post('/research/grants', form),
     onSuccess: (res) => {
-      addToast({ type: 'success', message: `Grant submitted: ${res.data.data.referenceNo}` })
+      addToast({ type: 'success', message: t('researchGrants.grantSubmitted', { ref: res.data.data.referenceNo }) })
       qc.invalidateQueries({ queryKey: ['research'] })
       setSubmitModal(false)
       reset()
     },
-    onError: (e: any) => addToast({ type: 'error', message: e.response?.data?.message ?? 'Submission failed' }),
+    onError: (e: any) => addToast({ type: 'error', message: e.response?.data?.message ?? t('researchGrants.actionFailed') }),
   })
 
   const reviewMutation = useMutation({
@@ -101,13 +110,15 @@ const ResearchGrantsPage: React.FC = () => {
       return                       apiClient.patch(`/research/grants/${id}/finance`, { action, remarks })
     },
     onSuccess: (_, vars) => {
-      addToast({ type: 'success', message: `Grant ${vars.action}` })
+      addToast({ type: 'success', message: t(STATUS_KEY[vars.action] as any ?? vars.action, { defaultValue: vars.action }) })
       qc.invalidateQueries({ queryKey: ['research'] })
       setReviewModal(null)
       setRemarks('')
     },
-    onError: (e: any) => addToast({ type: 'error', message: e.response?.data?.message ?? 'Action failed' }),
+    onError: (e: any) => addToast({ type: 'error', message: e.response?.data?.message ?? t('researchGrants.actionFailed') }),
   })
+
+  const statusLabel = (status: string) => t(STATUS_KEY[status] as any ?? status, { defaultValue: status })
 
   const filtered = grants.filter(g =>
     g.title.toLowerCase().includes(search.toLowerCase()) ||
@@ -116,37 +127,36 @@ const ResearchGrantsPage: React.FC = () => {
   )
 
   const columns: ColumnDef<Grant>[] = [
-    { key: 'referenceNo', title: 'Reference', render: v => <span className={styles.ref}>{v.referenceNo}</span> },
-    { key: 'title', title: 'Title', render: v => (
+    { key: 'referenceNo',    title: t('researchGrants.reference'), render: v => <span className={styles.ref}>{v.referenceNo}</span> },
+    { key: 'title',          title: t('researchGrants.title2'),    render: v => (
       <div>
         <div className={styles.grantTitle}>{v.title}</div>
         <div className={styles.sub}>{v.pi.fullName} · {v.department.code}</div>
       </div>
     )},
-    { key: 'totalBudget', title: 'Budget', render: v => (
+    { key: 'totalBudget',    title: t('researchGrants.budget'),    render: v => (
       <div>
         <div>BND {v.totalBudget.toLocaleString()}</div>
-        {v.amountUtilised > 0 && <div className={styles.sub}>Used: {v.amountUtilised.toLocaleString()}</div>}
+        {v.amountUtilised > 0 && <div className={styles.sub}>{t('researchGrants.utilised')}: {v.amountUtilised.toLocaleString()}</div>}
       </div>
     )},
-    { key: 'durationMonths', title: 'Duration', render: v => `${v.durationMonths} months` },
-    { key: 'status', title: 'Status', render: v => {
-      const s = STATUS_BADGE[v.status] ?? STATUS_BADGE.proposal_submitted
-      return <Badge color={s.color}>{s.label}</Badge>
-    }},
-    { key: 'submittedAt', title: 'Submitted', render: v => new Date(v.submittedAt).toLocaleDateString('en-GB') },
-    { key: 'actions', title: '', render: v => (
+    { key: 'durationMonths', title: t('researchGrants.duration'),  render: v => `${v.durationMonths} ${t('researchGrants.months')}` },
+    { key: 'status',         title: t('common.status'),            render: v => (
+      <Badge color={STATUS_COLOR[v.status] ?? 'gray'}>{statusLabel(v.status)}</Badge>
+    )},
+    { key: 'submittedAt',    title: t('researchGrants.submitted'), render: v => new Date(v.submittedAt).toLocaleDateString('en-GB') },
+    { key: 'actions',        title: '', render: v => (
       <div className={styles.actionBtns}>
-        <Button size="sm" variant="ghost" onClick={() => setDetailModal(v)}>Details</Button>
+        <Button size="sm" variant="ghost" onClick={() => setDetailModal(v)}>{t('researchGrants.detailsBtn')}</Button>
         {isManager && v.status === 'proposal_submitted' && (
           <>
             <Button size="sm" variant="ghost" icon={<CheckCircle size={13} />}
               onClick={() => { setReviewModal({ grant: v, type: 'dept', action: 'dept_approved' }); setRemarks('') }}>
-              Approve
+              {t('researchGrants.approveBtn')}
             </Button>
             <Button size="sm" variant="danger" icon={<XCircle size={13} />}
               onClick={() => { setReviewModal({ grant: v, type: 'dept', action: 'rejected' }); setRemarks('') }}>
-              Reject
+              {t('researchGrants.rejectBtn')}
             </Button>
           </>
         )}
@@ -154,11 +164,11 @@ const ResearchGrantsPage: React.FC = () => {
           <>
             <Button size="sm" variant="ghost" icon={<CheckCircle size={13} />}
               onClick={() => { setReviewModal({ grant: v, type: 'finance', action: 'approved' }); setRemarks('') }}>
-              Fund
+              {t('researchGrants.fundBtn')}
             </Button>
             <Button size="sm" variant="danger" icon={<XCircle size={13} />}
               onClick={() => { setReviewModal({ grant: v, type: 'finance', action: 'rejected' }); setRemarks('') }}>
-              Reject
+              {t('researchGrants.rejectBtn')}
             </Button>
           </>
         )}
@@ -174,38 +184,38 @@ const ResearchGrantsPage: React.FC = () => {
           <p className={styles.pageSub}>{t('researchGrants.subtitle')}</p>
         </div>
         {isLecturer && (
-          <Button icon={<Plus size={14} />} onClick={() => setSubmitModal(true)}>Submit Proposal</Button>
+          <Button icon={<Plus size={14} />} onClick={() => setSubmitModal(true)}>{t('researchGrants.submitProposal')}</Button>
         )}
       </div>
 
       {/* Stats (managers/finance) */}
       {stats && (
         <div className={styles.statsRow}>
-          <StatCard title="Total Grants"  value={stats.total}    sub="All proposals"       icon={<FlaskConical size={16} />} color="blue" />
-          <StatCard title="Pending"       value={stats.submitted} sub="Awaiting review"    icon={<Clock size={16} />}        color="orange" />
-          <StatCard title="Approved"      value={stats.approved} sub="Funded grants"       icon={<CheckCircle size={16} />}  color="green" />
-          <StatCard title="Approved Budget" value={`BND ${(stats.approvedBudget ?? 0).toLocaleString()}`} sub="Total funded" icon={<DollarSign size={16} />} color="purple" />
+          <StatCard title={t('researchGrants.totalGrants')}    value={stats.total}       sub={t('researchGrants.allProposals')}  icon={<FlaskConical size={16} />} color="blue" />
+          <StatCard title={t('researchGrants.pending')}         value={stats.submitted}   sub={t('researchGrants.awaitingReview')} icon={<Clock size={16} />}        color="orange" />
+          <StatCard title={t('researchGrants.approved')}        value={stats.approved}    sub={t('researchGrants.fundedGrants')}  icon={<CheckCircle size={16} />}  color="green" />
+          <StatCard title={t('researchGrants.approvedBudget')} value={`BND ${(stats.approvedBudget ?? 0).toLocaleString()}`} sub={t('researchGrants.totalFunded')} icon={<DollarSign size={16} />} color="purple" />
         </div>
       )}
 
       {/* Approval Workflow Hint */}
       <div className={styles.workflowBanner}>
-        <div className={styles.wfStep}><span className={styles.wfNum}>1</span><span>Submit Proposal</span></div>
+        <div className={styles.wfStep}><span className={styles.wfNum}>1</span><span>{t('researchGrants.submitProposal')}</span></div>
         <div className={styles.wfArrow}>→</div>
-        <div className={styles.wfStep}><span className={styles.wfNum}>2</span><span>Dept Head Review</span></div>
+        <div className={styles.wfStep}><span className={styles.wfNum}>2</span><span>{t('researchGrants.deptHeadReview')}</span></div>
         <div className={styles.wfArrow}>→</div>
-        <div className={styles.wfStep}><span className={styles.wfNum}>3</span><span>Finance Approval</span></div>
+        <div className={styles.wfStep}><span className={styles.wfNum}>3</span><span>{t('researchGrants.financeApproval')}</span></div>
         <div className={styles.wfArrow}>→</div>
-        <div className={styles.wfStep}><span className={`${styles.wfNum} ${styles.wfNumGreen}`}>✓</span><span>Funded</span></div>
+        <div className={styles.wfStep}><span className={`${styles.wfNum} ${styles.wfNumGreen}`}>✓</span><span>{t('researchGrants.funded')}</span></div>
       </div>
 
       {/* Table */}
       <Card
-        title="Grant Proposals"
+        title={t('researchGrants.grantProposals')}
         extra={
           <AntInput
             className={styles.searchInput}
-            placeholder="Search by title, reference, PI name..."
+            placeholder={t('researchGrants.searchPlaceholder')}
             value={search}
             onChange={e => setSearch(e.target.value)}
             prefix={<Search size={14} />}
@@ -220,62 +230,62 @@ const ResearchGrantsPage: React.FC = () => {
           rowKey="id"
           loading={isLoading}
           size="sm"
-          emptyText="No grant proposals found"
+          emptyText={t('researchGrants.noProposals')}
         />
       </Card>
 
       {/* Submit Proposal Modal */}
       <Modal
         open={submitModal}
-        title="Submit Research Grant Proposal"
+        title={t('researchGrants.submitTitle')}
         onClose={() => { setSubmitModal(false); reset() }}
-        okText="Submit Proposal"
+        okText={t('researchGrants.submitProposal')}
         onOk={handleSubmit(d => submitMutation.mutate(d))}
         okLoading={submitMutation.isPending}
       >
         <form className={styles.form}>
           <div className={styles.formGroup}>
-            <label className={styles.label}>Research Title *</label>
+            <label className={styles.label}>{t('researchGrants.researchTitle')}</label>
             <AntInput
               className={styles.input}
-              placeholder="Enter the full title of your research"
-              {...register('title', { required: 'Title is required' })}
+              placeholder={t('researchGrants.researchTitlePlaceholder')}
+              {...register('title', { required: true })}
             />
-            {errors.title && <span className={styles.error}>{errors.title.message}</span>}
+            {errors.title && <span className={styles.error}>{t('researchGrants.researchTitle')}</span>}
           </div>
 
           <div className={styles.formGroup}>
-            <label className={styles.label}>Abstract *</label>
+            <label className={styles.label}>{t('researchGrants.abstract')}</label>
             <textarea
               className={styles.textarea}
               rows={5}
-              placeholder="Provide a concise overview of your research objectives, methodology, and expected outcomes..."
-              {...register('abstract', { required: 'Abstract is required', minLength: { value: 50, message: 'Abstract must be at least 50 characters' } })}
+              placeholder={t('researchGrants.abstractPlaceholder')}
+              {...register('abstract', { required: true, minLength: 50 })}
             />
-            {errors.abstract && <span className={styles.error}>{errors.abstract.message}</span>}
+            {errors.abstract && <span className={styles.error}>{t('researchGrants.abstract')}</span>}
           </div>
 
           <div className={styles.twoCol}>
             <div className={styles.formGroup}>
-              <label className={styles.label}>Duration (months) *</label>
+              <label className={styles.label}>{t('researchGrants.durationMonths')}</label>
               <AntInput
                 type="number"
                 className={styles.input}
                 placeholder="e.g. 24"
-                {...register('durationMonths', { required: 'Duration is required', min: 1, max: 60 })}
+                {...register('durationMonths', { required: true, min: 1, max: 60 })}
               />
-              {errors.durationMonths && <span className={styles.error}>1–60 months required</span>}
+              {errors.durationMonths && <span className={styles.error}>{t('researchGrants.durationError')}</span>}
             </div>
 
             <div className={styles.formGroup}>
-              <label className={styles.label}>Total Budget (BND) *</label>
+              <label className={styles.label}>{t('researchGrants.totalBudget')}</label>
               <AntInput
                 type="number"
                 className={styles.input}
                 placeholder="e.g. 25000"
-                {...register('totalBudget', { required: 'Budget is required', min: 100 })}
+                {...register('totalBudget', { required: true, min: 100 })}
               />
-              {errors.totalBudget && <span className={styles.error}>Minimum BND 100</span>}
+              {errors.totalBudget && <span className={styles.error}>{t('researchGrants.budgetError')}</span>}
             </div>
           </div>
         </form>
@@ -287,7 +297,7 @@ const ResearchGrantsPage: React.FC = () => {
           open
           title={detailModal.referenceNo}
           onClose={() => setDetailModal(null)}
-          footer={<Button variant="ghost" onClick={() => setDetailModal(null)}>Close</Button>}
+          footer={<Button variant="ghost" onClick={() => setDetailModal(null)}>{t('common.close')}</Button>}
         >
           <div className={styles.detailBlock}>
             <div className={styles.detailTitle}>{detailModal.title}</div>
@@ -296,21 +306,21 @@ const ResearchGrantsPage: React.FC = () => {
               <span>·</span>
               <span>{detailModal.department.name}</span>
               <span>·</span>
-              <Badge color={STATUS_BADGE[detailModal.status]?.color ?? 'gray'}>
-                {STATUS_BADGE[detailModal.status]?.label ?? detailModal.status}
+              <Badge color={STATUS_COLOR[detailModal.status] ?? 'gray'}>
+                {statusLabel(detailModal.status)}
               </Badge>
             </div>
           </div>
           <div className={styles.detailGrid}>
-            <DetailRow label="Budget"    value={`BND ${detailModal.totalBudget.toLocaleString()}`} />
-            <DetailRow label="Duration"  value={`${detailModal.durationMonths} months`} />
-            <DetailRow label="Utilised"  value={`BND ${detailModal.amountUtilised.toLocaleString()}`} />
-            <DetailRow label="Submitted" value={new Date(detailModal.submittedAt).toLocaleDateString('en-GB')} />
-            {detailModal.l1ActedAt  && <DetailRow label="Dept Review"    value={`${new Date(detailModal.l1ActedAt).toLocaleDateString('en-GB')}${detailModal.l1Remarks ? ` – ${detailModal.l1Remarks}` : ''}`} />}
-            {detailModal.l3ActedAt  && <DetailRow label="Finance Review" value={`${new Date(detailModal.l3ActedAt).toLocaleDateString('en-GB')}${detailModal.l3Remarks ? ` – ${detailModal.l3Remarks}` : ''}`} />}
+            <DetailRow label={t('researchGrants.budget')}      value={`BND ${detailModal.totalBudget.toLocaleString()}`} />
+            <DetailRow label={t('researchGrants.duration')}    value={`${detailModal.durationMonths} ${t('researchGrants.months')}`} />
+            <DetailRow label={t('researchGrants.utilised')}    value={`BND ${detailModal.amountUtilised.toLocaleString()}`} />
+            <DetailRow label={t('researchGrants.submitted')}   value={new Date(detailModal.submittedAt).toLocaleDateString('en-GB')} />
+            {detailModal.l1ActedAt && <DetailRow label={t('researchGrants.deptReview')}    value={`${new Date(detailModal.l1ActedAt).toLocaleDateString('en-GB')}${detailModal.l1Remarks ? ` – ${detailModal.l1Remarks}` : ''}`} />}
+            {detailModal.l3ActedAt && <DetailRow label={t('researchGrants.financeReview')} value={`${new Date(detailModal.l3ActedAt).toLocaleDateString('en-GB')}${detailModal.l3Remarks ? ` – ${detailModal.l3Remarks}` : ''}`} />}
           </div>
           <div className={styles.abstractBox}>
-            <div className={styles.abstractLabel}>Abstract</div>
+            <div className={styles.abstractLabel}>{t('researchGrants.abstractLabel')}</div>
             <p className={styles.abstractText}>{detailModal.abstract}</p>
           </div>
         </Modal>
@@ -320,26 +330,36 @@ const ResearchGrantsPage: React.FC = () => {
       {reviewModal && (
         <Modal
           open
-          title={`${reviewModal.action === 'rejected' ? 'Reject' : reviewModal.type === 'finance' ? 'Approve Funding' : 'Approve'} Grant`}
+          title={reviewModal.action === 'rejected'
+            ? t('researchGrants.rejectBtn')
+            : reviewModal.type === 'finance'
+            ? t('researchGrants.approveFunding')
+            : t('researchGrants.approveBtn')}
           onClose={() => setReviewModal(null)}
           okDanger={reviewModal.action === 'rejected'}
-          okText={reviewModal.action === 'rejected' ? 'Reject' : reviewModal.type === 'finance' ? 'Approve Funding' : 'Approve'}
+          okText={reviewModal.action === 'rejected'
+            ? t('researchGrants.rejectBtn')
+            : reviewModal.type === 'finance'
+            ? t('researchGrants.approveFunding')
+            : t('researchGrants.approveBtn')}
           onOk={() => reviewMutation.mutate({ id: reviewModal.grant.id, type: reviewModal.type, action: reviewModal.action, remarks })}
           okLoading={reviewMutation.isPending}
         >
           <p className={styles.reviewText}>
             {reviewModal.action === 'rejected'
-              ? `Rejecting grant proposal "${reviewModal.grant.title}". Please provide a reason.`
+              ? t('researchGrants.rejectingText', { title: reviewModal.grant.title })
               : reviewModal.type === 'finance'
-              ? `Approving funding of BND ${reviewModal.grant.totalBudget.toLocaleString()} for "${reviewModal.grant.title}".`
-              : `Approving grant proposal "${reviewModal.grant.title}" for committee review.`}
+              ? t('researchGrants.approvingFundingText', { amount: reviewModal.grant.totalBudget.toLocaleString(), title: reviewModal.grant.title })
+              : t('researchGrants.approvingReviewText', { title: reviewModal.grant.title })}
           </p>
           <div className={styles.formGroup} style={{ marginTop: 12 }}>
-            <label className={styles.label}>Remarks {reviewModal.action === 'rejected' ? '(required)' : '(optional)'}</label>
+            <label className={styles.label}>
+              {t('common.remarks')} {reviewModal.action === 'rejected' ? `(${t('common.required')})` : `(${t('common.optional')})`}
+            </label>
             <textarea
               className={styles.textarea}
               rows={3}
-              placeholder="Add review notes..."
+              placeholder={t('researchGrants.addNotes')}
               value={remarks}
               onChange={e => setRemarks(e.target.value)}
             />

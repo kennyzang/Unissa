@@ -1,7 +1,7 @@
 import { useTranslation } from 'react-i18next'
 import React, { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { Users, Search, UserCheck, Calendar, Briefcase, Phone } from 'lucide-react'
+import { Users, Search, UserCheck, Calendar, Briefcase } from 'lucide-react'
 import { Input as AntInput } from 'antd'
 import { apiClient } from '@/lib/apiClient'
 import Card from '@/components/ui/Card'
@@ -42,10 +42,23 @@ const STATUS_COLOR: Record<string, 'green' | 'orange' | 'red' | 'gray'> = {
   inactive:   'gray',
 }
 
+const STATUS_KEY: Record<string, string> = {
+  active:     'hrStaff.statusActive',
+  on_leave:   'hrStaff.statusOnLeave',
+  terminated: 'hrStaff.statusTerminated',
+  inactive:   'hrStaff.statusInactive',
+}
+
 const EMPLOYMENT_COLOR: Record<string, 'blue' | 'purple' | 'gray'> = {
-  permanent:  'blue',
-  contract:   'purple',
-  part_time:  'gray',
+  permanent: 'blue',
+  contract:  'purple',
+  part_time: 'gray',
+}
+
+const EMPLOYMENT_KEY: Record<string, string> = {
+  permanent: 'hrStaff.permanent',
+  contract:  'hrStaff.contract',
+  part_time: 'hrStaff.partTime',
 }
 
 const HrStaffPage: React.FC = () => {
@@ -76,36 +89,39 @@ const HrStaffPage: React.FC = () => {
     s.department.name.toLowerCase().includes(search.toLowerCase())
   )
 
+  const employmentLabel = (type: string) => t(EMPLOYMENT_KEY[type] as any ?? type, { defaultValue: type.replace('_', ' ') })
+  const statusLabel     = (status: string) => t(STATUS_KEY[status] as any ?? status, { defaultValue: status })
+
   const columns: ColumnDef<Staff>[] = [
-    { key: 'staffId', title: 'Staff ID', render: v => <span className={styles.staffId}>{v.staffId}</span> },
-    { key: 'fullName', title: 'Name', render: v => (
+    { key: 'staffId',            title: t('hrStaff.staffId'),      render: v => <span className={styles.staffId}>{v.staffId}</span> },
+    { key: 'fullName',           title: t('hrStaff.name'),         render: v => (
       <div>
         <div className={styles.name}>{v.fullName}</div>
         <div className={styles.email}>{v.user.email}</div>
       </div>
     )},
-    { key: 'designation', title: 'Designation', render: v => (
+    { key: 'designation',        title: t('hrStaff.designation'),  render: v => (
       <div>
         <div>{v.designation}</div>
         <div className={styles.email}>{v.department.name}</div>
       </div>
     )},
-    { key: 'employmentType', title: 'Type', render: v => (
+    { key: 'employmentType',     title: t('hrStaff.type'),         render: v => (
       <Badge color={EMPLOYMENT_COLOR[v.employmentType] ?? 'gray'}>
-        {v.employmentType.replace('_', ' ')}
+        {employmentLabel(v.employmentType)}
       </Badge>
     )},
-    { key: 'status', title: 'Status', render: v => (
-      <Badge color={STATUS_COLOR[v.status] ?? 'gray'}>{v.status}</Badge>
+    { key: 'status',             title: t('common.status'),        render: v => (
+      <Badge color={STATUS_COLOR[v.status] ?? 'gray'}>{statusLabel(v.status)}</Badge>
     )},
-    { key: 'leaveBalanceAnnual', title: 'Leave Balance', render: v => (
+    { key: 'leaveBalanceAnnual', title: t('hrStaff.leaveBalance'), render: v => (
       <div className={styles.leaveBalance}>
-        <span title="Annual leave">A: {v.leaveBalanceAnnual}d</span>
-        <span title="Medical leave">M: {v.leaveBalanceMedical}d</span>
+        <span title={t('hrStaff.annualLeave')}>A: {v.leaveBalanceAnnual}{t('hrStaff.days')}</span>
+        <span title={t('hrStaff.medicalLeave')}>M: {v.leaveBalanceMedical}{t('hrStaff.days')}</span>
       </div>
     )},
-    { key: 'actions', title: '', render: v => (
-      <Button size="sm" variant="ghost" onClick={() => setSelected(v)}>View</Button>
+    { key: 'actions',            title: '', render: v => (
+      <Button size="sm" variant="ghost" onClick={() => setSelected(v)}>{t('hrStaff.viewBtn')}</Button>
     )},
   ]
 
@@ -119,10 +135,10 @@ const HrStaffPage: React.FC = () => {
       {/* Stats */}
       {stats && (
         <div className={styles.statsRow}>
-          <StatCard title="Total Staff" value={stats.total} sub="All departments" icon={<Users size={16} />} color="blue" />
-          <StatCard title="Active" value={stats.active} sub="Currently working" icon={<UserCheck size={16} />} color="green" />
-          <StatCard title="On Leave Today" value={stats.onLeave} sub="Approved leave" icon={<Calendar size={16} />} color="orange" />
-          <StatCard title="Departments" value={stats.departments.length} sub="With staff" icon={<Briefcase size={16} />} color="purple" />
+          <StatCard title={t('hrStaff.totalStaff')}    value={stats.total}              sub={t('hrStaff.allDepartments')}  icon={<Users size={16} />}     color="blue" />
+          <StatCard title={t('hrStaff.active')}         value={stats.active}             sub={t('hrStaff.currentlyWorking')} icon={<UserCheck size={16} />} color="green" />
+          <StatCard title={t('hrStaff.onLeaveToday')}  value={stats.onLeave}            sub={t('hrStaff.approvedLeave')}   icon={<Calendar size={16} />}  color="orange" />
+          <StatCard title={t('hrStaff.departments')}   value={stats.departments.length} sub={t('hrStaff.withStaff')}       icon={<Briefcase size={16} />} color="purple" />
         </div>
       )}
 
@@ -140,11 +156,11 @@ const HrStaffPage: React.FC = () => {
 
       {/* Table */}
       <Card
-        title="Staff Directory"
+        title={t('hrStaff.staffDirectory')}
         extra={
           <AntInput
             className={styles.searchInput}
-            placeholder="Search by name, ID, designation..."
+            placeholder={t('hrStaff.searchPlaceholder')}
             value={search}
             onChange={e => setSearch(e.target.value)}
             prefix={<Search size={14} />}
@@ -159,7 +175,7 @@ const HrStaffPage: React.FC = () => {
           rowKey="id"
           loading={isLoading}
           size="sm"
-          emptyText="No staff found"
+          emptyText={t('hrStaff.noStaff')}
         />
       </Card>
 
@@ -167,22 +183,22 @@ const HrStaffPage: React.FC = () => {
       {selected && (
         <Modal
           open
-          title={`Staff Profile: ${selected.staffId}`}
+          title={`${t('hrStaff.staffProfile')} ${selected.staffId}`}
           onClose={() => setSelected(null)}
-          footer={<Button variant="ghost" onClick={() => setSelected(null)}>Close</Button>}
+          footer={<Button variant="ghost" onClick={() => setSelected(null)}>{t('common.close')}</Button>}
         >
           <div className={styles.detailGrid}>
-            <DetailRow label="Full Name"      value={selected.fullName} />
-            <DetailRow label="Staff ID"       value={selected.staffId} />
-            <DetailRow label="Email"          value={selected.user.email} />
-            <DetailRow label="Department"     value={`${selected.department.name} (${selected.department.code})`} />
-            <DetailRow label="Designation"    value={selected.designation} />
-            <DetailRow label="Employment"     value={<Badge color={EMPLOYMENT_COLOR[selected.employmentType] ?? 'gray'}>{selected.employmentType.replace('_', ' ')}</Badge>} />
-            <DetailRow label="Join Date"      value={new Date(selected.joinDate).toLocaleDateString('en-GB')} />
-            <DetailRow label="Status"         value={<Badge color={STATUS_COLOR[selected.status] ?? 'gray'}>{selected.status}</Badge>} />
-            <DetailRow label="Annual Leave"   value={`${selected.leaveBalanceAnnual} days remaining`} />
-            <DetailRow label="Medical Leave"  value={`${selected.leaveBalanceMedical} days remaining`} />
-            <DetailRow label="Basic Salary"   value={`BND ${selected.payrollBasicSalary.toLocaleString('en-GB', { minimumFractionDigits: 2 })}`} />
+            <DetailRow label={t('hrStaff.fullName')}       value={selected.fullName} />
+            <DetailRow label={t('hrStaff.staffId')}        value={selected.staffId} />
+            <DetailRow label={t('hrStaff.email')}          value={selected.user.email} />
+            <DetailRow label={t('hrStaff.department')}     value={`${selected.department.name} (${selected.department.code})`} />
+            <DetailRow label={t('hrStaff.departmentLabel')} value={selected.designation} />
+            <DetailRow label={t('hrStaff.employment')}     value={<Badge color={EMPLOYMENT_COLOR[selected.employmentType] ?? 'gray'}>{employmentLabel(selected.employmentType)}</Badge>} />
+            <DetailRow label={t('hrStaff.joinDate')}       value={new Date(selected.joinDate).toLocaleDateString('en-GB')} />
+            <DetailRow label={t('common.status')}          value={<Badge color={STATUS_COLOR[selected.status] ?? 'gray'}>{statusLabel(selected.status)}</Badge>} />
+            <DetailRow label={t('hrStaff.annualLeave')}    value={`${selected.leaveBalanceAnnual} ${t('hrStaff.daysRemaining')}`} />
+            <DetailRow label={t('hrStaff.medicalLeave')}   value={`${selected.leaveBalanceMedical} ${t('hrStaff.daysRemaining')}`} />
+            <DetailRow label={t('hrStaff.basicSalary')}    value={`BND ${selected.payrollBasicSalary.toLocaleString('en-GB', { minimumFractionDigits: 2 })}`} />
           </div>
         </Modal>
       )}

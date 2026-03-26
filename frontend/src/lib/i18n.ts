@@ -12,6 +12,18 @@ export const LANGUAGES: { code: Language; label: string; nativeLabel: string }[]
   { code: 'ms', label: 'Bahasa Melayu',  nativeLabel: 'Melayu' },
 ]
 
+function getStoredLanguage(): Language {
+  try {
+    const raw = localStorage.getItem('unissa-lang')
+    if (raw) {
+      const parsed = JSON.parse(raw)
+      const lang = parsed?.state?.language
+      if (lang === 'en' || lang === 'zh' || lang === 'ms') return lang
+    }
+  } catch {}
+  return 'en'
+}
+
 i18n
   .use(initReactI18next)
   .init({
@@ -20,7 +32,7 @@ i18n
       zh: { translation: zh },
       ms: { translation: ms },
     },
-    lng: (localStorage.getItem('unissa-lang') as Language) ?? 'en',
+    lng: getStoredLanguage(),
     fallbackLng: 'en',
     interpolation: { escapeValue: false },
   })

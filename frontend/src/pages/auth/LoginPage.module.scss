@@ -1,6 +1,13 @@
 @use '@/styles/variables' as v;
 @use '@/styles/mixins' as m;
 
+// Wrapper: relative + overflow:visible so demo panel can float outside
+// but the card itself stays in normal flow (centered by AuthLayout)
+.wrapper {
+  position: relative;
+  overflow: visible;
+}
+
 .card {
   background: rgba(255, 255, 255, 0.97);
   border-radius: 12px;
@@ -14,7 +21,6 @@
   justify-content: flex-end;
   margin-bottom: 16px;
 
-  // Override button styles for the light card background
   :global(.langBar-btn),
   button {
     border-color: var(--color-gray-3, #d9d9d9);
@@ -95,32 +101,69 @@
   margin-bottom: 16px;
 }
 
-.lockWarning {
-  padding: 10px 12px;
-  background: var(--color-warning-bg);
-  border: 1px solid rgba(255, 125, 0, 0.3);
-  border-radius: v.$border-radius;
-  color: var(--color-warning);
-  font-size: v.$font-size-sm;
+.footer {
+  margin-top: 20px;
+  text-align: center;
+  font-size: 11px;
+  color: var(--color-gray-4);
 }
 
-.demoHint {
-  margin-top: 16px;
-  border: 1px solid var(--color-gray-2);
-  border-radius: v.$border-radius-md;
+// ── Demo Panel (floating, right side) ─────────────────────────
+.demoPanel {
+  position: absolute;
+  left: calc(100% + 12px);
+  top: 0;
+  width: 260px;
+  background: rgba(255, 255, 255, 0.96);
+  border-radius: 10px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
   overflow: hidden;
+  animation: fadeIn 0.25s ease;
+  backdrop-filter: blur(8px);
 
-  summary {
-    padding: 10px 14px;
-    font-size: v.$font-size-sm;
-    color: var(--color-gray-5);
-    cursor: pointer;
-    user-select: none;
-    background: var(--color-gray-1);
-    &:hover { color: var(--color-primary); }
+  // On small screens: hide the floating panel (login box fills width)
+  @media (max-width: 860px) {
+    display: none;
   }
+}
 
-  &[open] summary { border-bottom: 1px solid var(--color-gray-2); }
+.demoPanelToggle {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 14px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  font-size: v.$font-size-xs;
+  font-weight: v.$font-weight-semibold;
+  color: var(--color-gray-6);
+  text-align: left;
+  transition: background 0.15s, color 0.15s;
+
+  &:hover {
+    background: var(--color-gray-1);
+    color: var(--color-primary, #165DFF);
+  }
+}
+
+.demoChevron {
+  margin-left: auto;
+  flex-shrink: 0;
+  color: var(--color-gray-4);
+}
+
+.demoPanelBody {
+  animation: slideDown 0.15s ease;
+  border-top: 1px solid var(--color-gray-2);
+}
+
+.demoPanelHint {
+  padding: 8px 14px 6px;
+  font-size: 11px;
+  color: var(--color-gray-4);
+  margin: 0;
 }
 
 .demoTable {
@@ -156,14 +199,12 @@
   font-family: monospace;
 }
 
-.footer {
-  margin-top: 20px;
-  text-align: center;
-  font-size: 11px;
-  color: var(--color-gray-4);
-}
-
 @keyframes fadeIn {
   from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes slideDown {
+  from { opacity: 0; transform: translateY(-6px); }
   to   { opacity: 1; transform: translateY(0); }
 }

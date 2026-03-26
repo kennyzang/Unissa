@@ -10,7 +10,7 @@ interface LanguageStore {
 export const useLanguageStore = create<LanguageStore>()(
   persist(
     (set) => ({
-      language: (localStorage.getItem('unissa-lang') as Language) ?? 'en',
+      language: 'en',
       setLanguage: (lang: Language) => {
         i18n.changeLanguage(lang)
         set({ language: lang })
@@ -19,6 +19,9 @@ export const useLanguageStore = create<LanguageStore>()(
     {
       name: 'unissa-lang',
       partialize: state => ({ language: state.language }),
+      onRehydrateStorage: () => (state) => {
+        if (state?.language) i18n.changeLanguage(state.language)
+      },
     }
   )
 )

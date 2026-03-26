@@ -60,7 +60,6 @@ const fmt = (n: number) =>
 const fmtBND = (n: number) =>
   `BND ${n >= 1_000_000 ? `${(n / 1_000_000).toFixed(2)}M` : n.toLocaleString()}`
 
-const DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Today']
 
 // ── Sub-components ────────────────────────────────────────────
 
@@ -110,6 +109,16 @@ const DashboardPage: React.FC = () => {
   const { data: insights = [] } = useInsights()
   const { t } = useTranslation()
 
+  const DAYS = [
+    t('lmsCourses.days.monday' as any),
+    t('lmsCourses.days.tuesday' as any),
+    t('lmsCourses.days.wednesday' as any),
+    t('lmsCourses.days.thursday' as any),
+    t('lmsCourses.days.friday' as any),
+    t('lmsCourses.days.saturday' as any),
+    t('dashboard.today'),
+  ]
+
   // Live learner count oscillates ±3 around baseline for demo
   const [liveCount, setLiveCount] = useState(89)
   useEffect(() => {
@@ -134,15 +143,15 @@ const DashboardPage: React.FC = () => {
   // Finance donut data
   const financeDonut = kpi
     ? [
-        { name: 'Committed', value: kpi.finance.committed, color: '#165DFF' },
-        { name: 'Remaining', value: Math.max(0, kpi.finance.remaining), color: '#E5E6EB' },
+        { name: t('dashboard.committedLabel'), value: kpi.finance.committed, color: '#165DFF' },
+        { name: t('dashboard.remaining'), value: Math.max(0, kpi.finance.remaining), color: '#E5E6EB' },
       ]
     : []
 
   // Research bar data
   const researchBar = [
-    { name: 'Active', value: kpi?.research.activeGrants ?? 3, color: '#7D3FCC' },
-    { name: 'Pending', value: kpi?.research.pendingProposals ?? 5, color: '#C9CDD4' },
+    { name: t('dashboard.activeLabel'), value: kpi?.research.activeGrants ?? 3, color: '#7D3FCC' },
+    { name: t('dashboard.pendingLabel'), value: kpi?.research.pendingProposals ?? 5, color: '#C9CDD4' },
   ]
 
   if (isLoading) {
@@ -364,14 +373,14 @@ const DashboardPage: React.FC = () => {
               </ResponsiveContainer>
               <div className={styles.donutLabel}>
                 <span className={styles.donutPct}>{kpi.finance.committedPct}%</span>
-                <span className={styles.donutSub}>Committed</span>
+                <span className={styles.donutSub}>{t('dashboard.committedLabel')}</span>
               </div>
             </div>
             <div className={styles.budgetStats}>
-              <BudgetRow label="Total Budget" value={fmtBND(kpi.finance.totalBudget)} color="#165DFF" />
-              <BudgetRow label="Committed" value={fmtBND(kpi.finance.committed)} color="#165DFF" />
-              <BudgetRow label="Remaining" value={fmtBND(kpi.finance.remaining)} color="#00B42A" />
-              <BudgetRow label="Overdue Invoices" value={String(kpi.finance.overdueInvoices)} color="#F53F3F" />
+              <BudgetRow label={t('dashboard.totalBudget')} value={fmtBND(kpi.finance.totalBudget)} color="#165DFF" />
+              <BudgetRow label={t('dashboard.committedLabel')} value={fmtBND(kpi.finance.committed)} color="#165DFF" />
+              <BudgetRow label={t('dashboard.remaining')} value={fmtBND(kpi.finance.remaining)} color="#00B42A" />
+              <BudgetRow label={t('dashboard.overdueInvoices')} value={String(kpi.finance.overdueInvoices)} color="#F53F3F" />
             </div>
           </div>
         </Card>
@@ -388,12 +397,12 @@ const DashboardPage: React.FC = () => {
           className={styles.chartCard}
         >
           <div className={styles.activityList}>
-            <ActivityRow icon="📚" text={`${liveCount} learners active on LMS`} time="now" />
-            <ActivityRow icon="📋" text={`${kpi.hr.pendingApprovals} leave approvals pending`} time="2 min" />
-            <ActivityRow icon="⚠️" text={kpi.campus.activeAlert ?? 'All systems operational'} time="5 min" highlight={!!kpi.campus.activeAlert} />
-            <ActivityRow icon="💰" text={`${kpi.finance.overdueInvoices} overdue fee invoices`} time="10 min" highlight={kpi.finance.overdueInvoices > 0} />
-            <ActivityRow icon="🎓" text={`${kpi.enrollment.newApplicationsToday} new student applications`} time="today" />
-            <ActivityRow icon="🔬" text={`${kpi.research.activeGrants} research grants active`} time="today" />
+            <ActivityRow icon="📚" text={t('dashboard.learnersActive', { count: liveCount })} time={t('dashboard.now')} />
+            <ActivityRow icon="📋" text={t('dashboard.leavesPending', { count: kpi.hr.pendingApprovals })} time={t('dashboard.twoMin')} />
+            <ActivityRow icon="⚠️" text={kpi.campus.activeAlert ?? t('dashboard.allOperational')} time={t('dashboard.fiveMin')} highlight={!!kpi.campus.activeAlert} />
+            <ActivityRow icon="💰" text={t('dashboard.overdueFeesCount', { count: kpi.finance.overdueInvoices })} time={t('dashboard.tenMin')} highlight={kpi.finance.overdueInvoices > 0} />
+            <ActivityRow icon="🎓" text={t('dashboard.newAppsToday', { count: kpi.enrollment.newApplicationsToday })} time={t('dashboard.today')} />
+            <ActivityRow icon="🔬" text={t('dashboard.activeGrantsText', { count: kpi.research.activeGrants })} time={t('dashboard.today')} />
           </div>
         </Card>
       </div>
@@ -420,7 +429,7 @@ const DashboardPage: React.FC = () => {
                   <h3 className={styles.insightHeadline}>{item.headline}</h3>
                   <p className={styles.insightBody}>{item.body}</p>
                   <button className={styles.insightAction}>
-                    View details <ChevronRight size={12} />
+                    {t('dashboard.viewDetails')} <ChevronRight size={12} />
                   </button>
                 </div>
               )
@@ -443,7 +452,7 @@ const DashboardPage: React.FC = () => {
                 <div key={item.id} className={styles.insightCard} style={{ '--bg': cfg.bg } as React.CSSProperties}>
                   <div className={styles.insightTop}>
                     <Badge color={cfg.color} size="sm">{item.category}</Badge>
-                    <span className={styles.insightTime}>Today</span>
+                    <span className={styles.insightTime}>{t('dashboard.today')}</span>
                   </div>
                   <h3 className={styles.insightHeadline}>{item.headline}</h3>
                   <p className={styles.insightBody}>{item.body}</p>

@@ -34,11 +34,24 @@ const STATUS_COLOR: Record<string, 'red' | 'orange' | 'blue' | 'green' | 'gray'>
   open: 'red', investigating: 'orange', resolved: 'green', dismissed: 'gray',
 }
 
-const TYPE_LABELS: Record<string, string> = {
-  price_outlier: 'Price Outlier',
-  split_billing: 'Split Billing',
-  frequent_vendor: 'Frequent Vendor',
-  other: 'Other',
+const TYPE_KEY: Record<string, string> = {
+  price_outlier: 'procurementAnomalies.priceOutlier',
+  split_billing:  'procurementAnomalies.splitBilling',
+  frequent_vendor: 'procurementAnomalies.frequentVendor',
+  other:          'procurementAnomalies.other',
+}
+
+const SEVERITY_KEY: Record<string, string> = {
+  high:   'procurementAnomalies.severityHigh',
+  medium: 'procurementAnomalies.severityMedium',
+  low:    'procurementAnomalies.severityLow',
+}
+
+const STATUS_KEY: Record<string, string> = {
+  open:          'procurementAnomalies.statusOpen',
+  investigating: 'procurementAnomalies.investigating',
+  resolved:      'procurementAnomalies.statusResolved',
+  dismissed:     'procurementAnomalies.statusDismissed',
 }
 
 // Demo data fallback
@@ -77,13 +90,12 @@ const ProcurementAnomaliesPage: React.FC = () => {
   })
 
   const display = anomalies.length > 0 ? anomalies : DEMO_ANOMALIES
-  const highCount = display.filter(a => a.severity === 'high').length
-  const openCount = display.filter(a => a.status === 'open').length
+  const highCount    = display.filter(a => a.severity === 'high').length
+  const openCount    = display.filter(a => a.status === 'open').length
   const investigating = display.filter(a => a.status === 'investigating').length
 
-  // By type distribution
-  const typeData = Object.entries(TYPE_LABELS).map(([k, v]) => ({
-    type: v,
+  const typeData = Object.keys(TYPE_KEY).map(k => ({
+    type: t(TYPE_KEY[k] as any),
     count: display.filter(a => a.anomalyType === k).length,
   })).filter(d => d.count > 0)
 
@@ -96,19 +108,19 @@ const ProcurementAnomaliesPage: React.FC = () => {
         </div>
         <div className={styles.aiChip}>
           <ShieldAlert size={14} />
-          Z-Score Model v2.1
+          {t('procurementAnomalies.modelLabel')}
         </div>
       </div>
 
       <div className={styles.kpiRow}>
-        <StatCard title="Total Anomalies" value={display.length} sub="Detected this month" icon={<AlertTriangle size={16} />} color="red" />
-        <StatCard title="High Severity" value={highCount} sub="Requires immediate review" icon={<ShieldAlert size={16} />} color="red" />
-        <StatCard title="Open Cases" value={openCount} sub="Awaiting action" icon={<Eye size={16} />} color="orange" />
-        <StatCard title="Investigating" value={investigating} sub="Under review" icon={<TrendingUp size={16} />} color="blue" />
+        <StatCard title={t('procurementAnomalies.totalAnomalies')} value={display.length} sub={t('procurementAnomalies.detectedThisMonth')} icon={<AlertTriangle size={16} />} color="red" />
+        <StatCard title={t('procurementAnomalies.highSeverity')}   value={highCount}       sub={t('procurementAnomalies.requiresReview')}   icon={<ShieldAlert size={16} />}  color="red" />
+        <StatCard title={t('procurementAnomalies.openCases')}      value={openCount}       sub={t('procurementAnomalies.awaitingAction')}   icon={<Eye size={16} />}          color="orange" />
+        <StatCard title={t('procurementAnomalies.investigating')}  value={investigating}   sub={t('procurementAnomalies.underReview')}      icon={<TrendingUp size={16} />}   color="blue" />
       </div>
 
       <div className={styles.chartsRow}>
-        <Card title="Anomalies by Type">
+        <Card title={t('procurementAnomalies.anomaliesByType')}>
           <ResponsiveContainer width="100%" height={160}>
             <BarChart data={typeData} layout="vertical" margin={{ top: 0, right: 8, bottom: 0, left: 60 }}>
               <XAxis type="number" tick={{ fontSize: 11 }} axisLine={false} tickLine={false} />
@@ -121,7 +133,7 @@ const ProcurementAnomaliesPage: React.FC = () => {
           </ResponsiveContainer>
         </Card>
 
-        <Card title="Statistical Context">
+        <Card title={t('procurementAnomalies.statisticalContext')}>
           <div className={styles.statsContext}>
             <div className={styles.statItem}>
               <div className={styles.statNum}>2.5σ</div>
@@ -151,13 +163,13 @@ const ProcurementAnomaliesPage: React.FC = () => {
               <div className={styles.anomalyLeft}>
                 <AlertTriangle size={18} className={styles.alertIcon} />
                 <div>
-                  <div className={styles.anomalyType}>{TYPE_LABELS[anomaly.anomalyType] ?? anomaly.anomalyType}</div>
+                  <div className={styles.anomalyType}>{t(TYPE_KEY[anomaly.anomalyType] as any, { defaultValue: anomaly.anomalyType })}</div>
                   <div className={styles.anomalyPR}>{anomaly.pr?.prNumber} · {anomaly.pr?.itemDescription}</div>
                 </div>
               </div>
               <div className={styles.anomalyBadges}>
-                <Badge color={SEVERITY_COLOR[anomaly.severity]} size="sm">{anomaly.severity.toUpperCase()}</Badge>
-                <Badge color={STATUS_COLOR[anomaly.status]} size="sm">{anomaly.status.replace('_', ' ')}</Badge>
+                <Badge color={SEVERITY_COLOR[anomaly.severity]} size="sm">{t(SEVERITY_KEY[anomaly.severity] as any, { defaultValue: anomaly.severity.toUpperCase() })}</Badge>
+                <Badge color={STATUS_COLOR[anomaly.status]} size="sm">{t(STATUS_KEY[anomaly.status] as any, { defaultValue: anomaly.status })}</Badge>
                 {anomaly.zScore && (
                   <span className={styles.zScore}>Z = {anomaly.zScore.toFixed(1)}σ</span>
                 )}
@@ -167,10 +179,10 @@ const ProcurementAnomaliesPage: React.FC = () => {
             <p className={styles.anomalyDesc}>{anomaly.description}</p>
 
             <div className={styles.anomalyMeta}>
-              <span>Requestor: <strong>{anomaly.pr?.requestor?.user?.displayName ?? '—'}</strong></span>
-              <span>Department: <strong>{anomaly.pr?.department?.name ?? '—'}</strong></span>
-              <span>Amount: <strong>BND {anomaly.pr?.totalAmount?.toLocaleString() ?? '—'}</strong></span>
-              <span>Detected: <strong>{new Date(anomaly.detectedAt).toLocaleDateString('en-GB')}</strong></span>
+              <span>{t('procurementAnomalies.requestorLabel')} <strong>{anomaly.pr?.requestor?.user?.displayName ?? '—'}</strong></span>
+              <span>{t('procurementAnomalies.departmentLabel')} <strong>{anomaly.pr?.department?.name ?? '—'}</strong></span>
+              <span>{t('procurementAnomalies.amountLabel')} <strong>BND {anomaly.pr?.totalAmount?.toLocaleString() ?? '—'}</strong></span>
+              <span>{t('procurementAnomalies.detectedLabel')} <strong>{new Date(anomaly.detectedAt).toLocaleDateString('en-GB')}</strong></span>
             </div>
           </div>
         ))}

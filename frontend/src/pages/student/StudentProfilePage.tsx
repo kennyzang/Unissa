@@ -103,27 +103,27 @@ const StudentProfilePage: React.FC = () => {
           <div className={styles.heroMeta}>
             <span><GraduationCap size={13} /> {student.programme.name}</span>
             <span><MapPin size={13} /> {student.programme.department.name}</span>
-            <span><Calendar size={13} /> Intake: {student.intake.semester.name}</span>
+            <span><Calendar size={13} /> {t('studentProfile.intake')} {student.intake.semester.name}</span>
             <span><Mail size={13} /> {student.user.email}</span>
           </div>
           <div className={styles.heroBadges}>
             <Badge color={STATUS_COLOR[student.status] ?? 'gray'}>{student.status}</Badge>
             <Badge color="blue">{student.modeOfStudy.replace('_', ' ')}</Badge>
-            {student.scholarshipPct > 0 && <Badge color="purple">{student.scholarshipPct}% Scholarship</Badge>}
+            {student.scholarshipPct > 0 && <Badge color="purple">{student.scholarshipPct}% {t('studentProfile.scholarship')}</Badge>}
           </div>
         </div>
         <div className={styles.heroStats}>
           <div className={styles.heroStat}>
             <span className={styles.heroStatValue}>{student.currentCgpa.toFixed(2)}</span>
-            <span className={styles.heroStatLabel}>CGPA</span>
+            <span className={styles.heroStatLabel}>{t('studentProfile.cgpa')}</span>
           </div>
           <div className={styles.heroStat}>
             <span className={styles.heroStatValue}>{totalCH}</span>
-            <span className={styles.heroStatLabel}>Credit Hours</span>
+            <span className={styles.heroStatLabel}>{t('studentProfile.creditHours')}</span>
           </div>
           <div className={styles.heroStat}>
             <span className={styles.heroStatValue}>{student.programme.level.toUpperCase()}</span>
-            <span className={styles.heroStatLabel}>Level</span>
+            <span className={styles.heroStatLabel}>{t('studentProfile.level')}</span>
           </div>
         </div>
       </div>
@@ -134,27 +134,27 @@ const StudentProfilePage: React.FC = () => {
         items={[
           {
             key: 'profile',
-            label: 'Profile',
+            label: t('studentProfile.profile'),
             children: (
               <div className={styles.profileGrid}>
-                <Card title="Academic Details">
+                <Card title={t('studentProfile.academicDetails')}>
                   <div className={styles.detailList}>
-                    <DetailRow label="Student ID" value={student.studentId} />
-                    <DetailRow label="Programme" value={`${student.programme.name} (${student.programme.code})`} />
-                    <DetailRow label="Department" value={student.programme.department.name} />
-                    <DetailRow label="Intake" value={student.intake.semester.name} />
-                    <DetailRow label="Level" value={student.programme.level} />
-                    <DetailRow label="Student Type" value={student.studentType} />
-                    <DetailRow label="Nationality" value={student.nationality} />
-                    <DetailRow label="Enrolled" value={new Date(student.enrolledAt).toLocaleDateString('en-GB')} />
+                    <DetailRow label={t('studentProfile.studentId')} value={student.studentId} />
+                    <DetailRow label={t('studentProfile.programme')} value={`${student.programme.name} (${student.programme.code})`} />
+                    <DetailRow label={t('studentProfile.department')} value={student.programme.department.name} />
+                    <DetailRow label={t('studentProfile.intakeLabel')} value={student.intake.semester.name} />
+                    <DetailRow label={t('studentProfile.level')} value={student.programme.level} />
+                    <DetailRow label={t('studentProfile.studentType')} value={student.studentType} />
+                    <DetailRow label={t('studentProfile.nationality')} value={student.nationality} />
+                    <DetailRow label={t('studentProfile.enrolled')} value={new Date(student.enrolledAt).toLocaleDateString('en-GB')} />
                   </div>
                 </Card>
-                <Card title="Financial Summary">
+                <Card title={t('studentProfile.financialSummary')}>
                   <div className={styles.detailList}>
-                    <DetailRow label="Scholarship" value={student.scholarshipPct > 0 ? `${student.scholarshipPct}%` : 'None'} />
-                    <DetailRow label="Mode of Study" value={student.modeOfStudy.replace('_', ' ')} />
-                    <DetailRow label="CGPA" value={student.currentCgpa.toFixed(2)} />
-                    <DetailRow label="Status" value={<Badge color={STATUS_COLOR[student.status] ?? 'gray'}>{student.status}</Badge>} />
+                    <DetailRow label={t('studentProfile.scholarship')} value={student.scholarshipPct > 0 ? `${student.scholarshipPct}%` : t('studentProfile.none')} />
+                    <DetailRow label={t('studentProfile.modeOfStudy')} value={student.modeOfStudy.replace('_', ' ')} />
+                    <DetailRow label={t('studentProfile.cgpa')} value={student.currentCgpa.toFixed(2)} />
+                    <DetailRow label={t('common.status')} value={<Badge color={STATUS_COLOR[student.status] ?? 'gray'}>{student.status}</Badge>} />
                   </div>
                 </Card>
               </div>
@@ -162,15 +162,15 @@ const StudentProfilePage: React.FC = () => {
           },
           {
             key: 'timetable',
-            label: 'Timetable',
+            label: t('studentProfile.timetable'),
             children: (
-              <Card title={`Weekly Timetable — ${totalCH} Credit Hours`}>
+              <Card title={t('studentProfile.weeklyTimetableHours', { hours: totalCH })}>
                 <div className={styles.timetableGrid}>
                   {byDay.map(({ day, slots }) => (
                     <div key={day} className={styles.dayCol}>
                       <div className={styles.dayHeader}>{day}</div>
                       {slots.length === 0
-                        ? <div className={styles.emptyDay}>No class</div>
+                        ? <div className={styles.emptyDay}>{t('studentProfile.noClass')}</div>
                         : slots.map(slot => (
                           <div key={slot.id} className={styles.slotCard}>
                             <div className={styles.slotCourse}>{slot.course?.name}</div>
@@ -189,34 +189,34 @@ const StudentProfilePage: React.FC = () => {
           },
           {
             key: 'services',
-            label: 'Campus Services',
+            label: t('studentProfile.campusServices'),
             children: services ? (
               <div className={styles.servicesGrid}>
                 <ServiceCard
                   icon={<CreditCard size={28} />}
-                  title="Campus Card"
-                  value={services.campusCardNo ?? 'Not issued'}
+                  title={t('studentProfile.campusCard')}
+                  value={services.campusCardNo ?? t('studentProfile.notIssued')}
                   active={!!services.campusCardNo}
-                  activeLabel="Active"
-                  inactiveLabel="Pending Registration"
+                  activeLabel={t('studentProfile.active')}
+                  inactiveLabel={t('studentProfile.pendingRegistration')}
                   color="#165DFF"
                 />
                 <ServiceCard
                   icon={<Library size={28} />}
-                  title="Library Access"
-                  value={services.libraryAccountActive ? 'Active' : 'Inactive'}
+                  title={t('studentProfile.libraryAccess')}
+                  value={services.libraryAccountActive ? t('studentProfile.active') : t('studentProfile.inactive')}
                   active={services.libraryAccountActive}
-                  activeLabel="Books can be borrowed"
-                  inactiveLabel="Register courses to activate"
+                  activeLabel={t('studentProfile.canBorrow')}
+                  inactiveLabel={t('studentProfile.registerToActivate')}
                   color="#7D3FCC"
                 />
                 <ServiceCard
                   icon={<Mail size={28} />}
-                  title="UNISSA Email"
-                  value={services.emailAccountActive ? `${student.studentId.toLowerCase()}@student.unissa.edu.bn` : 'Not provisioned'}
+                  title={t('studentProfile.unissaEmail')}
+                  value={services.emailAccountActive ? `${student.studentId.toLowerCase()}@student.unissa.edu.bn` : t('studentProfile.notProvisioned')}
                   active={services.emailAccountActive}
-                  activeLabel="Email account active"
-                  inactiveLabel="Register courses to activate"
+                  activeLabel={t('studentProfile.emailActive')}
+                  inactiveLabel={t('studentProfile.registerToActivate')}
                   color="#00B42A"
                 />
               </div>

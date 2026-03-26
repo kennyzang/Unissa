@@ -59,20 +59,6 @@ interface IntakeOption {
   maxCapacity: number
 }
 
-const STEPS = [
-  { title: 'Personal Info',       icon: <UserOutlined /> },
-  { title: 'Academic Background', icon: <BookOutlined /> },
-  { title: 'Programme Choice',    icon: <TrophyOutlined /> },
-  { title: 'Review & Submit',     icon: <FileTextOutlined /> },
-]
-
-const QUAL_OPTIONS = [
-  { value: 'O_LEVEL', label: 'O-Level / BGCE' },
-  { value: 'A_LEVEL', label: 'A-Level / STPM' },
-  { value: 'DIPLOMA', label: 'Diploma' },
-  { value: 'DEGREE',  label: 'Bachelor Degree' },
-  { value: 'MASTERS', label: 'Masters Degree' },
-]
 
 // Helper: antd Form.Item status/help from error message
 const fe = (msg?: string) => ({
@@ -83,6 +69,21 @@ const fe = (msg?: string) => ({
 const AdmissionApplyPage: React.FC = () => {
   const { t } = useTranslation()
   const [step, setStep]           = useState(0)
+
+  const STEPS = [
+    { title: t('admissionApply.stepPersonal'),  icon: <UserOutlined /> },
+    { title: t('admissionApply.stepAcademic'),  icon: <BookOutlined /> },
+    { title: t('admissionApply.stepProgramme'), icon: <TrophyOutlined /> },
+    { title: t('admissionApply.stepReview'),    icon: <FileTextOutlined /> },
+  ]
+
+  const QUAL_OPTIONS = [
+    { value: 'O_LEVEL', label: t('admissionApply.qualOLevel') },
+    { value: 'A_LEVEL', label: t('admissionApply.qualALevel') },
+    { value: 'DIPLOMA', label: t('admissionApply.qualDiploma') },
+    { value: 'DEGREE',  label: t('admissionApply.qualBachelor') },
+    { value: 'MASTERS', label: t('admissionApply.qualMasters') },
+  ]
   const [submitted, setSubmitted] = useState<{ applicationRef: string } | null>(null)
   const [formData, setFormData]   = useState<Partial<Step1 & Step2 & Step3>>({})
   const addToast                  = useUIStore(s => s.addToast)
@@ -98,7 +99,7 @@ const AdmissionApplyPage: React.FC = () => {
   const submitMutation = useMutation({
     mutationFn: (payload: Record<string, unknown>) => apiClient.post('/admissions/apply', payload),
     onSuccess: (res) => setSubmitted({ applicationRef: res.data.data.applicationRef }),
-    onError: (e: any) => addToast({ type: 'error', message: e.response?.data?.message ?? 'Submission failed' }),
+    onError: (e: any) => addToast({ type: 'error', message: e.response?.data?.message ?? t('admissionApply.submissionFailed') }),
   })
 
   const form1 = useForm<Step1>({ resolver: zodResolver(step1Schema), defaultValues: { ...formData as Step1, nationality: (formData as Step1)?.nationality || 'Brunei Darussalam' } })
@@ -117,15 +118,14 @@ const AdmissionApplyPage: React.FC = () => {
       <div className={styles.successWrap}>
         <Card className={styles.successCard}>
           <div className={styles.successIcon}><CheckCircleOutlined style={{ fontSize: 48, color: '#00B42A' }} /></div>
-          <Title level={3} style={{ margin: 0 }}>Application Submitted!</Title>
-          <Text type="secondary">Your application reference number is:</Text>
+          <Title level={3} style={{ margin: 0 }}>{t('admissionApply.successTitle')}</Title>
+          <Text type="secondary">{t('admissionApply.successRef')}</Text>
           <div className={styles.refNo}>{submitted.applicationRef}</div>
           <Text type="secondary" style={{ fontSize: 12 }}>
-            We will review your application within 5–7 working days.
-            You will receive an email at <strong>{formData.email}</strong>.
+            {t('admissionApply.successNote')} <strong>{formData.email}</strong>.
           </Text>
           <Button type="primary" onClick={() => { setStep(0); setSubmitted(null); setFormData({}) }}>
-            Submit Another Application
+            {t('admissionApply.submitAnother')}
           </Button>
         </Card>
       </div>
@@ -146,25 +146,25 @@ const AdmissionApplyPage: React.FC = () => {
 
       {/* ── Step 1: Personal Info ─────────────────────────────── */}
       {step === 0 && (
-        <Card title="Step 1 – Personal Information">
+        <Card title={t('admissionApply.step1Title')}>
           <Form layout="vertical" onFinish={handleNext1} requiredMark="optional">
             <Row gutter={[16, 0]}>
               <Col xs={24} md={12}>
-                <Form.Item label="Full Name (as per IC/Passport)" required {...fe(form1.formState.errors.fullName?.message)}>
+                <Form.Item label={t('admissionApply.fullName')} required {...fe(form1.formState.errors.fullName?.message)}>
                   <Controller name="fullName" control={form1.control}
-                    render={({ field }) => <Input {...field} placeholder="Your full legal name" size="large" />}
+                    render={({ field }) => <Input {...field} placeholder={t('admissionApply.fullNamePlaceholder')} size="large" />}
                   />
                 </Form.Item>
               </Col>
               <Col xs={24} md={12}>
-                <Form.Item label="IC / Passport Number" required {...fe(form1.formState.errors.icPassport?.message)}>
+                <Form.Item label={t('admissionApply.icPassport')} required {...fe(form1.formState.errors.icPassport?.message)}>
                   <Controller name="icPassport" control={form1.control}
-                    render={({ field }) => <Input {...field} placeholder="e.g. 00-123456" size="large" />}
+                    render={({ field }) => <Input {...field} placeholder={t('admissionApply.icPassportPlaceholder')} size="large" />}
                   />
                 </Form.Item>
               </Col>
               <Col xs={24} md={12}>
-                <Form.Item label="Date of Birth" required {...fe(form1.formState.errors.dateOfBirth?.message)}>
+                <Form.Item label={t('admissionApply.dob')} required {...fe(form1.formState.errors.dateOfBirth?.message)}>
                   <Controller name="dateOfBirth" control={form1.control}
                     render={({ field }) => (
                       <DatePicker
@@ -179,48 +179,48 @@ const AdmissionApplyPage: React.FC = () => {
                 </Form.Item>
               </Col>
               <Col xs={24} md={12}>
-                <Form.Item label="Gender" required {...fe(form1.formState.errors.gender?.message)}>
+                <Form.Item label={t('admissionApply.gender')} required {...fe(form1.formState.errors.gender?.message)}>
                   <Controller name="gender" control={form1.control}
                     render={({ field }) => (
-                      <Select {...field} size="large" placeholder="Select gender"
-                        options={[{ value: 'male', label: 'Male' }, { value: 'female', label: 'Female' }]}
+                      <Select {...field} size="large" placeholder={t('admissionApply.selectGender')}
+                        options={[{ value: 'male', label: t('admissionApply.male') }, { value: 'female', label: t('admissionApply.female') }]}
                       />
                     )}
                   />
                 </Form.Item>
               </Col>
               <Col xs={24} md={12}>
-                <Form.Item label="Nationality" required {...fe(form1.formState.errors.nationality?.message)}>
+                <Form.Item label={t('admissionApply.nationality')} required {...fe(form1.formState.errors.nationality?.message)}>
                   <Controller name="nationality" control={form1.control}
                     render={({ field }) => <Input {...field} size="large" />}
                   />
                 </Form.Item>
               </Col>
               <Col xs={24} md={12}>
-                <Form.Item label="Email Address" required {...fe(form1.formState.errors.email?.message)}>
+                <Form.Item label={t('admissionApply.email')} required {...fe(form1.formState.errors.email?.message)}>
                   <Controller name="email" control={form1.control}
-                    render={({ field }) => <Input {...field} type="email" placeholder="your@email.com" size="large" />}
+                    render={({ field }) => <Input {...field} type="email" placeholder={t('admissionApply.emailPlaceholder')} size="large" />}
                   />
                 </Form.Item>
               </Col>
               <Col xs={24} md={12}>
-                <Form.Item label="Mobile Number" required {...fe(form1.formState.errors.mobile?.message)}>
+                <Form.Item label={t('admissionApply.mobile')} required {...fe(form1.formState.errors.mobile?.message)}>
                   <Controller name="mobile" control={form1.control}
-                    render={({ field }) => <Input {...field} placeholder="+673 xxxxxxx" size="large" />}
+                    render={({ field }) => <Input {...field} placeholder={t('admissionApply.mobilePlaceholder')} size="large" />}
                   />
                 </Form.Item>
               </Col>
               <Col xs={24}>
-                <Form.Item label="Home Address" required {...fe(form1.formState.errors.homeAddress?.message)}>
+                <Form.Item label={t('admissionApply.address')} required {...fe(form1.formState.errors.homeAddress?.message)}>
                   <Controller name="homeAddress" control={form1.control}
-                    render={({ field }) => <Input.TextArea {...field} rows={2} placeholder="Full home address" />}
+                    render={({ field }) => <Input.TextArea {...field} rows={2} placeholder={t('admissionApply.addressPlaceholder')} />}
                   />
                 </Form.Item>
               </Col>
             </Row>
             <div className={styles.formActions}>
               <Button type="primary" htmlType="submit" size="large">
-                Next: Academic Background →
+                {t('admissionApply.nextAcademic')}
               </Button>
             </div>
           </Form>
@@ -229,44 +229,44 @@ const AdmissionApplyPage: React.FC = () => {
 
       {/* ── Step 2: Academic Background ──────────────────────── */}
       {step === 1 && (
-        <Card title="Step 2 – Academic Background">
+        <Card title={t('admissionApply.step2Title')}>
           <Form layout="vertical" onFinish={handleNext2} requiredMark="optional">
             <Row gutter={[16, 0]}>
               <Col xs={24} md={12}>
-                <Form.Item label="Highest Qualification" required {...fe(form2.formState.errors.highestQualification?.message)}>
+                <Form.Item label={t('admissionApply.qualification')} required {...fe(form2.formState.errors.highestQualification?.message)}>
                   <Controller name="highestQualification" control={form2.control}
                     render={({ field }) => (
-                      <Select {...field} size="large" options={QUAL_OPTIONS} placeholder="Select qualification" />
+                      <Select {...field} size="large" options={QUAL_OPTIONS} placeholder={t('admissionApply.selectQualification')} />
                     )}
                   />
                 </Form.Item>
               </Col>
               <Col xs={24} md={12}>
-                <Form.Item label="Previous Institution" required {...fe(form2.formState.errors.previousInstitution?.message)}>
+                <Form.Item label={t('admissionApply.prevInstitution')} required {...fe(form2.formState.errors.previousInstitution?.message)}>
                   <Controller name="previousInstitution" control={form2.control}
-                    render={({ field }) => <Input {...field} placeholder="Name of institution" size="large" />}
+                    render={({ field }) => <Input {...field} placeholder={t('admissionApply.institutionPlaceholder')} size="large" />}
                   />
                 </Form.Item>
               </Col>
               <Col xs={24} md={12}>
-                <Form.Item label="Year of Completion" required {...fe(form2.formState.errors.yearOfCompletion?.message)}>
+                <Form.Item label={t('admissionApply.yearCompleted')} required {...fe(form2.formState.errors.yearOfCompletion?.message)}>
                   <Controller name="yearOfCompletion" control={form2.control}
-                    render={({ field }) => <Input {...field} type="number" placeholder="e.g. 2024" size="large" />}
+                    render={({ field }) => <Input {...field} type="number" placeholder={t('admissionApply.yearPlaceholder')} size="large" />}
                   />
                 </Form.Item>
               </Col>
               <Col xs={24} md={12}>
-                <Form.Item label="CGPA / Grade (if applicable)" {...fe(form2.formState.errors.cgpa?.message)}>
+                <Form.Item label={t('admissionApply.cgpa')} {...fe(form2.formState.errors.cgpa?.message)}>
                   <Controller name="cgpa" control={form2.control}
-                    render={({ field }) => <Input {...field} placeholder="e.g. 3.75" size="large" />}
+                    render={({ field }) => <Input {...field} placeholder={t('admissionApply.cgpaPlaceholder')} size="large" />}
                   />
                 </Form.Item>
               </Col>
             </Row>
             <div className={styles.formActions}>
               <Space>
-                <Button size="large" onClick={() => setStep(0)}>← Back</Button>
-                <Button type="primary" htmlType="submit" size="large">Next: Programme Choice →</Button>
+                <Button size="large" onClick={() => setStep(0)}>{t('admissionApply.backBtn')}</Button>
+                <Button type="primary" htmlType="submit" size="large">{t('admissionApply.nextProgramme')}</Button>
               </Space>
             </div>
           </Form>
@@ -275,15 +275,15 @@ const AdmissionApplyPage: React.FC = () => {
 
       {/* ── Step 3: Programme Choice ──────────────────────────── */}
       {step === 2 && (
-        <Card title="Step 3 – Programme & Intake">
+        <Card title={t('admissionApply.step3Title')}>
           <Form layout="vertical" onFinish={handleNext3} requiredMark="optional">
             <Row gutter={[16, 0]}>
               <Col xs={24}>
-                <Form.Item label="Select Intake" required {...fe(form3.formState.errors.intakeId?.message)}>
+                <Form.Item label={t('admissionApply.selectIntake')} required {...fe(form3.formState.errors.intakeId?.message)}>
                   <Controller name="intakeId" control={form3.control}
                     render={({ field }) => (
                       <Select {...field} size="large" showSearch optionFilterProp="label"
-                        placeholder="Select a programme and intake"
+                        placeholder={t('admissionApply.intakePlaceholder')}
                         options={intakes.map(i => ({
                           value: i.id,
                           label: `${i.programme.name} (${i.programme.code}) — ${i.semester.name}`,
@@ -299,11 +299,11 @@ const AdmissionApplyPage: React.FC = () => {
                 </Form.Item>
               </Col>
               <Col xs={24} md={12}>
-                <Form.Item label="Mode of Study" required {...fe(form3.formState.errors.modeOfStudy?.message)}>
+                <Form.Item label={t('admissionApply.modeStudy')} required {...fe(form3.formState.errors.modeOfStudy?.message)}>
                   <Controller name="modeOfStudy" control={form3.control}
                     render={({ field }) => (
-                      <Select {...field} size="large" placeholder="Select mode"
-                        options={[{ value: 'full_time', label: 'Full Time' }, { value: 'part_time', label: 'Part Time' }]}
+                      <Select {...field} size="large" placeholder={t('admissionApply.selectMode')}
+                        options={[{ value: 'full_time', label: t('admissionApply.fullTime') }, { value: 'part_time', label: t('admissionApply.partTime') }]}
                       />
                     )}
                   />
@@ -314,7 +314,7 @@ const AdmissionApplyPage: React.FC = () => {
                   <Controller name="scholarshipApplied" control={form3.control}
                     render={({ field }) => (
                       <Checkbox checked={!!field.value} onChange={e => field.onChange(e.target.checked)}>
-                        Apply for scholarship / financial aid
+                        {t('admissionApply.scholarship')}
                       </Checkbox>
                     )}
                   />
@@ -322,9 +322,9 @@ const AdmissionApplyPage: React.FC = () => {
               </Col>
               {form3.watch('scholarshipApplied') && (
                 <Col xs={24} md={12}>
-                  <Form.Item label="Scholarship Type">
+                  <Form.Item label={t('admissionApply.scholarshipType')}>
                     <Controller name="scholarshipType" control={form3.control}
-                      render={({ field }) => <Input {...field} placeholder="e.g. BIBD Scholarship" size="large" />}
+                      render={({ field }) => <Input {...field} placeholder={t('admissionApply.scholarshipPlaceholder')} size="large" />}
                     />
                   </Form.Item>
                 </Col>
@@ -332,8 +332,8 @@ const AdmissionApplyPage: React.FC = () => {
             </Row>
             <div className={styles.formActions}>
               <Space>
-                <Button size="large" onClick={() => setStep(1)}>← Back</Button>
-                <Button type="primary" htmlType="submit" size="large">Review & Submit →</Button>
+                <Button size="large" onClick={() => setStep(1)}>{t('admissionApply.backBtn')}</Button>
+                <Button type="primary" htmlType="submit" size="large">{t('admissionApply.reviewSubmit')}</Button>
               </Space>
             </div>
           </Form>
@@ -342,39 +342,39 @@ const AdmissionApplyPage: React.FC = () => {
 
       {/* ── Step 4: Review ────────────────────────────────────── */}
       {step === 3 && (
-        <Card title="Step 4 – Review & Submit">
+        <Card title={t('admissionApply.step4Title')}>
           <Row gutter={[16, 16]}>
             <Col xs={24} md={8}>
-              <Descriptions title="Personal Information" column={1} size="small" bordered>
-                <Descriptions.Item label="Full Name">{formData.fullName}</Descriptions.Item>
-                <Descriptions.Item label="IC / Passport">{formData.icPassport}</Descriptions.Item>
-                <Descriptions.Item label="Date of Birth">{formData.dateOfBirth}</Descriptions.Item>
-                <Descriptions.Item label="Gender">{formData.gender}</Descriptions.Item>
-                <Descriptions.Item label="Nationality">{formData.nationality}</Descriptions.Item>
-                <Descriptions.Item label="Email">{formData.email}</Descriptions.Item>
-                <Descriptions.Item label="Mobile">{formData.mobile}</Descriptions.Item>
+              <Descriptions title={t('admissionApply.personalInfo')} column={1} size="small" bordered>
+                <Descriptions.Item label={t('admissionApply.reviewFullName')}>{formData.fullName}</Descriptions.Item>
+                <Descriptions.Item label={t('admissionApply.reviewIC')}>{formData.icPassport}</Descriptions.Item>
+                <Descriptions.Item label={t('admissionApply.reviewDOB')}>{formData.dateOfBirth}</Descriptions.Item>
+                <Descriptions.Item label={t('admissionApply.reviewGender')}>{formData.gender}</Descriptions.Item>
+                <Descriptions.Item label={t('admissionApply.reviewNationality')}>{formData.nationality}</Descriptions.Item>
+                <Descriptions.Item label={t('admissionApply.reviewEmail')}>{formData.email}</Descriptions.Item>
+                <Descriptions.Item label={t('admissionApply.reviewMobile')}>{formData.mobile}</Descriptions.Item>
               </Descriptions>
             </Col>
             <Col xs={24} md={8}>
-              <Descriptions title="Academic Background" column={1} size="small" bordered>
-                <Descriptions.Item label="Qualification">
+              <Descriptions title={t('admissionApply.academicBg')} column={1} size="small" bordered>
+                <Descriptions.Item label={t('admissionApply.reviewQual')}>
                   {QUAL_OPTIONS.find(q => q.value === formData.highestQualification)?.label}
                 </Descriptions.Item>
-                <Descriptions.Item label="Institution">{formData.previousInstitution}</Descriptions.Item>
-                <Descriptions.Item label="Year">{formData.yearOfCompletion}</Descriptions.Item>
-                {formData.cgpa && <Descriptions.Item label="CGPA">{formData.cgpa}</Descriptions.Item>}
+                <Descriptions.Item label={t('admissionApply.reviewInstitution')}>{formData.previousInstitution}</Descriptions.Item>
+                <Descriptions.Item label={t('admissionApply.reviewYear')}>{formData.yearOfCompletion}</Descriptions.Item>
+                {formData.cgpa && <Descriptions.Item label={t('admissionApply.reviewCGPA')}>{formData.cgpa}</Descriptions.Item>}
               </Descriptions>
             </Col>
             <Col xs={24} md={8}>
-              <Descriptions title="Programme" column={1} size="small" bordered>
-                <Descriptions.Item label="Intake">
+              <Descriptions title={t('admissionApply.programmeLabel')} column={1} size="small" bordered>
+                <Descriptions.Item label={t('admissionApply.reviewIntake')}>
                   {selectedIntake ? `${selectedIntake.programme.name} — ${selectedIntake.semester.name}` : ''}
                 </Descriptions.Item>
-                <Descriptions.Item label="Mode">
-                  {formData.modeOfStudy === 'full_time' ? 'Full Time' : 'Part Time'}
+                <Descriptions.Item label={t('admissionApply.reviewMode')}>
+                  {formData.modeOfStudy === 'full_time' ? t('admissionApply.fullTime') : t('admissionApply.partTime')}
                 </Descriptions.Item>
                 {formData.scholarshipApplied && (
-                  <Descriptions.Item label="Scholarship">{formData.scholarshipType ?? 'Applied'}</Descriptions.Item>
+                  <Descriptions.Item label={t('admissionApply.reviewScholarship')}>{formData.scholarshipType ?? t('admissionApply.applied')}</Descriptions.Item>
                 )}
               </Descriptions>
             </Col>
@@ -382,16 +382,16 @@ const AdmissionApplyPage: React.FC = () => {
           <Alert
             style={{ margin: '20px 0 16px' }}
             type="info"
-            message="Declaration"
-            description="I declare that all information provided is true and accurate. I understand that false information will result in immediate disqualification."
+            message={t('admissionApply.declarationTitle')}
+            description={t('admissionApply.declaration')}
             showIcon
           />
           <div className={styles.formActions}>
             <Space>
-              <Button size="large" onClick={() => setStep(2)}>← Back</Button>
+              <Button size="large" onClick={() => setStep(2)}>{t('admissionApply.backBtn')}</Button>
               <Button type="primary" size="large" loading={submitMutation.isPending}
                 icon={<CheckCircleOutlined />} onClick={handleSubmit}>
-                Submit Application
+                {t('admissionApply.submitApplication')}
               </Button>
             </Space>
           </div>

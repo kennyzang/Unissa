@@ -1,9 +1,9 @@
 import { useTranslation } from 'react-i18next'
 import React, { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { Calendar, Plus, CheckCircle, XCircle, Clock, FileText } from 'lucide-react'
-import { useForm, Controller } from 'react-hook-form'
-import { Input as AntInput, Select as AntSelect } from 'antd'
+import { Calendar, Plus, CheckCircle, XCircle, Clock } from 'lucide-react'
+import { Modal, Form, Select, DatePicker, Input } from 'antd'
+import dayjs, { type Dayjs } from 'dayjs'
 import { apiClient } from '@/lib/apiClient'
 import { useUIStore } from '@/stores/uiStore'
 import { useAuthStore } from '@/stores/authStore'
@@ -11,7 +11,6 @@ import Card from '@/components/ui/Card'
 import Badge from '@/components/ui/Badge'
 import Table from '@/components/ui/Table'
 import type { ColumnDef } from '@/components/ui/Table'
-import Modal from '@/components/ui/Modal'
 import Button from '@/components/ui/Button'
 import StatCard from '@/components/ui/StatCard'
 import styles from './LeaveManagementPage.module.scss'
@@ -34,29 +33,21 @@ interface LeaveRequest {
   }
 }
 
-interface LeaveForm {
+interface LeaveFormValues {
   leaveType: string
-  startDate: string
-  endDate: string
+  dateRange: [Dayjs, Dayjs]
   reason: string
-  coveringOfficerId: string
+  coveringOfficerId?: string
 }
 
-const STATUS_BADGE: Record<string, { color: 'blue' | 'green' | 'red' | 'orange' | 'gray'; label: string }> = {
-  pending:  { color: 'orange', label: 'Pending' },
-  approved: { color: 'green',  label: 'Approved' },
-  rejected: { color: 'red',    label: 'Rejected' },
-  cancelled:{ color: 'gray',   label: 'Cancelled' },
+const STATUS_COLOR: Record<string, 'blue' | 'green' | 'red' | 'orange' | 'gray'> = {
+  pending:   'orange',
+  approved:  'green',
+  rejected:  'red',
+  cancelled: 'gray',
 }
 
-const LEAVE_TYPE_LABELS: Record<string, string> = {
-  annual:  'Annual Leave',
-  medical: 'Medical Leave',
-  unpaid:  'Unpaid Leave',
-  maternity: 'Maternity Leave',
-  paternity: 'Paternity Leave',
-  emergency: 'Emergency Leave',
-}
+const LEAVE_TYPE_KEYS = ['annual', 'medical', 'unpaid', 'maternity', 'paternity', 'emergency']
 
 const LeaveManagementPage: React.FC = () => {
   const { t } = useTranslation()
@@ -69,9 +60,14 @@ const LeaveManagementPage: React.FC = () => {
   const qc        = useQueryClient()
   const isManager = user?.role === 'manager' || user?.role === 'admin' || user?.role === 'hradmin'
 
-  const { register, handleSubmit, reset, watch, control, formState: { errors } } = useForm<LeaveForm>({
-    defaultValues: { leaveType: 'annual', coveringOfficerId: 'N/A' },
-  })
+  const [applyForm] = Form.useForm<LeaveFormValues>()
+  const dateRange = Form.useWatch('dateRange', applyForm)
+  const days = dateRange?.[0] && dateRange?.[1]
+    ? Math.max(1, dateRange[1].diff(dateRange[0], 'day') + 1)
+    : 0
+
+  const leaveTypeOptions = LEAVE_TYPE_KEYS.map(v => ({ value: v, label: t(`leaveManagement.${v}` as any) }))
+  const leaveTypeLabel = (type: string) => t(`leaveManagement.${type}` as any, { defaultValue: type })
 
   const { data: leaves = [], isLoading } = useQuery<LeaveRequest[]>({
     queryKey: ['hr', 'leave'],
@@ -82,35 +78,38 @@ const LeaveManagementPage: React.FC = () => {
   })
 
   const applyMutation = useMutation({
-    mutationFn: (form: LeaveForm) => apiClient.post('/hr/leave', form),
+    mutationFn: (values: LeaveFormValues) =>
+      apiClient.post('/hr/leave', {
+        leaveType: values.leaveType,
+        startDate: values.dateRange[0].format('YYYY-MM-DD'),
+        endDate:   values.dateRange[1].format('YYYY-MM-DD'),
+        reason:    values.reason,
+        coveringOfficerId: values.coveringOfficerId || 'N/A',
+      }),
     onSuccess: () => {
-      addToast({ type: 'success', message: 'Leave request submitted successfully' })
+      addToast({ type: 'success', message: t('leaveManagement.submitSuccess') })
       qc.invalidateQueries({ queryKey: ['hr', 'leave'] })
       setApplyModal(false)
-      reset()
+      applyForm.resetFields()
     },
-    onError: (e: any) => addToast({ type: 'error', message: e.response?.data?.message ?? 'Submission failed' }),
+    onError: (e: any) => addToast({ type: 'error', message: e.response?.data?.message ?? t('leaveManagement.submitFailed') }),
   })
 
   const approveMutation = useMutation({
     mutationFn: ({ id, action, remarks }: { id: string; action: string; remarks: string }) =>
       apiClient.patch(`/hr/leave/${id}/approve`, { action, remarks }),
     onSuccess: (_, vars) => {
-      addToast({ type: 'success', message: `Leave request ${vars.action}` })
+      addToast({ type: 'success', message: t(`leaveManagement.${vars.action}` as any) })
       qc.invalidateQueries({ queryKey: ['hr', 'leave'] })
       setReviewModal(null)
       setRemarks('')
     },
-    onError: (e: any) => addToast({ type: 'error', message: e.response?.data?.message ?? 'Action failed' }),
+    onError: (e: any) => addToast({ type: 'error', message: e.response?.data?.message ?? t('leaveManagement.actionFailed') }),
   })
 
-  const onSubmit = (form: LeaveForm) => applyMutation.mutate(form)
-
-  const startDate = watch('startDate')
-  const endDate   = watch('endDate')
-  const days = startDate && endDate
-    ? Math.max(0, Math.round((new Date(endDate).getTime() - new Date(startDate).getTime()) / 86400000) + 1)
-    : 0
+  const handleApplyOk = () => {
+    applyForm.validateFields().then(values => applyMutation.mutate(values))
+  }
 
   const pending  = leaves.filter(l => l.status === 'pending').length
   const approved = leaves.filter(l => l.status === 'approved').length
@@ -119,7 +118,7 @@ const LeaveManagementPage: React.FC = () => {
   const columns: ColumnDef<LeaveRequest>[] = [
     ...(isManager ? [{
       key: 'staff' as keyof LeaveRequest,
-      title: 'Staff',
+      title: t('leaveManagement.staffCol'),
       render: (v: LeaveRequest) => (
         <div>
           <div className={styles.name}>{v.staff.fullName}</div>
@@ -127,19 +126,20 @@ const LeaveManagementPage: React.FC = () => {
         </div>
       ),
     }] : []),
-    { key: 'leaveType', title: 'Leave Type', render: v => LEAVE_TYPE_LABELS[v.leaveType] ?? v.leaveType },
-    { key: 'startDate', title: 'Period', render: v => (
+    { key: 'leaveType', title: t('leaveManagement.leaveTypeCol'), render: v => leaveTypeLabel(v.leaveType) },
+    { key: 'startDate', title: t('leaveManagement.period'), render: v => (
       <div>
         <div>{new Date(v.startDate).toLocaleDateString('en-GB')} – {new Date(v.endDate).toLocaleDateString('en-GB')}</div>
-        <div className={styles.sub}>{v.durationDays} day{v.durationDays !== 1 ? 's' : ''}</div>
+        <div className={styles.sub}>{v.durationDays} {t('leaveManagement.daysUnit')}</div>
       </div>
     )},
-    { key: 'reason', title: 'Reason', render: v => <span className={styles.reason}>{v.reason}</span> },
-    { key: 'status', title: 'Status', render: v => {
-      const s = STATUS_BADGE[v.status] ?? STATUS_BADGE.pending
-      return <Badge color={s.color}>{s.label}</Badge>
+    { key: 'reason', title: t('leaveManagement.reasonCol'), render: v => <span className={styles.reason}>{v.reason}</span> },
+    { key: 'status', title: t('common.status'), render: v => {
+      const color = STATUS_COLOR[v.status] ?? 'gray'
+      const label = t(`leaveManagement.${v.status}` as any, { defaultValue: v.status })
+      return <Badge color={color}>{label}</Badge>
     }},
-    { key: 'submittedAt', title: 'Submitted', render: v => new Date(v.submittedAt).toLocaleDateString('en-GB') },
+    { key: 'submittedAt', title: t('leaveManagement.submittedCol'), render: v => new Date(v.submittedAt).toLocaleDateString('en-GB') },
     ...(isManager ? [{
       key: 'actions' as keyof LeaveRequest,
       title: '',
@@ -147,11 +147,11 @@ const LeaveManagementPage: React.FC = () => {
         <div className={styles.actionBtns}>
           <Button size="sm" variant="ghost" icon={<CheckCircle size={14} />}
             onClick={() => { setReviewModal({ leave: v, action: 'approved' }); setRemarks('') }}>
-            Approve
+            {t('common.approve')}
           </Button>
           <Button size="sm" variant="danger" icon={<XCircle size={14} />}
             onClick={() => { setReviewModal({ leave: v, action: 'rejected' }); setRemarks('') }}>
-            Reject
+            {t('common.reject')}
           </Button>
         </div>
       ) : null,
@@ -166,143 +166,123 @@ const LeaveManagementPage: React.FC = () => {
           <p className={styles.pageSub}>{isManager ? t('leaveManagement.subtitleManager') : t('leaveManagement.subtitleStaff')}</p>
         </div>
         {!isManager && (
-          <Button icon={<Plus size={14} />} onClick={() => setApplyModal(true)}>Apply for Leave</Button>
+          <Button icon={<Plus size={14} />} onClick={() => setApplyModal(true)}>{t('leaveManagement.applyLeave')}</Button>
         )}
       </div>
 
       {/* Stats */}
       <div className={styles.statsRow}>
-        <StatCard title="Pending"  value={pending}  sub="Awaiting approval" icon={<Clock size={16} />}       color="orange" />
-        <StatCard title="Approved" value={approved} sub="This period"       icon={<CheckCircle size={16} />} color="green" />
-        <StatCard title="Rejected" value={rejected} sub="This period"       icon={<XCircle size={16} />}     color="red" />
-        <StatCard title="Total"    value={leaves.length} sub="All requests"  icon={<Calendar size={16} />}   color="blue" />
+        <StatCard title={t('leaveManagement.pending')}  value={pending}       sub={t('leaveManagement.awaitingApproval')} icon={<Clock size={16} />}       color="orange" />
+        <StatCard title={t('leaveManagement.approved')} value={approved}      sub={t('leaveManagement.thisPeriod')}       icon={<CheckCircle size={16} />} color="green" />
+        <StatCard title={t('leaveManagement.rejected')} value={rejected}      sub={t('leaveManagement.thisPeriod')}       icon={<XCircle size={16} />}     color="red" />
+        <StatCard title={t('leaveManagement.total')}    value={leaves.length} sub={t('leaveManagement.allRequests')}      icon={<Calendar size={16} />}    color="blue" />
       </div>
 
       {/* Table */}
-      <Card title={isManager ? 'All Leave Requests' : 'My Leave Requests'} noPadding>
+      <Card title={isManager ? t('leaveManagement.allLeaveRequests') : t('leaveManagement.myLeaveRequests')} noPadding>
         <Table<LeaveRequest>
           columns={columns}
           dataSource={leaves}
           rowKey="id"
           loading={isLoading}
           size="sm"
-          emptyText="No leave requests found"
+          emptyText={t('leaveManagement.noRequests')}
         />
       </Card>
 
-      {/* Apply Modal */}
+      {/* Apply for Leave Modal */}
       <Modal
         open={applyModal}
-        title="Apply for Leave"
-        onClose={() => { setApplyModal(false); reset() }}
-        okText="Submit Request"
-        onOk={handleSubmit(onSubmit)}
-        okLoading={applyMutation.isPending}
+        title={t('leaveManagement.applyLeave')}
+        okText={t('leaveManagement.submitRequest')}
+        cancelText={t('common.cancel')}
+        onOk={handleApplyOk}
+        confirmLoading={applyMutation.isPending}
+        onCancel={() => { setApplyModal(false); applyForm.resetFields() }}
+        width={520}
+        destroyOnClose
       >
-        <form className={styles.form}>
-          <div className={styles.formGroup}>
-            <label className={styles.label}>Leave Type *</label>
-            <Controller
-              name="leaveType"
-              control={control}
-              rules={{ required: true }}
-              render={({ field }) => (
-                <AntSelect
-                  value={field.value}
-                  onChange={field.onChange}
-                  onBlur={field.onBlur}
-                  style={{ width: '100%' }}
-                  options={[
-                    { label: 'Annual Leave',    value: 'annual' },
-                    { label: 'Medical Leave',   value: 'medical' },
-                    { label: 'Emergency Leave', value: 'emergency' },
-                    { label: 'Maternity Leave', value: 'maternity' },
-                    { label: 'Paternity Leave', value: 'paternity' },
-                    { label: 'Unpaid Leave',    value: 'unpaid' },
-                  ]}
-                />
-              )}
-            />
-          </div>
+        <Form
+          form={applyForm}
+          layout="vertical"
+          initialValues={{ leaveType: 'annual' }}
+          style={{ marginTop: 16 }}
+        >
+          <Form.Item
+            name="leaveType"
+            label={t('leaveManagement.leaveTypeCol')}
+            rules={[{ required: true, message: t('leaveManagement.selectLeaveType') }]}
+          >
+            <Select options={leaveTypeOptions} />
+          </Form.Item>
 
-          <div className={styles.dateRow}>
-            <div className={styles.formGroup}>
-              <label className={styles.label}>Start Date *</label>
-              <AntInput
-                type="date"
-                className={styles.input}
-                {...register('startDate', { required: 'Start date is required' })}
-              />
-              {errors.startDate && <span className={styles.error}>{errors.startDate.message}</span>}
-            </div>
-            <div className={styles.formGroup}>
-              <label className={styles.label}>End Date *</label>
-              <AntInput
-                type="date"
-                className={styles.input}
-                {...register('endDate', { required: 'End date is required' })}
-              />
-              {errors.endDate && <span className={styles.error}>{errors.endDate.message}</span>}
-            </div>
-          </div>
+          <Form.Item
+            name="dateRange"
+            label={t('leaveManagement.dateRange')}
+            rules={[{ required: true, message: t('leaveManagement.selectDateRange') }]}
+          >
+            <DatePicker.RangePicker
+              style={{ width: '100%' }}
+              disabledDate={d => d.isBefore(dayjs().startOf('day'))}
+              format="DD MMM YYYY"
+            />
+          </Form.Item>
 
           {days > 0 && (
             <div className={styles.durationBadge}>
               <Calendar size={14} />
-              {days} day{days !== 1 ? 's' : ''} requested
+              {days} {t('leaveManagement.daysRequested')}
             </div>
           )}
 
-          <div className={styles.formGroup}>
-            <label className={styles.label}>Reason *</label>
-            <textarea
-              className={styles.textarea}
+          <Form.Item
+            name="reason"
+            label={t('leaveManagement.reasonCol')}
+            rules={[{ required: true, message: t('leaveManagement.provideReason') }]}
+            style={{ marginTop: days > 0 ? 12 : 0 }}
+          >
+            <Input.TextArea
               rows={3}
-              placeholder="Please briefly explain the reason for leave..."
-              {...register('reason', { required: 'Reason is required' })}
+              placeholder={t('leaveManagement.reasonPlaceholder')}
             />
-            {errors.reason && <span className={styles.error}>{errors.reason.message}</span>}
-          </div>
+          </Form.Item>
 
-          <div className={styles.formGroup}>
-            <label className={styles.label}>Covering Officer</label>
-            <AntInput
-              type="text"
-              className={styles.input}
-              placeholder="Name of colleague covering your duties"
-              {...register('coveringOfficerId')}
-            />
-          </div>
-        </form>
+          <Form.Item name="coveringOfficerId" label={t('leaveManagement.coveringOfficer')}>
+            <Input placeholder={t('leaveManagement.coveringOfficerPlaceholder')} />
+          </Form.Item>
+        </Form>
       </Modal>
 
-      {/* Approve/Reject Modal */}
+      {/* Approve / Reject Modal */}
       {reviewModal && (
         <Modal
           open
-          title={`${reviewModal.action === 'approved' ? 'Approve' : 'Reject'} Leave Request`}
-          onClose={() => setReviewModal(null)}
-          okDanger={reviewModal.action === 'rejected'}
-          okText={reviewModal.action === 'approved' ? 'Approve' : 'Reject'}
+          title={reviewModal.action === 'approved' ? t('leaveManagement.approveRequest') : t('leaveManagement.rejectRequest')}
+          okText={reviewModal.action === 'approved' ? t('common.approve') : t('common.reject')}
+          okButtonProps={{ danger: reviewModal.action === 'rejected' }}
+          cancelText={t('common.cancel')}
           onOk={() => approveMutation.mutate({ id: reviewModal.leave.id, action: reviewModal.action, remarks })}
-          okLoading={approveMutation.isPending}
+          confirmLoading={approveMutation.isPending}
+          onCancel={() => setReviewModal(null)}
+          width={480}
+          destroyOnClose
         >
           <div className={styles.reviewInfo}>
-            <div className={styles.reviewRow}><span>Staff:</span> {reviewModal.leave.staff.fullName}</div>
-            <div className={styles.reviewRow}><span>Leave Type:</span> {LEAVE_TYPE_LABELS[reviewModal.leave.leaveType]}</div>
-            <div className={styles.reviewRow}><span>Duration:</span> {reviewModal.leave.durationDays} days ({new Date(reviewModal.leave.startDate).toLocaleDateString('en-GB')} – {new Date(reviewModal.leave.endDate).toLocaleDateString('en-GB')})</div>
-            <div className={styles.reviewRow}><span>Reason:</span> {reviewModal.leave.reason}</div>
+            <div className={styles.reviewRow}><span>{t('leaveManagement.staffLabel')}</span> {reviewModal.leave.staff.fullName}</div>
+            <div className={styles.reviewRow}><span>{t('leaveManagement.leaveTypeLabel')}</span> {leaveTypeLabel(reviewModal.leave.leaveType)}</div>
+            <div className={styles.reviewRow}><span>{t('leaveManagement.durationLabel')}</span> {reviewModal.leave.durationDays} {t('leaveManagement.daysUnit')} ({new Date(reviewModal.leave.startDate).toLocaleDateString('en-GB')} – {new Date(reviewModal.leave.endDate).toLocaleDateString('en-GB')})</div>
+            <div className={styles.reviewRow}><span>{t('leaveManagement.reasonLabel')}</span> {reviewModal.leave.reason}</div>
           </div>
-          <div className={styles.formGroup} style={{ marginTop: 16 }}>
-            <label className={styles.label}>Remarks (optional)</label>
-            <textarea
-              className={styles.textarea}
-              rows={2}
-              placeholder="Add notes or reason for rejection..."
-              value={remarks}
-              onChange={e => setRemarks(e.target.value)}
-            />
-          </div>
+          <Form layout="vertical" style={{ marginTop: 16 }}>
+            <Form.Item label={t('leaveManagement.remarksLabel')}>
+              <Input.TextArea
+                rows={2}
+                placeholder={t('leaveManagement.remarksOptional')}
+                value={remarks}
+                onChange={e => setRemarks(e.target.value)}
+              />
+            </Form.Item>
+          </Form>
         </Modal>
       )}
     </div>

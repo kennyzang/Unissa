@@ -29,7 +29,6 @@ interface PRItem {
 }
 
 const TRAFFIC_COLORS: Record<string, string> = { red: '#F53F3F', amber: '#FF7D00', green: '#00B42A' }
-const TRAFFIC_LABELS: Record<string, string> = { red: 'No quotes', amber: '1-2 quotes', green: '3+ quotes' }
 
 const ApprovalInboxPage: React.FC = () => {
   const { t } = useTranslation()
@@ -52,15 +51,21 @@ const ApprovalInboxPage: React.FC = () => {
       return apiClient.post(endpoint, { remarks })
     },
     onSuccess: (_, vars) => {
-      addToast({ type: 'success', message: `PR ${vars.action === 'approve' ? 'approved' : 'rejected'} successfully` })
+      addToast({ type: 'success', message: vars.action === 'approve' ? t('approvalInbox.approveSuccess') : t('approvalInbox.rejectSuccess') })
       setApproveModal(null)
       setRemarks('')
       qc.invalidateQueries({ queryKey: ['procurement'] })
     },
     onError: (e: any) => {
-      addToast({ type: 'error', message: e.response?.data?.message ?? 'Action failed' })
+      addToast({ type: 'error', message: e.response?.data?.message ?? t('leaveManagement.actionFailed') })
     },
   })
+
+  const TRAFFIC_LABELS: Record<string, string> = {
+    red: t('approvalInbox.requestor'),
+    amber: '1-2 quotes',
+    green: '3+ quotes',
+  }
 
   return (
     <div className={styles.page}>
@@ -68,28 +73,27 @@ const ApprovalInboxPage: React.FC = () => {
         <div>
           <h1 className={styles.pageTitle}>{t('approvalInbox.title')}</h1>
           <p className={styles.pageSub}>
-            {items.length} PR{items.length !== 1 ? 's' : ''} pending your approval
+            {items.length} {t('approvalInbox.pending')}
           </p>
         </div>
         <div className={styles.inboxBadge}>
           <Inbox size={16} />
-          {items.length} Pending
+          {items.length} {t('approvalInbox.pendingLabel')}
         </div>
       </div>
 
-      {isLoading && <div className={styles.loading}>Loading inbox…</div>}
+      {isLoading && <div className={styles.loading}>{t('approvalInbox.loading')}</div>}
 
       {!isLoading && items.length === 0 && (
         <div className={styles.emptyInbox}>
           <CheckCircle size={40} />
-          <h3>Inbox is clear!</h3>
-          <p>No purchase requests require your approval at this time.</p>
+          <h3>{t('approvalInbox.clear')}</h3>
+          <p>{t('approvalInbox.clearNote')}</p>
         </div>
       )}
 
       <div className={styles.prList}>
         {items.map(pr => {
-          const quoteCount = pr.quotes?.length ?? 0
           const hasAnomaly = (pr.anomalies?.length ?? 0) > 0
 
           return (
@@ -97,7 +101,7 @@ const ApprovalInboxPage: React.FC = () => {
               {hasAnomaly && (
                 <div className={styles.anomalyBanner}>
                   <AlertTriangle size={14} />
-                  Anomaly detected — requires additional scrutiny
+                  {t('approvalInbox.anomalyNote')}
                 </div>
               )}
 
@@ -117,17 +121,17 @@ const ApprovalInboxPage: React.FC = () => {
               </div>
 
               <div className={styles.prMeta}>
-                <MetaItem label="Requestor" value={pr.requestor?.user?.displayName ?? '—'} />
-                <MetaItem label="Department" value={pr.department?.name ?? '—'} />
-                <MetaItem label="GL Code" value={`${pr.glCode?.code} – ${pr.glCode?.description}`} />
-                <MetaItem label="Qty × Price" value={`${pr.quantity} × BND ${pr.estimatedUnitPrice}`} />
-                <MetaItem label="Required By" value={new Date(pr.requiredByDate).toLocaleDateString('en-GB')} />
-                <MetaItem label="Submitted" value={pr.submittedAt ? new Date(pr.submittedAt).toLocaleDateString('en-GB') : '—'} />
+                <MetaItem label={t('approvalInbox.requestor')}     value={pr.requestor?.user?.displayName ?? '—'} />
+                <MetaItem label={t('approvalInbox.department')}    value={pr.department?.name ?? '—'} />
+                <MetaItem label={t('approvalInbox.glCode')}        value={`${pr.glCode?.code} – ${pr.glCode?.description}`} />
+                <MetaItem label={t('approvalInbox.qtyPrice')}      value={`${pr.quantity} × BND ${pr.estimatedUnitPrice}`} />
+                <MetaItem label={t('approvalInbox.requiredBy')}    value={new Date(pr.requiredByDate).toLocaleDateString('en-GB')} />
+                <MetaItem label={t('approvalInbox.submittedLabel')} value={pr.submittedAt ? new Date(pr.submittedAt).toLocaleDateString('en-GB') : '—'} />
               </div>
 
               {pr.quotes && pr.quotes.length > 0 && (
                 <div className={styles.quotesBar}>
-                  <span className={styles.quotesLabel}>Vendor Quotes:</span>
+                  <span className={styles.quotesLabel}>{t('approvalInbox.vendorQuotes')}</span>
                   {pr.quotes.map(q => (
                     <span key={q.id} className={styles.quoteChip}>
                       #{q.quoteNumber} {q.vendorName} — BND {q.quotedPrice.toLocaleString()}
@@ -150,14 +154,14 @@ const ApprovalInboxPage: React.FC = () => {
                   icon={<XCircle size={14} />}
                   onClick={() => { setApproveModal({ pr, action: 'reject' }); setRemarks('') }}
                 >
-                  Reject
+                  {t('approvalInbox.rejectBtn')}
                 </Button>
                 <Button
                   size="sm"
                   icon={<CheckCircle size={14} />}
                   onClick={() => { setApproveModal({ pr, action: 'approve' }); setRemarks('') }}
                 >
-                  Approve
+                  {t('approvalInbox.approveBtn')}
                 </Button>
               </div>
             </Card>
@@ -169,32 +173,36 @@ const ApprovalInboxPage: React.FC = () => {
       {approveModal && (
         <Modal
           open
-          title={approveModal.action === 'approve' ? `Approve PR: ${approveModal.pr.prNumber}` : `Reject PR: ${approveModal.pr.prNumber}`}
+          title={approveModal.action === 'approve'
+            ? `${t('approvalInbox.approvePR')} ${approveModal.pr.prNumber}`
+            : `${t('approvalInbox.rejectPR')} ${approveModal.pr.prNumber}`}
           onClose={() => setApproveModal(null)}
           okDanger={approveModal.action === 'reject'}
-          okText={approveModal.action === 'approve' ? 'Approve' : 'Reject'}
+          okText={approveModal.action === 'approve' ? t('approvalInbox.approveBtn') : t('approvalInbox.rejectBtn')}
           onOk={() => actionMutation.mutate({ id: approveModal.pr.id, action: approveModal.action, remarks })}
           okLoading={actionMutation.isPending}
         >
           <div className={styles.modalSummary}>
-            <div>Item: <strong>{approveModal.pr.itemDescription}</strong></div>
-            <div>Total: <strong>BND {approveModal.pr.totalAmount.toLocaleString()}</strong></div>
-            <div>GL: <strong>{approveModal.pr.glCode?.code}</strong></div>
+            <div>{t('approvalInbox.item')} <strong>{approveModal.pr.itemDescription}</strong></div>
+            <div>{t('approvalInbox.totalLabel')} <strong>BND {approveModal.pr.totalAmount.toLocaleString()}</strong></div>
+            <div>{t('approvalInbox.gl')} <strong>{approveModal.pr.glCode?.code}</strong></div>
           </div>
 
           {approveModal.action === 'approve' && (
             <div className={styles.eSignNote}>
               <PenLine size={14} />
-              Your approval constitutes an electronic signature under UNISSA procurement policy.
+              {t('approvalInbox.signatureNote')}
             </div>
           )}
 
           <div className={styles.remarksField}>
-            <label>Remarks {approveModal.action === 'reject' ? '(required)' : '(optional)'}</label>
+            <label>
+              {t('common.remarks')} {approveModal.action === 'reject' ? `(${t('common.required')})` : `(${t('common.optional')})`}
+            </label>
             <textarea
               rows={3}
               className={styles.remarksTextarea}
-              placeholder={approveModal.action === 'reject' ? 'State reason for rejection…' : 'Add any notes…'}
+              placeholder={approveModal.action === 'reject' ? t('approvalInbox.reasonRequired') : t('approvalInbox.addNotes')}
               value={remarks}
               onChange={e => setRemarks(e.target.value)}
             />
