@@ -22,27 +22,27 @@ const { Title, Text } = Typography
 
 // ── Step schemas ──────────────────────────────────────────────
 const step1Schema = z.object({
-  fullName:    z.string().min(3, 'Full name required'),
-  icPassport:  z.string().min(6, 'IC/Passport required'),
-  dateOfBirth: z.string().min(1, 'Date of birth required'),
-  gender:      z.enum(['male', 'female'], { required_error: 'Gender required' }),
-  nationality: z.string().min(2, 'Nationality required'),
-  email:       z.string().email('Valid email required'),
-  mobile:      z.string().min(7, 'Mobile required'),
-  homeAddress: z.string().min(5, 'Address required'),
+  fullName:    z.string().min(1, 'Full name is required').min(3, 'Must be at least 3 characters'),
+  icPassport:  z.string().min(1, 'IC/Passport number is required').min(6, 'Must be at least 6 characters'),
+  dateOfBirth: z.string().min(1, 'Date of birth is required'),
+  gender:      z.enum(['male', 'female'], { required_error: 'Gender is required', invalid_type_error: 'Gender is required' }),
+  nationality: z.string().min(1, 'Nationality is required').min(2, 'Must be at least 2 characters'),
+  email:       z.string().min(1, 'Email address is required').email('Please enter a valid email address'),
+  mobile:      z.string().min(1, 'Mobile number is required').min(7, 'Must be at least 7 digits'),
+  homeAddress: z.string().min(1, 'Home address is required').min(5, 'Must be at least 5 characters'),
 })
 
 const step2Schema = z.object({
-  highestQualification: z.string().min(1, 'Qualification required'),
-  previousInstitution:  z.string().min(2, 'Institution required'),
-  yearOfCompletion:     z.string().min(4, 'Year required'),
+  highestQualification: z.string().min(1, 'Qualification is required'),
+  previousInstitution:  z.string().min(1, 'Previous institution is required').min(2, 'Must be at least 2 characters'),
+  yearOfCompletion:     z.string().min(1, 'Year of completion is required').min(4, 'Please enter a valid 4-digit year'),
   cgpa:                 z.string().optional(),
 })
 
 const step3Schema = z.object({
-  programmeId:        z.string().min(1, 'Programme required'),
-  intakeId:           z.string().min(1, 'Intake required'),
-  modeOfStudy:        z.enum(['full_time', 'part_time'], { required_error: 'Mode required' }),
+  programmeId:        z.string().min(1, 'Programme is required'),
+  intakeId:           z.string().min(1, 'Intake is required'),
+  modeOfStudy:        z.enum(['full_time', 'part_time'], { required_error: 'Mode of study is required', invalid_type_error: 'Mode of study is required' }),
   scholarshipApplied: z.boolean().optional(),
   scholarshipType:    z.string().optional(),
 })
