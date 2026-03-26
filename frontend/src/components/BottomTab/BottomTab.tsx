@@ -1,10 +1,7 @@
 import { useState } from 'react'
-import { NavLink, useLocation, useNavigate } from 'react-router-dom'
-import { X, MoreHorizontal, LogOut } from 'lucide-react'
+import { NavLink, useLocation } from 'react-router-dom'
+import { X, MoreHorizontal } from 'lucide-react'
 import { useAuthStore } from '@/stores/authStore'
-import { useUIStore } from '@/stores/uiStore'
-import { useLanguageStore } from '@/stores/languageStore'
-import { LANGUAGES, type Language } from '@/lib/i18n'
 import type { UserRole } from '@/types'
 import styles from './BottomTab.module.scss'
 
@@ -49,12 +46,9 @@ const PRIMARY_KEYS: Record<string, string[]> = {
 }
 
 const BottomTab = () => {
-  const [moreOpen, setMoreOpen]       = useState(false)
-  const { user, clearAuth }           = useAuthStore()
-  const { addToast }                  = useUIStore()
-  const { language, setLanguage }     = useLanguageStore()
+  const [moreOpen, setMoreOpen] = useState(false)
+  const { user }                = useAuthStore()
   const location                = useLocation()
-  const navigate                = useNavigate()
 
   if (!user) return null
 
@@ -66,12 +60,6 @@ const BottomTab = () => {
     .filter(Boolean) as TabItem[]
   const moreTabs    = allVisible.filter(t => !primaryKeys.includes(t.key))
   const showMore    = moreTabs.length > 0
-
-  const handleLogout = () => {
-    clearAuth()
-    addToast({ type: 'info', message: 'You have been signed out.' })
-    navigate('/login', { replace: true })
-  }
 
   const isTabActive = (path: string) =>
     location.pathname === path || location.pathname.startsWith(path + '/')
@@ -131,34 +119,6 @@ const BottomTab = () => {
               ))}
             </div>
 
-            {/* Language switcher */}
-            <div className={styles.sheetLang}>
-              <span className={styles.sheetLangLabel}>Language</span>
-              <div className={styles.sheetLangBtns}>
-                {LANGUAGES.map(l => (
-                  <button
-                    key={l.code}
-                    className={`${styles.sheetLangBtn} ${language === l.code ? styles.sheetLangActive : ''}`}
-                    onClick={() => setLanguage(l.code as Language)}
-                  >
-                    {l.nativeLabel}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* User section at bottom of sheet */}
-            <div className={styles.sheetUser}>
-              <div className={styles.sheetAvatar}>{user.displayName.charAt(0).toUpperCase()}</div>
-              <div className={styles.sheetUserInfo}>
-                <div className={styles.sheetUserName}>{user.displayName}</div>
-                <div className={styles.sheetUserRole}>{role.toUpperCase()}</div>
-              </div>
-              <button className={styles.sheetLogout} onClick={handleLogout}>
-                <LogOut size={16} />
-                <span>Sign Out</span>
-              </button>
-            </div>
           </div>
         </>
       )}

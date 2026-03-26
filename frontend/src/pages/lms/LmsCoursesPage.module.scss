@@ -79,15 +79,80 @@
 
 // Calendar view
 .calendarView {
-  overflow-x: auto;
   border-radius: v.$border-radius-lg;
   border: 1px solid var(--color-gray-3);
   background: white;
+  overflow: hidden;
 }
 
+// ── Mobile: day tab switcher ─────────────────────────────────
+.mobileDayTabs {
+  display: none;
+
+  @media (max-width: v.$bp-md) {
+    display: flex;
+    border-bottom: 1px solid var(--color-gray-2);
+    background: var(--color-gray-1);
+    overflow-x: auto;
+    scrollbar-width: none;
+    &::-webkit-scrollbar { display: none; }
+  }
+}
+
+.mobileDayTab {
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: v.$space-3 v.$space-4;
+  border: none;
+  background: none;
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  -webkit-tap-highlight-color: transparent;
+  transition: all 0.15s;
+}
+
+.mobileDayTabActive {
+  background: white;
+  border-bottom-color: v.$brand-primary;
+}
+
+.mobileDayTabName {
+  font-size: v.$font-size-xs;
+  font-weight: v.$font-weight-semibold;
+  color: var(--color-gray-5);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+
+  .mobileDayTabActive & { color: v.$brand-primary; }
+}
+
+.mobileDayTabDot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: v.$brand-primary;
+}
+
+.mobileDayContent {
+  display: none;
+
+  @media (max-width: v.$bp-md) {
+    display: flex;
+    flex-direction: column;
+    gap: v.$space-3;
+    padding: v.$space-4;
+  }
+}
+
+// ── Desktop: full week grid ──────────────────────────────────
 .calendarGrid {
   display: grid;
   min-width: 600px;
+
+  @media (max-width: v.$bp-md) { display: none; }
 }
 
 .calendarColumn {

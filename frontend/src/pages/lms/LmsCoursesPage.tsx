@@ -59,7 +59,8 @@ const LmsCoursesPage: React.FC = () => {
   const navigate = useNavigate()
   const user = useAuthStore(s => s.user)
   const { t } = useTranslation()
-  const [viewMode, setViewMode] = useState<ViewMode>('card')
+  const [viewMode, setViewMode]   = useState<ViewMode>('card')
+  const [mobileDay, setMobileDay] = useState<string>('')
 
   const { data: enrolments = [], isLoading } = useQuery<Enrolment[]>({
     queryKey: ['lms', 'courses', '2026001'],
@@ -164,66 +165,79 @@ const LmsCoursesPage: React.FC = () => {
     WEEK_DAYS.forEach(d => { byDay[d] = [] })
     enrolments.forEach(e => {
       const day = e.offering?.dayOfWeek
-      if (day && byDay[day] !== undefined) {
-        byDay[day].push(e)
-      }
+      if (day && byDay[day] !== undefined) byDay[day].push(e)
     })
 
-    // Active days (days that have at least one course)
     const activeDays = WEEK_DAYS.filter(d => byDay[d].length > 0)
-    const displayDays = activeDays.length > 0 ? WEEK_DAYS : WEEK_DAYS.slice(0, 5)
+    const displayDays = activeDays.length > 0 ? activeDays : WEEK_DAYS.slice(0, 5)
+
+    // Mobile: current selected day (default first active day)
+    const currentMobileDay = mobileDay && displayDays.includes(mobileDay) ? mobileDay : displayDays[0]
+
+    const renderSlots = (day: string) =>
+      byDay[day].map(enrolment => {
+        const off = enrolment.offering
+        const color = colorMap[off.id]
+        const pendingCount = off.assignments?.filter(a => a.dueDate && new Date(a.dueDate) > new Date()).length ?? 0
+        return (
+          <div
+            key={enrolment.id}
+            className={styles.calendarSlot}
+            style={{ background: color.bg, borderColor: color.border }}
+            onClick={() => navigate(`/lms/courses/${off.id}`)}
+          >
+            <div className={styles.slotCode} style={{ color: color.text }}>{off.course?.code}</div>
+            <div className={styles.slotName}>{off.course?.name}</div>
+            <div className={styles.slotMeta}><Clock size={11} /><span>{off.startTime}–{off.endTime}</span></div>
+            <div className={styles.slotMeta}><MapPin size={11} /><span>{off.room}</span></div>
+            <div className={styles.slotFooter}>
+              <Badge color="blue" size="sm">{off.course?.creditHours} CH</Badge>
+              {pendingCount > 0 && <Badge color="orange" size="sm"><AlertTriangle size={9} /> {pendingCount}</Badge>}
+              {enrolment.finalGrade && (
+                <Badge color={GRADE_COLORS[enrolment.finalGrade] ?? 'gray'} size="sm">
+                  {GRADE_LABELS[enrolment.finalGrade]}
+                </Badge>
+              )}
+            </div>
+          </div>
+        )
+      })
 
     return (
       <div className={styles.calendarView}>
+        {/* ── Mobile: day tabs + single-day content ── */}
+        <div className={styles.mobileDayTabs}>
+          {displayDays.map(day => (
+            <button
+              key={day}
+              className={`${styles.mobileDayTab} ${currentMobileDay === day ? styles.mobileDayTabActive : ''}`}
+              onClick={() => setMobileDay(day)}
+            >
+              <span className={styles.mobileDayTabName}>{t(`lmsCourses.days.${day.toLowerCase()}`, { defaultValue: day.slice(0, 3) })}</span>
+              {byDay[day].length > 0 && <span className={styles.mobileDayTabDot} />}
+            </button>
+          ))}
+        </div>
+        <div className={styles.mobileDayContent}>
+          {byDay[currentMobileDay].length === 0
+            ? <div className={styles.calendarEmpty}>—</div>
+            : renderSlots(currentMobileDay)
+          }
+        </div>
+
+        {/* ── Desktop: full week grid ── */}
         <div className={styles.calendarGrid} style={{ gridTemplateColumns: `repeat(${displayDays.length}, 1fr)` }}>
           {displayDays.map(day => (
             <div key={day} className={styles.calendarColumn}>
               <div className={`${styles.calendarDayHeader} ${byDay[day].length > 0 ? styles.calendarDayHeaderActive : ''}`}>
                 <span className={styles.calendarDayName}>{t(`lmsCourses.days.${day.toLowerCase()}`, { defaultValue: day.slice(0, 3) })}</span>
-                {byDay[day].length > 0 && (
-                  <span className={styles.calendarDayCount}>{byDay[day].length}</span>
-                )}
+                {byDay[day].length > 0 && <span className={styles.calendarDayCount}>{byDay[day].length}</span>}
               </div>
               <div className={styles.calendarSlots}>
-                {byDay[day].length === 0 ? (
-                  <div className={styles.calendarEmpty}>—</div>
-                ) : (
-                  byDay[day].map(enrolment => {
-                    const off = enrolment.offering
-                    const color = colorMap[off.id]
-                    const pendingCount = off.assignments?.filter(a => a.dueDate && new Date(a.dueDate) > new Date()).length ?? 0
-                    return (
-                      <div
-                        key={enrolment.id}
-                        className={styles.calendarSlot}
-                        style={{ background: color.bg, borderColor: color.border }}
-                        onClick={() => navigate(`/lms/courses/${off.id}`)}
-                      >
-                        <div className={styles.slotCode} style={{ color: color.text }}>{off.course?.code}</div>
-                        <div className={styles.slotName}>{off.course?.name}</div>
-                        <div className={styles.slotMeta}>
-                          <Clock size={11} />
-                          <span>{off.startTime}–{off.endTime}</span>
-                        </div>
-                        <div className={styles.slotMeta}>
-                          <MapPin size={11} />
-                          <span>{off.room}</span>
-                        </div>
-                        <div className={styles.slotFooter}>
-                          <Badge color="blue" size="sm">{off.course?.creditHours} CH</Badge>
-                          {pendingCount > 0 && (
-                            <Badge color="orange" size="sm"><AlertTriangle size={9} /> {pendingCount}</Badge>
-                          )}
-                          {enrolment.finalGrade && (
-                            <Badge color={GRADE_COLORS[enrolment.finalGrade] ?? 'gray'} size="sm">
-                              {GRADE_LABELS[enrolment.finalGrade]}
-                            </Badge>
-                          )}
-                        </div>
-                      </div>
-                    )
-                  })
-                )}
+                {byDay[day].length === 0
+                  ? <div className={styles.calendarEmpty}>—</div>
+                  : renderSlots(day)
+                }
               </div>
             </div>
           ))}

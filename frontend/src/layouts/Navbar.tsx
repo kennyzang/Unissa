@@ -2,9 +2,11 @@ import { useState } from 'react'
 import { useNavigate, useLocation, Link } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
-import { Bell, Settings, LogOut } from 'lucide-react'
+import { Bell, Settings, LogOut, Check } from 'lucide-react'
 import { useAuthStore } from '@/stores/authStore'
 import { useUIStore } from '@/stores/uiStore'
+import { useLanguageStore } from '@/stores/languageStore'
+import { LANGUAGES } from '@/lib/i18n'
 import { apiClient } from '@/lib/apiClient'
 import LanguageSwitcher from '@/components/ui/LanguageSwitcher'
 import styles from './Navbar.module.scss'
@@ -24,7 +26,9 @@ const Navbar = () => {
   const { t }                   = useTranslation()
   const navigate                = useNavigate()
   const location                = useLocation()
-  const [notifOpen, setNotifOpen] = useState(false)
+  const [notifOpen, setNotifOpen]   = useState(false)
+  const [avatarOpen, setAvatarOpen] = useState(false)
+  const { language, setLanguage }   = useLanguageStore()
 
   // Breadcrumb map using translated labels
   const BREADCRUMBS: Record<string, string[]> = {
@@ -143,7 +147,14 @@ const Navbar = () => {
 
         {user && (
           <div className={styles.userMenu}>
-            <div className={styles.avatar}>{user.displayName.charAt(0).toUpperCase()}</div>
+            {/* Avatar – clickable on mobile to open panel */}
+            <div
+              className={styles.avatar}
+              onClick={() => setAvatarOpen(o => !o)}
+              style={{ cursor: 'pointer' }}
+            >
+              {user.displayName.charAt(0).toUpperCase()}
+            </div>
             <div className={styles.userInfo}>
               <span className={styles.userName}>{user.displayName}</span>
               <span className={styles.userRole}>{user.role}</span>
@@ -151,12 +162,48 @@ const Navbar = () => {
             <button className={styles.logoutBtn} onClick={handleLogout} title={t('navbar.signOut')}>
               <LogOut size={14} />
             </button>
+
+            {/* Mobile avatar dropdown */}
+            {avatarOpen && (
+              <div className={styles.avatarDropdown}>
+                {/* User info */}
+                <div className={styles.avatarDropdownUser}>
+                  <div className={styles.avatarDropdownAvatar}>{user.displayName.charAt(0).toUpperCase()}</div>
+                  <div>
+                    <div className={styles.avatarDropdownName}>{user.displayName}</div>
+                    <div className={styles.avatarDropdownRole}>{user.role.toUpperCase()}</div>
+                  </div>
+                </div>
+                {/* Language list */}
+                <div className={styles.avatarDropdownLangSection}>
+                  <div className={styles.avatarDropdownLangLabel}>Language</div>
+                  {LANGUAGES.map(l => (
+                    <button
+                      key={l.code}
+                      className={`${styles.avatarDropdownLangRow} ${language === l.code ? styles.avatarDropdownLangRowActive : ''}`}
+                      onClick={() => setLanguage(l.code)}
+                    >
+                      <span className={styles.avatarDropdownLangName}>{l.nativeLabel}</span>
+                      <span className={styles.avatarDropdownLangSub}>{l.label}</span>
+                      {language === l.code && <Check size={14} className={styles.avatarDropdownLangCheck} />}
+                    </button>
+                  ))}
+                </div>
+                {/* Sign out */}
+                <button className={styles.avatarDropdownLogout} onClick={handleLogout}>
+                  <LogOut size={14} />
+                  <span>{t('navbar.signOut')}</span>
+                </button>
+              </div>
+            )}
           </div>
         )}
       </div>
 
-      {/* Close notif panel on outside click */}
-      {notifOpen && <div className={styles.overlay} onClick={() => setNotifOpen(false)} />}
+      {/* Close panels on outside click */}
+      {(notifOpen || avatarOpen) && (
+        <div className={styles.overlay} onClick={() => { setNotifOpen(false); setAvatarOpen(false) }} />
+      )}
     </header>
   )
 }
