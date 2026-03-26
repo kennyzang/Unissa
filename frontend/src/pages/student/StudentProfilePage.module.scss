@@ -11,8 +11,8 @@
   overflow-x: hidden;
 
   @media (max-width: v.$bp-md) {
-    padding: v.$space-4 v.$space-3;
-    gap: v.$space-4;
+    padding: v.$space-3;
+    gap: v.$space-3;
   }
 }
 
@@ -28,7 +28,13 @@
   align-items: center;
   gap: v.$space-6;
   box-shadow: v.$shadow-sm;
-  @media (max-width: v.$bp-md) { flex-direction: column; align-items: flex-start; }
+
+  @media (max-width: v.$bp-md) {
+    flex-direction: column;
+    align-items: stretch;
+    padding: v.$space-4;
+    gap: v.$space-3;
+  }
 }
 
 .avatar {
@@ -43,10 +49,36 @@
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
+
+  @media (max-width: v.$bp-md) { width: 48px; height: 48px; font-size: v.$font-size-xl; }
 }
 
-.heroInfo { flex: 1; display: flex; flex-direction: column; gap: v.$space-2; }
-.heroName { font-size: v.$font-size-xl; font-weight: v.$font-weight-bold; color: var(--color-gray-8); }
+// Mobile: avatar + name/id side by side
+.heroTop {
+  display: contents;
+
+  @media (max-width: v.$bp-md) {
+    display: flex;
+    align-items: center;
+    gap: v.$space-3;
+  }
+}
+
+.heroInfo {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: v.$space-2;
+
+  @media (max-width: v.$bp-md) { gap: v.$space-1; }
+}
+.heroName {
+  font-size: v.$font-size-xl;
+  font-weight: v.$font-weight-bold;
+  color: var(--color-gray-8);
+
+  @media (max-width: v.$bp-md) { font-size: v.$font-size-md; }
+}
 .heroId { font-size: v.$font-size-sm; color: var(--color-gray-5); font-weight: v.$font-weight-medium; }
 .heroMeta {
   display: flex;
@@ -55,15 +87,34 @@
   font-size: v.$font-size-xs;
   color: var(--color-gray-6);
   span { display: flex; align-items: center; gap: 3px; }
+
+  @media (max-width: v.$bp-md) { gap: v.$space-2 v.$space-3; }
 }
 .heroBadges { display: flex; gap: v.$space-2; flex-wrap: wrap; }
 .heroStats {
   display: flex;
   gap: v.$space-6;
-  @media (max-width: v.$bp-md) { width: 100%; }
+
+  @media (max-width: v.$bp-md) {
+    gap: 0;
+    border-top: 1px solid var(--color-gray-2);
+    padding-top: v.$space-3;
+  }
 }
-.heroStat { text-align: center; }
-.heroStatValue { display: block; font-size: v.$font-size-2xl; font-weight: v.$font-weight-bold; color: v.$brand-primary; line-height: 1; }
+.heroStat {
+  text-align: center;
+
+  @media (max-width: v.$bp-md) { flex: 1; }
+}
+.heroStatValue {
+  display: block;
+  font-size: v.$font-size-2xl;
+  font-weight: v.$font-weight-bold;
+  color: v.$brand-primary;
+  line-height: 1;
+
+  @media (max-width: v.$bp-md) { font-size: v.$font-size-xl; }
+}
 .heroStatLabel { font-size: v.$font-size-xs; color: var(--color-gray-5); margin-top: 2px; display: block; }
 
 // Tabs
@@ -118,7 +169,12 @@
 .slotLecturer { font-size: 10px; color: var(--color-gray-5); }
 
 // Campus Services
-.servicesGrid { display: grid; grid-template-columns: repeat(3, 1fr); gap: v.$space-4; @media (max-width: v.$bp-md) { grid-template-columns: 1fr; } }
+.servicesGrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: v.$space-4;
+  @media (max-width: v.$bp-md) { grid-template-columns: 1fr 1fr; gap: v.$space-2; }
+}
 .serviceCard {
   background: white;
   border: 1px solid var(--color-gray-3);
@@ -128,11 +184,41 @@
   gap: v.$space-4;
   align-items: flex-start;
   box-shadow: v.$shadow-sm;
+
+  @media (max-width: v.$bp-md) {
+    padding: v.$space-3;
+    gap: v.$space-2;
+    flex-direction: column;
+    align-items: flex-start;
+  }
 }
-.serviceIconWrap { width: 52px; height: 52px; border-radius: v.$border-radius-lg; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.serviceIconWrap {
+  width: 52px;
+  height: 52px;
+  border-radius: v.$border-radius-lg;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+
+  @media (max-width: v.$bp-md) { width: 36px; height: 36px; border-radius: v.$border-radius-md; svg { width: 18px; height: 18px; } }
+}
 .serviceBody { flex: 1; }
-.serviceTitle { font-size: v.$font-size-sm; color: var(--color-gray-5); margin-bottom: 2px; }
-.serviceValue { font-size: v.$font-size-md; font-weight: v.$font-weight-semibold; color: var(--color-gray-8); word-break: break-all; }
+.serviceTitle {
+  font-size: v.$font-size-sm;
+  color: var(--color-gray-5);
+  margin-bottom: 2px;
+
+  @media (max-width: v.$bp-md) { font-size: v.$font-size-xs; }
+}
+.serviceValue {
+  font-size: v.$font-size-md;
+  font-weight: v.$font-weight-semibold;
+  color: var(--color-gray-8);
+  word-break: break-all;
+
+  @media (max-width: v.$bp-md) { font-size: v.$font-size-sm; }
+}
 .serviceStatus { display: flex; align-items: center; gap: v.$space-2; font-size: v.$font-size-xs; margin-top: v.$space-2; }
 .serviceDot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
 .serviceActive { color: v.$color-success; .serviceDot { background: v.$color-success; } }

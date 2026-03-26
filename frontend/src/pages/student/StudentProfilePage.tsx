@@ -94,22 +94,21 @@ const StudentProfilePage: React.FC = () => {
     <div className={styles.page}>
       {/* Profile Hero */}
       <div className={styles.hero}>
-        <div className={styles.avatar}>
-          {student.user.displayName.charAt(0).toUpperCase()}
-        </div>
-        <div className={styles.heroInfo}>
-          <div className={styles.heroName}>{student.user.displayName}</div>
-          <div className={styles.heroId}>{student.studentId}</div>
-          <div className={styles.heroMeta}>
-            <span><GraduationCap size={13} /> {student.programme.name}</span>
-            <span><MapPin size={13} /> {student.programme.department.name}</span>
-            <span><Calendar size={13} /> {t('studentProfile.intake')} {student.intake.semester.name}</span>
-            <span><Mail size={13} /> {student.user.email}</span>
-          </div>
-          <div className={styles.heroBadges}>
-            <Badge color={STATUS_COLOR[student.status] ?? 'gray'}>{student.status}</Badge>
-            <Badge color="blue">{student.modeOfStudy.replace('_', ' ')}</Badge>
-            {student.scholarshipPct > 0 && <Badge color="purple">{student.scholarshipPct}% {t('studentProfile.scholarship')}</Badge>}
+        <div className={styles.heroTop}>
+          <div className={styles.heroInfo}>
+            <div className={styles.heroName}>{student.user.displayName}</div>
+            <div className={styles.heroId}>{student.studentId}</div>
+            <div className={styles.heroMeta}>
+              <span><GraduationCap size={13} /> {student.programme.name}</span>
+              <span><MapPin size={13} /> {student.programme.department.name}</span>
+              <span><Calendar size={13} /> {t('studentProfile.intake')} {student.intake.semester.name}</span>
+              <span><Mail size={13} /> {student.user.email}</span>
+            </div>
+            <div className={styles.heroBadges}>
+              <Badge color={STATUS_COLOR[student.status] ?? 'gray'}>{student.status}</Badge>
+              <Badge color="blue">{student.modeOfStudy.replace('_', ' ')}</Badge>
+              {student.scholarshipPct > 0 && <Badge color="purple">{student.scholarshipPct}% {t('studentProfile.scholarship')}</Badge>}
+            </div>
           </div>
         </div>
         <div className={styles.heroStats}>

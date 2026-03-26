@@ -181,7 +181,7 @@ const Navbar = () => {
                     <button
                       key={l.code}
                       className={`${styles.avatarDropdownLangRow} ${language === l.code ? styles.avatarDropdownLangRowActive : ''}`}
-                      onClick={() => setLanguage(l.code)}
+                      onClick={() => { setLanguage(l.code); setAvatarOpen(false) }}
                     >
                       <span className={styles.avatarDropdownLangName}>{l.nativeLabel}</span>
                       <span className={styles.avatarDropdownLangSub}>{l.label}</span>

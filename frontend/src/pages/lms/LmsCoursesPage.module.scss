@@ -10,8 +10,8 @@
   overflow-x: hidden;
 
   @media (max-width: v.$bp-md) {
-    padding: v.$space-4 v.$space-3;
-    gap: v.$space-4;
+    padding: v.$space-3 v.$space-3;
+    gap: v.$space-3;
   }
 }
 .header {
@@ -32,8 +32,20 @@
 .pageSub { font-size: v.$font-size-sm; color: var(--color-gray-5); margin: v.$space-1 0 0; }
 .loading { display: flex; align-items: center; justify-content: center; height: 300px; color: var(--color-gray-5); }
 
-.headerRight { display: flex; align-items: center; gap: v.$space-4; flex-wrap: wrap; }
-.headerStats { display: flex; gap: v.$space-5; }
+.headerRight {
+  display: flex;
+  align-items: center;
+  gap: v.$space-4;
+  flex-wrap: wrap;
+
+  @media (max-width: v.$bp-md) { gap: v.$space-2; }
+}
+.headerStats {
+  display: flex;
+  gap: v.$space-5;
+
+  @media (max-width: v.$bp-md) { display: none; }
+}
 .headerStat { text-align: center; span { display: block; font-size: v.$font-size-xl; font-weight: v.$font-weight-bold; color: v.$brand-primary; } label { font-size: v.$font-size-xs; color: var(--color-gray-5); } }
 
 // View toggle
@@ -49,7 +61,14 @@
 .viewBtnActive { background: white !important; color: v.$brand-primary !important; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
 
 // Card view
-.courseGrid { display: grid; grid-template-columns: repeat(3, 1fr); gap: v.$space-4; @media (max-width: v.$bp-xl) { grid-template-columns: repeat(2, 1fr); } @media (max-width: v.$bp-md) { grid-template-columns: 1fr; } }
+.courseGrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: v.$space-4;
+  @media (max-width: v.$bp-xl) { grid-template-columns: repeat(2, 1fr); }
+  @media (max-width: v.$bp-md) { grid-template-columns: repeat(2, 1fr); gap: v.$space-2; }
+  @media (max-width: 360px) { grid-template-columns: 1fr; }
+}
 
 .courseCard {
   background: white;
@@ -62,18 +81,46 @@
   flex-direction: column;
   gap: v.$space-4;
   &:hover { box-shadow: v.$shadow-md; transform: translateY(-2px); border-color: v.$brand-primary-3; }
+
+  @media (max-width: v.$bp-md) {
+    padding: v.$space-3;
+    gap: v.$space-2;
+    border-radius: v.$border-radius-md;
+  }
 }
 
 .cardHeader { display: flex; align-items: flex-start; gap: v.$space-3; }
-.courseIcon { width: 40px; height: 40px; border-radius: v.$border-radius-md; background: v.$brand-primary-1; color: v.$brand-primary; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.courseIcon {
+  width: 40px; height: 40px;
+  border-radius: v.$border-radius-md;
+  background: v.$brand-primary-1; color: v.$brand-primary;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+
+  @media (max-width: v.$bp-md) { width: 28px; height: 28px; border-radius: v.$border-radius; svg { width: 14px; height: 14px; } }
+}
 .courseInfo { flex: 1; }
 .courseCode { font-size: v.$font-size-xs; font-weight: v.$font-weight-semibold; color: v.$brand-primary; }
 .courseName { font-size: v.$font-size-sm; font-weight: v.$font-weight-semibold; color: var(--color-gray-8); margin-top: 1px; line-height: 1.3; }
 
-.cardMeta { display: flex; flex-direction: column; gap: v.$space-2; }
+.cardMeta {
+  display: flex;
+  flex-direction: column;
+  gap: v.$space-2;
+
+  @media (max-width: v.$bp-md) { gap: 3px; }
+}
 .metaItem { display: flex; align-items: center; gap: v.$space-2; font-size: v.$font-size-xs; color: var(--color-gray-5); }
 
-.cardFooter { display: flex; justify-content: space-between; align-items: center; padding-top: v.$space-3; border-top: 1px solid var(--color-gray-2); }
+.cardFooter {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-top: v.$space-3;
+  border-top: 1px solid var(--color-gray-2);
+
+  @media (max-width: v.$bp-md) { padding-top: v.$space-2; }
+}
 .footerLeft { display: flex; gap: v.$space-2; flex-wrap: wrap; }
 .arrowIcon { color: var(--color-gray-4); }
 
@@ -104,8 +151,8 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 4px;
-  padding: v.$space-3 v.$space-4;
+  gap: 3px;
+  padding: v.$space-2 v.$space-3;
   border: none;
   background: none;
   cursor: pointer;
@@ -142,8 +189,8 @@
   @media (max-width: v.$bp-md) {
     display: flex;
     flex-direction: column;
-    gap: v.$space-3;
-    padding: v.$space-4;
+    gap: v.$space-2;
+    padding: v.$space-3;
   }
 }
 
