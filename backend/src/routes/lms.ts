@@ -123,29 +123,47 @@ router.post('/attendance/sessions', async (req: AuthRequest, res: Response) => {
   res.status(201).json({ success: true, data: { ...session, qrData: sessionToken } })
 })
 
-// POST /api/v1/attendance/check-in  — Student scans QR
+// POST /api/v1/attendance/check-in  — Student submits token (JWT or sessionId)
 router.post('/attendance/check-in', async (req: AuthRequest, res: Response) => {
   const { token, studentId } = req.body as { token: string; studentId: string }
 
-  let payload: any
-  try {
-    payload = verify(token, process.env.JWT_SECRET ?? 'secret')
-  } catch {
-    res.status(400).json({ success: false, message: 'Invalid or expired QR code' })
+  let session: any = null
+
+  // Try matching as sessionId directly (short form)
+  if (!token.includes('.')) {
+    session = await prisma.attendanceSession.findUnique({ where: { id: token } })
+  } else {
+    // Validate JWT token
+    try {
+      verify(token, process.env.JWT_SECRET ?? 'secret')
+    } catch {
+      res.status(400).json({ success: false, message: 'Invalid or expired token' })
+      return
+    }
+    session = await prisma.attendanceSession.findUnique({ where: { sessionToken: token } })
+  }
+
+  if (!session || session.qrExpiresAt < new Date()) {
+    res.status(400).json({ success: false, message: 'Session not found or expired' })
+    return
+  }
+  if (session.endedAt) {
+    res.status(400).json({ success: false, message: 'Session has been closed by lecturer' })
     return
   }
 
-  const session = await prisma.attendanceSession.findUnique({
-    where: { sessionToken: token },
+  // Look up student by userId or studentId
+  const student = await prisma.student.findFirst({
+    where: { OR: [{ id: studentId }, { studentId }, { userId: studentId }] },
   })
-  if (!session || session.qrExpiresAt < new Date()) {
-    res.status(400).json({ success: false, message: 'QR session expired' })
+  if (!student) {
+    res.status(404).json({ success: false, message: 'Student record not found' })
     return
   }
 
   const record = await prisma.attendanceRecord.upsert({
-    where: { sessionId_studentId: { sessionId: session.id, studentId } },
-    create: { sessionId: session.id, studentId, status: 'present' },
+    where: { sessionId_studentId: { sessionId: session.id, studentId: student.id } },
+    create: { sessionId: session.id, studentId: student.id, status: 'present' },
     update: { status: 'present', scannedAt: new Date() },
   })
 
@@ -158,6 +176,150 @@ router.get('/attendance/live-count/:sessionId', async (req: AuthRequest, res: Re
     where: { sessionId: req.params.sessionId, status: 'present' },
   })
   res.json({ success: true, data: { count } })
+})
+
+// GET /api/v1/attendance/sessions/offering/:offeringId  — List sessions for a course offering
+router.get('/attendance/sessions/offering/:offeringId', async (req: AuthRequest, res: Response) => {
+  const sessions = await prisma.attendanceSession.findMany({
+    where: { offeringId: req.params.offeringId },
+    include: {
+      records: { select: { id: true, status: true, scannedAt: true, studentId: true } },
+    },
+    orderBy: { startedAt: 'desc' },
+  })
+  res.json({ success: true, data: sessions })
+})
+
+// PATCH /api/v1/attendance/sessions/:sessionId/close  — Lecturer closes session
+router.patch('/attendance/sessions/:sessionId/close', async (req: AuthRequest, res: Response) => {
+  const session = await prisma.attendanceSession.update({
+    where: { id: req.params.sessionId },
+    data: { endedAt: new Date() },
+  })
+  res.json({ success: true, data: session })
+})
+
+// GET /api/v1/attendance/records/offering/:offeringId  — Full attendance report for a course
+router.get('/attendance/records/offering/:offeringId', async (req: AuthRequest, res: Response) => {
+  const sessions = await prisma.attendanceSession.findMany({
+    where: { offeringId: req.params.offeringId as string },
+    include: {
+      records: {
+        include: {
+          student: { include: { user: { select: { displayName: true } } } },
+        },
+      },
+    },
+    orderBy: { startedAt: 'desc' },
+  }) as any[]
+
+  // Build per-student summary
+  const studentMap: Record<string, { studentId: string; name: string; present: number; total: number }> = {}
+  const totalSessions = sessions.length
+
+  for (const sess of sessions) {
+    for (const rec of sess.records) {
+      if (!studentMap[rec.studentId]) {
+        studentMap[rec.studentId] = {
+          studentId: rec.studentId,
+          name: rec.student.user.displayName,
+          present: 0,
+          total: totalSessions,
+        }
+      }
+      if (rec.status === 'present') studentMap[rec.studentId].present++
+    }
+  }
+
+  res.json({
+    success: true,
+    data: {
+      sessions,
+      summary: Object.values(studentMap).map(s => ({
+        ...s,
+        attendancePct: totalSessions > 0 ? Math.round((s.present / totalSessions) * 100) : 0,
+      })),
+    },
+  })
+})
+
+// GET /api/v1/attendance/records/student/:studentId  — Student's own attendance across all courses
+router.get('/attendance/records/student/:studentId', async (req: AuthRequest, res: Response) => {
+  const student = await prisma.student.findFirst({
+    where: { OR: [{ id: req.params.studentId }, { studentId: req.params.studentId }, { userId: req.params.studentId }] },
+  })
+  if (!student) { res.status(404).json({ success: false, message: 'Student not found' }); return }
+
+  const records = await prisma.attendanceRecord.findMany({
+    where: { studentId: student.id },
+    include: {
+      session: {
+        include: {
+          offering: { include: { course: true } },
+        },
+      },
+    },
+    orderBy: { scannedAt: 'desc' },
+  })
+
+  // Group by offering
+  const offeringMap: Record<string, { offeringId: string; courseName: string; courseCode: string; present: number; total: number }> = {}
+  for (const rec of records) {
+    const oid = rec.session.offeringId
+    if (!offeringMap[oid]) {
+      offeringMap[oid] = {
+        offeringId: oid,
+        courseName: rec.session.offering.course.name,
+        courseCode: rec.session.offering.course.code,
+        present: 0,
+        total: 0,
+      }
+    }
+    offeringMap[oid].total++
+    if (rec.status === 'present') offeringMap[oid].present++
+  }
+
+  res.json({
+    success: true,
+    data: {
+      records,
+      summary: Object.values(offeringMap).map(o => ({
+        ...o,
+        attendancePct: o.total > 0 ? Math.round((o.present / o.total) * 100) : 0,
+      })),
+    },
+  })
+})
+
+// GET /api/v1/attendance/offerings/lecturer/:lecturerId — Offerings taught by lecturer
+router.get('/attendance/offerings/lecturer/:lecturerId', async (req: AuthRequest, res: Response) => {
+  const param = req.params.lecturerId
+
+  // Admin "all" sentinel — return all offerings
+  if (param === 'all') {
+    const offerings = await prisma.courseOffering.findMany({
+      include: {
+        course: true,
+        _count: { select: { enrolments: true, attendanceSessions: true } },
+      },
+    })
+    res.json({ success: true, data: offerings })
+    return
+  }
+
+  const staff = await prisma.staff.findFirst({
+    where: { OR: [{ id: param }, { staffId: param }, { userId: param }] },
+  })
+  if (!staff) { res.status(404).json({ success: false, message: 'Lecturer not found' }); return }
+
+  const offerings = await prisma.courseOffering.findMany({
+    where: { lecturerId: staff.id },
+    include: {
+      course: true,
+      _count: { select: { enrolments: true, attendanceSessions: true } },
+    },
+  })
+  res.json({ success: true, data: offerings })
 })
 
 export default router
