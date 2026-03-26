@@ -167,17 +167,39 @@ const Sidebar = () => {
           const isOpen = expanded.has(group.key)
           const hasActiveChild = children.some(c => isActive(c.path))
 
+          // Single child: render flat without group header
+          if (children.length === 1) {
+            const item = children[0]
+            return (
+              <NavLink
+                key={item.key}
+                to={item.path}
+                onClick={closeMobileSidebar}
+                className={({ isActive: a }) =>
+                  clsx(styles.navItem, { [styles.active]: a || isActive(item.path) })
+                }
+                title={sidebarCollapsed ? t(item.labelKey) : undefined}
+              >
+                <span className={styles.navIcon}>{group.icon}</span>
+                {!sidebarCollapsed && <span className={styles.navLabel}>{t(item.labelKey)}</span>}
+              </NavLink>
+            )
+          }
+
           return (
             <div key={group.key}>
               {!sidebarCollapsed && (
                 <div
-                  className={clsx(styles.groupHeader, { [styles.active]: hasActiveChild && !isOpen })}
+                  className={clsx(styles.groupHeader, {
+                    [styles.active]: hasActiveChild && !isOpen,
+                    [styles.groupOpen]: isOpen,
+                  })}
                   onClick={() => toggleGroup(group.key)}
                   title={t(group.labelKey)}
                 >
                   <span className={styles.groupIcon}>{group.icon}</span>
                   <span className={styles.groupLabel}>{t(group.labelKey)}</span>
-                  <span className={clsx(styles.groupChevron, { [styles.open]: isOpen })}>▶</span>
+                  <span className={clsx(styles.groupChevron, { [styles.open]: isOpen })}>▾</span>
                 </div>
               )}
 
