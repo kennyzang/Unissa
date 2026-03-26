@@ -42,7 +42,16 @@
       "Bash(npm install:*)",
       "Bash(sudo chown:*)",
       "Bash(pnpm --filter frontend add i18next react-i18next)",
-      "Bash(pnpm --filter frontend exec tsc --noEmit)"
+      "Bash(pnpm --filter frontend exec tsc --noEmit)",
+      "WebFetch(domain:test-demo.easycraft.ai)",
+      "Bash(grep -r \"Input\\\\|Select\" /Users/xiex/Documents/OverseaBU/project/UNISSA-POC/frontend/src/components/ui/*.tsx)",
+      "Bash(grep -r \"LUI\\\\|@lui\" /Users/xiex/Documents/OverseaBU/project/UNISSA-POC/frontend --include=*.tsx --include=*.ts)",
+      "Bash(grep -r \"<input\\\\|<select\" /Users/xiex/Documents/OverseaBU/project/UNISSA-POC/frontend/src --include=*.tsx --include=*.ts -B 2 -n)",
+      "Bash(python3 -c \"import json,sys; p=json.load\\(sys.stdin\\); print\\(json.dumps\\({k:p.get\\(k\\) for k in [''''main'''',''''module'''',''''exports'''']}, indent=2\\)\\)\")",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:5173/)",
+      "Bash(grep -n \"@lui/core\\\\|@lui/icons\\\\|from ''@lui\" /Users/xiex/Documents/OverseaBU/project/UNISSA-POC/frontend/src/pages/hr/LeaveManagementPage.tsx /Users/xiex/Documents/OverseaBU/project/UNISSA-POC/frontend/src/pages/hr/HrStaffPage.tsx /Users/xiex/Documents/OverseaBU/project/UNISSA-POC/frontend/src/pages/admission/AdmissionReviewPage.tsx /Users/xiex/Documents/OverseaBU/project/UNISSA-POC/frontend/src/pages/research/ResearchGrantsPage.tsx /Users/xiex/Documents/OverseaBU/project/UNISSA-POC/frontend/src/components/ui/LanguageSwitcher/index.tsx)",
+      "Bash(sed -i '' \"s/import { Input as LuiInput, Select as LuiSelect } from ''@lui\\\\/core''/import { Input as AntInput, Select as AntSelect } from ''antd''/\" /Users/xiex/Documents/OverseaBU/project/UNISSA-POC/frontend/src/pages/hr/LeaveManagementPage.tsx)",
+      "Bash(sed -i '' 's/LuiInput/AntInput/g; s/LuiSelect/AntSelect/g' /Users/xiex/Documents/OverseaBU/project/UNISSA-POC/frontend/src/pages/hr/LeaveManagementPage.tsx)"
     ]
   }
 }

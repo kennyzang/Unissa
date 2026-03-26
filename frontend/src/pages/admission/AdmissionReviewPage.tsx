@@ -2,6 +2,7 @@ import { useTranslation } from 'react-i18next'
 import React, { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { CheckCircle, XCircle, Clock, Search, Eye, Users } from 'lucide-react'
+import { Input as AntInput } from 'antd'
 import { apiClient } from '@/lib/apiClient'
 import { useUIStore } from '@/stores/uiStore'
 import Card from '@/components/ui/Card'
@@ -143,15 +144,14 @@ const AdmissionReviewPage: React.FC = () => {
       <Card
         title="Applications"
         extra={
-          <div className={styles.searchWrap}>
-            <Search size={14} />
-            <input
-              className={styles.searchInput}
-              placeholder="Search by name, ref, programme..."
-              value={search}
-              onChange={e => setSearch(e.target.value)}
-            />
-          </div>
+          <AntInput
+            className={styles.searchInput}
+            placeholder="Search by name, ref, programme..."
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            prefix={<Search size={14} />}
+            allowClear
+          />
         }
         noPadding
       >

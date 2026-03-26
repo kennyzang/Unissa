@@ -1,5 +1,6 @@
 import { useLanguageStore } from '@/stores/languageStore'
 import { LANGUAGES, type Language } from '@/lib/i18n'
+import { Select as AntSelect } from 'antd'
 import styles from './LanguageSwitcher.module.scss'
 
 interface Props {
@@ -12,15 +13,12 @@ const LanguageSwitcher = ({ variant = 'buttons', theme = 'dark' }: Props) => {
 
   if (variant === 'select') {
     return (
-      <select
+      <AntSelect
         className={styles.select}
         value={language}
-        onChange={e => setLanguage(e.target.value as Language)}
-      >
-        {LANGUAGES.map(l => (
-          <option key={l.code} value={l.code}>{l.nativeLabel}</option>
-        ))}
-      </select>
+        onChange={(val) => setLanguage(val as Language)}
+        options={LANGUAGES.map(l => ({ label: l.nativeLabel, value: l.code }))}
+      />
     )
   }
 

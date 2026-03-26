@@ -3,6 +3,7 @@ import React, { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useForm } from 'react-hook-form'
 import { FlaskConical, Plus, CheckCircle, XCircle, Clock, DollarSign, Search } from 'lucide-react'
+import { Input as AntInput } from 'antd'
 import { apiClient } from '@/lib/apiClient'
 import { useUIStore } from '@/stores/uiStore'
 import { useAuthStore } from '@/stores/authStore'
@@ -202,15 +203,14 @@ const ResearchGrantsPage: React.FC = () => {
       <Card
         title="Grant Proposals"
         extra={
-          <div className={styles.searchWrap}>
-            <Search size={14} />
-            <input
-              className={styles.searchInput}
-              placeholder="Search by title, reference, PI name..."
-              value={search}
-              onChange={e => setSearch(e.target.value)}
-            />
-          </div>
+          <AntInput
+            className={styles.searchInput}
+            placeholder="Search by title, reference, PI name..."
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            prefix={<Search size={14} />}
+            allowClear
+          />
         }
         noPadding
       >
@@ -236,7 +236,7 @@ const ResearchGrantsPage: React.FC = () => {
         <form className={styles.form}>
           <div className={styles.formGroup}>
             <label className={styles.label}>Research Title *</label>
-            <input
+            <AntInput
               className={styles.input}
               placeholder="Enter the full title of your research"
               {...register('title', { required: 'Title is required' })}
@@ -258,8 +258,8 @@ const ResearchGrantsPage: React.FC = () => {
           <div className={styles.twoCol}>
             <div className={styles.formGroup}>
               <label className={styles.label}>Duration (months) *</label>
-              <input
-                type="number" min="1" max="60"
+              <AntInput
+                type="number"
                 className={styles.input}
                 placeholder="e.g. 24"
                 {...register('durationMonths', { required: 'Duration is required', min: 1, max: 60 })}
@@ -269,8 +269,8 @@ const ResearchGrantsPage: React.FC = () => {
 
             <div className={styles.formGroup}>
               <label className={styles.label}>Total Budget (BND) *</label>
-              <input
-                type="number" min="100"
+              <AntInput
+                type="number"
                 className={styles.input}
                 placeholder="e.g. 25000"
                 {...register('totalBudget', { required: 'Budget is required', min: 100 })}

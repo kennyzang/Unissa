@@ -2,7 +2,8 @@ import { useTranslation } from 'react-i18next'
 import React, { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { Calendar, Plus, CheckCircle, XCircle, Clock, FileText } from 'lucide-react'
-import { useForm } from 'react-hook-form'
+import { useForm, Controller } from 'react-hook-form'
+import { Input as AntInput, Select as AntSelect } from 'antd'
 import { apiClient } from '@/lib/apiClient'
 import { useUIStore } from '@/stores/uiStore'
 import { useAuthStore } from '@/stores/authStore'
@@ -68,7 +69,7 @@ const LeaveManagementPage: React.FC = () => {
   const qc        = useQueryClient()
   const isManager = user?.role === 'manager' || user?.role === 'admin' || user?.role === 'hradmin'
 
-  const { register, handleSubmit, reset, watch, formState: { errors } } = useForm<LeaveForm>({
+  const { register, handleSubmit, reset, watch, control, formState: { errors } } = useForm<LeaveForm>({
     defaultValues: { leaveType: 'annual', coveringOfficerId: 'N/A' },
   })
 
@@ -201,20 +202,33 @@ const LeaveManagementPage: React.FC = () => {
         <form className={styles.form}>
           <div className={styles.formGroup}>
             <label className={styles.label}>Leave Type *</label>
-            <select className={styles.select} {...register('leaveType', { required: true })}>
-              <option value="annual">Annual Leave</option>
-              <option value="medical">Medical Leave</option>
-              <option value="emergency">Emergency Leave</option>
-              <option value="maternity">Maternity Leave</option>
-              <option value="paternity">Paternity Leave</option>
-              <option value="unpaid">Unpaid Leave</option>
-            </select>
+            <Controller
+              name="leaveType"
+              control={control}
+              rules={{ required: true }}
+              render={({ field }) => (
+                <AntSelect
+                  value={field.value}
+                  onChange={field.onChange}
+                  onBlur={field.onBlur}
+                  style={{ width: '100%' }}
+                  options={[
+                    { label: 'Annual Leave',    value: 'annual' },
+                    { label: 'Medical Leave',   value: 'medical' },
+                    { label: 'Emergency Leave', value: 'emergency' },
+                    { label: 'Maternity Leave', value: 'maternity' },
+                    { label: 'Paternity Leave', value: 'paternity' },
+                    { label: 'Unpaid Leave',    value: 'unpaid' },
+                  ]}
+                />
+              )}
+            />
           </div>
 
           <div className={styles.dateRow}>
             <div className={styles.formGroup}>
               <label className={styles.label}>Start Date *</label>
-              <input
+              <AntInput
                 type="date"
                 className={styles.input}
                 {...register('startDate', { required: 'Start date is required' })}
@@ -223,7 +237,7 @@ const LeaveManagementPage: React.FC = () => {
             </div>
             <div className={styles.formGroup}>
               <label className={styles.label}>End Date *</label>
-              <input
+              <AntInput
                 type="date"
                 className={styles.input}
                 {...register('endDate', { required: 'End date is required' })}
@@ -252,7 +266,7 @@ const LeaveManagementPage: React.FC = () => {
 
           <div className={styles.formGroup}>
             <label className={styles.label}>Covering Officer</label>
-            <input
+            <AntInput
               type="text"
               className={styles.input}
               placeholder="Name of colleague covering your duties"

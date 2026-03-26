@@ -20,5 +20,12 @@
       "esbuild",
       "prisma"
     ]
+  },
+  "dependencies": {
+    "@lui/core": "^6.0.10",
+    "@lui/icons": "^6.0.10",
+    "@lui/pro": "^6.0.10",
+    "@mui/core": "^6.0.10",
+    "@mui/pro": "^6.0.10"
   }
 }
