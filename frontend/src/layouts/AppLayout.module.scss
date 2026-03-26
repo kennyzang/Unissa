@@ -35,6 +35,8 @@
 
   @include m.max-md {
     // Extra bottom padding so content clears the fixed bottom tab bar
-    padding: 12px 12px calc(56px + env(safe-area-inset-bottom) + 12px);
+    // constant() for iOS < 11.2, env() for modern; requires viewport-fit=cover
+    padding: 8px 8px calc(56px + constant(safe-area-inset-bottom) + 8px);
+    padding: 8px 8px calc(56px + env(safe-area-inset-bottom) + 8px);
   }
 }

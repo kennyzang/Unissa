@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useMutation } from '@tanstack/react-query'
-import { Form, Input, Button, Alert } from 'antd'
+import { Form, Input, Button, Alert, Modal } from 'antd'
 import { UserOutlined, LockOutlined } from '@ant-design/icons'
 import { useTranslation } from 'react-i18next'
 import { ChevronRight, ChevronLeft, KeyRound } from 'lucide-react'
@@ -44,6 +44,7 @@ const LoginPage = () => {
   const { t } = useTranslation()
   const [failedAttempts, setFailedAttempts] = useState(0)
   const [demoOpen, setDemoOpen] = useState(false)
+  const [mobileDemoOpen, setMobileDemoOpen] = useState(false)
   const [form] = Form.useForm<FormValues>()
 
   const loginMutation = useMutation({
@@ -152,7 +153,47 @@ const LoginPage = () => {
         <div className={styles.footer}>
           {t('login.footer')}
         </div>
+
+        {/* Mobile-only demo trigger – hidden on desktop where the floating panel shows */}
+        <div className={styles.mobileDemo}>
+          <button
+            type="button"
+            className={styles.mobileDemoTrigger}
+            onClick={() => setMobileDemoOpen(true)}
+          >
+            <KeyRound size={13} />
+            <span>{t('login.demoAccounts')}</span>
+          </button>
+        </div>
       </div>
+
+      {/* Demo accounts modal (mobile) */}
+      <Modal
+        open={mobileDemoOpen}
+        onCancel={() => setMobileDemoOpen(false)}
+        footer={null}
+        title={<span style={{ display: 'flex', alignItems: 'center', gap: 8 }}><KeyRound size={15} />{t('login.demoAccounts')}</span>}
+        centered
+        width={320}
+      >
+        <p className={styles.demoModalHint}>{t('login.demoClickFill')}</p>
+        <div className={styles.demoModalList}>
+          {DEMO_ACCOUNTS.map(([role, user, pwd]) => (
+            <button
+              key={user}
+              type="button"
+              className={styles.demoModalItem}
+              onClick={() => {
+                form.setFieldsValue({ username: user, password: pwd })
+                setMobileDemoOpen(false)
+              }}
+            >
+              <span className={styles.demoModalRole}>{role}</span>
+              <code className={styles.demoModalUser}>{user}</code>
+            </button>
+          ))}
+        </div>
+      </Modal>
 
       {/* Demo accounts — floating panel to the right */}
       <div className={`${styles.demoPanel} ${demoOpen ? styles.demoPanelOpen : ''}`}>

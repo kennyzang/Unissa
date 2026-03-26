@@ -10,13 +10,19 @@
   overflow-x: hidden;
 
   @media (max-width: v.$bp-md) {
-    padding: v.$space-4 v.$space-3;
-    gap: v.$space-4;
+    padding: v.$space-2 0;
+    gap: v.$space-2;
   }
 }
 
 .header { display: flex; flex-direction: column; gap: v.$space-1; }
-.pageTitle { font-size: v.$font-size-2xl; font-weight: v.$font-weight-bold; color: var(--color-gray-8); margin: 0; }
+.pageTitle {
+  font-size: v.$font-size-2xl;
+  font-weight: v.$font-weight-bold;
+  color: var(--color-gray-8);
+  margin: 0;
+  @media (max-width: v.$bp-md) { font-size: v.$font-size-lg; }
+}
 .pageSub { font-size: v.$font-size-sm; color: var(--color-gray-5); margin: 0; }
 
 .stepperCard {
