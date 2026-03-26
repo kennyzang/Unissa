@@ -197,6 +197,10 @@
   gap: 8px;
 }
 
+.languageWrap {
+  @include m.max-md { display: none; }
+}
+
 .iconBtn {
   width: 32px; height: 32px;
   border-radius: v.$border-radius-md;

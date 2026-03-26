@@ -3,6 +3,8 @@ import { NavLink, useLocation, useNavigate } from 'react-router-dom'
 import { X, MoreHorizontal, LogOut } from 'lucide-react'
 import { useAuthStore } from '@/stores/authStore'
 import { useUIStore } from '@/stores/uiStore'
+import { useLanguageStore } from '@/stores/languageStore'
+import { LANGUAGES, type Language } from '@/lib/i18n'
 import type { UserRole } from '@/types'
 import styles from './BottomTab.module.scss'
 
@@ -47,9 +49,10 @@ const PRIMARY_KEYS: Record<string, string[]> = {
 }
 
 const BottomTab = () => {
-  const [moreOpen, setMoreOpen] = useState(false)
-  const { user, clearAuth }     = useAuthStore()
-  const { addToast }            = useUIStore()
+  const [moreOpen, setMoreOpen]       = useState(false)
+  const { user, clearAuth }           = useAuthStore()
+  const { addToast }                  = useUIStore()
+  const { language, setLanguage }     = useLanguageStore()
   const location                = useLocation()
   const navigate                = useNavigate()
 
@@ -126,6 +129,22 @@ const BottomTab = () => {
                   <span className={styles.sheetLabel}>{tab.label}</span>
                 </NavLink>
               ))}
+            </div>
+
+            {/* Language switcher */}
+            <div className={styles.sheetLang}>
+              <span className={styles.sheetLangLabel}>Language</span>
+              <div className={styles.sheetLangBtns}>
+                {LANGUAGES.map(l => (
+                  <button
+                    key={l.code}
+                    className={`${styles.sheetLangBtn} ${language === l.code ? styles.sheetLangActive : ''}`}
+                    onClick={() => setLanguage(l.code as Language)}
+                  >
+                    {l.nativeLabel}
+                  </button>
+                ))}
+              </div>
             </div>
 
             {/* User section at bottom of sheet */}

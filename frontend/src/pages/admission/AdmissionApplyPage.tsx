@@ -5,7 +5,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { useMutation, useQuery } from '@tanstack/react-query'
 import {
-  Steps, Form, Input, Select, DatePicker, Checkbox,
+  Form, Input, Select, DatePicker, Checkbox,
   Button, Card, Row, Col, Descriptions, Alert, Space,
 } from 'antd'
 import {
@@ -140,9 +140,21 @@ const AdmissionApplyPage: React.FC = () => {
       </div>
 
       {/* Steps indicator */}
-      <Card className={styles.stepperCard} size="small">
-        <Steps current={step} items={STEPS} responsive={false} size="small" labelPlacement="vertical" />
-      </Card>
+      <div className={styles.stepperCard}>
+        <div className={styles.stepTrack}>
+          {STEPS.map((_s, i) => (
+            <div key={i} className={styles.stepItem}>
+              <div className={`${styles.stepCircle} ${i < step ? styles.stepDone : i === step ? styles.stepActive : ''}`}>
+                {i < step ? '✓' : i + 1}
+              </div>
+              {i < STEPS.length - 1 && <div className={`${styles.stepLine} ${i < step ? styles.stepLineDone : ''}`} />}
+            </div>
+          ))}
+        </div>
+        <div className={styles.stepCaption}>
+          {t('admissionApply.stepOf', { current: step + 1, total: STEPS.length })}&nbsp;—&nbsp;{STEPS[step].title}
+        </div>
+      </div>
 
       {/* ── Step 1: Personal Info ─────────────────────────────── */}
       {step === 0 && (

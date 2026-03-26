@@ -183,6 +183,7 @@ const zh = {
     stepAcademic: '学术背景',
     stepProgramme: '专业选择',
     stepReview: '审核与提交',
+    stepOf: '第 {{current}} 步，共 {{total}} 步',
     step1Title: '第一步 – 个人信息',
     fullName: '全名（与身份证/护照一致）',
     fullNamePlaceholder: '请输入法定全名',

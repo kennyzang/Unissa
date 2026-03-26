@@ -179,6 +179,47 @@ $z-tab:   110; // above sidebar z-index
   color: inherit;
 }
 
+// ── Language switcher in sheet ──────────────────────────────
+.sheetLang {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 20px 12px;
+  border-top: 1px solid v.$color-gray-2;
+}
+
+.sheetLangLabel {
+  font-size: v.$font-size-xs;
+  color: v.$color-gray-4;
+  font-weight: v.$font-weight-medium;
+  letter-spacing: 0.3px;
+}
+
+.sheetLangBtns {
+  display: flex;
+  gap: 6px;
+}
+
+.sheetLangBtn {
+  padding: 5px 12px;
+  border-radius: 100px;
+  border: 1px solid v.$color-gray-3;
+  background: none;
+  font-size: v.$font-size-xs;
+  color: v.$color-gray-5;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: all 0.15s;
+
+  &:active { opacity: 0.7; }
+}
+
+.sheetLangActive {
+  background: v.$brand-primary;
+  border-color: v.$brand-primary;
+  color: #fff;
+}
+
 // ── User / Logout in sheet ──────────────────────────────────
 .sheetUser {
   display: flex;

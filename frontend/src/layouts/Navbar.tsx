@@ -95,8 +95,10 @@ const Navbar = () => {
 
       {/* Right: user actions */}
       <div className={styles.right}>
-        {/* Language switcher */}
-        <LanguageSwitcher variant="select" />
+        {/* Language switcher – hidden on mobile (moved to BottomTab More sheet) */}
+        <div className={styles.languageWrap}>
+          <LanguageSwitcher variant="select" />
+        </div>
 
         {/* Notifications Bell */}
         <div className={styles.notifWrap}>

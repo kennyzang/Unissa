@@ -27,7 +27,77 @@
 
 .stepperCard {
   background: white;
-  // Ant Design Steps handles responsive display
+  border: 1px solid var(--color-gray-3);
+  border-radius: v.$border-radius-lg;
+  padding: v.$space-4 v.$space-6;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: v.$space-2;
+
+  @media (max-width: v.$bp-md) {
+    padding: v.$space-3 v.$space-4;
+  }
+}
+
+.stepTrack {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  max-width: 320px;
+}
+
+.stepItem {
+  display: flex;
+  align-items: center;
+  flex: 1;
+
+  &:last-child { flex: 0; }
+}
+
+.stepCircle {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 2px solid var(--color-gray-3);
+  background: #fff;
+  color: var(--color-gray-4);
+  font-size: v.$font-size-sm;
+  font-weight: v.$font-weight-semibold;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: all 0.2s;
+}
+
+.stepActive {
+  border-color: v.$brand-primary;
+  background: v.$brand-primary;
+  color: #fff;
+}
+
+.stepDone {
+  border-color: v.$brand-primary;
+  background: v.$brand-primary-1;
+  color: v.$brand-primary;
+}
+
+.stepLine {
+  flex: 1;
+  height: 2px;
+  background: var(--color-gray-3);
+  transition: background 0.2s;
+}
+
+.stepLineDone {
+  background: v.$brand-primary;
+}
+
+.stepCaption {
+  font-size: v.$font-size-sm;
+  color: var(--color-gray-6);
+  font-weight: v.$font-weight-medium;
 }
 
 .formCard { width: 100%; }

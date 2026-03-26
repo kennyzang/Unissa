@@ -190,6 +190,7 @@ const en = {
     stepAcademic: 'Academic Background',
     stepProgramme: 'Programme Choice',
     stepReview: 'Review & Submit',
+    stepOf: 'Step {{current}} of {{total}}',
     step1Title: 'Step 1 – Personal Information',
     fullName: 'Full Name (as per IC/Passport)',
     fullNamePlaceholder: 'Your full legal name',

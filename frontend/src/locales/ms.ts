@@ -183,6 +183,7 @@ const ms = {
     stepAcademic: 'Latar Belakang Akademik',
     stepProgramme: 'Pilihan Program',
     stepReview: 'Semak & Hantar',
+    stepOf: 'Langkah {{current}} daripada {{total}}',
     step1Title: 'Langkah 1 – Maklumat Peribadi',
     fullName: 'Nama Penuh (seperti dalam IC/Pasport)',
     fullNamePlaceholder: 'Nama penuh mengikut dokumen rasmi',
