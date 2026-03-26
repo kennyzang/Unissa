@@ -115,22 +115,23 @@ const AiChatBubble: React.FC = () => {
   }
 
   // ── Drag logic ─────────────────────────────────────────────
-  const handleFabMouseDown = useCallback((e: React.MouseEvent) => {
-    const startX = e.clientX
-    const startY = e.clientY
+  const startDrag = useCallback((startX: number, startY: number, isTouch: boolean) => {
     wasDragged.current = false
 
     const rect = wrapperRef.current!.getBoundingClientRect()
     const initTop  = rect.top
     const initLeft = rect.left
 
-    const onMove = (ev: MouseEvent) => {
-      const dx = ev.clientX - startX
-      const dy = ev.clientY - startY
+    const onMove = (ev: MouseEvent | TouchEvent) => {
+      const clientX = isTouch ? (ev as TouchEvent).touches[0].clientX : (ev as MouseEvent).clientX
+      const clientY = isTouch ? (ev as TouchEvent).touches[0].clientY : (ev as MouseEvent).clientY
+      const dx = clientX - startX
+      const dy = clientY - startY
       if (Math.abs(dx) > 4 || Math.abs(dy) > 4) {
         wasDragged.current = true
       }
       if (wasDragged.current) {
+        ev.preventDefault()
         // Clamp within viewport
         const newTop  = Math.max(0, Math.min(window.innerHeight - 60, initTop  + dy))
         const newLeft = Math.max(0, Math.min(window.innerWidth  - 60, initLeft + dx))
@@ -141,16 +142,32 @@ const AiChatBubble: React.FC = () => {
     const onUp = () => {
       document.removeEventListener('mousemove', onMove)
       document.removeEventListener('mouseup', onUp)
+      document.removeEventListener('touchmove', onMove)
+      document.removeEventListener('touchend', onUp)
       if (!wasDragged.current) {
         setOpen(o => !o)
         setUnread(0)
       }
     }
 
-    document.addEventListener('mousemove', onMove)
-    document.addEventListener('mouseup', onUp)
-    e.preventDefault()
+    if (isTouch) {
+      document.addEventListener('touchmove', onMove, { passive: false })
+      document.addEventListener('touchend', onUp)
+    } else {
+      document.addEventListener('mousemove', onMove)
+      document.addEventListener('mouseup', onUp)
+    }
   }, [])
+
+  const handleFabMouseDown = useCallback((e: React.MouseEvent) => {
+    startDrag(e.clientX, e.clientY, false)
+    e.preventDefault()
+  }, [startDrag])
+
+  const handleFabTouchStart = useCallback((e: React.TouchEvent) => {
+    const touch = e.touches[0]
+    startDrag(touch.clientX, touch.clientY, true)
+  }, [startDrag])
 
   const wrapperStyle: React.CSSProperties = position
     ? { top: position.top, left: position.left, bottom: 'auto', right: 'auto' }
@@ -255,6 +272,7 @@ const AiChatBubble: React.FC = () => {
       <button
         className={clsx(styles.fab, { [styles.fabOpen]: open })}
         onMouseDown={handleFabMouseDown}
+        onTouchStart={handleFabTouchStart}
         title="AI Assistant"
         aria-label="Open AI Assistant"
       >
