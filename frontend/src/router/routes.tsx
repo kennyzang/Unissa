@@ -58,6 +58,7 @@ const ResearchGrantsPage       = lazy(() => import('@/pages/research/ResearchGra
 const RiskDashboardPage        = lazy(() => import('@/pages/ai/RiskDashboardPage'))
 const CampusServicesPage       = lazy(() => import('@/pages/campus/CampusServicesPage'))
 const SettingsPage             = lazy(() => import('@/pages/admin/SettingsPage'))
+const CourseManagementPage     = lazy(() => import('@/pages/admin/CourseManagementPage'))
 
 const wrap = (el: React.ReactNode) => <Suspense fallback={<PageLoader />}>{el}</Suspense>
 
@@ -112,6 +113,7 @@ export const router = createBrowserRouter([
 
       // Admin
       { path: 'admin/settings', element: r(['admin'], <SettingsPage />) },
+      { path: 'admin/courses',  element: r(['admin'], <CourseManagementPage />) },
 
       // Legacy redirect
       { path: 'ai/chat', element: <Navigate to="/dashboard" replace /> },

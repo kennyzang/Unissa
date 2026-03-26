@@ -88,8 +88,12 @@ const NAV_STRUCTURE: NavGroup[] = [
     ],
   },
   {
-    key: 'settings', labelKey: 'nav.settings', icon: '⚙️',
-    path: '/admin/settings', roles: ['admin'],
+    key: 'g-admin', labelKey: 'nav.administration', icon: '🛠️',
+    roles: ['admin'],
+    children: [
+      { key: 'admin-courses',  labelKey: 'nav.courseManagement', path: '/admin/courses',  icon: '📖', roles: ['admin'] },
+      { key: 'admin-settings', labelKey: 'nav.settings',         path: '/admin/settings', icon: '⚙️', roles: ['admin'] },
+    ],
   },
 ]
 
