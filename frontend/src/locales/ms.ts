@@ -394,6 +394,9 @@ const ms = {
     noCoursesNote: 'Daftar kursus untuk melihatnya di sini.',
     registerCourses: 'Daftar Kursus',
     loading: 'Memuatkan kursus…',
+    cardView: 'Paparan Kad',
+    calendarView: 'Paparan Kalendar',
+    days: { monday: 'Isn', tuesday: 'Sel', wednesday: 'Rab', thursday: 'Kha', friday: 'Jum', saturday: 'Sab' },
   },
 
   lmsCourseDetail: {

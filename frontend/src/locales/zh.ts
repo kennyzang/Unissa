@@ -394,6 +394,9 @@ const zh = {
     noCoursesNote: '完成选课注册后即可在此查看课程。',
     registerCourses: '选课注册',
     loading: '正在加载课程…',
+    cardView: '卡片视图',
+    calendarView: '日历视图',
+    days: { monday: '周一', tuesday: '周二', wednesday: '周三', thursday: '周四', friday: '周五', saturday: '周六' },
   },
 
   lmsCourseDetail: {

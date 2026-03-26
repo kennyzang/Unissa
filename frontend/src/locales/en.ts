@@ -407,6 +407,9 @@ const en = {
     noCoursesNote: 'Register for courses to see them here.',
     registerCourses: 'Register Courses',
     loading: 'Loading courses…',
+    cardView: 'Card View',
+    calendarView: 'Calendar View',
+    days: { monday: 'Mon', tuesday: 'Tue', wednesday: 'Wed', thursday: 'Thu', friday: 'Fri', saturday: 'Sat' },
   },
 
   // LMS Course Detail
