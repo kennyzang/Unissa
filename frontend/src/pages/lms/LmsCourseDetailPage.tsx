@@ -182,27 +182,6 @@ const LmsCourseDetailPage: React.FC = () => {
         )}
       </Card>
 
-      {/* Demo Submission Section */}
-      <Card
-        title="Quick Demo: Submit Assignment"
-        extra={<Badge color="blue" size="sm">AI Grading Enabled</Badge>}
-      >
-        <div className={styles.demoSubmit}>
-          <p className={styles.demoText}>
-            Click "Submit" on any assignment to trigger the AI rubric grading pipeline.
-            The system will generate criterion-level scores (Clarity, References, Analysis, Presentation).
-          </p>
-          {assignments.length > 0 && (
-            <Button
-              icon={<Upload size={14} />}
-              onClick={() => { setSubmitModal(assignments[0]); setSubmissionContent('Demo submission content for AI grading test.') }}
-            >
-              Demo: Submit {assignments[0].title}
-            </Button>
-          )}
-        </div>
-      </Card>
-
       {/* Submit Modal */}
       {submitModal && (
         <Modal

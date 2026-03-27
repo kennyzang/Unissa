@@ -207,6 +207,12 @@ async function main() {
     departmentId: deptARA.id, day: 'Wednesday', start: '09:00', end: '11:00', room: 'Lecture Hall B',
     roomId: roomLH_B.id,
   })
+  // FND101 offering — gives Noor a 4th no-prereq course (3+3+3+3 = 12 CH minimum)
+  await upsertOffering({
+    courseId: cFND101.id, semesterId: semSep2026.id, lecturerId: staffSiti.id,
+    departmentId: deptFND.id, day: 'Friday', start: '09:00', end: '11:00', room: 'Lecture Hall A',
+    roomId: roomLH_A.id,
+  })
 
   // ── Applicant: Noor ──────────────────────────────────────────
   const applicantNoor = await prisma.applicant.upsert({

@@ -259,7 +259,7 @@ const FeeStatementPage: React.FC = () => {
 
             {method === 'e_wallet' && (
               <div className={styles.ewalletNote}>
-                You will be redirected to complete payment via e-wallet. (Demo: auto-approved)
+                You will be redirected to complete payment via e-wallet.
               </div>
             )}
 

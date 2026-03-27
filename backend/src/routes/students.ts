@@ -5,6 +5,32 @@ import { authenticate, requireRole, AuthRequest } from '../middleware/auth'
 const router = Router()
 router.use(authenticate)
 
+// GET /api/v1/students/offerings  — list all available offerings for current semester
+router.get('/offerings', async (_req: AuthRequest, res: Response) => {
+  const activeSemester = await prisma.semester.findFirst({
+    where: { isActive: true },
+    orderBy: { startDate: 'desc' },
+  })
+
+  const offerings = await prisma.courseOffering.findMany({
+    where: activeSemester ? { semesterId: activeSemester.id } : {},
+    include: {
+      course: {
+        include: {
+          prerequisites: {
+            include: { prerequisite: { select: { id: true, code: true, name: true } } },
+          },
+        },
+      },
+      lecturer: { include: { user: { select: { displayName: true } } } },
+      semester: { select: { id: true, name: true } },
+    },
+    orderBy: [{ course: { level: 'asc' } }, { dayOfWeek: 'asc' }],
+  })
+
+  res.json({ success: true, data: offerings })
+})
+
 // GET /api/v1/students/:id
 router.get('/:id', async (req: AuthRequest, res: Response) => {
   const student = await prisma.student.findFirst({
@@ -74,32 +100,6 @@ router.get('/:id/campus-services', async (req: AuthRequest, res: Response) => {
       libraryAccount: student.libraryAccount,
     },
   })
-})
-
-// GET /api/v1/students/offerings  — list all available offerings for current semester
-router.get('/offerings', async (_req: AuthRequest, res: Response) => {
-  const activeSemester = await prisma.semester.findFirst({
-    where: { isActive: true },
-    orderBy: { startDate: 'desc' },
-  })
-
-  const offerings = await prisma.courseOffering.findMany({
-    where: activeSemester ? { semesterId: activeSemester.id } : {},
-    include: {
-      course: {
-        include: {
-          prerequisites: {
-            include: { prerequisite: { select: { id: true, code: true, name: true } } },
-          },
-        },
-      },
-      lecturer: { include: { user: { select: { displayName: true } } } },
-      semester: { select: { id: true, name: true } },
-    },
-    orderBy: [{ course: { level: 'asc' } }, { dayOfWeek: 'asc' }],
-  })
-
-  res.json({ success: true, data: offerings })
 })
 
 // POST /api/v1/students/:id/register-courses
@@ -180,15 +180,22 @@ router.post('/:id/register-courses', async (req: AuthRequest, res: Response) => 
     return
   }
 
-  // CH validation
-  const totalCH = offerings.reduce((sum, o) => sum + o.course.creditHours, 0)
+  // CH validation — include already-registered enrolments so a student can re-add
+  // a single course dropped by admin without failing the minimum-CH check
+  const existingEnrolments = await prisma.enrolment.findMany({
+    where: { studentId: student.id, status: 'registered', offeringId: { notIn: offeringIds } },
+    include: { offering: { include: { course: { select: { creditHours: true } } } } },
+  })
+  const existingCH = existingEnrolments.reduce((sum, e) => sum + e.offering.course.creditHours, 0)
+  const newCH = offerings.reduce((sum, o) => sum + o.course.creditHours, 0)
+  const totalCH = newCH + existingCH
   const maxCH = student.currentCgpa >= 3.5 ? 21 : student.studentType === 'probation' ? 6 : 18
   const minCH = student.studentType === 'probation' ? 3 : 12
 
   if (totalCH < minCH || totalCH > maxCH) {
     res.status(400).json({
       success: false,
-      message: `Credit hours must be between ${minCH} and ${maxCH}. Selected: ${totalCH} CH.`,
+      message: `Credit hours must be between ${minCH} and ${maxCH}. Total: ${totalCH} CH.`,
     })
     return
   }
@@ -213,7 +220,7 @@ router.post('/:id/register-courses', async (req: AuthRequest, res: Response) => 
     ? (student.programme as any).feeLocalPerCh
     : (student.programme as any).feeInternationalPerCh
 
-  const tuitionFee = totalCH * (feePerCh ?? 800)
+  const tuitionFee = newCH * (feePerCh ?? 800)
   const scholarshipDeduction = (tuitionFee * student.scholarshipPct) / 100
   const total = tuitionFee + 50 + 0 - scholarshipDeduction
 
@@ -260,8 +267,8 @@ router.post('/:id/register-courses', async (req: AuthRequest, res: Response) => 
 
   res.json({
     success: true,
-    data: { enrolments, invoice, campusCardNo: campusCard, totalCH },
-    message: `Successfully registered ${offeringIds.length} courses (${totalCH} CH). Invoice generated.`,
+    data: { enrolments, invoice, campusCardNo: campusCard, totalCH: newCH },
+    message: `Successfully registered ${offeringIds.length} courses (${newCH} CH). Invoice generated.`,
   })
 })
 

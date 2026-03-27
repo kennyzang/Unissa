@@ -192,15 +192,6 @@ const CampusServicesPage: React.FC = () => {
         ))}
       </div>
 
-      {/* Demo note */}
-      <div className={styles.demoNote}>
-        <strong>{t('campusServices.demoNote')}</strong>
-        {t('campusServices.demoNoteText')}
-        <button className={styles.inlineLink} onClick={() => navigate('/student/courses')}>
-          {t('campusServices.goCourseReg')}
-        </button>
-        {t('campusServices.demoNoteText2')}
-      </div>
     </div>
   )
 }

@@ -20,10 +20,21 @@ router.get('/courses', async (_req: AuthRequest, res: Response) => {
   const courses = await prisma.course.findMany({
     include: {
       _count: { select: { offerings: true } },
+      offerings: {
+        select: {
+          _count: { select: { enrolments: true } },
+        },
+      },
     },
     orderBy: { code: 'asc' },
   })
-  res.json({ success: true, data: courses })
+
+  const data = courses.map(({ offerings, ...c }) => ({
+    ...c,
+    totalEnrolled: offerings.reduce((sum, o) => sum + o._count.enrolments, 0),
+  }))
+
+  res.json({ success: true, data })
 })
 
 // POST /api/v1/admin/courses
@@ -117,13 +128,44 @@ router.delete('/enrolments/:enrolmentId', async (req: AuthRequest, res: Response
 
   await prisma.$transaction([
     prisma.enrolment.delete({ where: { id: enrolment.id } }),
-    prisma.courseOffering.update({
-      where: { id: enrolment.offeringId },
+    // Only decrement when > 0 to prevent negative values
+    prisma.courseOffering.updateMany({
+      where: { id: enrolment.offeringId, seatsTaken: { gt: 0 } },
       data: { seatsTaken: { decrement: 1 } },
     }),
   ])
 
   res.json({ success: true, message: 'Student removed and seat released' })
+})
+
+// POST /api/v1/admin/demo-reset  — full system reset to clean slate for re-demo
+router.post('/demo-reset', async (_req: AuthRequest, res: Response) => {
+  // 1. Delete all payments
+  await prisma.payment.deleteMany({})
+
+  // 2. Delete all fee invoices
+  await prisma.feeInvoice.deleteMany({})
+
+  // 3. Delete all enrolments
+  await prisma.enrolment.deleteMany({})
+
+  // 4. Reset seatsTaken to 0 for all offerings
+  await prisma.courseOffering.updateMany({ data: { seatsTaken: 0 } })
+
+  // 5. Reset all students to unactivated state (campus card, library, email)
+  await prisma.student.updateMany({
+    data: {
+      campusCardNo: null,
+      libraryAccountActive: false,
+      emailAccountActive: false,
+    },
+  })
+  await prisma.libraryAccount.updateMany({ data: { isActive: false } })
+
+  // 6. Clear chatbot conversations for a clean demo
+  await prisma.chatbotConversation.deleteMany({})
+
+  res.json({ success: true, message: 'Demo reset complete: all student activity data cleared, ready for re-demo' })
 })
 
 // DELETE /api/v1/admin/courses/:id

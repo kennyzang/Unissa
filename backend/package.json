@@ -10,7 +10,8 @@
     "db:reset": "prisma migrate reset --force && tsx prisma/seed.ts",
     "db:migrate": "prisma migrate dev",
     "db:generate": "prisma generate",
-    "db:studio": "prisma studio"
+    "db:studio": "prisma studio",
+    "test": "../frontend/node_modules/.bin/vitest run --config vitest.config.ts"
   },
   "onlyBuiltDependencies": [
     "@prisma/client",

@@ -7,7 +7,6 @@ import {
 import type { ColumnsType } from 'antd/es/table'
 import { BookOpen, Plus, Pencil, Trash2, Users } from 'lucide-react'
 import { apiClient } from '@/lib/apiClient'
-import { useUIStore } from '@/stores/uiStore'
 import Button from '@/components/ui/Button'
 import Badge from '@/components/ui/Badge'
 import styles from './CourseManagementPage.module.scss'
@@ -28,6 +27,7 @@ interface Course {
   isOpenToInternational: boolean
   maxSeats: number
   createdAt: string
+  totalEnrolled: number
   _count: { offerings: number }
 }
 
@@ -71,8 +71,7 @@ const LEVEL_OPTIONS = [1, 2, 3, 4].map(n => ({ value: n, label: `Level ${n}` }))
 
 const CourseManagementPage: React.FC = () => {
   const { t } = useTranslation()
-  const { modal } = App.useApp()
-  const addToast = useUIStore(s => s.addToast)
+  const { modal, message } = App.useApp()
   const qc = useQueryClient()
 
   const [search, setSearch]               = useState('')
@@ -110,7 +109,7 @@ const CourseManagementPage: React.FC = () => {
   const createMutation = useMutation({
     mutationFn: (payload: CourseForm) => apiClient.post('/admin/courses', payload),
     onSuccess: () => {
-      addToast({ type: 'success', message: t('courseManagement.createSuccess') })
+      message.success(t('courseManagement.createSuccess'))
       qc.invalidateQueries({ queryKey: ['admin', 'courses'] })
       closeModal()
     },
@@ -121,7 +120,7 @@ const CourseManagementPage: React.FC = () => {
     mutationFn: ({ id, payload }: { id: string; payload: Partial<CourseForm> }) =>
       apiClient.put(`/admin/courses/${id}`, payload),
     onSuccess: () => {
-      addToast({ type: 'success', message: t('courseManagement.updateSuccess') })
+      message.success(t('courseManagement.updateSuccess'))
       qc.invalidateQueries({ queryKey: ['admin', 'courses'] })
       closeModal()
     },
@@ -131,10 +130,10 @@ const CourseManagementPage: React.FC = () => {
   const deleteMutation = useMutation({
     mutationFn: (id: string) => apiClient.delete(`/admin/courses/${id}`),
     onSuccess: () => {
-      addToast({ type: 'success', message: t('courseManagement.deleteSuccess') })
+      message.success(t('courseManagement.deleteSuccess'))
       qc.invalidateQueries({ queryKey: ['admin', 'courses'] })
     },
-    onError: (e: any) => addToast({ type: 'error', message: e.response?.data?.message ?? t('courseManagement.deleteFailed') }),
+    onError: (e: any) => message.error(e.response?.data?.message ?? t('courseManagement.deleteFailed')),
   })
 
   const removeEnrolmentMutation = useMutation({
@@ -200,12 +199,11 @@ const CourseManagementPage: React.FC = () => {
       onOk: async () => {
         try {
           await removeEnrolmentMutation.mutateAsync(record.id)
-          addToast({ type: 'success', message: t('courseManagement.removeStudentSuccess') })
-          qc.invalidateQueries({ queryKey: ['admin', 'course-enrolments', courseId] })
+          message.success(t('courseManagement.removeStudentSuccess'))
+          await qc.refetchQueries({ queryKey: ['admin', 'course-enrolments', courseId] })
           qc.invalidateQueries({ queryKey: ['admin', 'courses'] })
         } catch (e: any) {
-          addToast({ type: 'error', message: e.response?.data?.message ?? t('courseManagement.removeStudentFailed') })
-          throw e  // keep modal open on error
+          message.error(e.response?.data?.message ?? t('courseManagement.removeStudentFailed'))
         }
       },
     })
@@ -321,9 +319,21 @@ const CourseManagementPage: React.FC = () => {
       align: 'center',
     },
     {
+      title: t('courseManagement.colEnrolled'),
+      key: 'enrolled',
+      width: 90,
+      align: 'center',
+      sorter: (a, b) => a.totalEnrolled - b.totalEnrolled,
+      render: (_: unknown, r: Course) => (
+        <Badge variant={r.totalEnrolled > 0 ? 'success' : 'default'}>
+          {r.totalEnrolled}
+        </Badge>
+      ),
+    },
+    {
       title: t('courseManagement.colOfferings'),
       key: 'offerings',
-      width: 100,
+      width: 90,
       align: 'center',
       render: (_: unknown, r: Course) => (
         <Badge variant={r._count.offerings > 0 ? 'info' : 'default'}>

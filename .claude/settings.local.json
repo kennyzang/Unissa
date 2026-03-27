@@ -52,7 +52,12 @@
       "Bash(grep -n \"@lui/core\\\\|@lui/icons\\\\|from ''@lui\" /Users/xiex/Documents/OverseaBU/project/UNISSA-POC/frontend/src/pages/hr/LeaveManagementPage.tsx /Users/xiex/Documents/OverseaBU/project/UNISSA-POC/frontend/src/pages/hr/HrStaffPage.tsx /Users/xiex/Documents/OverseaBU/project/UNISSA-POC/frontend/src/pages/admission/AdmissionReviewPage.tsx /Users/xiex/Documents/OverseaBU/project/UNISSA-POC/frontend/src/pages/research/ResearchGrantsPage.tsx /Users/xiex/Documents/OverseaBU/project/UNISSA-POC/frontend/src/components/ui/LanguageSwitcher/index.tsx)",
       "Bash(sed -i '' \"s/import { Input as LuiInput, Select as LuiSelect } from ''@lui\\\\/core''/import { Input as AntInput, Select as AntSelect } from ''antd''/\" /Users/xiex/Documents/OverseaBU/project/UNISSA-POC/frontend/src/pages/hr/LeaveManagementPage.tsx)",
       "Bash(sed -i '' 's/LuiInput/AntInput/g; s/LuiSelect/AntSelect/g' /Users/xiex/Documents/OverseaBU/project/UNISSA-POC/frontend/src/pages/hr/LeaveManagementPage.tsx)",
-      "Bash(grep -rn \"AntApp\\\\|from ''''antd''''.*App\\\\|<App\" /Users/xiex/Documents/OverseaBU/project/UNISSA-POC/frontend/src/main.tsx /Users/xiex/Documents/OverseaBU/project/UNISSA-POC/frontend/src/App.tsx)"
+      "Bash(grep -rn \"AntApp\\\\|from ''''antd''''.*App\\\\|<App\" /Users/xiex/Documents/OverseaBU/project/UNISSA-POC/frontend/src/main.tsx /Users/xiex/Documents/OverseaBU/project/UNISSA-POC/frontend/src/App.tsx)",
+      "Bash(do)",
+      "Bash(echo \"=== $f.ts ===\")",
+      "Read(//Users/xiex/Documents/OverseaBU/project/UNISSA-POC/frontend/src/locales/**)",
+      "Bash(done)",
+      "Bash(npm test:*)"
     ]
   }
 }
