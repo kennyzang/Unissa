@@ -251,7 +251,7 @@ const CourseManagementPage: React.FC = () => {
     label: (
       <span>
         {o.semester.name} · {o.dayOfWeek} {o.startTime}–{o.endTime}
-        <Badge variant={o.enrolments.length >= (viewingCourse?.maxSeats ?? 0) ? 'warning' : 'info'} style={{ marginLeft: 6 }}>
+        <Badge color={o.enrolments.length >= (viewingCourse?.maxSeats ?? 0) ? 'orange' : 'blue'} style={{ marginLeft: 6 }}>
           {o.enrolments.length}/{viewingCourse?.maxSeats ?? '?'}
         </Badge>
       </span>
@@ -325,7 +325,7 @@ const CourseManagementPage: React.FC = () => {
       align: 'center',
       sorter: (a, b) => a.totalEnrolled - b.totalEnrolled,
       render: (_: unknown, r: Course) => (
-        <Badge variant={r.totalEnrolled > 0 ? 'success' : 'default'}>
+        <Badge color={r.totalEnrolled > 0 ? 'green' : 'gray'}>
           {r.totalEnrolled}
         </Badge>
       ),
@@ -336,7 +336,7 @@ const CourseManagementPage: React.FC = () => {
       width: 90,
       align: 'center',
       render: (_: unknown, r: Course) => (
-        <Badge variant={r._count.offerings > 0 ? 'info' : 'default'}>
+        <Badge color={r._count.offerings > 0 ? 'blue' : 'gray'}>
           {r._count.offerings}
         </Badge>
       ),
@@ -348,7 +348,7 @@ const CourseManagementPage: React.FC = () => {
       width: 90,
       align: 'center',
       render: (v: boolean) => (
-        <Badge variant={v ? 'success' : 'default'}>{v ? t('common.yes') : t('common.no')}</Badge>
+        <Badge color={v ? 'green' : 'gray'}>{v ? t('common.yes') : t('common.no')}</Badge>
       ),
     },
     {

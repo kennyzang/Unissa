@@ -11,10 +11,11 @@ interface BadgeProps {
   dot?: boolean
   children: React.ReactNode
   className?: string
+  style?: React.CSSProperties
 }
 
-const Badge: React.FC<BadgeProps> = ({ color = 'blue', size = 'md', dot, children, className }) => (
-  <span className={clsx(styles.badge, styles[color], styles[`size-${size}`], className)}>
+const Badge: React.FC<BadgeProps> = ({ color = 'blue', size = 'md', dot, children, className, style }) => (
+  <span className={clsx(styles.badge, styles[color], styles[`size-${size}`], className)} style={style}>
     {dot && <span className={styles.dot} />}
     {children}
   </span>
