@@ -79,6 +79,7 @@ async function main() {
   const PASS = 'Demo@2026'
 
   const uNoor       = await upsertUser({ username: 'noor',       displayName: 'Noor (Demo Student)', role: 'student',    email: 'noor@unissa.edu.bn',       hash: hash(PASS) })
+  const uZara       = await upsertUser({ username: 'zara',       displayName: 'Zara (Demo Student)', role: 'student',    email: 'zara@unissa.edu.bn',       hash: hash(PASS) })
   const uAdmissions = await upsertUser({ username: 'admissions', displayName: 'Admissions Officer',  role: 'admissions', email: 'admissions@unissa.edu.bn',  hash: hash(PASS) })
   const uDrSiti     = await upsertUser({ username: 'drsiti',     displayName: 'Dr. Siti (Lecturer)', role: 'lecturer',   email: 'drsiti@unissa.edu.bn',      hash: hash(PASS) })
   const uManager    = await upsertUser({ username: 'manager',    displayName: 'Dept Manager',        role: 'manager',    email: 'manager@unissa.edu.bn',     hash: hash(PASS) })
@@ -287,6 +288,77 @@ async function main() {
     create: { studentId: studentNoor.id, accountNo: 'LIB-2026001', isActive: true, activatedAt: new Date('2026-04-01') },
     update: {},
   })
+
+  // ── Applicant: Zara ──────────────────────────────────────────
+  // Use userId as upsert key (same as the apply route) so this merges with any
+  // UI-submitted application that Zara may already have in the DB.
+  const applicantZara = await prisma.applicant.upsert({
+    where: { userId: uZara.id },
+    create: {
+      applicationRef: 'APP-2026-Z001',
+      userId: uZara.id,
+      fullName: 'Zara Khalid Binti Yusof',
+      icPassport: '00-234567',
+      dateOfBirth: new Date('2001-08-22'),
+      gender: 'female',
+      nationality: 'Brunei Darussalam',
+      email: 'zara@unissa.edu.bn',
+      mobile: '+673-8234567',
+      homeAddress: '45 Jalan Tutong, Bandar Seri Begawan, BA1312, Brunei Darussalam',
+      highestQualification: 'a_level',
+      previousInstitution: 'Kolej Universiti Perguruan Ugama Seri Begawan',
+      yearOfCompletion: 2025,
+      cgpa: null,
+      intakeId: intakeBSC.id,
+      programmeId: progBSC.id,
+      modeOfStudy: 'full_time',
+      scholarshipApplied: false,
+      status: 'accepted',
+      submittedAt: new Date('2026-03-12'),
+      decisionMadeAt: new Date('2026-03-20'),
+    },
+    // Ensure programmeId/intakeId are correct even if a UI-submitted application has them swapped
+    update: { programmeId: progBSC.id, intakeId: intakeBSC.id, status: 'accepted' },
+  })
+
+  // ── Student: Zara (active) ───────────────────────────────────
+  const studentZara = await prisma.student.upsert({
+    where: { studentId: '2026013' },
+    create: {
+      studentId: '2026013',
+      userId: uZara.id,
+      applicantId: applicantZara.id,
+      programmeId: progBSC.id,
+      intakeId: intakeBSC.id,
+      modeOfStudy: 'full_time',
+      nationality: 'Brunei Darussalam',
+      studentType: 'standard',
+      currentCgpa: 3.45,
+      scholarshipPct: 0,
+      campusCardNo: 'CC-2026013',
+      libraryAccountActive: true,
+      emailAccountActive: true,
+      status: 'active',
+      enrolledAt: new Date('2026-04-01'),
+    },
+    update: {},
+  })
+
+  // Library account for Zara
+  await prisma.libraryAccount.upsert({
+    where: { studentId: studentZara.id },
+    create: { studentId: studentZara.id, accountNo: 'LIB-2026013', isActive: true, activatedAt: new Date('2026-04-01') },
+    update: {},
+  })
+
+  // Enrolments for Zara (same core courses as Noor)
+  for (const offering of [offeringIFN101, offeringIFN102, offeringIFN201, offeringARA101]) {
+    await prisma.enrolment.upsert({
+      where: { studentId_offeringId: { studentId: studentZara.id, offeringId: offering.id } },
+      create: { studentId: studentZara.id, offeringId: offering.id, semesterId: semSep2026.id, status: 'registered', registeredAt: new Date('2026-04-05') },
+      update: {},
+    })
+  }
 
   // ── 11 Additional Students for Risk Analytics Demo ────────────
   const riskStudents = []
@@ -712,6 +784,7 @@ async function main() {
   console.log('\n✅ Seed complete! Demo data ready.\n')
   console.log('Demo Accounts:')
   console.log('  noor        / Demo@2026  → Student Portal')
+  console.log('  zara        / Demo@2026  → Student Portal')
   console.log('  admissions  / Demo@2026  → Admission Dashboard')
   console.log('  drsiti      / Demo@2026  → LMS Instructor')
   console.log('  manager     / Demo@2026  → Approval Inbox')

@@ -28,6 +28,7 @@ const ROLE_REDIRECTS: Record<string, string> = {
 
 const DEMO_ACCOUNTS = [
   ['Student',    'noor',       'Demo@2026'],
+  ['Student',    'zara',       'Demo@2026'],
   ['Admissions', 'admissions', 'Demo@2026'],
   ['Lecturer',   'drsiti',     'Demo@2026'],
   ['Lecturer',   'drahmad',    'Demo@2026'],
