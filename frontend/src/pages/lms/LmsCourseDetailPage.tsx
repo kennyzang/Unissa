@@ -5,6 +5,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { ArrowLeft, Upload, Star, CheckCircle, Clock, FileText } from 'lucide-react'
 import { apiClient } from '@/lib/apiClient'
 import { useUIStore } from '@/stores/uiStore'
+import { useAuthStore } from '@/stores/authStore'
 import Card from '@/components/ui/Card'
 import Badge from '@/components/ui/Badge'
 import Button from '@/components/ui/Button'
@@ -35,18 +36,29 @@ const LmsCourseDetailPage: React.FC = () => {
   const navigate = useNavigate()
   const addToast = useUIStore(s => s.addToast)
   const qc = useQueryClient()
+  const user = useAuthStore(s => s.user)
 
   const [submitModal, setSubmitModal] = useState<Assignment | null>(null)
   const [submissionContent, setSubmissionContent] = useState('')
   const [viewAI, setViewAI] = useState<Submission | null>(null)
 
-  // Fetch enrolments to find this offering
-  const { data: enrolments = [] } = useQuery<any[]>({
-    queryKey: ['lms', 'courses', '2026001'],
+  const { data: studentProfile } = useQuery({
+    queryKey: ['student', 'me'],
     queryFn: async () => {
-      const { data } = await apiClient.get('/lms/courses/2026001')
+      const { data } = await apiClient.get('/students/me')
       return data.data
     },
+    enabled: !!user,
+  })
+
+  // Fetch enrolments to find this offering
+  const { data: enrolments = [] } = useQuery<any[]>({
+    queryKey: ['lms', 'courses', studentProfile?.id],
+    queryFn: async () => {
+      const { data } = await apiClient.get(`/lms/courses/${studentProfile!.id}`)
+      return data.data
+    },
+    enabled: !!studentProfile?.id,
   })
 
   const enrolment = enrolments.find((e: any) => e.offering?.id === offeringId)
@@ -64,7 +76,7 @@ const LmsCourseDetailPage: React.FC = () => {
     mutationFn: async ({ assignmentId, content }: { assignmentId: string; content: string }) => {
       const { data } = await apiClient.post('/lms/submissions', {
         assignmentId,
-        studentId: 'student-noor-001',
+        studentId: studentProfile?.id,
         content,
       })
       return data

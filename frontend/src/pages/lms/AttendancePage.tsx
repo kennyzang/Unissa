@@ -559,6 +559,15 @@ const AttendancePage: React.FC = () => {
   const user = useAuthStore(s => s.user)
   const hasRole = useAuthStore(s => s.hasRole)
 
+  const { data: studentProfile } = useQuery({
+    queryKey: ['student', 'me'],
+    queryFn: async () => {
+      const { data } = await apiClient.get('/students/me')
+      return data.data
+    },
+    enabled: !!user && hasRole('student'),
+  })
+
   return (
     <div className={styles.page}>
       <div className={styles.header}>
@@ -577,8 +586,8 @@ const AttendancePage: React.FC = () => {
       {hasRole('lecturer') && user?.id && (
         <LecturerView lecturerId={user.id} />
       )}
-      {hasRole('student') && user?.id && (
-        <StudentView studentId={user.id} />
+      {hasRole('student') && studentProfile?.id && (
+        <StudentView studentId={studentProfile.id} />
       )}
       {hasRole('admin') && (
         <AdminView />

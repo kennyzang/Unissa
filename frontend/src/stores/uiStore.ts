@@ -30,7 +30,7 @@ export const useUIStore = create<UIStore>()(set => ({
   closeMobileSidebar: () => set({ mobileSidebarOpen: false }),
 
   addToast: toast => {
-    const id = crypto.randomUUID()
+    const id = Date.now().toString(36) + Math.random().toString(36).substring(2)
     set(s => ({ toasts: [...s.toasts, { ...toast, id }] }))
     setTimeout(() => {
       set(s => ({ toasts: s.toasts.filter(t => t.id !== id) }))

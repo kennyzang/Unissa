@@ -220,7 +220,7 @@ router.post('/:id/register-courses', async (req: AuthRequest, res: Response) => 
     offeringIds.map(offeringId =>
       prisma.enrolment.upsert({
         where: { studentId_offeringId: { studentId: student.id, offeringId } },
-        create: { studentId: student.id, offeringId, semesterId, registeredAt: new Date() },
+        create: { studentId: student.id, offeringId, semesterId, status: 'registered', registeredAt: new Date() },
         update: { status: 'registered' },
       })
     )

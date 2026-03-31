@@ -71,6 +71,36 @@ const CourseRegistrationPage: React.FC = () => {
     },
   })
 
+  const registerMutation = useMutation({
+    mutationFn: async (offeringIds: string[]) => {
+      const semesterId = offerings.find(o => offeringIds.includes(o.id))?.semester?.id ?? 'sem-1'
+      const studentId = studentProfile?.studentId ?? user?.id ?? 'me'
+      const { data } = await apiClient.post(`/students/${studentId}/register-courses`, { offeringIds, semesterId })
+      return data
+    },
+    onSuccess: (data) => {
+      setSuccessData(data)
+      setConfirmModal(false)
+      qc.invalidateQueries({ queryKey: ['lms'], exact: false })
+      qc.invalidateQueries({ queryKey: ['student'], exact: false })
+      qc.invalidateQueries({ queryKey: ['lms', 'courses'], exact: false })
+      qc.invalidateQueries({ queryKey: ['campus-services'], exact: false })
+      qc.invalidateQueries({ queryKey: ['invoices'], exact: false })
+      addToast({ type: 'success', message: data.message ?? t('courseReg.successTitle') })
+    },
+    onError: (e: any) => {
+      setConfirmModal(false)
+      const errData = e.response?.data
+      if (errData?.conflicts) {
+        addToast({ type: 'error', message: `Schedule conflict: ${errData.conflicts[0]?.course1} ↔ ${errData.conflicts[0]?.course2}` })
+      } else if (errData?.prereqErrors) {
+        addToast({ type: 'error', message: errData.prereqErrors[0] ?? 'Prerequisite not met' })
+      } else {
+        addToast({ type: 'error', message: errData?.message ?? 'Registration failed' })
+      }
+    },
+  })
+
   const isLoading = profileLoading || offeringsLoading
 
   // Not yet enrolled — show placeholder
@@ -93,34 +123,6 @@ const CourseRegistrationPage: React.FC = () => {
       </div>
     )
   }
-
-  const registerMutation = useMutation({
-    mutationFn: async (offeringIds: string[]) => {
-      const semesterId = offerings.find(o => offeringIds.includes(o.id))?.semester?.id ?? 'sem-1'
-      const studentId = studentProfile?.studentId ?? user?.id ?? 'me'
-      const { data } = await apiClient.post(`/students/${studentId}/register-courses`, { offeringIds, semesterId })
-      return data
-    },
-    onSuccess: (data) => {
-      setSuccessData(data)
-      setConfirmModal(false)
-      qc.invalidateQueries({ queryKey: ['lms'] })
-      qc.invalidateQueries({ queryKey: ['campus-services'] })
-      qc.invalidateQueries({ queryKey: ['invoices'] })
-      addToast({ type: 'success', message: data.message ?? t('courseReg.successTitle') })
-    },
-    onError: (e: any) => {
-      setConfirmModal(false)
-      const errData = e.response?.data
-      if (errData?.conflicts) {
-        addToast({ type: 'error', message: `Schedule conflict: ${errData.conflicts[0]?.course1} ↔ ${errData.conflicts[0]?.course2}` })
-      } else if (errData?.prereqErrors) {
-        addToast({ type: 'error', message: errData.prereqErrors[0] ?? 'Prerequisite not met' })
-      } else {
-        addToast({ type: 'error', message: errData?.message ?? 'Registration failed' })
-      }
-    },
-  })
 
   const toggle = (id: string) => {
     setSelected(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id])

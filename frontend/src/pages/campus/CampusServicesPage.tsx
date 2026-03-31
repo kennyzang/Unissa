@@ -2,8 +2,9 @@ import React from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import { CheckCircle, XCircle, CreditCard, BookOpen, Mail, DollarSign, ExternalLink } from 'lucide-react'
+import { CheckCircle, XCircle, CreditCard, BookOpen, Mail, DollarSign, ExternalLink, LockKeyhole } from 'lucide-react'
 import { apiClient } from '@/lib/apiClient'
+import { useAuthStore } from '@/stores/authStore'
 import Badge from '@/components/ui/Badge'
 import styles from './CampusServicesPage.module.scss'
 
@@ -29,35 +30,69 @@ interface Invoice {
   dueDate: string
 }
 
+interface StudentProfile {
+  id: string
+  studentId: string
+  user: { displayName: string; email: string; username: string }
+}
+
 const CampusServicesPage: React.FC = () => {
   const navigate = useNavigate()
   const { t } = useTranslation()
+  const user = useAuthStore(s => s.user)
 
-  const { data: services, isLoading: svcLoading } = useQuery<CampusServices>({
-    queryKey: ['campus-services', '2026001'],
+  const { data: studentProfile, isLoading: profileLoading } = useQuery<StudentProfile>({
+    queryKey: ['student', 'me'],
     queryFn: async () => {
-      const { data } = await apiClient.get('/students/2026001/campus-services')
+      const { data } = await apiClient.get('/students/me')
       return data.data
     },
+    enabled: !!user,
+    retry: false,
+  })
+
+  const { data: services, isLoading: svcLoading } = useQuery<CampusServices>({
+    queryKey: ['campus-services', studentProfile?.studentId],
+    queryFn: async () => {
+      const { data } = await apiClient.get(`/students/${studentProfile?.studentId}/campus-services`)
+      return data.data
+    },
+    enabled: !!studentProfile?.studentId,
   })
 
   const { data: invoices = [] } = useQuery<Invoice[]>({
-    queryKey: ['invoices', '2026001'],
+    queryKey: ['invoices', studentProfile?.studentId],
     queryFn: async () => {
-      const { data } = await apiClient.get('/finance/invoices/2026001')
+      const { data } = await apiClient.get(`/finance/invoices/${studentProfile?.studentId}`)
       return data.data
     },
+    enabled: !!studentProfile?.studentId,
   })
 
-  const latestInvoice = invoices[0]
+  const isLoading = profileLoading || (studentProfile && svcLoading)
 
-  if (svcLoading) {
+  // Not yet enrolled — show placeholder
+  if (!profileLoading && !studentProfile) {
     return (
-      <div className={styles.page}>
-        <div className={styles.loading}>{t('campusServices.loading')}</div>
+      <div style={{ maxWidth: 480, margin: '80px auto', textAlign: 'center', padding: '0 16px' }}>
+        <div style={{
+          width: 80, height: 80, borderRadius: '50%',
+          background: '#f5f5f5', display: 'flex', alignItems: 'center', justifyContent: 'center',
+          margin: '0 auto 20px',
+        }}>
+          <LockKeyhole size={36} color="#bbb" />
+        </div>
+        <div style={{ fontWeight: 700, fontSize: 20, color: '#333', marginBottom: 8 }}>
+          {t('campusServices.notEnrolledTitle', { defaultValue: 'Not Enrolled Yet' })}
+        </div>
+        <div style={{ fontSize: 14, color: '#888', lineHeight: 1.7 }}>
+          {t('campusServices.notEnrolledMsg', { defaultValue: 'Campus services will be activated once you have been admitted and accepted your offer. Please complete your admission application first.' })}
+        </div>
       </div>
     )
   }
+
+  const latestInvoice = invoices[0]
 
   const cards = [
     {
@@ -66,7 +101,7 @@ const CampusServicesPage: React.FC = () => {
       title: t('campusServices.lmsSystem'),
       subtitle: t('campusServices.lmsSubtitle'),
       active: true,
-      detail: `Noor Aisyah ${t('campusServices.registered')}`,
+      detail: `${studentProfile?.user?.displayName ? `${studentProfile.user.displayName} ${t('campusServices.registered')}` : t('campusServices.registered')}`,
       subDetail: t('campusServices.viewCourses'),
       color: '#165DFF',
       actionLabel: t('campusServices.viewCourses'),
@@ -78,7 +113,7 @@ const CampusServicesPage: React.FC = () => {
       title: t('campusServices.librarySystem'),
       subtitle: t('campusServices.libraryAccount'),
       active: services?.libraryAccountActive ?? false,
-      detail: services?.libraryAccount?.accountNo ?? (services?.libraryAccountActive ? 'LIB-2026001' : t('campusServices.notActivated')),
+      detail: services?.libraryAccount?.accountNo ?? (services?.libraryAccountActive ? `LIB-${studentProfile?.studentId}` : t('campusServices.notActivated')),
       subDetail: services?.libraryAccount?.activatedAt
         ? `${t('campusServices.activatedAt')}${new Date(services.libraryAccount.activatedAt).toLocaleDateString()}`
         : services?.libraryAccountActive ? t('campusServices.accountActivated') : t('campusServices.completeRegistrationFirst'),
@@ -104,7 +139,7 @@ const CampusServicesPage: React.FC = () => {
       title: t('campusServices.universityEmail'),
       subtitle: t('campusServices.universityEmailSubtitle'),
       active: services?.emailAccountActive ?? false,
-      detail: services?.emailAccountActive ? 'noor@unissa.edu.bn' : t('campusServices.notActivated'),
+      detail: services?.emailAccountActive ? (studentProfile?.user?.email ?? t('campusServices.notActivated')) : t('campusServices.notActivated'),
       subDetail: services?.emailAccountActive ? t('campusServices.emailActivated') : t('campusServices.completeRegistrationFirst'),
       color: '#7816FF',
       actionLabel: null,
@@ -132,7 +167,7 @@ const CampusServicesPage: React.FC = () => {
         <div>
           <h1 className={styles.pageTitle}>{t('campusServices.title')}</h1>
           <p className={styles.pageSub}>
-            {t('campusServices.studentId')} 2026001 · Noor Aisyah Binti Hassan ·{' '}
+            {t('campusServices.studentId')} {studentProfile?.studentId} · {studentProfile?.user?.displayName} ·{' '}
             {cards.filter(c => c.active).length}/{cards.length} {t('campusServices.servicesActivated')}
           </p>
         </div>

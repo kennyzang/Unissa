@@ -289,76 +289,27 @@ async function main() {
     update: {},
   })
 
-  // ── Applicant: Zara ──────────────────────────────────────────
-  // Use userId as upsert key (same as the apply route) so this merges with any
-  // UI-submitted application that Zara may already have in the DB.
-  const applicantZara = await prisma.applicant.upsert({
-    where: { userId: uZara.id },
-    create: {
-      applicationRef: 'APP-2026-Z001',
-      userId: uZara.id,
-      fullName: 'Zara Khalid Binti Yusof',
-      icPassport: '00-234567',
-      dateOfBirth: new Date('2001-08-22'),
-      gender: 'female',
-      nationality: 'Brunei Darussalam',
-      email: 'zara@unissa.edu.bn',
-      mobile: '+673-8234567',
-      homeAddress: '45 Jalan Tutong, Bandar Seri Begawan, BA1312, Brunei Darussalam',
-      highestQualification: 'a_level',
-      previousInstitution: 'Kolej Universiti Perguruan Ugama Seri Begawan',
-      yearOfCompletion: 2025,
-      cgpa: null,
-      intakeId: intakeBSC.id,
-      programmeId: progBSC.id,
-      modeOfStudy: 'full_time',
-      scholarshipApplied: false,
-      status: 'accepted',
-      submittedAt: new Date('2026-03-12'),
-      decisionMadeAt: new Date('2026-03-20'),
-    },
-    // Ensure programmeId/intakeId are correct even if a UI-submitted application has them swapped
-    update: { programmeId: progBSC.id, intakeId: intakeBSC.id, status: 'accepted' },
-  })
-
-  // ── Student: Zara (active) ───────────────────────────────────
-  const studentZara = await prisma.student.upsert({
-    where: { studentId: '2026013' },
-    create: {
-      studentId: '2026013',
-      userId: uZara.id,
-      applicantId: applicantZara.id,
-      programmeId: progBSC.id,
-      intakeId: intakeBSC.id,
-      modeOfStudy: 'full_time',
-      nationality: 'Brunei Darussalam',
-      studentType: 'standard',
-      currentCgpa: 3.45,
-      scholarshipPct: 0,
-      campusCardNo: 'CC-2026013',
-      libraryAccountActive: true,
-      emailAccountActive: true,
-      status: 'active',
-      enrolledAt: new Date('2026-04-01'),
-    },
-    update: {},
-  })
-
-  // Library account for Zara
-  await prisma.libraryAccount.upsert({
-    where: { studentId: studentZara.id },
-    create: { studentId: studentZara.id, accountNo: 'LIB-2026013', isActive: true, activatedAt: new Date('2026-04-01') },
-    update: {},
-  })
-
-  // Enrolments for Zara (same core courses as Noor)
-  for (const offering of [offeringIFN101, offeringIFN102, offeringIFN201, offeringARA101]) {
-    await prisma.enrolment.upsert({
-      where: { studentId_offeringId: { studentId: studentZara.id, offeringId: offering.id } },
-      create: { studentId: studentZara.id, offeringId: offering.id, semesterId: semSep2026.id, status: 'registered', registeredAt: new Date('2026-04-05') },
-      update: {},
-    })
+  // ── Zara: Unregistered (only User account exists) ─────────────
+  // Zara has a login account but has not submitted an application yet.
+  // This is a clean state for testing the application flow.
+  
+  // First, find if Zara has any student record to use for cascading deletion
+  const existingStudentZara = await prisma.student.findUnique({ where: { userId: uZara.id } })
+  
+  if (existingStudentZara) {
+    // Delete all student-related records
+    await prisma.studentGpaRecord.deleteMany({ where: { studentId: existingStudentZara.id } })
+    await prisma.studentRiskScore.deleteMany({ where: { studentId: existingStudentZara.id } })
+    await prisma.attendanceRecord.deleteMany({ where: { studentId: existingStudentZara.id } })
+    await prisma.submission.deleteMany({ where: { studentId: existingStudentZara.id } })
+    await prisma.feeInvoice.deleteMany({ where: { studentId: existingStudentZara.id } })
+    await prisma.enrolment.deleteMany({ where: { studentId: existingStudentZara.id } })
+    await prisma.libraryAccount.deleteMany({ where: { studentId: existingStudentZara.id } })
   }
+  
+  // Delete student and applicant records
+  await prisma.student.deleteMany({ where: { userId: uZara.id } })
+  await prisma.applicant.deleteMany({ where: { userId: uZara.id } })
 
   // ── 11 Additional Students for Risk Analytics Demo ────────────
   const riskStudents = []
@@ -783,8 +734,8 @@ async function main() {
 
   console.log('\n✅ Seed complete! Demo data ready.\n')
   console.log('Demo Accounts:')
-  console.log('  noor        / Demo@2026  → Student Portal')
-  console.log('  zara        / Demo@2026  → Student Portal')
+  console.log('  noor        / Demo@2026  → Student Portal (registered student)')
+  console.log('  zara        / Demo@2026  → Login only (unregistered - apply for admission)')
   console.log('  admissions  / Demo@2026  → Admission Dashboard')
   console.log('  drsiti      / Demo@2026  → LMS Instructor')
   console.log('  manager     / Demo@2026  → Approval Inbox')

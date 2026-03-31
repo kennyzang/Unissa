@@ -284,13 +284,22 @@ const StudentCoursesView: React.FC = () => {
   const [viewMode, setViewMode] = useState<ViewMode>('card')
   const [mobileDay, setMobileDay] = useState<string>('')
 
-  const { data: enrolments = [], isLoading } = useQuery<Enrolment[]>({
-    queryKey: ['lms', 'courses', user?.id],
+  const { data: studentProfile } = useQuery({
+    queryKey: ['student', 'me'],
     queryFn: async () => {
-      const { data } = await apiClient.get(`/lms/courses/${user!.id}`)
+      const { data } = await apiClient.get('/students/me')
       return data.data
     },
     enabled: !!user,
+  })
+
+  const { data: enrolments = [], isLoading } = useQuery<Enrolment[]>({
+    queryKey: ['lms', 'courses', studentProfile?.id],
+    queryFn: async () => {
+      const { data } = await apiClient.get(`/lms/courses/${studentProfile!.id}`)
+      return data.data
+    },
+    enabled: !!studentProfile?.id,
   })
 
   const totalCH = enrolments.reduce((s, e) => s + (e.offering?.course?.creditHours ?? 0), 0)
