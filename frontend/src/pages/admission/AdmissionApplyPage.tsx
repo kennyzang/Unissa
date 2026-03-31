@@ -227,6 +227,7 @@ const PendingApplicationCard: React.FC<{ app: any }> = ({ app }) => {
       addToast({ type: 'success', message: res.data.message ?? t('admissionApply.offerAccepted', { defaultValue: 'Offer accepted! Welcome to UNISSA.' }) })
       qc.invalidateQueries({ queryKey: ['student', 'me'] })
       qc.invalidateQueries({ queryKey: ['admissions', 'my-application'] })
+      qc.invalidateQueries({ queryKey: ['dashboard', 'kpi'] })
     },
     onError: (e: any) => {
       addToast({ type: 'error', message: e.response?.data?.message ?? t('admissionApply.acceptOfferFailed', { defaultValue: 'Failed to accept offer. Please try again.' }) })

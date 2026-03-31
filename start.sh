@@ -6,9 +6,6 @@
 
 set -e
 
-export PNPM_HOME="$HOME/Library/pnpm"
-export PATH="$PNPM_HOME:$PATH"
-
 ROOT="$(cd "$(dirname "$0")" && pwd)"
 BACKEND="$ROOT/backend"
 FRONTEND="$ROOT/frontend"
@@ -19,24 +16,18 @@ echo "║  UNISSA Smart University Platform  –  POC v5.0       ║"
 echo "╚══════════════════════════════════════════════════════╝"
 echo ""
 
-# Check pnpm
-if ! command -v pnpm &> /dev/null; then
-  echo "❌ pnpm not found. Install via: curl -fsSL https://get.pnpm.io/install.sh | sh -"
-  exit 1
-fi
-
 # Install deps if needed
 if [ ! -d "$ROOT/node_modules" ]; then
   echo "📦 Installing dependencies..."
-  cd "$ROOT" && pnpm install
+  cd "$ROOT" && yarn install
 fi
 
 # Run DB migration + seed if DB not exists
-if [ ! -f "$BACKEND/dev.db" ]; then
+if [ ! -f "$BACKEND/prisma/dev.db" ]; then
   echo "🗄️  Initialising database..."
-  cd "$BACKEND"
-  pnpm exec prisma migrate deploy
-  pnpm exec tsx prisma/seed.ts
+  node "$ROOT/node_modules/prisma/build/index.js" migrate deploy --schema "$BACKEND/prisma/schema.prisma"
+  cd "$BACKEND" && node "$ROOT/node_modules/tsx/dist/cli.mjs" prisma/seed.ts
+  cd "$ROOT"
 fi
 
 echo "🚀 Starting services..."
@@ -51,4 +42,4 @@ echo ""
 lsof -ti:4000 -ti:5173 | xargs kill -9 2>/dev/null || true
 
 # Start both services
-cd "$ROOT" && pnpm run dev
+cd "$ROOT" && yarn run dev

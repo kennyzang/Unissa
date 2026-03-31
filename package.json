@@ -3,29 +3,19 @@
   "version": "1.0.0",
   "private": true,
   "description": "UNISSA Smart University Platform – Full-Stack POC",
+  "workspaces": [
+    "backend",
+    "frontend"
+  ],
   "scripts": {
-    "dev": "concurrently \"pnpm --filter backend dev\" \"pnpm --filter frontend dev\"",
-    "build": "pnpm --filter backend build && pnpm --filter frontend build",
-    "seed": "pnpm --filter backend seed",
-    "db:reset": "pnpm --filter backend db:reset"
+    "dev": "concurrently \"yarn workspace backend dev\" \"yarn workspace frontend dev\"",
+    "build": "yarn workspace backend build && yarn workspace frontend build",
+    "seed": "yarn workspace backend seed",
+    "db:reset": "yarn workspace backend db:reset",
+    "test": "cd backend && npx vitest run"
   },
   "devDependencies": {
     "concurrently": "^8.2.2"
   },
-  "pnpm": {
-    "onlyBuiltDependencies": [
-      "@parcel/watcher",
-      "@prisma/client",
-      "@prisma/engines",
-      "esbuild",
-      "prisma"
-    ]
-  },
-  "dependencies": {
-    "@lui/core": "^6.0.10",
-    "@lui/icons": "^6.0.10",
-    "@lui/pro": "^6.0.10",
-    "@mui/core": "^6.0.10",
-    "@mui/pro": "^6.0.10"
-  }
+  "packageManager": "yarn@4.13.0+sha512.5c20ba010c99815433e5c8453112165e673f1c7948d8d2b267f4b5e52097538658388ebc9f9580656d9b75c5cc996f990f611f99304a2197d4c56d21eea370e7"
 }

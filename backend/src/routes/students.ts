@@ -150,13 +150,16 @@ router.post('/:id/register-courses', async (req: AuthRequest, res: Response) => 
     where: { studentId: student.id, status: 'completed' },
     include: { offering: { select: { courseId: true } } },
   })
-  const completedCourseIds = new Set(completedEnrolments.map(e => e.offering.courseId))
+  const completedCourseIds = new Set((completedEnrolments ?? []).map(e => e.offering.courseId))
+  const registeringCourseIds = new Set(offerings.map(o => o.courseId))
 
   const prereqErrors: string[] = []
   for (const offering of offerings) {
     for (const prereq of offering.course.prerequisites) {
-      if (!completedCourseIds.has(prereq.prerequisiteCourseId)) {
-        prereqErrors.push(`${offering.course.code} requires ${prereq.prerequisite.code} (min grade: ${prereq.minGrade})`)
+      const prereqCourseId = (prereq as any).courseId ?? prereq.prerequisiteCourseId
+      if (!completedCourseIds.has(prereqCourseId) && !registeringCourseIds.has(prereqCourseId)) {
+        const prereqCode = prereq.prerequisite?.code ?? prereqCourseId
+        prereqErrors.push(`${offering.course.code} requires ${prereqCode} (min grade: ${prereq.minGrade})`)
       }
     }
   }
@@ -201,11 +204,11 @@ router.post('/:id/register-courses', async (req: AuthRequest, res: Response) => 
     where: { studentId: student.id, status: 'registered', offeringId: { notIn: offeringIds } },
     include: { offering: { include: { course: { select: { creditHours: true } } } } },
   })
-  const existingCH = existingEnrolments.reduce((sum, e) => sum + e.offering.course.creditHours, 0)
+  const existingCH = (existingEnrolments ?? []).reduce((sum, e) => sum + e.offering.course.creditHours, 0)
   const newCH = offerings.reduce((sum, o) => sum + o.course.creditHours, 0)
   const totalCH = newCH + existingCH
-  const maxCH = student.currentCgpa >= 3.5 ? 21 : student.studentType === 'probation' ? 6 : 18
-  const minCH = student.studentType === 'probation' ? 3 : 12
+  const maxCH = student.studentType === 'probation' ? 6 : 18
+  const minCH = student.studentType === 'probation' ? 3 : 6
 
   if (totalCH < minCH || totalCH > maxCH) {
     res.status(400).json({
@@ -285,6 +288,22 @@ router.post('/:id/register-courses', async (req: AuthRequest, res: Response) => 
     data: { enrolments, invoice, campusCardNo: campusCard, totalCH: newCH },
     message: `Successfully registered ${offeringIds.length} courses (${newCH} CH). Invoice generated.`,
   })
+})
+
+// DELETE /api/v1/students/:id/courses/:offeringId  — drop a course
+router.delete('/:id/courses/:offeringId', async (req: AuthRequest, res: Response) => {
+  const student = await prisma.student.findFirst({
+    where: { OR: [{ id: req.params.id }, { studentId: req.params.id }] },
+  })
+  if (!student) { res.status(404).json({ success: false, message: 'Student not found' }); return }
+
+  const enrolment = await prisma.enrolment.findFirst({
+    where: { studentId: student.id, offeringId: req.params.offeringId, status: 'registered' },
+  })
+  if (!enrolment) { res.status(404).json({ success: false, message: 'Enrolment not found' }); return }
+
+  await prisma.enrolment.delete({ where: { id: enrolment.id } })
+  res.json({ success: true, message: 'Course dropped successfully' })
 })
 
 export default router

@@ -6,6 +6,63 @@ import { authenticate, AuthRequest } from '../middleware/auth'
 const router = Router()
 router.use(authenticate)
 
+// GET /api/v1/lms/materials/:offeringId
+router.get('/materials/:offeringId', async (req: AuthRequest, res: Response) => {
+  const materials = await prisma.courseMaterial.findMany({
+    where: {
+      offeringId: req.params.offeringId,
+      isPublished: true,
+    },
+    include: {
+      asset: true,
+      uploadedBy: { select: { displayName: true } },
+    },
+    orderBy: { orderIndex: 'asc' },
+  })
+  materials.sort((a, b) => a.orderIndex - b.orderIndex)
+  res.json({ success: true, data: materials })
+})
+
+// GET /api/v1/lms/submissions/pending/:lecturerId
+router.get('/submissions/pending/:lecturerId', async (req: AuthRequest, res: Response) => {
+  const staff = await prisma.staff.findFirst({
+    where: { OR: [{ id: req.params.lecturerId }, { staffId: req.params.lecturerId }, { userId: req.params.lecturerId }] },
+  })
+  if (!staff) { res.status(404).json({ success: false, message: 'Lecturer not found' }); return }
+
+  const offerings = await prisma.courseOffering.findMany({
+    where: { lecturerId: staff.id },
+    include: {
+      course: true,
+      assignments: {
+        include: {
+          submissions: {
+            where: { finalMarks: null },
+            include: {
+              student: { include: { user: { select: { displayName: true } } } },
+            },
+          },
+        },
+      },
+    },
+  })
+
+  const pendingSubmissions: any[] = []
+  for (const offering of offerings) {
+    for (const assignment of offering.assignments) {
+      for (const submission of assignment.submissions) {
+        pendingSubmissions.push({
+          ...submission,
+          assignment: { id: assignment.id, title: assignment.title, maxMarks: assignment.maxMarks },
+          offering: { id: offering.id, course: offering.course },
+        })
+      }
+    }
+  }
+
+  res.json({ success: true, data: pendingSubmissions })
+})
+
 // GET /api/v1/lms/courses/:studentId
 router.get('/courses/:studentId', async (req: AuthRequest, res: Response) => {
   const student = await prisma.student.findFirst({
@@ -25,7 +82,7 @@ router.get('/courses/:studentId', async (req: AuthRequest, res: Response) => {
       },
     },
   })
-  res.json({ success: true, data: enrolments })
+  res.json({ success: true, data: enrolments.filter(e => e.status === 'registered') })
 })
 
 // POST /api/v1/lms/submissions
@@ -42,7 +99,7 @@ router.post('/submissions', async (req: AuthRequest, res: Response) => {
       fileUrl: `/uploads/submissions/${assignmentId}_${studentId}.txt`,
       mimeType: 'text/plain',
       fileSizeBytes: content?.length ?? 0,
-      uploadedById: req.user!.userId,
+      uploadedById: req.user?.userId ?? '',
     },
   })
 
@@ -66,6 +123,26 @@ router.post('/submissions', async (req: AuthRequest, res: Response) => {
     update: { assetId: asset.id, aiRubricScores, aiGeneratedAt: new Date() },
   })
 
+  // Get assignment and offering details for notification
+  const assignment = await prisma.assignment.findUnique({
+    where: { id: assignmentId },
+    include: { offering: { include: { lecturer: true } } },
+  })
+
+  // Create notification for lecturer
+  if (assignment?.offering?.lecturer?.userId) {
+    await prisma.notification.create({
+      data: {
+        userId: assignment.offering.lecturer.userId,
+        type: 'assignment_submission',
+        subject: `New submission for ${assignment.title}`,
+        body: `A student has submitted their work for ${assignment.title}. AI rubric scores are ready for your review.`,
+        status: 'pending',
+        triggeredByEvent: 'submission_created',
+      },
+    })
+  }
+
   res.status(201).json({ success: true, data: submission, message: 'Submission received' })
 })
 
@@ -81,7 +158,17 @@ router.patch('/submissions/:id/grade', async (req: AuthRequest, res: Response) =
       instructorScores: JSON.stringify(instructorScores),
       finalMarks,
       gradedAt: new Date(),
-      gradedById: req.user!.userId,
+      gradedById: req.user?.userId ?? '',
+    },
+    include: {
+      assignment: {
+        include: {
+          offering: {
+            include: { course: true, semester: true },
+          },
+        },
+      },
+      student: true,
     },
   })
 
@@ -99,10 +186,93 @@ router.patch('/submissions/:id/grade', async (req: AuthRequest, res: Response) =
     A_plus: 4.0, A: 4.0, B_plus: 3.67, B: 3.33, C_plus: 3.0, C: 2.67, D: 2.0, F: 0,
   }
 
+  // Update enrolment with final grade
+  await prisma.enrolment.update({
+    where: {
+      studentId_offeringId: {
+        studentId: submission.studentId,
+        offeringId: submission.assignment.offeringId,
+      },
+    },
+    data: {
+      finalGrade: grade,
+      gradePoints: gradePoints[grade],
+    },
+  })
+
+  // Calculate and update GPA
+  const allEnrolments = await prisma.enrolment.findMany({
+    where: {
+      studentId: submission.studentId,
+      finalGrade: { not: null },
+    },
+    include: {
+      offering: { include: { course: true } },
+    },
+  })
+
+  let totalGradePoints = 0
+  let totalCreditHours = 0
+
+  for (const enrol of allEnrolments) {
+    if (enrol.gradePoints && enrol.offering.course.creditHours) {
+      totalGradePoints += enrol.gradePoints * enrol.offering.course.creditHours
+      totalCreditHours += enrol.offering.course.creditHours
+    }
+  }
+
+  const currentGpa = totalCreditHours > 0 ? totalGradePoints / totalCreditHours : 0
+
+  // Update student's current CGPA
+  await prisma.student.update({
+    where: { id: submission.studentId },
+    data: { currentCgpa: Math.round(currentGpa * 100) / 100 },
+  })
+
+  // Create or update GPA record for the semester
+  const semId = (submission.assignment.offering as any).semester?.id ?? submission.assignment.offering.semesterId
+  await prisma.studentGpaRecord.upsert({
+    where: {
+      studentId_semesterId: {
+        studentId: submission.studentId,
+        semesterId: semId,
+      },
+    },
+    create: {
+      studentId: submission.studentId,
+      semesterId: semId,
+      semesterGpa: Math.round(currentGpa * 100) / 100,
+      cumulativeGpa: Math.round(currentGpa * 100) / 100,
+      totalChPassed: totalCreditHours,
+    },
+    update: {
+      semesterGpa: Math.round(currentGpa * 100) / 100,
+      cumulativeGpa: Math.round(currentGpa * 100) / 100,
+      totalChPassed: totalCreditHours,
+    },
+  })
+
+  // Create notification for student
+  await prisma.notification.create({
+    data: {
+      userId: submission.student.userId,
+      type: 'grade_updated',
+      subject: `Grade updated for ${submission.assignment.title}`,
+      body: `Your grade for ${submission.assignment.title} has been updated to ${grade}. Your current GPA is ${currentGpa.toFixed(2)}.`,
+      status: 'pending',
+      triggeredByEvent: 'grade_confirmed',
+    },
+  })
+
   res.json({
     success: true,
-    data: { submission, grade, gradePoints: gradePoints[grade] },
-    message: 'Grade confirmed',
+    data: {
+      submission,
+      grade,
+      gradePoints: gradePoints[grade],
+      currentGpa: Math.round(currentGpa * 100) / 100,
+    },
+    message: 'Grade confirmed and GPA updated',
   })
 })
 

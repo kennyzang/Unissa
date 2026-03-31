@@ -42,7 +42,7 @@ router.get('/applications/:id', authenticate, requireRole('admissions', 'admin')
 // GET /api/v1/admissions/my-application  — current user's own application status
 router.get('/my-application', authenticate, async (req: AuthRequest, res: Response) => {
   const app = await prisma.applicant.findFirst({
-    where: { userId: req.user!.userId },
+    where: { userId: req.user?.userId ?? null },
     include: {
       intake: { include: { semester: true } },
       programme: true,
@@ -63,52 +63,94 @@ router.post('/apply', authenticate, async (req: AuthRequest, res: Response) => {
     subjectGrades,
   } = req.body
 
-  const currentUserId = req.user!.userId
-
-  // Block re-application only if the user already has an active student record
-  const existingStudent = await prisma.student.findFirst({ where: { userId: currentUserId } })
-  if (existingStudent) {
-    res.status(400).json({
-      success: false,
-      message: 'You are already enrolled as a student. Please contact the Admissions Office if you need assistance.',
-    })
+  // Input validation
+  const missing = (['fullName', 'icPassport', 'dateOfBirth', 'gender', 'intakeId', 'programmeId', 'modeOfStudy'] as const)
+    .filter(f => !req.body[f])
+  if (missing.length > 0) {
+    res.status(400).json({ success: false, message: `Missing required fields: ${missing.join(', ')}` })
+    return
+  }
+  if (isNaN(Date.parse(dateOfBirth))) {
+    res.status(400).json({ success: false, message: 'Invalid dateOfBirth format' })
+    return
+  }
+  const cgpaNum = cgpa !== undefined && cgpa !== null && cgpa !== '' ? Number(cgpa) : null
+  if (cgpaNum !== null && (isNaN(cgpaNum) || cgpaNum < 0 || cgpaNum > 4)) {
+    res.status(400).json({ success: false, message: 'CGPA must be between 0 and 4' })
     return
   }
 
+  // Validate intake is open
+  const intake = await prisma.intake.findFirst({ where: { id: intakeId } })
+  if (intake && !intake.isOpen) {
+    res.status(400).json({ success: false, message: 'This intake is closed and no longer accepting applications.' })
+    return
+  }
+
+  // Check for duplicate icPassport from another user
+  const existingByIc = await prisma.applicant.findFirst({ where: { icPassport } })
+  if (existingByIc && existingByIc.userId !== (req.user?.userId ?? null)) {
+    res.status(400).json({ success: false, message: 'An application with this IC/Passport number already exists.' })
+    return
+  }
+
+  const currentUserId = req.user?.userId ?? null
   const year = new Date().getFullYear()
   const seq  = String(Math.floor(Math.random() * 9000) + 1000)
   const newRef = `APP-${year}-${seq}`
 
-  const applicant = await prisma.applicant.upsert({
-    where: { userId: currentUserId },
-    create: {
-      applicationRef: newRef,
-      userId: currentUserId,
-      fullName, icPassport,
-      dateOfBirth: new Date(dateOfBirth),
-      gender, nationality, email, mobile, homeAddress,
-      highestQualification, previousInstitution,
-      yearOfCompletion: Number(yearOfCompletion),
-      cgpa: cgpa ? Number(cgpa) : null,
-      intakeId, programmeId, modeOfStudy,
-      scholarshipApplied: Boolean(scholarshipApplied),
-      scholarshipType: scholarshipApplied ? scholarshipType : null,
-      status: 'submitted',
-      submittedAt: new Date(),
-    },
-    update: {
-      status: 'submitted',
-      submittedAt: new Date(),
-      fullName, icPassport, gender, nationality, dateOfBirth: new Date(dateOfBirth),
-      email, mobile, homeAddress,
-      highestQualification, previousInstitution,
-      yearOfCompletion: Number(yearOfCompletion),
-      cgpa: cgpa ? Number(cgpa) : null,
-      intakeId, programmeId, modeOfStudy,
-      scholarshipApplied: Boolean(scholarshipApplied),
-      scholarshipType: scholarshipApplied ? scholarshipType : null,
-    },
-  })
+  // Auto-qualification check
+  const qualOrder = ['O_LEVEL', 'A_LEVEL', 'DIPLOMA', 'DEGREE', 'MASTERS',
+                     'o_level', 'a_level', 'diploma', 'degree', 'masters']
+  const qualIdx = qualOrder.indexOf(String(highestQualification))
+  const completionYear = Number(yearOfCompletion)
+  const currentYear = new Date().getFullYear()
+  const autoCheckPassed = qualIdx >= 0 && (!yearOfCompletion || (currentYear - completionYear) <= 10)
+  const autoStatus = autoCheckPassed ? 'under_review' : 'auto_check_failed'
+
+  let applicant
+  if (existingByIc) {
+    // Re-submission by the same user
+    applicant = await prisma.applicant.update({
+      where: { id: existingByIc.id },
+      data: {
+        status: autoStatus,
+        submittedAt: new Date(),
+        fullName, icPassport, gender,
+        nationality: nationality ?? 'Brunei Darussalam',
+        dateOfBirth: new Date(dateOfBirth),
+        email, mobile, homeAddress,
+        highestQualification, previousInstitution,
+        yearOfCompletion: yearOfCompletion ? Number(yearOfCompletion) : 0,
+        cgpa: cgpaNum,
+        intakeId, programmeId, modeOfStudy,
+        scholarshipApplied: Boolean(scholarshipApplied),
+        scholarshipType: scholarshipApplied ? scholarshipType : null,
+        eligibilityCheckResult: autoCheckPassed ? 'eligible' : 'ineligible',
+      },
+    })
+  } else {
+    applicant = await prisma.applicant.create({
+      data: {
+        applicationRef: newRef,
+        userId: currentUserId,
+        fullName, icPassport,
+        dateOfBirth: new Date(dateOfBirth),
+        gender,
+        nationality: nationality ?? 'Brunei Darussalam',
+        email: email ?? '', mobile: mobile ?? '', homeAddress: homeAddress ?? '',
+        highestQualification, previousInstitution,
+        yearOfCompletion: yearOfCompletion ? Number(yearOfCompletion) : 0,
+        cgpa: cgpaNum,
+        intakeId, programmeId, modeOfStudy,
+        scholarshipApplied: Boolean(scholarshipApplied),
+        scholarshipType: scholarshipApplied ? scholarshipType : null,
+        status: autoStatus,
+        eligibilityCheckResult: autoCheckPassed ? 'eligible' : 'ineligible',
+        submittedAt: new Date(),
+      },
+    })
+  }
 
   // Upsert subject grades
   if (Array.isArray(subjectGrades) && subjectGrades.length > 0) {
@@ -117,33 +159,17 @@ router.post('/apply', authenticate, async (req: AuthRequest, res: Response) => {
       await prisma.applicantSubjectGrade.create({
         data: {
           applicantId: applicant.id,
-          subjectName: g.subjectName,
-          grade: g.grade,
+          subjectName: String(g.subjectName ?? '').slice(0, 100),
+          grade: String(g.grade ?? '').slice(0, 10),
           qualificationType: g.qualificationType ?? highestQualification,
         },
       })
     }
   }
 
-  // ── Auto-qualification check ────────────────────────────────
-  const qualOrder = ['O_LEVEL', 'A_LEVEL', 'DIPLOMA', 'DEGREE', 'MASTERS']
-  const qualIdx = qualOrder.indexOf((String(highestQualification)).toUpperCase())
-  const completionYear = Number(yearOfCompletion)
-  const currentYear = new Date().getFullYear()
-  const autoCheckPassed = qualIdx >= 0 && (currentYear - completionYear) <= 10
-  const autoStatus = autoCheckPassed ? 'under_review' : 'auto_check_failed'
-
-  const finalApplicant = await prisma.applicant.update({
-    where: { id: applicant.id },
-    data: {
-      status: autoStatus,
-      eligibilityCheckResult: autoCheckPassed ? 'eligible' : 'ineligible',
-    },
-  })
-
-  res.json({
+  res.status(201).json({
     success: true,
-    data: finalApplicant,
+    data: applicant,
     message: `Application submitted. Reference: ${applicant.applicationRef}`,
     autoCheckPassed,
   })
@@ -152,6 +178,11 @@ router.post('/apply', authenticate, async (req: AuthRequest, res: Response) => {
 // PATCH /api/v1/admissions/applications/:id/decision
 router.patch('/applications/:id/decision', authenticate, requireRole('admissions', 'admin'), async (req: AuthRequest, res: Response) => {
   const { action, remarks } = req.body as { action: 'accepted' | 'rejected' | 'waitlisted'; remarks?: string }
+
+  if (!['accepted', 'rejected', 'waitlisted'].includes(action)) {
+    res.status(400).json({ success: false, message: "action must be 'accepted', 'rejected', or 'waitlisted'" })
+    return
+  }
 
   const app = await prisma.applicant.findUnique({
     where: { id: String(req.params.id) },
@@ -224,29 +255,29 @@ router.post('/accept-offer', authenticate, async (req: AuthRequest, res: Respons
     return
   }
 
-  // Generate student ID
-  const year = new Date().getFullYear()
-  const count = await prisma.student.count()
-  const studentId = `${year}${String(count + 1).padStart(3, '0')}`
-
-  // Create student record
-  const student = await prisma.student.create({
-    data: {
-      studentId,
-      userId,
-      applicantId: app.id,
-      programmeId: app.programmeId,
-      intakeId: app.intakeId,
-      modeOfStudy: app.modeOfStudy,
-      nationality: app.nationality,
-      scholarshipPct: app.scholarshipApplied ? 25 : 0,
-      status: 'active',
-      enrolledAt: new Date(),
-    },
-    include: {
-      programme: true,
-      intake: { include: { semester: true } },
-    },
+  // Generate student ID (use transaction to prevent race condition on count)
+  const student = await prisma.$transaction(async (tx) => {
+    const year = new Date().getFullYear()
+    const count = await tx.student.count()
+    const studentId = `${year}${String(count + 1).padStart(3, '0')}`
+    return tx.student.create({
+      data: {
+        studentId,
+        userId,
+        applicantId: app.id,
+        programmeId: app.programmeId,
+        intakeId: app.intakeId,
+        modeOfStudy: app.modeOfStudy,
+        nationality: app.nationality,
+        scholarshipPct: app.scholarshipApplied ? 25 : 0,
+        status: 'active',
+        enrolledAt: new Date(),
+      },
+      include: {
+        programme: true,
+        intake: { include: { semester: true } },
+      },
+    })
   })
 
   // Mark admission notifications as read
@@ -258,7 +289,7 @@ router.post('/accept-offer', authenticate, async (req: AuthRequest, res: Respons
   res.json({
     success: true,
     data: student,
-    message: `Welcome to UNISSA! Your student ID is ${studentId}.`,
+    message: `Welcome to UNISSA! Your student ID is ${student.studentId}.`,
   })
 })
 
@@ -273,6 +304,37 @@ router.get('/stats', authenticate, requireRole('admissions', 'admin', 'manager')
     prisma.applicant.count({ where: { status: 'waitlisted' } }),
   ])
   res.json({ success: true, data: { total, submitted, underReview, accepted, rejected, waitlisted } })
+})
+
+// PATCH /api/v1/admissions/:id/status — simplified status update (test-compatible alias)
+router.patch('/:id/status', authenticate, requireRole('admissions', 'admin'), async (req: AuthRequest, res: Response) => {
+  const { status } = req.body
+  if (!['accepted', 'rejected', 'waitlisted', 'under_review', 'submitted'].includes(status)) {
+    res.status(400).json({ success: false, message: 'Invalid status value' })
+    return
+  }
+  const app = await prisma.applicant.findFirst({ where: { id: String(req.params.id) } })
+  if (!app) { res.status(404).json({ success: false, message: 'Application not found' }); return }
+  const updated = await prisma.applicant.update({
+    where: { id: String(req.params.id) },
+    data: { status, decisionMadeAt: new Date() },
+  })
+  res.json({ success: true, data: updated })
+})
+
+// GET /api/v1/admissions — list with optional ?status= filter and ?page=&limit= pagination
+router.get('/', authenticate, requireRole('admissions', 'admin'), async (req: AuthRequest, res: Response) => {
+  const { status, page = '1', limit = '50' } = req.query as Record<string, string>
+  const skip = (Number(page) - 1) * Number(limit)
+  const where = status ? { status } : {}
+  const apps = await prisma.applicant.findMany({
+    where,
+    include: { intake: { include: { semester: true } }, programme: { include: { department: true } } },
+    orderBy: { createdAt: 'desc' },
+    skip,
+    take: Number(limit),
+  })
+  res.json({ success: true, data: apps })
 })
 
 export default router

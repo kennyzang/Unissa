@@ -93,6 +93,7 @@ model User {
   student              Student?
   staff                Staff?
   fileAssets           FileAsset[]
+  courseMaterials      CourseMaterial[]
   chatbotConversations ChatbotConversation[]
   notifications        Notification[]
   auditLogs            AuditLog[]
@@ -120,6 +121,7 @@ model FileAsset {
 
   applicantDocuments   ApplicantDocument[]
   submissionAsset      Submission?
+  courseMaterial       CourseMaterial?
   prQuotes             PrQuote[]
   poAsset              PurchaseOrder?  @relation("PoAsset")
   appointmentLetters   Staff[]         @relation("AppointmentLetter")
@@ -337,6 +339,7 @@ model CourseOffering {
 
   enrolments         Enrolment[]
   assignments        Assignment[]
+  materials          CourseMaterial[]
   attendanceSessions AttendanceSession[]
   riskScores         StudentRiskScore[]
 
@@ -375,6 +378,27 @@ model StudentGpaRecord {
 
   @@unique([studentId, semesterId])
   @@map("student_gpa_records")
+}
+
+model CourseMaterial {
+  id           String   @id @default(cuid())
+  offeringId   String
+  offering     CourseOffering @relation(fields: [offeringId], references: [id])
+  title        String
+  description  String?
+  materialType String   // video|document|link|presentation
+  assetId      String?    @unique
+  asset        FileAsset? @relation(fields: [assetId], references: [id])
+  externalUrl  String?
+  duration     Int?     // video duration in seconds
+  orderIndex   Int      @default(0)
+  isPublished  Boolean  @default(false)
+  uploadedById String
+  uploadedBy   User     @relation(fields: [uploadedById], references: [id])
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@map("course_materials")
 }
 
 model Assignment {
