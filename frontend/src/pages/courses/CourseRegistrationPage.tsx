@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { Plus, Minus, CheckCircle, AlertTriangle, BookOpen, Clock, AlertCircle } from 'lucide-react'
 import { apiClient } from '@/lib/apiClient'
+import { useAuthStore } from '@/stores/authStore'
 import { useUIStore } from '@/stores/uiStore'
 import Badge from '@/components/ui/Badge'
 import Button from '@/components/ui/Button'
@@ -34,8 +35,16 @@ function timesOverlap(a: Offering, b: Offering): boolean {
   return a.dayOfWeek === b.dayOfWeek && a.startTime < b.endTime && a.endTime > b.startTime
 }
 
+interface StudentProfile {
+  id: string
+  studentId: string
+  currentCgpa: number
+  studentType: string
+}
+
 const CourseRegistrationPage: React.FC = () => {
   const navigate = useNavigate()
+  const user = useAuthStore(s => s.user)
   const addToast = useUIStore(s => s.addToast)
   const { t } = useTranslation()
   const qc = useQueryClient()
@@ -44,7 +53,16 @@ const CourseRegistrationPage: React.FC = () => {
   const [confirmModal, setConfirmModal] = useState(false)
   const [successData, setSuccessData] = useState<any>(null)
 
-  const { data: offerings = [], isLoading } = useQuery<Offering[]>({
+  const { data: studentProfile, isLoading: profileLoading } = useQuery<StudentProfile>({
+    queryKey: ['student', 'me'],
+    queryFn: async () => {
+      const { data } = await apiClient.get('/students/me')
+      return data.data
+    },
+    enabled: !!user,
+  })
+
+  const { data: offerings = [], isLoading: offeringsLoading } = useQuery<Offering[]>({
     queryKey: ['offerings'],
     queryFn: async () => {
       const { data } = await apiClient.get('/students/offerings')
@@ -52,10 +70,13 @@ const CourseRegistrationPage: React.FC = () => {
     },
   })
 
+  const isLoading = profileLoading || offeringsLoading
+
   const registerMutation = useMutation({
     mutationFn: async (offeringIds: string[]) => {
       const semesterId = offerings.find(o => offeringIds.includes(o.id))?.semester?.id ?? 'sem-1'
-      const { data } = await apiClient.post('/students/2026001/register-courses', { offeringIds, semesterId })
+      const studentId = studentProfile?.studentId ?? user?.id ?? 'me'
+      const { data } = await apiClient.post(`/students/${studentId}/register-courses`, { offeringIds, semesterId })
       return data
     },
     onSuccess: (data) => {
@@ -85,8 +106,10 @@ const CourseRegistrationPage: React.FC = () => {
 
   const selectedOfferings = offerings.filter(o => selected.includes(o.id))
   const totalCH = selectedOfferings.reduce((s, o) => s + (o.course?.creditHours ?? 0), 0)
-  const maxCH = 18
-  const minCH = 12
+  const maxCH = studentProfile
+    ? (studentProfile.currentCgpa >= 3.5 ? 21 : studentProfile.studentType === 'probation' ? 6 : 18)
+    : 18
+  const minCH = studentProfile?.studentType === 'probation' ? 3 : 12
 
   const conflictPairs: { a: string; b: string }[] = []
   for (let i = 0; i < selectedOfferings.length; i++) {

@@ -31,9 +31,9 @@ const NAV_STRUCTURE: NavGroup[] = [
   },
   {
     key: 'g-student', labelKey: 'nav.studentAffairs', icon: '🎓',
-    roles: ['student', 'admissions', 'admin'],
+    roles: ['student', 'admissions'],
     children: [
-      { key: 'apply',       labelKey: 'nav.apply',           path: '/admission/apply',   icon: '📝', roles: ['student', 'admin'] },
+      { key: 'apply',       labelKey: 'nav.apply',           path: '/admission/apply',   icon: '📝', roles: ['student'] },
       { key: 'admission',   labelKey: 'nav.applications',    path: '/admission/review',  icon: '🎓', roles: ['admissions', 'admin'] },
       { key: 'profile',     labelKey: 'nav.myProfile',       path: '/student/profile',   icon: '👤', roles: ['student'] },
       { key: 'courses-reg', labelKey: 'nav.courseReg',       path: '/student/courses',   icon: '📋', roles: ['student', 'admin'] },
@@ -45,8 +45,9 @@ const NAV_STRUCTURE: NavGroup[] = [
     key: 'g-lms', labelKey: 'nav.learning', icon: '📚',
     roles: ['student', 'lecturer', 'admin'],
     children: [
-      { key: 'lms',        labelKey: 'nav.myCourses', path: '/lms/courses',    icon: '📚', roles: ['student', 'lecturer', 'admin'] },
-      { key: 'attendance', labelKey: 'nav.attendance', path: '/lms/attendance', icon: '📸', roles: ['student', 'lecturer', 'admin'] },
+      { key: 'lms',           labelKey: 'nav.myCourses',        path: '/lms/courses',    icon: '📚', roles: ['student', 'lecturer'] },
+      { key: 'attendance',    labelKey: 'nav.attendance',        path: '/lms/attendance', icon: '📸', roles: ['student', 'lecturer', 'admin'] },
+      { key: 'admin-courses', labelKey: 'nav.courseManagement',  path: '/admin/courses',  icon: '📖', roles: ['admin'] },
     ],
   },
   {
@@ -82,7 +83,7 @@ const NAV_STRUCTURE: NavGroup[] = [
   },
   {
     key: 'g-ai', labelKey: 'nav.aiAnalytics', icon: '📊',
-    roles: ['lecturer', 'finance', 'admin'],
+    roles: ['lecturer', 'admin'],
     children: [
       { key: 'risk', labelKey: 'nav.riskAnalytics', path: '/ai/risk', icon: '📊', roles: ['lecturer', 'admin'] },
     ],
@@ -91,8 +92,7 @@ const NAV_STRUCTURE: NavGroup[] = [
     key: 'g-admin', labelKey: 'nav.administration', icon: '🛠️',
     roles: ['admin'],
     children: [
-      { key: 'admin-courses',  labelKey: 'nav.courseManagement', path: '/admin/courses',  icon: '📖', roles: ['admin'] },
-      { key: 'admin-settings', labelKey: 'nav.settings',         path: '/admin/settings', icon: '⚙️', roles: ['admin'] },
+      { key: 'admin-settings', labelKey: 'nav.settings', path: '/admin/settings', icon: '⚙️', roles: ['admin'] },
     ],
   },
 ]

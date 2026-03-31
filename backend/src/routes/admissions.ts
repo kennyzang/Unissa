@@ -3,7 +3,7 @@ import prisma from '../lib/prisma'
 import bcrypt from 'bcryptjs'
 import { authenticate, requireRole, AuthRequest } from '../middleware/auth'
 
-const router = Router()
+const router: Router = Router()
 
 // GET /api/v1/admissions/intakes  (public for apply form)
 router.get('/intakes', authenticate, async (_req: AuthRequest, res: Response) => {
@@ -39,6 +39,20 @@ router.get('/applications/:id', authenticate, requireRole('admissions', 'admin')
   res.json({ success: true, data: app })
 })
 
+// GET /api/v1/admissions/my-application  — current user's own application status
+router.get('/my-application', authenticate, async (req: AuthRequest, res: Response) => {
+  const app = await prisma.applicant.findFirst({
+    where: { userId: req.user!.userId },
+    include: {
+      intake: { include: { semester: true } },
+      programme: true,
+    },
+    orderBy: { createdAt: 'desc' },
+  })
+  if (!app) { res.status(404).json({ success: false, message: 'No application found' }); return }
+  res.json({ success: true, data: app })
+})
+
 // POST /api/v1/admissions/apply
 router.post('/apply', authenticate, async (req: AuthRequest, res: Response) => {
   const {
@@ -48,22 +62,27 @@ router.post('/apply', authenticate, async (req: AuthRequest, res: Response) => {
     subjectGrades,
   } = req.body
 
-  // Check duplicate IC
-  const existing = await prisma.applicant.findFirst({ where: { icPassport } })
-  if (existing) {
-    if (existing.status !== 'draft') {
-      res.status(400).json({ success: false, message: `Applicant with IC/Passport ${icPassport} already has a submitted application (${existing.applicationRef})` }); return
-    }
+  const currentUserId = req.user!.userId
+
+  // Block re-application only if the user is already an accepted/enrolled applicant
+  const existing = await prisma.applicant.findFirst({ where: { userId: currentUserId } })
+  if (existing && existing.status === 'accepted') {
+    res.status(400).json({
+      success: false,
+      message: `You are already enrolled as a student (${existing.applicationRef}). Please contact the Admissions Office if you need assistance.`,
+    })
+    return
   }
 
   const year = new Date().getFullYear()
   const seq  = String(Math.floor(Math.random() * 9000) + 1000)
-  const applicationRef = `APP-${year}-${seq}`
+  const newRef = `APP-${year}-${seq}`
 
   const applicant = await prisma.applicant.upsert({
-    where: { icPassport },
+    where: { userId: currentUserId },
     create: {
-      applicationRef,
+      applicationRef: newRef,
+      userId: currentUserId,
       fullName, icPassport,
       dateOfBirth: new Date(dateOfBirth),
       gender, nationality, email, mobile, homeAddress,
@@ -79,11 +98,14 @@ router.post('/apply', authenticate, async (req: AuthRequest, res: Response) => {
     update: {
       status: 'submitted',
       submittedAt: new Date(),
-      fullName, email, mobile, homeAddress,
+      fullName, icPassport, gender, nationality, dateOfBirth: new Date(dateOfBirth),
+      email, mobile, homeAddress,
       highestQualification, previousInstitution,
       yearOfCompletion: Number(yearOfCompletion),
       cgpa: cgpa ? Number(cgpa) : null,
       intakeId, programmeId, modeOfStudy,
+      scholarshipApplied: Boolean(scholarshipApplied),
+      scholarshipType: scholarshipApplied ? scholarshipType : null,
     },
   })
 
@@ -103,7 +125,7 @@ router.post('/apply', authenticate, async (req: AuthRequest, res: Response) => {
     }
   }
 
-  res.json({ success: true, data: applicant, message: `Application submitted successfully. Reference: ${applicationRef}` })
+  res.json({ success: true, data: applicant, message: `Application submitted successfully. Reference: ${applicant.applicationRef}` })
 })
 
 // PATCH /api/v1/admissions/applications/:id/decision
@@ -112,7 +134,7 @@ router.patch('/applications/:id/decision', authenticate, requireRole('admissions
 
   const app = await prisma.applicant.findUnique({
     where: { id: String(req.params.id) },
-    include: { intake: { include: { semester: true } }, programme: true },
+    include: { intake: { include: { semester: true } }, programme: true, student: true },
   })
   if (!app) { res.status(404).json({ success: false, message: 'Application not found' }); return }
 

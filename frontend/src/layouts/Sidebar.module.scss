@@ -182,24 +182,6 @@
   padding-left: 42px;
   font-size: 13px;
   color: rgba(255,255,255,0.55);
-
-  &::before {
-    content: '';
-    position: absolute;
-    left: 22px;
-    top: 50%;
-    transform: translateY(-50%);
-    width: 4px;
-    height: 4px;
-    border-radius: 50%;
-    background: rgba(255,255,255,0.3);
-  }
-
-  position: relative;
-
-  &.active::before {
-    background: #fff;
-  }
 }
 
 .userInfo {

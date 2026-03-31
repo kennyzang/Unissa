@@ -43,7 +43,7 @@ const LoginPage = () => {
   const { addToast } = useUIStore()
   const { t } = useTranslation()
   const [failedAttempts, setFailedAttempts] = useState(0)
-  const [demoOpen, setDemoOpen] = useState(false)
+  const [demoOpen, setDemoOpen] = useState(true)
   const [mobileDemoOpen, setMobileDemoOpen] = useState(false)
   const [form] = Form.useForm<FormValues>()
 

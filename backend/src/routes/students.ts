@@ -31,6 +31,21 @@ router.get('/offerings', async (_req: AuthRequest, res: Response) => {
   res.json({ success: true, data: offerings })
 })
 
+// GET /api/v1/students/me — current logged-in student's own profile
+router.get('/me', async (req: AuthRequest, res: Response) => {
+  const student = await prisma.student.findFirst({
+    where: { userId: req.user!.userId },
+    include: {
+      user:    { select: { displayName: true, email: true, username: true } },
+      programme: { include: { department: true } },
+      intake:  { include: { semester: true } },
+      libraryAccount: true,
+    },
+  })
+  if (!student) { res.status(404).json({ success: false, message: 'Student profile not found' }); return }
+  res.json({ success: true, data: student })
+})
+
 // GET /api/v1/students/:id
 router.get('/:id', async (req: AuthRequest, res: Response) => {
   const student = await prisma.student.findFirst({
@@ -107,7 +122,7 @@ router.post('/:id/register-courses', async (req: AuthRequest, res: Response) => 
   const { offeringIds, semesterId } = req.body as { offeringIds: string[]; semesterId: string }
 
   const student = await prisma.student.findFirst({
-    where: { OR: [{ id: req.params.id }, { studentId: req.params.id }] },
+    where: { OR: [{ id: req.params.id }, { studentId: req.params.id }, { userId: req.params.id }] },
     include: { programme: true },
   })
   if (!student) { res.status(404).json({ success: false, message: 'Student not found' }); return }

@@ -1,6 +1,6 @@
 /**
- * Unit tests for admin course management routes
- * Covers: GET /courses (totalEnrolled), DELETE /enrolments/:id (seatsTaken protection)
+ * Unit tests for admin routes
+ * Covers: GET /courses, DELETE /enrolments/:id, POST /demo-reset
  */
 
 import { describe, it, expect, vi, beforeEach } from 'vitest'
@@ -13,12 +13,22 @@ vi.mock('../middleware/auth', () => ({
   requireRole: () => (_req: any, _res: any, next: any) => next(),
 }))
 
-// ── Mock Prisma client ────────────────────────────────────────────────────────
+// ── Shared mock Prisma client ─────────────────────────────────────────────────
 const mockPrisma = {
-  department: { findMany: vi.fn() },
-  course:     { findMany: vi.fn(), findUnique: vi.fn(), create: vi.fn(), update: vi.fn(), delete: vi.fn() },
-  courseOffering: { findMany: vi.fn(), count: vi.fn(), update: vi.fn(), updateMany: vi.fn() },
-  enrolment: { findUnique: vi.fn(), delete: vi.fn(), deleteMany: vi.fn() },
+  department:          { findMany: vi.fn() },
+  course:              { findMany: vi.fn(), findUnique: vi.fn(), create: vi.fn(), update: vi.fn(), delete: vi.fn() },
+  courseOffering:      { findMany: vi.fn(), count: vi.fn(), update: vi.fn(), updateMany: vi.fn() },
+  enrolment:           { findUnique: vi.fn(), delete: vi.fn(), deleteMany: vi.fn(), create: vi.fn() },
+  payment:             { deleteMany: vi.fn() },
+  feeInvoice:          { deleteMany: vi.fn() },
+  submission:          { deleteMany: vi.fn() },
+  attendanceRecord:    { deleteMany: vi.fn() },
+  attendanceSession:   { deleteMany: vi.fn() },
+  student:             { findUnique: vi.fn(), update: vi.fn(), updateMany: vi.fn(), deleteMany: vi.fn() },
+  libraryAccount:      { upsert: vi.fn(), updateMany: vi.fn(), deleteMany: vi.fn() },
+  user:                { deleteMany: vi.fn() },
+  applicant:           { deleteMany: vi.fn() },
+  chatbotConversation: { deleteMany: vi.fn() },
   $transaction: vi.fn(async (ops: any[]) => Promise.all(ops)),
 }
 
@@ -26,7 +36,6 @@ vi.mock('../lib/prisma', () => ({ default: mockPrisma }))
 
 // ── Test server setup ─────────────────────────────────────────────────────────
 async function buildTestServer() {
-  // Import after mocks are registered
   const { default: adminRoutes } = await import('../routes/admin')
   const app = express()
   app.use(express.json())
@@ -42,6 +51,22 @@ async function startServer(app: express.Express): Promise<{ server: Server; url:
       resolve({ server, url: `http://127.0.0.1:${port}` })
     })
   })
+}
+
+// helper: configure all mocks needed for a successful demo-reset
+function setupDemoResetMocks() {
+  mockPrisma.attendanceRecord.deleteMany.mockResolvedValue({ count: 12 })
+  mockPrisma.attendanceSession.deleteMany.mockResolvedValue({ count: 3 })
+  mockPrisma.submission.deleteMany.mockResolvedValue({ count: 1 })
+  mockPrisma.payment.deleteMany.mockResolvedValue({ count: 0 })
+  mockPrisma.feeInvoice.deleteMany.mockResolvedValue({ count: 2 })
+  mockPrisma.enrolment.deleteMany.mockResolvedValue({ count: 26 })
+  mockPrisma.courseOffering.updateMany.mockResolvedValue({ count: 6 })
+  mockPrisma.libraryAccount.deleteMany.mockResolvedValue({ count: 12 })
+  mockPrisma.student.deleteMany.mockResolvedValue({ count: 12 })
+  mockPrisma.user.deleteMany.mockResolvedValue({ count: 12 })
+  mockPrisma.applicant.deleteMany.mockResolvedValue({ count: 5 })
+  mockPrisma.chatbotConversation.deleteMany.mockResolvedValue({ count: 0 })
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -78,7 +103,7 @@ describe('GET /admin/courses', () => {
     expect(res.status).toBe(200)
     expect(body.success).toBe(true)
     expect(body.data).toHaveLength(1)
-    expect(body.data[0].totalEnrolled).toBe(8)        // 5 + 3
+    expect(body.data[0].totalEnrolled).toBe(8)           // 5 + 3
     expect(body.data[0]).not.toHaveProperty('offerings') // stripped from response
   })
 
@@ -125,11 +150,7 @@ describe('DELETE /admin/enrolments/:enrolmentId', () => {
 
     expect(res.status).toBe(200)
     expect(body.success).toBe(true)
-
-    // enrolment.delete called with correct id
     expect(mockPrisma.enrolment.delete).toHaveBeenCalledWith({ where: { id: 'e1' } })
-
-    // updateMany called with gt:0 guard to prevent negative seatsTaken
     expect(mockPrisma.courseOffering.updateMany).toHaveBeenCalledWith({
       where: { id: 'o1', seatsTaken: { gt: 0 } },
       data: { seatsTaken: { decrement: 1 } },
@@ -140,7 +161,6 @@ describe('DELETE /admin/enrolments/:enrolmentId', () => {
     const fakeEnrolment = { id: 'e2', offeringId: 'o2', studentId: 's2', status: 'registered' }
     mockPrisma.enrolment.findUnique.mockResolvedValue(fakeEnrolment)
     mockPrisma.enrolment.delete.mockResolvedValue(fakeEnrolment)
-    // updateMany with gt:0 finds no rows → count: 0 (no decrement applied)
     mockPrisma.courseOffering.updateMany.mockResolvedValue({ count: 0 })
 
     const res = await fetch(`${url}/admin/enrolments/e2`, { method: 'DELETE' })
@@ -148,9 +168,7 @@ describe('DELETE /admin/enrolments/:enrolmentId', () => {
 
     expect(res.status).toBe(200)
     expect(body.success).toBe(true)
-    // Enrolment is deleted regardless
     expect(mockPrisma.enrolment.delete).toHaveBeenCalledWith({ where: { id: 'e2' } })
-    // updateMany still called with the guard — it just matches 0 rows, seatsTaken stays ≥ 0
     expect(mockPrisma.courseOffering.updateMany).toHaveBeenCalledWith(
       expect.objectContaining({ where: expect.objectContaining({ seatsTaken: { gt: 0 } }) })
     )
@@ -164,7 +182,6 @@ describe('DELETE /admin/enrolments/:enrolmentId', () => {
 
     expect(res.status).toBe(404)
     expect(body.success).toBe(false)
-    // Neither delete nor updateMany should be called
     expect(mockPrisma.enrolment.delete).not.toHaveBeenCalled()
     expect(mockPrisma.courseOffering.updateMany).not.toHaveBeenCalled()
   })
@@ -185,9 +202,7 @@ describe('POST /admin/demo-reset', () => {
   afterEach(() => server.close())
 
   it('returns 200 with success message', async () => {
-    mockPrisma.enrolment.deleteMany.mockResolvedValue({ count: 4 })
-    mockPrisma.courseOffering.updateMany.mockResolvedValue({ count: 5 })
-
+    setupDemoResetMocks()
     const res = await fetch(`${url}/admin/demo-reset`, { method: 'POST' })
     const body = await res.json() as any
 
@@ -196,34 +211,104 @@ describe('POST /admin/demo-reset', () => {
     expect(body.message).toMatch(/reset/i)
   })
 
-  it('calls enrolment.deleteMany with no filter to wipe all records', async () => {
-    mockPrisma.enrolment.deleteMany.mockResolvedValue({ count: 4 })
-    mockPrisma.courseOffering.updateMany.mockResolvedValue({ count: 5 })
+  it('deletes attendance records before attendance sessions (FK order)', async () => {
+    setupDemoResetMocks()
+    const order: string[] = []
+    mockPrisma.attendanceRecord.deleteMany.mockImplementation(async () => {
+      order.push('attendanceRecord')
+      return { count: 0 }
+    })
+    mockPrisma.attendanceSession.deleteMany.mockImplementation(async () => {
+      order.push('attendanceSession')
+      return { count: 0 }
+    })
 
     await fetch(`${url}/admin/demo-reset`, { method: 'POST' })
 
+    expect(order.indexOf('attendanceRecord')).toBeLessThan(order.indexOf('attendanceSession'))
+  })
+
+  it('clears all attendance sessions and records', async () => {
+    setupDemoResetMocks()
+    await fetch(`${url}/admin/demo-reset`, { method: 'POST' })
+
+    expect(mockPrisma.attendanceRecord.deleteMany).toHaveBeenCalledWith({})
+    expect(mockPrisma.attendanceSession.deleteMany).toHaveBeenCalledWith({})
+  })
+
+  it('clears all submissions', async () => {
+    setupDemoResetMocks()
+    await fetch(`${url}/admin/demo-reset`, { method: 'POST' })
+
+    expect(mockPrisma.submission.deleteMany).toHaveBeenCalledWith({})
+  })
+
+  it('clears all payments, invoices, and enrolments', async () => {
+    setupDemoResetMocks()
+    await fetch(`${url}/admin/demo-reset`, { method: 'POST' })
+
+    expect(mockPrisma.payment.deleteMany).toHaveBeenCalledWith({})
+    expect(mockPrisma.feeInvoice.deleteMany).toHaveBeenCalledWith({})
     expect(mockPrisma.enrolment.deleteMany).toHaveBeenCalledWith({})
   })
 
-  it('calls courseOffering.updateMany to reset seatsTaken to 0', async () => {
-    mockPrisma.enrolment.deleteMany.mockResolvedValue({ count: 4 })
-    mockPrisma.courseOffering.updateMany.mockResolvedValue({ count: 5 })
-
+  it('resets seatsTaken to 0 for all offerings', async () => {
+    setupDemoResetMocks()
     await fetch(`${url}/admin/demo-reset`, { method: 'POST' })
 
     expect(mockPrisma.courseOffering.updateMany).toHaveBeenCalledWith({ data: { seatsTaken: 0 } })
   })
 
-  it('wraps both operations in a single transaction', async () => {
-    mockPrisma.enrolment.deleteMany.mockResolvedValue({ count: 0 })
-    mockPrisma.courseOffering.updateMany.mockResolvedValue({ count: 0 })
+  it('deletes library accounts, student records, and student user accounts', async () => {
+    setupDemoResetMocks()
+    await fetch(`${url}/admin/demo-reset`, { method: 'POST' })
+
+    expect(mockPrisma.libraryAccount.deleteMany).toHaveBeenCalledWith({})
+    expect(mockPrisma.student.deleteMany).toHaveBeenCalledWith({})
+    expect(mockPrisma.user.deleteMany).toHaveBeenCalledWith({ where: { role: 'student' } })
+  })
+
+  it('deletes all applicant records (cascades subject grades and documents)', async () => {
+    setupDemoResetMocks()
+    await fetch(`${url}/admin/demo-reset`, { method: 'POST' })
+
+    expect(mockPrisma.applicant.deleteMany).toHaveBeenCalledWith({})
+  })
+
+  it('deletes students and applicants after enrolments are cleared (FK order)', async () => {
+    setupDemoResetMocks()
+    const order: string[] = []
+    mockPrisma.enrolment.deleteMany.mockImplementation(async () => { order.push('enrolment'); return { count: 0 } })
+    mockPrisma.student.deleteMany.mockImplementation(async () => { order.push('student'); return { count: 0 } })
+    mockPrisma.applicant.deleteMany.mockImplementation(async () => { order.push('applicant'); return { count: 0 } })
 
     await fetch(`${url}/admin/demo-reset`, { method: 'POST' })
 
-    // $transaction must be called once with an array of exactly 2 promises
-    expect(mockPrisma.$transaction).toHaveBeenCalledOnce()
-    const [ops] = mockPrisma.$transaction.mock.calls[0]
-    expect(Array.isArray(ops)).toBe(true)
-    expect(ops).toHaveLength(2)
+    expect(order.indexOf('enrolment')).toBeLessThan(order.indexOf('student'))
+    expect(order.indexOf('student')).toBeLessThan(order.indexOf('applicant'))
+  })
+
+  it('only deletes users with role student, not staff or admin accounts', async () => {
+    setupDemoResetMocks()
+    await fetch(`${url}/admin/demo-reset`, { method: 'POST' })
+
+    expect(mockPrisma.user.deleteMany).toHaveBeenCalledWith(
+      expect.objectContaining({ where: { role: 'student' } })
+    )
+  })
+
+  it('clears chatbot conversations', async () => {
+    setupDemoResetMocks()
+    await fetch(`${url}/admin/demo-reset`, { method: 'POST' })
+
+    expect(mockPrisma.chatbotConversation.deleteMany).toHaveBeenCalledWith({})
+  })
+
+  it('does not create any new records (pure wipe, no re-seed)', async () => {
+    setupDemoResetMocks()
+    await fetch(`${url}/admin/demo-reset`, { method: 'POST' })
+
+    expect(mockPrisma.enrolment.create).not.toHaveBeenCalled()
+    expect(mockPrisma.feeInvoice.upsert ?? vi.fn()).not.toHaveBeenCalled()
   })
 })

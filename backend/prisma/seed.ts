@@ -219,6 +219,7 @@ async function main() {
     where: { icPassport: '00-123456' },
     create: {
       applicationRef: 'APP-2026-0001',
+      userId: uNoor.id,
       fullName: 'Noor Aisyah Binti Hassan',
       icPassport: '00-123456',
       dateOfBirth: new Date('2000-05-14'),
@@ -235,10 +236,10 @@ async function main() {
       programmeId: progBSC.id,
       modeOfStudy: 'full_time',
       scholarshipApplied: false,
-      status: 'submitted',
+      status: 'accepted',
       submittedAt: new Date('2026-03-10'),
     },
-    update: {},
+    update: { userId: uNoor.id, status: 'accepted' },
   })
 
   // Subject grades for Noor

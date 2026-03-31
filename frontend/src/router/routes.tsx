@@ -77,15 +77,15 @@ export const router = createBrowserRouter([
       { path: 'dashboard', element: r(['admin','manager','finance'], <DashboardPage />) },
 
       // Admission
-      { path: 'admission/apply',  element: r(['student','admin'], <AdmissionApplyPage />) },
-      { path: 'admission/review', element: r(['admissions','admin'], <AdmissionReviewPage />) },
+      { path: 'admission/apply',  element: r(['student'], <AdmissionApplyPage />) },
+      { path: 'admission/review', element: r(['admissions'], <AdmissionReviewPage />) },
 
       // Student
       { path: 'student/profile',  element: r(['student'], <StudentProfilePage />) },
-      { path: 'student/courses',  element: r(['student','admin'], <CourseRegistrationPage />) },
+      { path: 'student/courses',  element: r(['student'], <CourseRegistrationPage />) },
 
       // Finance
-      { path: 'finance/statement',  element: r(['student','finance','admin'], <FeeStatementPage />) },
+      { path: 'finance/statement',  element: r(['student','finance'], <FeeStatementPage />) },
       { path: 'finance/dashboard',  element: r(['finance','admin'], <FinanceDashboardPage />) },
 
       // LMS
@@ -109,7 +109,7 @@ export const router = createBrowserRouter([
       { path: 'ai/risk', element: r(['lecturer','admin'], <RiskDashboardPage />) },
 
       // Campus
-      { path: 'campus/services', element: r(['student','admin'], <CampusServicesPage />) },
+      { path: 'campus/services', element: r(['student'], <CampusServicesPage />) },
 
       // Admin
       { path: 'admin/settings', element: r(['admin'], <SettingsPage />) },

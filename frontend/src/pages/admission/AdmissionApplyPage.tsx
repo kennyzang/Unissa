@@ -10,15 +10,104 @@ import {
 } from 'antd'
 import {
   CheckCircleOutlined, UserOutlined, BookOutlined,
-  TrophyOutlined, FileTextOutlined,
+  TrophyOutlined, FileTextOutlined, IdcardOutlined, ClockCircleOutlined,
 } from '@ant-design/icons'
 import dayjs from 'dayjs'
+import { useNavigate } from 'react-router-dom'
 import { apiClient } from '@/lib/apiClient'
+import { useAuthStore } from '@/stores/authStore'
 import { useUIStore } from '@/stores/uiStore'
-import { Typography } from 'antd'
+import { Typography, Spin, Tag } from 'antd'
 import styles from './AdmissionApplyPage.module.scss'
 
 const { Title, Text } = Typography
+
+// ── Enrolled student status card (shown when role === 'student') ──────────────
+const EnrolledStudentCard: React.FC = () => {
+  const { t } = useTranslation()
+  const navigate = useNavigate()
+  const { data: profile, isLoading } = useQuery<any>({
+    queryKey: ['student', 'me'],
+    queryFn: async () => {
+      const { data } = await apiClient.get('/students/me')
+      return data.data
+    },
+  })
+
+  if (isLoading) {
+    return (
+      <div style={{ display: 'flex', justifyContent: 'center', padding: '80px 0' }}>
+        <Spin size="large" />
+      </div>
+    )
+  }
+
+  const statusColor: Record<string, string> = {
+    active: 'green', suspended: 'orange', graduated: 'blue', withdrawn: 'red',
+  }
+
+  return (
+    <div className={styles.page}>
+      <div className={styles.header}>
+        <h1 className={styles.pageTitle}>{t('admissionApply.title')}</h1>
+        <p className={styles.pageSub}>{t('admissionApply.enrolledNote', { defaultValue: 'You are already enrolled as a student at UNISSA.' })}</p>
+      </div>
+
+      <Card
+        style={{ maxWidth: 640, margin: '0 auto' }}
+        styles={{ body: { padding: 32 } }}
+      >
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 16, marginBottom: 28 }}>
+          <div style={{
+            width: 72, height: 72, borderRadius: '50%',
+            background: '#e8f5e9', display: 'flex', alignItems: 'center', justifyContent: 'center',
+          }}>
+            <IdcardOutlined style={{ fontSize: 36, color: '#00B42A' }} />
+          </div>
+          <Title level={4} style={{ margin: 0 }}>
+            {profile?.user?.displayName ?? '—'}
+          </Title>
+          <Tag color={statusColor[profile?.status] ?? 'default'} style={{ fontSize: 13, padding: '2px 12px' }}>
+            {(profile?.status ?? 'active').toUpperCase()}
+          </Tag>
+        </div>
+
+        <Descriptions column={1} size="small" bordered>
+          <Descriptions.Item label={t('admissionApply.reviewFullName', { defaultValue: 'Student ID' })}>
+            <strong>{profile?.studentId ?? '—'}</strong>
+          </Descriptions.Item>
+          <Descriptions.Item label={t('admissionApply.reviewEmail', { defaultValue: 'Email' })}>
+            {profile?.user?.email ?? '—'}
+          </Descriptions.Item>
+          <Descriptions.Item label={t('admissionApply.programmeLabel', { defaultValue: 'Programme' })}>
+            {profile?.programme ? `${profile.programme.name} (${profile.programme.code})` : '—'}
+          </Descriptions.Item>
+          <Descriptions.Item label={t('admissionApply.reviewIntake', { defaultValue: 'Intake' })}>
+            {profile?.intake?.semester?.name ?? '—'}
+          </Descriptions.Item>
+          <Descriptions.Item label="CGPA">
+            {profile?.currentCgpa?.toFixed(2) ?? '0.00'}
+          </Descriptions.Item>
+          <Descriptions.Item label={t('admissionApply.enrolledDate', { defaultValue: 'Enrolled' })}>
+            {profile?.enrolledAt ? dayjs(profile.enrolledAt).format('DD MMM YYYY') : '—'}
+          </Descriptions.Item>
+        </Descriptions>
+
+        <div style={{ display: 'flex', gap: 12, marginTop: 24, justifyContent: 'center', flexWrap: 'wrap' }}>
+          <Button type="primary" onClick={() => navigate('/lms/courses')}>
+            {t('lmsCourses.title', { defaultValue: 'My Courses' })}
+          </Button>
+          <Button onClick={() => navigate('/student/courses')}>
+            {t('nav.courseReg', { defaultValue: 'Course Registration' })}
+          </Button>
+          <Button onClick={() => navigate('/student/profile')}>
+            {t('nav.myProfile', { defaultValue: 'My Profile' })}
+          </Button>
+        </div>
+      </Card>
+    </div>
+  )
+}
 
 // ── Step schemas ──────────────────────────────────────────────
 const step1Schema = z.object({
@@ -66,9 +155,80 @@ const fe = (msg?: string) => ({
   help: msg ?? '',
 })
 
+// ── Pending application status card ──────────────────────────────────────────
+const PendingApplicationCard: React.FC<{ app: any }> = ({ app }) => {
+  const { t } = useTranslation()
+  const statusColor: Record<string, string> = {
+    submitted: 'blue', under_review: 'orange', waitlisted: 'purple',
+    rejected: 'red', accepted: 'green',
+  }
+  return (
+    <div className={styles.page}>
+      <div className={styles.header}>
+        <h1 className={styles.pageTitle}>{t('admissionApply.title')}</h1>
+        <p className={styles.pageSub}>{t('admissionApply.pendingNote', { defaultValue: 'Your application is being reviewed.' })}</p>
+      </div>
+      <Card style={{ maxWidth: 560, margin: '0 auto' }} styles={{ body: { padding: 32 } }}>
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 16, marginBottom: 28 }}>
+          <div style={{ width: 72, height: 72, borderRadius: '50%', background: '#fffbe6', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <ClockCircleOutlined style={{ fontSize: 36, color: '#fa8c16' }} />
+          </div>
+          <Title level={4} style={{ margin: 0 }}>{app.fullName}</Title>
+          <Tag color={statusColor[app.status] ?? 'default'} style={{ fontSize: 13, padding: '2px 12px' }}>
+            {app.status.replace('_', ' ').toUpperCase()}
+          </Tag>
+        </div>
+        <Descriptions column={1} size="small" bordered>
+          <Descriptions.Item label={t('admissionApply.successRef', { defaultValue: 'Application Ref' })}>
+            <strong>{app.applicationRef}</strong>
+          </Descriptions.Item>
+          <Descriptions.Item label={t('admissionApply.programmeLabel', { defaultValue: 'Programme' })}>
+            {app.programme?.name ?? '—'}
+          </Descriptions.Item>
+          <Descriptions.Item label={t('admissionApply.reviewIntake', { defaultValue: 'Intake' })}>
+            {app.intake?.semester?.name ?? '—'}
+          </Descriptions.Item>
+          <Descriptions.Item label={t('admissionApply.submittedAt', { defaultValue: 'Submitted' })}>
+            {app.submittedAt ? dayjs(app.submittedAt).format('DD MMM YYYY') : '—'}
+          </Descriptions.Item>
+        </Descriptions>
+        {app.officerRemarks && (
+          <Alert style={{ marginTop: 16 }} type={app.status === 'rejected' ? 'error' : 'info'}
+            message={t('admissionApply.officerRemarks', { defaultValue: 'Remarks' })}
+            description={app.officerRemarks} showIcon />
+        )}
+      </Card>
+    </div>
+  )
+}
+
 const AdmissionApplyPage: React.FC = () => {
   const { t } = useTranslation()
+
+  // Determine which view to show based on actual DB state, not just user.role
+  const { data: studentProfile, isLoading: studentLoading } = useQuery<any>({
+    queryKey: ['student', 'me'],
+    queryFn: async () => {
+      const { data } = await apiClient.get('/students/me')
+      return data.data
+    },
+    retry: false,
+  })
+
+  const { data: myApplication, isLoading: appLoading } = useQuery<any>({
+    queryKey: ['admissions', 'my-application'],
+    queryFn: async () => {
+      const { data } = await apiClient.get('/admissions/my-application')
+      return data.data
+    },
+    retry: false,
+    enabled: !studentLoading && !studentProfile,
+  })
+
   const [step, setStep]           = useState(0)
+  const [submitted, setSubmitted] = useState<{ applicationRef: string } | null>(null)
+  const [formData, setFormData]   = useState<Partial<Step1 & Step2 & Step3>>({})
+  const addToast                  = useUIStore(s => s.addToast)
 
   const STEPS = [
     { title: t('admissionApply.stepPersonal'),  icon: <UserOutlined /> },
@@ -84,9 +244,6 @@ const AdmissionApplyPage: React.FC = () => {
     { value: 'DEGREE',  label: t('admissionApply.qualBachelor') },
     { value: 'MASTERS', label: t('admissionApply.qualMasters') },
   ]
-  const [submitted, setSubmitted] = useState<{ applicationRef: string } | null>(null)
-  const [formData, setFormData]   = useState<Partial<Step1 & Step2 & Step3>>({})
-  const addToast                  = useUIStore(s => s.addToast)
 
   const { data: intakes = [] } = useQuery<IntakeOption[]>({
     queryKey: ['admissions', 'intakes'],
@@ -102,9 +259,23 @@ const AdmissionApplyPage: React.FC = () => {
     onError: (e: any) => addToast({ type: 'error', message: e.response?.data?.message ?? t('admissionApply.submissionFailed') }),
   })
 
+  const submitErrorMsg: string | null = submitMutation.isError
+    ? ((submitMutation.error as any)?.response?.data?.message ?? t('admissionApply.submissionFailed'))
+    : null
+
   const form1 = useForm<Step1>({ resolver: zodResolver(step1Schema), defaultValues: { ...formData as Step1, nationality: (formData as Step1)?.nationality || 'Brunei Darussalam' } })
   const form2 = useForm<Step2>({ resolver: zodResolver(step2Schema), defaultValues: formData as Step2 })
   const form3 = useForm<Step3>({ resolver: zodResolver(step3Schema), defaultValues: formData as Step3 })
+
+  if (studentLoading || (appLoading && !studentProfile)) {
+    return <div style={{ display: 'flex', justifyContent: 'center', padding: '80px 0' }}><Spin size="large" /></div>
+  }
+
+  // Already enrolled as a student
+  if (studentProfile) return <EnrolledStudentCard />
+
+  // Application submitted but not yet approved
+  if (myApplication && myApplication.status !== 'rejected') return <PendingApplicationCard app={myApplication} />
 
   const handleNext1 = form1.handleSubmit(data => { setFormData(p => ({ ...p, ...data })); setStep(1) })
   const handleNext2 = form2.handleSubmit(data => { setFormData(p => ({ ...p, ...data })); setStep(2) })
@@ -121,6 +292,24 @@ const AdmissionApplyPage: React.FC = () => {
           <Title level={3} style={{ margin: 0 }}>{t('admissionApply.successTitle')}</Title>
           <Text type="secondary">{t('admissionApply.successRef')}</Text>
           <div className={styles.refNo}>{submitted.applicationRef}</div>
+
+          {/* Pending review status */}
+          <div style={{
+            display: 'flex', alignItems: 'center', gap: 8,
+            background: '#fffbe6', border: '1px solid #ffe58f',
+            borderRadius: 8, padding: '10px 16px', margin: '4px 0',
+          }}>
+            <ClockCircleOutlined style={{ color: '#fa8c16', fontSize: 18 }} />
+            <div style={{ textAlign: 'left' }}>
+              <div style={{ fontWeight: 600, color: '#d46b08', fontSize: 13 }}>
+                {t('admissionApply.pendingStatus', { defaultValue: 'Awaiting Review' })}
+              </div>
+              <div style={{ fontSize: 12, color: '#8c6d1f', marginTop: 2 }}>
+                {t('admissionApply.pendingNote', { defaultValue: 'Your application has been received and is pending review by the Admissions team. You will be notified once a decision is made.' })}
+              </div>
+            </div>
+          </div>
+
           <Text type="secondary" style={{ fontSize: 12 }}>
             {t('admissionApply.successNote')} <strong>{formData.email}</strong>.
           </Text>
@@ -398,6 +587,17 @@ const AdmissionApplyPage: React.FC = () => {
             description={t('admissionApply.declaration')}
             showIcon
           />
+          {submitErrorMsg && (
+            <Alert
+              style={{ marginBottom: 16 }}
+              type="error"
+              message={t('admissionApply.submissionFailed', { defaultValue: 'Submission Failed' })}
+              description={submitErrorMsg}
+              showIcon
+              closable
+              onClose={() => submitMutation.reset()}
+            />
+          )}
           <div className={styles.formActions}>
             <Space>
               <Button size="large" onClick={() => setStep(2)}>{t('admissionApply.backBtn')}</Button>

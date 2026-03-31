@@ -176,13 +176,13 @@ const AdmissionReviewPage: React.FC = () => {
         />
       </Card>
 
-      {/* Detail Modal */}
-      {selected && (
-        <Modal
-          open
-          title={t('admissionReview.appTitle', { ref: selected.applicationRef })}
-          onClose={() => setSelected(null)}
-          footer={
+      {/* Detail Modal — always mounted, open controlled by !!selected */}
+      <Modal
+        open={!!selected}
+        title={selected ? t('admissionReview.appTitle', { ref: selected.applicationRef }) : ''}
+        onClose={() => setSelected(null)}
+        footer={
+          selected ? (
             <div className={styles.modalFooter}>
               {(selected.status === 'submitted' || selected.status === 'under_review') && (
                 <>
@@ -193,8 +193,10 @@ const AdmissionReviewPage: React.FC = () => {
               )}
               <Button variant="ghost" onClick={() => setSelected(null)}>{t('admissionReview.closeModal')}</Button>
             </div>
-          }
-        >
+          ) : null
+        }
+      >
+        {selected && (
           <div className={styles.detailGrid}>
             <DetailRow label={t('admissionReview.detailFullName')} value={selected.fullName} />
             <DetailRow label={t('admissionReview.detailEmail')} value={selected.email} />
@@ -208,47 +210,49 @@ const AdmissionReviewPage: React.FC = () => {
             <DetailRow label={t('admissionReview.detailStatus')} value={<Badge color={STATUS_COLOR[selected.status] ?? 'gray'}>{statusLabel(selected.status)}</Badge>} />
             {selected.officerRemarks && <DetailRow label={t('admissionReview.detailRemarks')} value={selected.officerRemarks} />}
           </div>
-        </Modal>
-      )}
+        )}
+      </Modal>
 
-      {/* Decision Modal */}
-      {decisionModal && (
-        <Modal
-          open
-          title={
-            decisionModal.action === 'accepted' ? t('admissionReview.acceptApplication')
-            : decisionModal.action === 'rejected' ? t('admissionReview.rejectApplication')
-            : t('admissionReview.waitlistTitle')
-          }
-          onClose={() => setDecisionModal(null)}
-          okDanger={decisionModal.action === 'rejected'}
-          okText={
-            decisionModal.action === 'accepted' ? t('admissionReview.acceptApplication')
-            : decisionModal.action === 'rejected' ? t('admissionReview.rejectApplication')
-            : t('admissionReview.waitlistBtn')
-          }
-          onOk={() => decisionMutation.mutate({ id: decisionModal.app.id, action: decisionModal.action, remarks })}
-          okLoading={decisionMutation.isPending}
-        >
-          <p className={styles.decisionText}>
-            {decisionModal.action === 'accepted'
-              ? t('admissionReview.acceptConfirm', { name: decisionModal.app.fullName })
-              : decisionModal.action === 'rejected'
-              ? t('admissionReview.rejectConfirm', { name: decisionModal.app.fullName })
-              : t('admissionReview.waitlistConfirm', { name: decisionModal.app.fullName })}
-          </p>
-          <div className={styles.remarksWrap}>
-            <label className={styles.remarksLabel}>{t('admissionReview.remarksLabel')}</label>
-            <textarea
-              className={styles.remarksInput}
-              rows={3}
-              placeholder={t('admissionReview.remarksOptional')}
-              value={remarks}
-              onChange={e => setRemarks(e.target.value)}
-            />
-          </div>
-        </Modal>
-      )}
+      {/* Decision Modal — always mounted, open controlled by !!decisionModal */}
+      <Modal
+        open={!!decisionModal}
+        title={
+          decisionModal?.action === 'accepted' ? t('admissionReview.acceptApplication')
+          : decisionModal?.action === 'rejected' ? t('admissionReview.rejectApplication')
+          : t('admissionReview.waitlistTitle')
+        }
+        onClose={() => { setDecisionModal(null); decisionMutation.reset() }}
+        okDanger={decisionModal?.action === 'rejected'}
+        okText={
+          decisionModal?.action === 'accepted' ? t('admissionReview.acceptApplication')
+          : decisionModal?.action === 'rejected' ? t('admissionReview.rejectApplication')
+          : t('admissionReview.waitlistBtn')
+        }
+        onOk={() => decisionModal && decisionMutation.mutate({ id: decisionModal.app.id, action: decisionModal.action, remarks })}
+        okLoading={decisionMutation.isPending}
+      >
+        {decisionModal && (
+          <>
+            <p className={styles.decisionText}>
+              {decisionModal.action === 'accepted'
+                ? t('admissionReview.acceptConfirm', { name: decisionModal.app.fullName })
+                : decisionModal.action === 'rejected'
+                ? t('admissionReview.rejectConfirm', { name: decisionModal.app.fullName })
+                : t('admissionReview.waitlistConfirm', { name: decisionModal.app.fullName })}
+            </p>
+            <div className={styles.remarksWrap}>
+              <label className={styles.remarksLabel}>{t('admissionReview.remarksLabel')}</label>
+              <textarea
+                className={styles.remarksInput}
+                rows={3}
+                placeholder={t('admissionReview.remarksOptional')}
+                value={remarks}
+                onChange={e => setRemarks(e.target.value)}
+              />
+            </div>
+          </>
+        )}
+      </Modal>
     </div>
   )
 }
