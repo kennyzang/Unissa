@@ -66,10 +66,12 @@ const ms = {
     applications: 'Permohonan',
     myProfile: 'Profil Saya',
     courseReg: 'Daftar Kursus',
+    transcript: 'Transkrip',
     feeStatement: 'Penyata Yuran',
     campusServices: 'Perkhidmatan Kampus',
     learning: 'Pembelajaran',
     myCourses: 'Kursus Saya',
+    grading: 'Penilaian',
     attendance: 'Kehadiran',
     finance: 'Kewangan',
     financeDashboard: 'Papan Pemuka Kewangan',
@@ -1009,6 +1011,29 @@ const ms = {
     removeConfirm: 'Buang',
     removeStudentSuccess: 'Pelajar dibuang dan tempat dilepaskan',
     removeStudentFailed: 'Gagal membuang pelajar',
+  },
+
+  // Penilaian LMS (Pensyarah)
+  lmsGrading: {
+    title: 'Penilaian Tugasan',
+    desc: 'Semak skor cadangan AI dan sahkan gred pelajar',
+    allGraded: 'Semua selesai!',
+    noPending: 'Tiada penyerahan menunggu untuk dinilai.',
+  },
+
+  // Transkrip Pelajar
+  transcript: {
+    title: 'Transkrip Akademik',
+    desc: 'Lihat rekod akademik dan sejarah GPA anda',
+    download: 'Muat Turun PDF',
+    currentGpa: 'GPA Semasa',
+    coursesCompleted: 'Kursus Selesai',
+    creditHours: 'Jam Kredit Diperolehi',
+    gpaHistory: 'Sejarah GPA',
+    courseRecord: 'Rekod Kursus',
+    noRecords: 'Tiada kursus selesai lagi',
+    noRecordsDesc: 'Kursus selesai anda akan muncul di sini setelah dinilai.',
+    gradeScale: 'Skala Gred',
   },
 }
 

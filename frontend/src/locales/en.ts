@@ -70,10 +70,12 @@ const en = {
     applications: 'Applications',
     myProfile: 'My Profile',
     courseReg: 'Course Reg.',
+    transcript: 'Transcript',
     feeStatement: 'Fee Statement',
     campusServices: 'Campus Services',
     learning: 'Learning',
     myCourses: 'My Courses',
+    grading: 'Grading',
     attendance: 'Attendance',
     finance: 'Finance',
     financeDashboard: 'Finance Dashboard',
@@ -1033,6 +1035,29 @@ const en = {
     removeConfirm: 'Remove',
     removeStudentSuccess: 'Student removed and seat released',
     removeStudentFailed: 'Failed to remove student',
+  },
+
+  // LMS Grading (Lecturer)
+  lmsGrading: {
+    title: 'Assignment Grading',
+    desc: 'Review AI-suggested scores and confirm student grades',
+    allGraded: 'All caught up!',
+    noPending: 'No pending submissions to grade.',
+  },
+
+  // Student Transcript
+  transcript: {
+    title: 'Academic Transcript',
+    desc: 'View your academic record and GPA history',
+    download: 'Download PDF',
+    currentGpa: 'Current GPA',
+    coursesCompleted: 'Courses Completed',
+    creditHours: 'Credit Hours Earned',
+    gpaHistory: 'GPA History',
+    courseRecord: 'Course Record',
+    noRecords: 'No completed courses yet',
+    noRecordsDesc: 'Your completed courses will appear here once graded.',
+    gradeScale: 'Grade Scale',
   },
 }
 

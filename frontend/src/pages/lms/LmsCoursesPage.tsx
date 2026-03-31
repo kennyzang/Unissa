@@ -76,7 +76,7 @@ const LecturerCoursesView: React.FC = () => {
   const { data: offerings = [], isLoading } = useQuery<LecturerOffering[]>({
     queryKey: ['lms', 'lecturer-offerings', user?.id],
     queryFn: async () => {
-      const { data } = await apiClient.get(`/attendance/offerings/lecturer/${user!.id}`)
+      const { data } = await apiClient.get(`/lms/attendance/offerings/lecturer/${user!.id}`)
       return data.data
     },
     enabled: !!user,

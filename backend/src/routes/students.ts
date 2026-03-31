@@ -98,6 +98,21 @@ router.get('/:id/transcript', async (req: AuthRequest, res: Response) => {
   res.json({ success: true, data: { student, enrolments } })
 })
 
+// GET /api/v1/students/:id/gpa-records
+router.get('/:id/gpa-records', async (req: AuthRequest, res: Response) => {
+  const student = await prisma.student.findFirst({
+    where: { OR: [{ id: req.params.id }, { studentId: req.params.id }] },
+  })
+  if (!student) { res.status(404).json({ success: false, message: 'Student not found' }); return }
+
+  const gpaRecords = await prisma.studentGpaRecord.findMany({
+    where: { studentId: student.id },
+    include: { semester: { select: { id: true, name: true } } },
+    orderBy: { semester: { startDate: 'asc' } },
+  })
+  res.json({ success: true, data: gpaRecords })
+})
+
 // GET /api/v1/students/:id/campus-services
 router.get('/:id/campus-services', async (req: AuthRequest, res: Response) => {
   const student = await prisma.student.findFirst({

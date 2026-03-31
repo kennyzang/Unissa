@@ -66,10 +66,12 @@ const zh = {
     applications: '入学申请',
     myProfile: '我的档案',
     courseReg: '选课注册',
+    transcript: '成绩单',
     feeStatement: '缴费账单',
     campusServices: '校园服务',
     learning: '教学与学习',
     myCourses: '我的课程',
+    grading: '评分管理',
     attendance: '考勤管理',
     finance: '财务',
     financeDashboard: '财务仪表板',
@@ -1009,6 +1011,29 @@ const zh = {
     removeConfirm: '移除',
     removeStudentSuccess: '学生已移除，座位已释放',
     removeStudentFailed: '移除学生失败',
+  },
+
+  // 讲师评分
+  lmsGrading: {
+    title: '作业评分',
+    desc: '审核AI建议评分并确认学生成绩',
+    allGraded: '已全部完成！',
+    noPending: '暂无待评分作业。',
+  },
+
+  // 学生成绩单
+  transcript: {
+    title: '学业成绩单',
+    desc: '查看您的学业记录和GPA历史',
+    download: '下载PDF',
+    currentGpa: '当前GPA',
+    coursesCompleted: '已完成课程',
+    creditHours: '已获学分',
+    gpaHistory: 'GPA历史',
+    courseRecord: '课程记录',
+    noRecords: '暂无已完成课程',
+    noRecordsDesc: '已评分的完成课程将在此显示。',
+    gradeScale: '成绩等级',
   },
 }
 

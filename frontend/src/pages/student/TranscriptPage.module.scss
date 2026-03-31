@@ -1,0 +1,313 @@
+.page {
+  padding: 24px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.loading {
+  text-align: center;
+  padding: 48px;
+  color: var(--text-secondary);
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 24px;
+}
+
+.headerLeft {
+  flex: 1;
+}
+
+.headerRight {
+  margin-left: 16px;
+}
+
+.pageTitle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 1.75rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0 0 8px 0;
+}
+
+.pageDesc {
+  color: var(--text-secondary);
+  margin: 0;
+}
+
+.studentCard {
+  margin-bottom: 24px;
+}
+
+.studentInfo {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.studentAvatar {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  background: var(--primary-light);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--primary);
+}
+
+.studentDetails {
+  h2 {
+    margin: 0 0 8px 0;
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: var(--text-primary);
+  }
+}
+
+.studentMeta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+
+  strong {
+    color: var(--text-primary);
+  }
+}
+
+.statsGrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.statCard {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 20px !important;
+}
+
+.statIcon {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  background: var(--primary-light);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--primary);
+}
+
+.statContent {
+  flex: 1;
+}
+
+.statValue {
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  line-height: 1.2;
+}
+
+.statLabel {
+  font-size: 0.8125rem;
+  color: var(--text-secondary);
+  margin-top: 4px;
+}
+
+.gpaTable {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.gpaHeader {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr 1fr;
+  background: var(--bg-secondary);
+  padding: 12px 16px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+}
+
+.gpaRow {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr 1fr;
+  padding: 12px 16px;
+  border-top: 1px solid var(--border);
+  font-size: 0.875rem;
+}
+
+.semesterName {
+  font-weight: 500;
+}
+
+.gpaValue {
+  font-weight: 600;
+  color: var(--primary);
+}
+
+.emptyState {
+  text-align: center;
+  padding: 48px 24px;
+  color: var(--text-secondary);
+
+  svg {
+    color: var(--text-muted);
+    margin-bottom: 16px;
+  }
+
+  h3 {
+    margin: 0 0 8px 0;
+    color: var(--text-primary);
+  }
+
+  p {
+    margin: 0;
+  }
+}
+
+.transcriptTable {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.transcriptHeader {
+  display: grid;
+  grid-template-columns: 100px 1fr 60px 80px 80px;
+  background: var(--bg-secondary);
+  padding: 12px 16px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+}
+
+.semesterSection {
+  border-top: 1px solid var(--border);
+}
+
+.semesterHeader {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--bg-tertiary);
+  padding: 10px 16px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--primary);
+}
+
+.transcriptRow {
+  display: grid;
+  grid-template-columns: 100px 1fr 60px 80px 80px;
+  padding: 12px 16px;
+  border-top: 1px solid var(--border);
+  font-size: 0.875rem;
+  align-items: center;
+
+  &:hover {
+    background: var(--bg-secondary);
+  }
+}
+
+.colCode {
+  font-weight: 600;
+  color: var(--primary);
+}
+
+.colCourse {
+  color: var(--text-primary);
+}
+
+.colCh {
+  text-align: center;
+  color: var(--text-secondary);
+}
+
+.colGrade {
+  text-align: center;
+}
+
+.colPoints {
+  text-align: right;
+  font-weight: 500;
+}
+
+.gradeScale {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+}
+
+.scaleItem {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  background: var(--bg-secondary);
+  border-radius: 6px;
+  font-size: 0.8125rem;
+
+  span:first-of-type {
+    font-weight: 600;
+    color: var(--text-primary);
+  }
+
+  span:last-of-type {
+    margin-left: auto;
+    color: var(--primary);
+    font-weight: 600;
+  }
+}
+
+@media (max-width: 768px) {
+  .page {
+    padding: 16px;
+  }
+
+  .header {
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .headerRight {
+    margin-left: 0;
+    width: 100%;
+  }
+
+  .statsGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .transcriptHeader,
+  .transcriptRow {
+    grid-template-columns: 80px 1fr 50px 70px;
+  }
+
+  .colPoints {
+    display: none;
+  }
+
+  .gradeScale {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .gpaHeader,
+  .gpaRow {
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+}

@@ -37,6 +37,7 @@ const NAV_STRUCTURE: NavGroup[] = [
       { key: 'admission',   labelKey: 'nav.applications',    path: '/admission/review',  icon: '🎓', roles: ['admissions', 'admin'] },
       { key: 'profile',     labelKey: 'nav.myProfile',       path: '/student/profile',   icon: '👤', roles: ['student'] },
       { key: 'courses-reg', labelKey: 'nav.courseReg',       path: '/student/courses',   icon: '📋', roles: ['student', 'admin'] },
+      { key: 'transcript',  labelKey: 'nav.transcript',      path: '/student/transcript',icon: '📜', roles: ['student'] },
       { key: 'statement',   labelKey: 'nav.feeStatement',    path: '/finance/statement', icon: '💳', roles: ['student', 'finance', 'admin'] },
       { key: 'campus',      labelKey: 'nav.campusServices',  path: '/campus/services',   icon: '🏛️', roles: ['student', 'admin'] },
     ],
@@ -46,6 +47,7 @@ const NAV_STRUCTURE: NavGroup[] = [
     roles: ['student', 'lecturer', 'admin'],
     children: [
       { key: 'lms',           labelKey: 'nav.myCourses',        path: '/lms/courses',    icon: '📚', roles: ['student', 'lecturer'] },
+      { key: 'grading',       labelKey: 'nav.grading',          path: '/lms/grading',    icon: '⭐', roles: ['lecturer'] },
       { key: 'attendance',    labelKey: 'nav.attendance',        path: '/lms/attendance', icon: '📸', roles: ['student', 'lecturer', 'admin'] },
       { key: 'admin-courses', labelKey: 'nav.courseManagement',  path: '/admin/courses',  icon: '📖', roles: ['admin'] },
     ],

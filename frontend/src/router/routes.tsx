@@ -43,11 +43,13 @@ const DashboardPage            = lazy(() => import('@/pages/dashboard/DashboardP
 const AdmissionApplyPage       = lazy(() => import('@/pages/admission/AdmissionApplyPage'))
 const AdmissionReviewPage      = lazy(() => import('@/pages/admission/AdmissionReviewPage'))
 const StudentProfilePage       = lazy(() => import('@/pages/student/StudentProfilePage'))
+const TranscriptPage           = lazy(() => import('@/pages/student/TranscriptPage'))
 const CourseRegistrationPage   = lazy(() => import('@/pages/courses/CourseRegistrationPage'))
 const FeeStatementPage         = lazy(() => import('@/pages/finance/FeeStatementPage'))
 const FinanceDashboardPage     = lazy(() => import('@/pages/finance/FinanceDashboardPage'))
 const LmsCoursesPage           = lazy(() => import('@/pages/lms/LmsCoursesPage'))
 const LmsCourseDetailPage      = lazy(() => import('@/pages/lms/LmsCourseDetailPage'))
+const LmsGradingPage           = lazy(() => import('@/pages/lms/LmsGradingPage'))
 const AttendancePage           = lazy(() => import('@/pages/lms/AttendancePage'))
 const ProcurementPRPage        = lazy(() => import('@/pages/procurement/ProcurementPRPage'))
 const ApprovalInboxPage        = lazy(() => import('@/pages/procurement/ApprovalInboxPage'))
@@ -81,8 +83,9 @@ export const router = createBrowserRouter([
       { path: 'admission/review', element: r(['admissions'], <AdmissionReviewPage />) },
 
       // Student
-      { path: 'student/profile',  element: r(['student'], <StudentProfilePage />) },
-      { path: 'student/courses',  element: r(['student'], <CourseRegistrationPage />) },
+      { path: 'student/profile',    element: r(['student'], <StudentProfilePage />) },
+      { path: 'student/courses',    element: r(['student'], <CourseRegistrationPage />) },
+      { path: 'student/transcript', element: r(['student'], <TranscriptPage />) },
 
       // Finance
       { path: 'finance/statement',  element: r(['student','finance'], <FeeStatementPage />) },
@@ -91,6 +94,7 @@ export const router = createBrowserRouter([
       // LMS
       { path: 'lms/courses',              element: r(['student','lecturer','admin'], <LmsCoursesPage />) },
       { path: 'lms/courses/:offeringId',  element: r(['student','lecturer','admin'], <LmsCourseDetailPage />) },
+      { path: 'lms/grading',              element: r(['lecturer'], <LmsGradingPage />) },
       { path: 'lms/attendance',           element: r(['student','lecturer','admin'], <AttendancePage />) },
 
       // Procurement
