@@ -79,7 +79,8 @@ async function main() {
   const PASS = 'Demo@2026'
 
   const uNoor       = await upsertUser({ username: 'noor',       displayName: 'Noor (Demo Student)', role: 'student',    email: 'noor@unissa.edu.bn',       hash: hash(PASS) })
-  const uZara       = await upsertUser({ username: 'zara',       displayName: 'Zara (Demo Student)', role: 'student',    email: 'zara@unissa.edu.bn',       hash: hash(PASS) })
+  // Scene-1 demo account: fresh applicant — always reset so demo starts from the very beginning
+  const uZara       = await upsertUser({ username: 'zara',       displayName: 'Noor Aisyah Binti Hassan', role: 'student',    email: 'zara@unissa.edu.bn',       hash: hash(PASS) })
   const uAdmissions = await upsertUser({ username: 'admissions', displayName: 'Admissions Officer',  role: 'admissions', email: 'admissions@unissa.edu.bn',  hash: hash(PASS) })
   const uDrSiti     = await upsertUser({ username: 'drsiti',     displayName: 'Dr. Siti (Lecturer)', role: 'lecturer',   email: 'drsiti@unissa.edu.bn',      hash: hash(PASS) })
   const uManager    = await upsertUser({ username: 'manager',    displayName: 'Dept Manager',        role: 'manager',    email: 'manager@unissa.edu.bn',     hash: hash(PASS) })
@@ -289,26 +290,22 @@ async function main() {
     update: {},
   })
 
-  // ── Zara: Unregistered (only User account exists) ─────────────
-  // Zara has a login account but has not submitted an application yet.
-  // This is a clean state for testing the application flow.
+  // ── Noor Aisyah (Scene-1 demo): clean state — no applicant, no student ───────
+  // noor_apply / Demo@2026 — always reset so demo starts from the very beginning.
   
-  // First, find if Zara has any student record to use for cascading deletion
-  const existingStudentZara = await prisma.student.findUnique({ where: { userId: uZara.id } })
-  
-  if (existingStudentZara) {
-    // Delete all student-related records
-    await prisma.studentGpaRecord.deleteMany({ where: { studentId: existingStudentZara.id } })
-    await prisma.studentRiskScore.deleteMany({ where: { studentId: existingStudentZara.id } })
-    await prisma.attendanceRecord.deleteMany({ where: { studentId: existingStudentZara.id } })
-    await prisma.submission.deleteMany({ where: { studentId: existingStudentZara.id } })
-    await prisma.feeInvoice.deleteMany({ where: { studentId: existingStudentZara.id } })
-    await prisma.enrolment.deleteMany({ where: { studentId: existingStudentZara.id } })
-    await prisma.libraryAccount.deleteMany({ where: { studentId: existingStudentZara.id } })
+  // Reset demo account: wipe any prior student/applicant data so demo always starts clean
+  const existingStudentNoorApply = await prisma.student.findFirst({ where: { userId: uZara.id } })
+  if (existingStudentNoorApply) {
+    await prisma.studentGpaRecord.deleteMany({ where: { studentId: existingStudentNoorApply.id } })
+    await prisma.studentRiskScore.deleteMany({ where: { studentId: existingStudentNoorApply.id } })
+    await prisma.attendanceRecord.deleteMany({ where: { studentId: existingStudentNoorApply.id } })
+    await prisma.submission.deleteMany({ where: { studentId: existingStudentNoorApply.id } })
+    await prisma.feeInvoice.deleteMany({ where: { studentId: existingStudentNoorApply.id } })
+    await prisma.enrolment.deleteMany({ where: { studentId: existingStudentNoorApply.id } })
+    await prisma.libraryAccount.deleteMany({ where: { studentId: existingStudentNoorApply.id } })
   }
-  
-  // Delete student and applicant records
   await prisma.student.deleteMany({ where: { userId: uZara.id } })
+  await prisma.notification.deleteMany({ where: { userId: uZara.id } })
   await prisma.applicant.deleteMany({ where: { userId: uZara.id } })
 
   // ── 11 Additional Students for Risk Analytics Demo ────────────
@@ -734,8 +731,8 @@ async function main() {
 
   console.log('\n✅ Seed complete! Demo data ready.\n')
   console.log('Demo Accounts:')
-  console.log('  noor        / Demo@2026  → Student Portal (registered student)')
-  console.log('  zara        / Demo@2026  → Login only (unregistered - apply for admission)')
+  console.log('  noor        / Demo@2026  → Student Portal (fully enrolled student)')
+  console.log('  zara        / Demo@2026  → Scene 1 Demo: Noor Aisyah — clean state, apply for admission')
   console.log('  admissions  / Demo@2026  → Admission Dashboard')
   console.log('  drsiti      / Demo@2026  → LMS Instructor')
   console.log('  manager     / Demo@2026  → Approval Inbox')
@@ -757,7 +754,7 @@ async function upsertUser(u: { username: string; displayName: string; role: stri
   return prisma.user.upsert({
     where: { username: u.username },
     create: { username: u.username, passwordHash: u.hash, displayName: u.displayName, role: u.role, email: u.email },
-    update: {},
+    update: { displayName: u.displayName, email: u.email },
   })
 }
 

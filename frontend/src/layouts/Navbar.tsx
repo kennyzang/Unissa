@@ -64,7 +64,8 @@ const Navbar = () => {
         return []
       }
     },
-    refetchInterval: 60000,
+    refetchInterval: 10000,
+    refetchOnWindowFocus: true,
   })
 
   const unreadCount = notifications.filter(n => !n.isRead).length
