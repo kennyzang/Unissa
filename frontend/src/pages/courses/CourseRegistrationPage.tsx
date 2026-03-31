@@ -2,7 +2,7 @@ import React, { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import { Plus, Minus, CheckCircle, AlertTriangle, BookOpen, Clock, AlertCircle } from 'lucide-react'
+import { Plus, Minus, CheckCircle, AlertTriangle, BookOpen, Clock, AlertCircle, LockKeyhole } from 'lucide-react'
 import { apiClient } from '@/lib/apiClient'
 import { useAuthStore } from '@/stores/authStore'
 import { useUIStore } from '@/stores/uiStore'
@@ -60,6 +60,7 @@ const CourseRegistrationPage: React.FC = () => {
       return data.data
     },
     enabled: !!user,
+    retry: false,
   })
 
   const { data: offerings = [], isLoading: offeringsLoading } = useQuery<Offering[]>({
@@ -71,6 +72,27 @@ const CourseRegistrationPage: React.FC = () => {
   })
 
   const isLoading = profileLoading || offeringsLoading
+
+  // Not yet enrolled — show placeholder
+  if (!profileLoading && !studentProfile) {
+    return (
+      <div style={{ maxWidth: 480, margin: '80px auto', textAlign: 'center', padding: '0 16px' }}>
+        <div style={{
+          width: 80, height: 80, borderRadius: '50%',
+          background: '#f5f5f5', display: 'flex', alignItems: 'center', justifyContent: 'center',
+          margin: '0 auto 20px',
+        }}>
+          <LockKeyhole size={36} color="#bbb" />
+        </div>
+        <div style={{ fontWeight: 700, fontSize: 20, color: '#333', marginBottom: 8 }}>
+          {t('courseReg.notEnrolledTitle', { defaultValue: 'Not Enrolled Yet' })}
+        </div>
+        <div style={{ fontSize: 14, color: '#888', lineHeight: 1.7 }}>
+          {t('courseReg.notEnrolledMsg', { defaultValue: 'Course registration will be available once you have been admitted and accepted your offer. Please complete your admission application first.' })}
+        </div>
+      </div>
+    )
+  }
 
   const registerMutation = useMutation({
     mutationFn: async (offeringIds: string[]) => {

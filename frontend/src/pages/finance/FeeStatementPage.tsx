@@ -4,7 +4,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useForm, Controller } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { CreditCard, CheckCircle, AlertCircle, Receipt } from 'lucide-react'
+import { CreditCard, CheckCircle, AlertCircle, Receipt, LockKeyhole } from 'lucide-react'
 import { apiClient } from '@/lib/apiClient'
 import { useUIStore } from '@/stores/uiStore'
 import Card from '@/components/ui/Card'
@@ -56,13 +56,26 @@ const FeeStatementPage: React.FC = () => {
   const addToast = useUIStore(s => s.addToast)
   const qc = useQueryClient()
 
-  const { data: invoices = [], isLoading } = useQuery<Invoice[]>({
-    queryKey: ['invoices', '2026001'],
+  // Get current student's ID dynamically
+  const { data: studentProfile, isLoading: studentLoading } = useQuery<{ studentId: string }>({
+    queryKey: ['student', 'me'],
     queryFn: async () => {
-      const { data } = await apiClient.get('/finance/invoices/2026001')
+      const { data } = await apiClient.get('/students/me')
       return data.data
     },
+    retry: false,
   })
+
+  const { data: invoices = [], isLoading: invoicesLoading } = useQuery<Invoice[]>({
+    queryKey: ['invoices', studentProfile?.studentId],
+    queryFn: async () => {
+      const { data } = await apiClient.get(`/finance/invoices/${studentProfile!.studentId}`)
+      return data.data
+    },
+    enabled: !!studentProfile?.studentId,
+  })
+
+  const isLoading = studentLoading || invoicesLoading
 
   const { register, handleSubmit, watch, control, formState: { errors }, reset } = useForm<PayForm>({
     resolver: zodResolver(paySchema),
@@ -90,6 +103,29 @@ const FeeStatementPage: React.FC = () => {
   })
 
   const totalOutstanding = invoices.reduce((s, i) => s + i.outstandingBalance, 0)
+
+  // Not yet enrolled
+  if (!studentLoading && !studentProfile) {
+    return (
+      <div className={styles.page}>
+        <div style={{ maxWidth: 480, margin: '80px auto', textAlign: 'center', padding: '0 16px' }}>
+          <div style={{
+            width: 80, height: 80, borderRadius: '50%',
+            background: '#f5f5f5', display: 'flex', alignItems: 'center', justifyContent: 'center',
+            margin: '0 auto 20px',
+          }}>
+            <LockKeyhole size={36} color="#bbb" />
+          </div>
+          <div style={{ fontWeight: 700, fontSize: 20, color: '#333', marginBottom: 8 }}>
+            {t('feeStatement.notEnrolledTitle', { defaultValue: 'Not Enrolled Yet' })}
+          </div>
+          <div style={{ fontSize: 14, color: '#888', lineHeight: 1.7 }}>
+            {t('feeStatement.notEnrolledMsg', { defaultValue: 'Your fee statement will be available once you have registered for courses. Please complete your admission application and accept your offer first.' })}
+          </div>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className={styles.page}>

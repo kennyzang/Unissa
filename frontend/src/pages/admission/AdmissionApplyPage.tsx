@@ -1,28 +1,28 @@
 import { useTranslation } from 'react-i18next'
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { Controller, useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { useMutation, useQuery } from '@tanstack/react-query'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   Form, Input, Select, DatePicker, Checkbox,
   Button, Card, Row, Col, Descriptions, Alert, Space,
+  Spin, Tag, Typography,
 } from 'antd'
 import {
   CheckCircleOutlined, UserOutlined, BookOutlined,
   TrophyOutlined, FileTextOutlined, IdcardOutlined, ClockCircleOutlined,
+  BellOutlined, CloseCircleOutlined, LoadingOutlined,
 } from '@ant-design/icons'
 import dayjs from 'dayjs'
 import { useNavigate } from 'react-router-dom'
 import { apiClient } from '@/lib/apiClient'
-import { useAuthStore } from '@/stores/authStore'
 import { useUIStore } from '@/stores/uiStore'
-import { Typography, Spin, Tag } from 'antd'
 import styles from './AdmissionApplyPage.module.scss'
 
 const { Title, Text } = Typography
 
-// ── Enrolled student status card (shown when role === 'student') ──────────────
+// ── Enrolled student status card ──────────────────────────────────────────────
 const EnrolledStudentCard: React.FC = () => {
   const { t } = useTranslation()
   const navigate = useNavigate()
@@ -53,6 +53,44 @@ const EnrolledStudentCard: React.FC = () => {
         <p className={styles.pageSub}>{t('admissionApply.enrolledNote', { defaultValue: 'You are already enrolled as a student at UNISSA.' })}</p>
       </div>
 
+      {/* Admission notice banner */}
+      <div style={{
+        maxWidth: 640, margin: '0 auto 20px',
+        background: 'linear-gradient(135deg, #e8f5e9 0%, #f0f9ff 100%)',
+        border: '1px solid #b7eb8f',
+        borderRadius: 12, padding: '20px 24px',
+        display: 'flex', alignItems: 'flex-start', gap: 16,
+      }}>
+        <div style={{
+          width: 48, height: 48, borderRadius: '50%',
+          background: '#00B42A', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+        }}>
+          <CheckCircleOutlined style={{ fontSize: 24, color: '#fff' }} />
+        </div>
+        <div>
+          <div style={{ fontWeight: 700, fontSize: 16, color: '#135200', marginBottom: 4 }}>
+            {t('admissionApply.admissionNoticeTitle', { defaultValue: 'Admission Notice — UNISSA AY 2026/2027' })}
+          </div>
+          <div style={{ fontSize: 13, color: '#237804', lineHeight: 1.6 }}>
+            {t('admissionApply.admissionNoticeBody', { defaultValue: 'You have been successfully admitted and enrolled. Your student account has been activated. You may now access all student modules.' })}
+          </div>
+          <div style={{ marginTop: 12, display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+            <Button size="small" type="primary" onClick={() => navigate('/lms/attendance')}>
+              {t('nav.attendance', { defaultValue: 'Attendance' })}
+            </Button>
+            <Button size="small" onClick={() => navigate('/student/courses')}>
+              {t('nav.courseReg', { defaultValue: 'Course Registration' })}
+            </Button>
+            <Button size="small" onClick={() => navigate('/student/profile')}>
+              {t('nav.myProfile', { defaultValue: 'My Profile' })}
+            </Button>
+            <Button size="small" onClick={() => navigate('/finance/statement')}>
+              {t('nav.feeStatement', { defaultValue: 'Fee Statement' })}
+            </Button>
+          </div>
+        </div>
+      </div>
+
       <Card
         style={{ maxWidth: 640, margin: '0 auto' }}
         styles={{ body: { padding: 32 } }}
@@ -73,7 +111,7 @@ const EnrolledStudentCard: React.FC = () => {
         </div>
 
         <Descriptions column={1} size="small" bordered>
-          <Descriptions.Item label={t('admissionApply.reviewFullName', { defaultValue: 'Student ID' })}>
+          <Descriptions.Item label={t('admissionApply.studentId', { defaultValue: 'Student ID' })}>
             <strong>{profile?.studentId ?? '—'}</strong>
           </Descriptions.Item>
           <Descriptions.Item label={t('admissionApply.reviewEmail', { defaultValue: 'Email' })}>
@@ -92,18 +130,6 @@ const EnrolledStudentCard: React.FC = () => {
             {profile?.enrolledAt ? dayjs(profile.enrolledAt).format('DD MMM YYYY') : '—'}
           </Descriptions.Item>
         </Descriptions>
-
-        <div style={{ display: 'flex', gap: 12, marginTop: 24, justifyContent: 'center', flexWrap: 'wrap' }}>
-          <Button type="primary" onClick={() => navigate('/lms/courses')}>
-            {t('lmsCourses.title', { defaultValue: 'My Courses' })}
-          </Button>
-          <Button onClick={() => navigate('/student/courses')}>
-            {t('nav.courseReg', { defaultValue: 'Course Registration' })}
-          </Button>
-          <Button onClick={() => navigate('/student/profile')}>
-            {t('nav.myProfile', { defaultValue: 'My Profile' })}
-          </Button>
-        </div>
       </Card>
     </div>
   )
@@ -148,8 +174,6 @@ interface IntakeOption {
   maxCapacity: number
 }
 
-
-// Helper: antd Form.Item status/help from error message
 const fe = (msg?: string) => ({
   validateStatus: msg ? ('error' as const) : ('' as const),
   help: msg ?? '',
@@ -158,44 +182,224 @@ const fe = (msg?: string) => ({
 // ── Pending application status card ──────────────────────────────────────────
 const PendingApplicationCard: React.FC<{ app: any }> = ({ app }) => {
   const { t } = useTranslation()
+  const addToast = useUIStore(s => s.addToast)
+  const qc = useQueryClient()
+
   const statusColor: Record<string, string> = {
     submitted: 'blue', under_review: 'orange', waitlisted: 'purple',
-    rejected: 'red', accepted: 'green',
+    rejected: 'red', accepted: 'green', auto_check_failed: 'red',
   }
+
+  const QUAL_LABELS: Record<string, string> = {
+    O_LEVEL: 'O-Level / BGCE', A_LEVEL: 'A-Level / STPM',
+    DIPLOMA: 'Diploma', DEGREE: 'Bachelor Degree', MASTERS: 'Masters Degree',
+    o_level: 'O-Level / BGCE', a_level: 'A-Level / STPM',
+    diploma: 'Diploma', degree: 'Bachelor Degree', masters: 'Masters Degree',
+  }
+
+  const acceptMutation = useMutation({
+    mutationFn: () => apiClient.post('/admissions/accept-offer'),
+    onSuccess: (res) => {
+      addToast({ type: 'success', message: res.data.message ?? t('admissionApply.offerAccepted', { defaultValue: 'Offer accepted! Welcome to UNISSA.' }) })
+      qc.invalidateQueries({ queryKey: ['student', 'me'] })
+      qc.invalidateQueries({ queryKey: ['admissions', 'my-application'] })
+    },
+    onError: (e: any) => {
+      addToast({ type: 'error', message: e.response?.data?.message ?? t('admissionApply.acceptOfferFailed', { defaultValue: 'Failed to accept offer. Please try again.' }) })
+    },
+  })
+
+  const isAccepted = app.status === 'accepted'
+  const isRejected = app.status === 'rejected'
+
   return (
     <div className={styles.page}>
       <div className={styles.header}>
         <h1 className={styles.pageTitle}>{t('admissionApply.title')}</h1>
-        <p className={styles.pageSub}>{t('admissionApply.pendingNote', { defaultValue: 'Your application is being reviewed.' })}</p>
+        <p className={styles.pageSub}>
+          {isAccepted
+            ? t('admissionApply.offerReadyNote', { defaultValue: 'Your application has been approved. Please review and accept your offer below.' })
+            : isRejected
+              ? t('admissionApply.rejectedNote', { defaultValue: 'Thank you for your application to UNISSA.' })
+              : t('admissionApply.pendingNote', { defaultValue: 'Your application is being reviewed.' })
+          }
+        </p>
       </div>
-      <Card style={{ maxWidth: 560, margin: '0 auto' }} styles={{ body: { padding: 32 } }}>
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 16, marginBottom: 28 }}>
-          <div style={{ width: 72, height: 72, borderRadius: '50%', background: '#fffbe6', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <ClockCircleOutlined style={{ fontSize: 36, color: '#fa8c16' }} />
+
+      {/* Acceptance / Rejection notification banner */}
+      {isAccepted && (
+        <div style={{
+          maxWidth: 760, margin: '0 auto 20px',
+          background: 'linear-gradient(135deg, #e8f5e9 0%, #f6ffed 100%)',
+          border: '2px solid #52c41a', borderRadius: 12, padding: '20px 24px',
+          display: 'flex', alignItems: 'flex-start', gap: 16,
+        }}>
+          <BellOutlined style={{ fontSize: 28, color: '#52c41a', marginTop: 2, flexShrink: 0 }} />
+          <div style={{ flex: 1 }}>
+            <div style={{ fontWeight: 700, fontSize: 17, color: '#135200', marginBottom: 6 }}>
+              🎓 {t('admissionApply.congratulations', { defaultValue: 'Congratulations, you have been admitted!' })}
+            </div>
+            <div style={{ fontSize: 13, color: '#237804', lineHeight: 1.7, marginBottom: 12 }}>
+              {t('admissionApply.acceptInstructions', { defaultValue: 'Your application to UNISSA has been approved by the Admissions Office. Please review your application details below and click "Accept Offer & Enrol" to complete your registration.' })}
+            </div>
+            <Button
+              type="primary"
+              size="large"
+              loading={acceptMutation.isPending}
+              onClick={() => acceptMutation.mutate()}
+              style={{ background: '#52c41a', borderColor: '#52c41a', fontWeight: 600 }}
+            >
+              <CheckCircleOutlined />
+              {t('admissionApply.acceptOffer', { defaultValue: 'Accept Offer & Enrol' })}
+            </Button>
           </div>
-          <Title level={4} style={{ margin: 0 }}>{app.fullName}</Title>
+        </div>
+      )}
+
+      {isRejected && (
+        <Alert
+          style={{ maxWidth: 760, margin: '0 auto 20px' }}
+          type="error"
+          icon={<CloseCircleOutlined />}
+          showIcon
+          message={
+            <span style={{ fontWeight: 700, fontSize: 15 }}>
+              {t('admissionApply.sorryRejected', { defaultValue: 'Sorry, you have not been admitted.' })}
+            </span>
+          }
+          description={
+            app.officerRemarks
+              ? `${t('admissionApply.rejectionReason', { defaultValue: 'Reason' })}: ${app.officerRemarks}`
+              : t('admissionApply.noReason', { defaultValue: 'Please contact the Admissions Office for further details.' })
+          }
+        />
+      )}
+
+      {/* Application summary card */}
+      <Card style={{ maxWidth: 760, margin: '0 auto' }} styles={{ body: { padding: 24 } }}>
+        {/* Header row */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 24, paddingBottom: 16, borderBottom: '1px solid #f0f0f0' }}>
+          <div style={{
+            width: 56, height: 56, borderRadius: '50%',
+            background: isAccepted ? '#e8f5e9' : isRejected ? '#fff1f0' : '#fffbe6',
+            display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+          }}>
+            {isAccepted
+              ? <CheckCircleOutlined style={{ fontSize: 28, color: '#00B42A' }} />
+              : isRejected
+                ? <CloseCircleOutlined style={{ fontSize: 28, color: '#f5222d' }} />
+                : <ClockCircleOutlined style={{ fontSize: 28, color: '#fa8c16' }} />
+            }
+          </div>
+          <div style={{ flex: 1 }}>
+            <div style={{ fontWeight: 700, fontSize: 16 }}>{app.fullName}</div>
+            <div style={{ fontSize: 13, color: '#888', marginTop: 2 }}>{app.applicationRef}</div>
+          </div>
           <Tag color={statusColor[app.status] ?? 'default'} style={{ fontSize: 13, padding: '2px 12px' }}>
-            {app.status.replace('_', ' ').toUpperCase()}
+            {app.status.replace(/_/g, ' ').toUpperCase()}
           </Tag>
         </div>
-        <Descriptions column={1} size="small" bordered>
-          <Descriptions.Item label={t('admissionApply.successRef', { defaultValue: 'Application Ref' })}>
-            <strong>{app.applicationRef}</strong>
-          </Descriptions.Item>
-          <Descriptions.Item label={t('admissionApply.programmeLabel', { defaultValue: 'Programme' })}>
-            {app.programme?.name ?? '—'}
-          </Descriptions.Item>
-          <Descriptions.Item label={t('admissionApply.reviewIntake', { defaultValue: 'Intake' })}>
-            {app.intake?.semester?.name ?? '—'}
-          </Descriptions.Item>
-          <Descriptions.Item label={t('admissionApply.submittedAt', { defaultValue: 'Submitted' })}>
-            {app.submittedAt ? dayjs(app.submittedAt).format('DD MMM YYYY') : '—'}
-          </Descriptions.Item>
-        </Descriptions>
-        {app.officerRemarks && (
-          <Alert style={{ marginTop: 16 }} type={app.status === 'rejected' ? 'error' : 'info'}
+
+        <Row gutter={[16, 16]}>
+          {/* Personal Information */}
+          <Col xs={24} md={12}>
+            <div style={{ fontWeight: 600, fontSize: 13, color: '#165DFF', marginBottom: 8, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+              {t('admissionApply.personalInfo', { defaultValue: 'Personal Information' })}
+            </div>
+            <Descriptions column={1} size="small" bordered>
+              <Descriptions.Item label={t('admissionApply.reviewFullName', { defaultValue: 'Full Name' })}>{app.fullName}</Descriptions.Item>
+              <Descriptions.Item label={t('admissionApply.reviewIC', { defaultValue: 'IC / Passport' })}>{app.icPassport}</Descriptions.Item>
+              <Descriptions.Item label={t('admissionApply.reviewDOB', { defaultValue: 'Date of Birth' })}>
+                {app.dateOfBirth ? dayjs(app.dateOfBirth).format('DD MMM YYYY') : '—'}
+              </Descriptions.Item>
+              <Descriptions.Item label={t('admissionApply.reviewGender', { defaultValue: 'Gender' })}>{app.gender}</Descriptions.Item>
+              <Descriptions.Item label={t('admissionApply.reviewNationality', { defaultValue: 'Nationality' })}>{app.nationality}</Descriptions.Item>
+              <Descriptions.Item label={t('admissionApply.reviewEmail', { defaultValue: 'Email' })}>{app.email}</Descriptions.Item>
+              <Descriptions.Item label={t('admissionApply.reviewMobile', { defaultValue: 'Mobile' })}>{app.mobile}</Descriptions.Item>
+            </Descriptions>
+          </Col>
+
+          {/* Academic Background */}
+          <Col xs={24} md={12}>
+            <div style={{ fontWeight: 600, fontSize: 13, color: '#165DFF', marginBottom: 8, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+              {t('admissionApply.academicBg', { defaultValue: 'Academic Background' })}
+            </div>
+            <Descriptions column={1} size="small" bordered>
+              <Descriptions.Item label={t('admissionApply.reviewQual', { defaultValue: 'Qualification' })}>
+                {QUAL_LABELS[app.highestQualification] ?? app.highestQualification}
+              </Descriptions.Item>
+              <Descriptions.Item label={t('admissionApply.reviewInstitution', { defaultValue: 'Institution' })}>{app.previousInstitution}</Descriptions.Item>
+              <Descriptions.Item label={t('admissionApply.reviewYear', { defaultValue: 'Year' })}>{app.yearOfCompletion}</Descriptions.Item>
+              {app.cgpa != null && (
+                <Descriptions.Item label={t('admissionApply.reviewCGPA', { defaultValue: 'CGPA' })}>{app.cgpa}</Descriptions.Item>
+              )}
+            </Descriptions>
+
+            {/* Subject Grades */}
+            {Array.isArray(app.subjectGrades) && app.subjectGrades.length > 0 && (
+              <>
+                <div style={{ fontWeight: 600, fontSize: 13, color: '#165DFF', margin: '16px 0 8px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                  {t('admissionApply.subjectGrades', { defaultValue: 'Subject Grades' })}
+                </div>
+                <Descriptions column={1} size="small" bordered>
+                  {app.subjectGrades.map((g: any) => (
+                    <Descriptions.Item key={g.id ?? g.subjectName} label={g.subjectName}>
+                      <Tag color={g.grade === 'A' ? 'green' : g.grade === 'B' ? 'blue' : g.grade === 'C' ? 'orange' : 'default'}>
+                        {g.grade}
+                      </Tag>
+                    </Descriptions.Item>
+                  ))}
+                </Descriptions>
+              </>
+            )}
+          </Col>
+
+          {/* Programme Choice */}
+          <Col xs={24}>
+            <div style={{ fontWeight: 600, fontSize: 13, color: '#165DFF', marginBottom: 8, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+              {t('admissionApply.programmeLabel', { defaultValue: 'Programme Choice' })}
+            </div>
+            <Descriptions column={2} size="small" bordered>
+              <Descriptions.Item label={t('admissionApply.reviewIntake', { defaultValue: 'Intake' })}>
+                {app.programme ? `${app.programme.name} (${app.programme.code})` : '—'}
+                {app.intake?.semester ? ` — ${app.intake.semester.name}` : ''}
+              </Descriptions.Item>
+              <Descriptions.Item label={t('admissionApply.reviewMode', { defaultValue: 'Mode' })}>
+                {app.modeOfStudy === 'full_time' ? t('admissionApply.fullTime', { defaultValue: 'Full Time' }) : t('admissionApply.partTime', { defaultValue: 'Part Time' })}
+              </Descriptions.Item>
+              {app.scholarshipApplied && (
+                <Descriptions.Item label={t('admissionApply.reviewScholarship', { defaultValue: 'Scholarship' })}>
+                  {app.scholarshipType ?? t('admissionApply.applied', { defaultValue: 'Applied' })}
+                </Descriptions.Item>
+              )}
+              <Descriptions.Item label={t('admissionApply.submittedAt', { defaultValue: 'Submitted' })}>
+                {app.submittedAt ? dayjs(app.submittedAt).format('DD MMM YYYY') : '—'}
+              </Descriptions.Item>
+            </Descriptions>
+          </Col>
+        </Row>
+
+        {/* Officer remarks for non-rejection cases */}
+        {app.officerRemarks && !isRejected && (
+          <Alert style={{ marginTop: 16 }} type="info"
             message={t('admissionApply.officerRemarks', { defaultValue: 'Remarks' })}
             description={app.officerRemarks} showIcon />
+        )}
+
+        {/* Bottom accept button for accepted state */}
+        {isAccepted && (
+          <div style={{ marginTop: 24, textAlign: 'center' }}>
+            <Button
+              type="primary"
+              size="large"
+              loading={acceptMutation.isPending}
+              onClick={() => acceptMutation.mutate()}
+              style={{ background: '#52c41a', borderColor: '#52c41a', fontWeight: 600, minWidth: 200 }}
+            >
+              <CheckCircleOutlined />
+              {t('admissionApply.acceptOffer', { defaultValue: 'Accept Offer & Enrol' })}
+            </Button>
+          </div>
         )}
       </Card>
     </div>
@@ -205,7 +409,6 @@ const PendingApplicationCard: React.FC<{ app: any }> = ({ app }) => {
 const AdmissionApplyPage: React.FC = () => {
   const { t } = useTranslation()
 
-  // Determine which view to show based on actual DB state, not just user.role
   const { data: studentProfile, isLoading: studentLoading } = useQuery<any>({
     queryKey: ['student', 'me'],
     queryFn: async () => {
@@ -226,9 +429,21 @@ const AdmissionApplyPage: React.FC = () => {
   })
 
   const [step, setStep]           = useState(0)
-  const [submitted, setSubmitted] = useState<{ applicationRef: string } | null>(null)
+  const [submitted, setSubmitted] = useState<{ applicationRef: string; autoCheckPassed: boolean } | null>(null)
+  const [checkStep, setCheckStep] = useState(0)
   const [formData, setFormData]   = useState<Partial<Step1 & Step2 & Step3>>({})
   const addToast                  = useUIStore(s => s.addToast)
+
+  // Animate auto-check steps after submission
+  useEffect(() => {
+    if (submitted) {
+      setCheckStep(0)
+      const t1 = setTimeout(() => setCheckStep(1), 700)
+      const t2 = setTimeout(() => setCheckStep(2), 1400)
+      const t3 = setTimeout(() => setCheckStep(3), 2100)
+      return () => { clearTimeout(t1); clearTimeout(t2); clearTimeout(t3) }
+    }
+  }, [submitted])
 
   const STEPS = [
     { title: t('admissionApply.stepPersonal'),  icon: <UserOutlined /> },
@@ -255,7 +470,10 @@ const AdmissionApplyPage: React.FC = () => {
 
   const submitMutation = useMutation({
     mutationFn: (payload: Record<string, unknown>) => apiClient.post('/admissions/apply', payload),
-    onSuccess: (res) => setSubmitted({ applicationRef: res.data.data.applicationRef }),
+    onSuccess: (res) => setSubmitted({
+      applicationRef: res.data.data.applicationRef,
+      autoCheckPassed: res.data.autoCheckPassed ?? true,
+    }),
     onError: (e: any) => addToast({ type: 'error', message: e.response?.data?.message ?? t('admissionApply.submissionFailed') }),
   })
 
@@ -274,8 +492,8 @@ const AdmissionApplyPage: React.FC = () => {
   // Already enrolled as a student
   if (studentProfile) return <EnrolledStudentCard />
 
-  // Application submitted but not yet approved
-  if (myApplication && myApplication.status !== 'rejected') return <PendingApplicationCard app={myApplication} />
+  // Application submitted (waiting/accepted/rejected)
+  if (myApplication) return <PendingApplicationCard app={myApplication} />
 
   const handleNext1 = form1.handleSubmit(data => { setFormData(p => ({ ...p, ...data })); setStep(1) })
   const handleNext2 = form2.handleSubmit(data => { setFormData(p => ({ ...p, ...data })); setStep(2) })
@@ -285,6 +503,11 @@ const AdmissionApplyPage: React.FC = () => {
   const selectedIntake = intakes.find(i => i.id === formData.intakeId)
 
   if (submitted) {
+    const autoCheckSteps = [
+      t('admissionApply.checkStep1', { defaultValue: 'Verifying qualification credentials...' }),
+      t('admissionApply.checkStep2', { defaultValue: 'Checking programme eligibility requirements...' }),
+      t('admissionApply.checkStep3', { defaultValue: 'Reviewing intake availability...' }),
+    ]
     return (
       <div className={styles.successWrap}>
         <Card className={styles.successCard}>
@@ -293,29 +516,63 @@ const AdmissionApplyPage: React.FC = () => {
           <Text type="secondary">{t('admissionApply.successRef')}</Text>
           <div className={styles.refNo}>{submitted.applicationRef}</div>
 
-          {/* Pending review status */}
+          {/* Auto-qualification check animation */}
           <div style={{
-            display: 'flex', alignItems: 'center', gap: 8,
-            background: '#fffbe6', border: '1px solid #ffe58f',
-            borderRadius: 8, padding: '10px 16px', margin: '4px 0',
+            width: '100%', background: '#f9f9ff', border: '1px solid #e8e8ff',
+            borderRadius: 8, padding: '16px 20px', margin: '8px 0', textAlign: 'left',
           }}>
-            <ClockCircleOutlined style={{ color: '#fa8c16', fontSize: 18 }} />
-            <div style={{ textAlign: 'left' }}>
-              <div style={{ fontWeight: 600, color: '#d46b08', fontSize: 13 }}>
-                {t('admissionApply.pendingStatus', { defaultValue: 'Awaiting Review' })}
+            <div style={{ fontWeight: 600, fontSize: 13, color: '#165DFF', marginBottom: 12 }}>
+              🤖 {t('admissionApply.autoCheckTitle', { defaultValue: 'Automatic Qualification Review' })}
+            </div>
+            {autoCheckSteps.map((step, i) => (
+              <div key={i} style={{
+                display: 'flex', alignItems: 'center', gap: 10,
+                padding: '6px 0', fontSize: 13,
+                color: checkStep > i ? '#237804' : checkStep === i ? '#165DFF' : '#aaa',
+              }}>
+                {checkStep > i
+                  ? <CheckCircleOutlined style={{ color: '#52c41a', fontSize: 16 }} />
+                  : checkStep === i
+                    ? <LoadingOutlined style={{ color: '#165DFF', fontSize: 16 }} />
+                    : <span style={{ width: 16, height: 16, borderRadius: '50%', border: '2px solid #ddd', display: 'inline-block' }} />
+                }
+                {step}
               </div>
-              <div style={{ fontSize: 12, color: '#8c6d1f', marginTop: 2 }}>
-                {t('admissionApply.pendingNote', { defaultValue: 'Your application has been received and is pending review by the Admissions team. You will be notified once a decision is made.' })}
+            ))}
+            {checkStep >= 3 && (
+              <div style={{ marginTop: 12, paddingTop: 12, borderTop: '1px solid #e8e8ff', display: 'flex', alignItems: 'center', gap: 10 }}>
+                <CheckCircleOutlined style={{ color: '#00B42A', fontSize: 18 }} />
+                <span style={{ fontWeight: 600, color: submitted.autoCheckPassed ? '#237804' : '#cf1322', fontSize: 14 }}>
+                  {submitted.autoCheckPassed
+                    ? t('admissionApply.autoCheckPassed', { defaultValue: 'Auto-check passed — Application forwarded for specialist review.' })
+                    : t('admissionApply.autoCheckFailed', { defaultValue: 'Auto-check did not pass. Please contact the Admissions Office.' })
+                  }
+                </span>
+              </div>
+            )}
+          </div>
+
+          {checkStep >= 3 && submitted.autoCheckPassed && (
+            <div style={{
+              display: 'flex', alignItems: 'center', gap: 8,
+              background: '#fffbe6', border: '1px solid #ffe58f',
+              borderRadius: 8, padding: '10px 16px', margin: '4px 0', width: '100%',
+            }}>
+              <ClockCircleOutlined style={{ color: '#fa8c16', fontSize: 18 }} />
+              <div style={{ textAlign: 'left' }}>
+                <div style={{ fontWeight: 600, color: '#d46b08', fontSize: 13 }}>
+                  {t('admissionApply.pendingStatus', { defaultValue: 'Under Review' })}
+                </div>
+                <div style={{ fontSize: 12, color: '#8c6d1f', marginTop: 2 }}>
+                  {t('admissionApply.pendingNote', { defaultValue: 'Your application is pending specialist review. You will be notified once a decision is made.' })}
+                </div>
               </div>
             </div>
-          </div>
+          )}
 
           <Text type="secondary" style={{ fontSize: 12 }}>
             {t('admissionApply.successNote')} <strong>{formData.email}</strong>.
           </Text>
-          <Button type="primary" onClick={() => { setStep(0); setSubmitted(null); setFormData({}) }}>
-            {t('admissionApply.submitAnother')}
-          </Button>
         </Card>
       </div>
     )

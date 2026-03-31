@@ -1,9 +1,8 @@
 import { useTranslation } from 'react-i18next'
 import React, { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { useAuthStore } from '@/stores/authStore'
 import { Tabs } from 'antd'
-import { GraduationCap, CreditCard, Library, Mail, MapPin, Calendar } from 'lucide-react'
+import { GraduationCap, CreditCard, Library, Mail, MapPin, Calendar, LockKeyhole } from 'lucide-react'
 import { apiClient } from '@/lib/apiClient'
 import Card from '@/components/ui/Card'
 import Badge from '@/components/ui/Badge'
@@ -44,43 +43,59 @@ const STATUS_COLOR: Record<string, 'green' | 'red' | 'orange' | 'gray'> = {
 
 const StudentProfilePage: React.FC = () => {
   const { t } = useTranslation()
-  const user = useAuthStore(s => s.user)
   const [tab, setTab] = useState<'profile' | 'timetable' | 'services'>('profile')
 
-
-  const studentId = user?.role === 'student' ? 'me' : '2026001'
-
   const { data: student, isLoading } = useQuery<StudentData>({
-    queryKey: ['student', studentId],
+    queryKey: ['student', 'me'],
     queryFn: async () => {
-      const id = studentId === 'me' ? '2026001' : studentId
-      const { data } = await apiClient.get(`/students/${id}`)
+      const { data } = await apiClient.get('/students/me')
       return data.data
     },
+    retry: false,
   })
 
   const { data: timetable = [] } = useQuery<Offering[]>({
-    queryKey: ['student', studentId, 'timetable'],
+    queryKey: ['student', 'me', 'timetable'],
     queryFn: async () => {
-      const id = studentId === 'me' ? '2026001' : studentId
-      const { data } = await apiClient.get(`/students/${id}/timetable`)
+      const { data } = await apiClient.get(`/students/${student!.studentId}/timetable`)
       return data.data
     },
-    enabled: tab === 'timetable',
+    enabled: tab === 'timetable' && !!student,
   })
 
   const { data: services } = useQuery<{ campusCardNo?: string; libraryAccountActive: boolean; emailAccountActive: boolean }>({
-    queryKey: ['student', studentId, 'campus-services'],
+    queryKey: ['student', 'me', 'campus-services'],
     queryFn: async () => {
-      const id = studentId === 'me' ? '2026001' : studentId
-      const { data } = await apiClient.get(`/students/${id}/campus-services`)
+      const { data } = await apiClient.get(`/students/${student!.studentId}/campus-services`)
       return data.data
     },
-    enabled: tab === 'services',
+    enabled: tab === 'services' && !!student,
   })
 
   if (isLoading) return <div className={styles.loading}>{t('studentProfile.loading')}</div>
-  if (!student) return <div className={styles.loading}>Student not found</div>
+
+  // Not yet enrolled
+  if (!student) {
+    return (
+      <div className={styles.page}>
+        <div style={{ maxWidth: 480, margin: '80px auto', textAlign: 'center' }}>
+          <div style={{
+            width: 80, height: 80, borderRadius: '50%',
+            background: '#f5f5f5', display: 'flex', alignItems: 'center', justifyContent: 'center',
+            margin: '0 auto 20px',
+          }}>
+            <LockKeyhole size={36} color="#bbb" />
+          </div>
+          <div style={{ fontWeight: 700, fontSize: 20, color: '#333', marginBottom: 8 }}>
+            {t('studentProfile.notEnrolledTitle', { defaultValue: 'Not Enrolled Yet' })}
+          </div>
+          <div style={{ fontSize: 14, color: '#888', lineHeight: 1.7 }}>
+            {t('studentProfile.notEnrolledMsg', { defaultValue: 'Your student profile will be available once you have been admitted and accepted your offer. Please complete your admission application first.' })}
+          </div>
+        </div>
+      </div>
+    )
+  }
 
   // Group timetable by day
   const byDay = DAYS_ORDER.map(day => ({

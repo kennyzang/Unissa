@@ -177,6 +177,11 @@ router.post('/demo-reset', async (_req: AuthRequest, res: Response) => {
   // ── 10. Chatbot history ──────────────────────────────────────────────────
   await prisma.chatbotConversation.deleteMany({})
 
+  // ── 11. Admission notifications ──────────────────────────────────────────
+  await prisma.notification.deleteMany({
+    where: { triggeredByEvent: { in: ['admission_accepted', 'admission_rejected', 'admission_waitlisted'] } },
+  })
+
   res.json({ success: true, message: 'System reset complete: all student lifecycle data cleared, ready for re-demo' })
 })
 

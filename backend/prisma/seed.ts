@@ -236,10 +236,10 @@ async function main() {
       programmeId: progBSC.id,
       modeOfStudy: 'full_time',
       scholarshipApplied: false,
-      status: 'accepted',
+      status: 'under_review',
       submittedAt: new Date('2026-03-10'),
     },
-    update: { userId: uNoor.id, status: 'accepted' },
+    update: { userId: uNoor.id, status: 'under_review' },
   })
 
   // Subject grades for Noor
@@ -280,9 +280,6 @@ async function main() {
     },
     update: {},
   })
-
-  // Update applicant status to accepted
-  await prisma.applicant.update({ where: { id: applicantNoor.id }, data: { status: 'accepted', userId: uNoor.id, decisionMadeAt: new Date('2026-03-15') } })
 
   // Library account for Noor
   await prisma.libraryAccount.upsert({

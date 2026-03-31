@@ -46,6 +46,7 @@ router.get('/my-application', authenticate, async (req: AuthRequest, res: Respon
     include: {
       intake: { include: { semester: true } },
       programme: true,
+      subjectGrades: true,
     },
     orderBy: { createdAt: 'desc' },
   })
@@ -64,12 +65,12 @@ router.post('/apply', authenticate, async (req: AuthRequest, res: Response) => {
 
   const currentUserId = req.user!.userId
 
-  // Block re-application only if the user is already an accepted/enrolled applicant
-  const existing = await prisma.applicant.findFirst({ where: { userId: currentUserId } })
-  if (existing && existing.status === 'accepted') {
+  // Block re-application only if the user already has an active student record
+  const existingStudent = await prisma.student.findFirst({ where: { userId: currentUserId } })
+  if (existingStudent) {
     res.status(400).json({
       success: false,
-      message: `You are already enrolled as a student (${existing.applicationRef}). Please contact the Admissions Office if you need assistance.`,
+      message: 'You are already enrolled as a student. Please contact the Admissions Office if you need assistance.',
     })
     return
   }
@@ -111,7 +112,6 @@ router.post('/apply', authenticate, async (req: AuthRequest, res: Response) => {
 
   // Upsert subject grades
   if (Array.isArray(subjectGrades) && subjectGrades.length > 0) {
-    // Delete existing grades first to avoid duplicates on re-submit
     await prisma.applicantSubjectGrade.deleteMany({ where: { applicantId: applicant.id } })
     for (const g of subjectGrades) {
       await prisma.applicantSubjectGrade.create({
@@ -125,7 +125,28 @@ router.post('/apply', authenticate, async (req: AuthRequest, res: Response) => {
     }
   }
 
-  res.json({ success: true, data: applicant, message: `Application submitted successfully. Reference: ${applicant.applicationRef}` })
+  // ── Auto-qualification check ────────────────────────────────
+  const qualOrder = ['O_LEVEL', 'A_LEVEL', 'DIPLOMA', 'DEGREE', 'MASTERS']
+  const qualIdx = qualOrder.indexOf((String(highestQualification)).toUpperCase())
+  const completionYear = Number(yearOfCompletion)
+  const currentYear = new Date().getFullYear()
+  const autoCheckPassed = qualIdx >= 0 && (currentYear - completionYear) <= 10
+  const autoStatus = autoCheckPassed ? 'under_review' : 'auto_check_failed'
+
+  const finalApplicant = await prisma.applicant.update({
+    where: { id: applicant.id },
+    data: {
+      status: autoStatus,
+      eligibilityCheckResult: autoCheckPassed ? 'eligible' : 'ineligible',
+    },
+  })
+
+  res.json({
+    success: true,
+    data: finalApplicant,
+    message: `Application submitted. Reference: ${applicant.applicationRef}`,
+    autoCheckPassed,
+  })
 })
 
 // PATCH /api/v1/admissions/applications/:id/decision
@@ -148,69 +169,96 @@ router.patch('/applications/:id/decision', authenticate, requireRole('admissions
     },
   })
 
-  // ── Auto-create Student account when ACCEPTED ──────────────
-  let studentAccount = null
-  if (action === 'accepted' && !app.student) {
-    try {
-      const year = new Date().getFullYear()
+  // ── Create in-app notification for the applicant ────────────
+  if (app.userId) {
+    const notifBody = action === 'accepted'
+      ? 'Congratulations, you have been admitted to UNISSA! Please log in to accept your offer and complete enrolment.'
+      : action === 'rejected'
+        ? `Sorry, you have not been admitted.${remarks ? ' Reason: ' + remarks : ''}`
+        : 'Your application has been waitlisted. You will be notified if a place becomes available.'
 
-      // Generate student ID (e.g. 2026001)
-      const studentCount = await prisma.student.count()
-      const studentId = `${year}${String(studentCount + 1).padStart(3, '0')}`
-
-      // Generate username from name + year
-      const baseUsername = app.fullName.toLowerCase().replace(/\s+/g, '.').replace(/[^a-z.]/g, '').slice(0, 15)
-      const username = `${baseUsername}.${studentId.slice(-3)}`
-
-      // Temporary password: FirstName@Year
-      const firstName = app.fullName.split(' ')[0]
-      const tempPassword = `${firstName}@${year}`
-      const passwordHash = await bcrypt.hash(tempPassword, 10)
-
-      // Create User account
-      const user = await prisma.user.create({
-        data: {
-          username,
-          passwordHash,
-          displayName: app.fullName,
-          role: 'student',
-          email: app.email,
-        },
-      })
-
-      // Create Student record
-      studentAccount = await prisma.student.create({
-        data: {
-          studentId,
-          userId: user.id,
-          applicantId: app.id,
-          programmeId: app.programmeId,
-          intakeId: app.intakeId,
-          modeOfStudy: app.modeOfStudy,
-          nationality: app.nationality,
-          scholarshipPct: app.scholarshipApplied ? 25 : 0, // default 25% if scholarship applied
-          status: 'active',
-          enrolledAt: new Date(),
-        },
-      })
-
-      // Update applicant with userId link
-      await prisma.applicant.update({
-        where: { id: app.id },
-        data: { userId: user.id },
-      })
-    } catch (err) {
-      console.error('[Admissions] Failed to create student account:', err)
-      // Don't fail the whole request – admission still recorded
-    }
+    await prisma.notification.create({
+      data: {
+        userId: app.userId,
+        type: 'push',
+        subject: 'Admission Result',
+        body: notifBody,
+        status: 'sent',
+        sentAt: new Date(),
+        triggeredByEvent: `admission_${action}`,
+        isRead: false,
+      },
+    }).catch(err => console.error('[Admissions] Failed to create notification:', err))
   }
 
   res.json({
     success: true,
-    data: { application: updated, studentAccount },
+    data: { application: updated },
     message: action === 'accepted'
-      ? `Application accepted. Student account created successfully.`
+      ? 'Application accepted. Student has been notified to accept the offer.'
       : `Application ${action} successfully.`,
+  })
+})
+
+// POST /api/v1/admissions/accept-offer  — student formally accepts their admission offer
+router.post('/accept-offer', authenticate, async (req: AuthRequest, res: Response) => {
+  const userId = req.user!.userId
+
+  // Find the accepted application for this user
+  const app = await prisma.applicant.findFirst({
+    where: { userId, status: 'accepted' },
+    include: { programme: true, intake: { include: { semester: true } } },
+  })
+  if (!app) {
+    res.status(400).json({ success: false, message: 'No accepted offer found for your account.' })
+    return
+  }
+
+  // If student record already exists, return it (idempotent)
+  const existing = await prisma.student.findFirst({
+    where: { applicantId: app.id },
+    include: { programme: true, intake: { include: { semester: true } } },
+  })
+  if (existing) {
+    res.json({ success: true, data: existing, message: 'Already enrolled.' })
+    return
+  }
+
+  // Generate student ID
+  const year = new Date().getFullYear()
+  const count = await prisma.student.count()
+  const studentId = `${year}${String(count + 1).padStart(3, '0')}`
+
+  // Create student record
+  const student = await prisma.student.create({
+    data: {
+      studentId,
+      userId,
+      applicantId: app.id,
+      programmeId: app.programmeId,
+      intakeId: app.intakeId,
+      modeOfStudy: app.modeOfStudy,
+      nationality: app.nationality,
+      scholarshipPct: app.scholarshipApplied ? 25 : 0,
+      status: 'active',
+      enrolledAt: new Date(),
+    },
+    include: {
+      programme: true,
+      intake: { include: { semester: true } },
+    },
+  })
+
+  // Mark admission notifications as read
+  await prisma.notification.updateMany({
+    where: { userId, triggeredByEvent: { in: ['admission_accepted', 'admission_rejected', 'admission_waitlisted'] }, isRead: false },
+    data: { isRead: true },
+  })
+
+  res.json({
+    success: true,
+    data: student,
+    message: `Welcome to UNISSA! Your student ID is ${studentId}.`,
   })
 })
 
