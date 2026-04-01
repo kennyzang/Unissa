@@ -26,12 +26,13 @@ async function main() {
     { key: 'anomaly_zscore_threshold', value: '2.0', description: 'Z-score threshold for flagging' },
     { key: 'lms_active_learners', value: '89', description: 'Dashboard: active LMS learners now' },
     { key: 'demo_version', value: 'v5.0', description: 'POC demo version' },
-    // AI Configuration (disabled by default – configure via Admin > Settings)
-    { key: 'ai_enabled',       value: 'false',       description: 'Enable real AI responses (requires API key)' },
-    { key: 'ai_provider',      value: 'openai',       description: 'AI provider: openai | anthropic | custom' },
-    { key: 'ai_api_key',       value: '',             description: 'AI provider API key' },
-    { key: 'ai_model',         value: 'gpt-4o-mini',  description: 'AI model ID' },
-    { key: 'ai_base_url',      value: '',             description: 'Custom API base URL (leave empty for defaults)' },
+    // AI Configuration (enabled by default with Deepseek)
+    { key: 'ai_enabled',       value: 'true',                                  description: 'Enable real AI responses (requires API key)' },
+    { key: 'ai_provider',      value: 'custom',                                description: 'AI provider: openai | anthropic | custom' },
+    { key: 'ai_api_key',       value: 'sk-8062c00427f442f494c210bb9dc0f1b0',  description: 'AI provider API key' },
+    { key: 'ai_model',         value: 'deepseek-chat',                         description: 'AI model ID' },
+    { key: 'ai_base_url',      value: 'https://api.deepseek.com/v1',           description: 'Custom API base URL (leave empty for defaults)' },
+    { key: 'max_selectable_courses', value: '10',                              description: 'Maximum number of courses a student can select per registration' },
     { key: 'ai_temperature',   value: '0.7',          description: 'LLM temperature (0-1)' },
     { key: 'ai_max_tokens',    value: '2048',         description: 'Max response tokens' },
     { key: 'ai_system_prompt', value: '',             description: 'Custom system prompt (empty = default UNIBOT prompt)' },
@@ -432,7 +433,7 @@ async function main() {
   }
 
   // ── Dashboard Demo: 12 New Applications Today ────────────────
-  // 8 accepted + 4 under_review = 12 new applications today
+  // 12 accepted = 12 admitted students today
   const todayAt = new Date(); todayAt.setHours(9, 0, 0, 0)
   const todayNames = [
     'Haziq Bin Rosli', 'Nurul Fatin Binti Hamzah', 'Muhammad Aiman Bin Ishak',
@@ -442,7 +443,7 @@ async function main() {
     'Hafizuddin Bin Abdullah', 'Maisarah Binti Ismail',
   ]
   for (let d = 1; d <= 12; d++) {
-    const isAccepted = d <= 8
+    const isAccepted = d <= 12
     await prisma.applicant.upsert({
       where: { applicationRef: `APP-2026-T${String(d).padStart(2, '0')}` },
       create: {
