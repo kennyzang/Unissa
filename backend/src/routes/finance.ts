@@ -1,14 +1,16 @@
 import { Router, Response } from 'express'
 import prisma from '../lib/prisma'
 import { authenticate, requireRole, AuthRequest } from '../middleware/auth'
+import { generateInvoicePDF } from '../services/invoiceService'
 
 const router = Router()
 router.use(authenticate)
 
 // GET /api/v1/finance/invoices/:studentId
 router.get('/invoices/:studentId', async (req: AuthRequest, res: Response) => {
+  const studentId = Array.isArray(req.params.studentId) ? req.params.studentId[0] : req.params.studentId
   const student = await prisma.student.findFirst({
-    where: { OR: [{ id: req.params.studentId }, { studentId: req.params.studentId }] },
+    where: { OR: [{ id: studentId }, { studentId: studentId }] },
   })
   if (!student) { res.status(404).json({ success: false, message: 'Student not found' }); return }
 
@@ -18,6 +20,34 @@ router.get('/invoices/:studentId', async (req: AuthRequest, res: Response) => {
     orderBy: { generatedAt: 'desc' },
   })
   res.json({ success: true, data: invoices })
+})
+
+// GET /api/v1/finance/invoices/:invoiceId/pdf
+router.get('/invoices/:invoiceId/pdf', async (req: AuthRequest, res: Response) => {
+  const invoiceId = Array.isArray(req.params.invoiceId) ? req.params.invoiceId[0] : req.params.invoiceId
+  const invoice = await prisma.feeInvoice.findUnique({
+    where: { id: invoiceId },
+    include: {
+      student: { include: { user: true } },
+      semester: true,
+      payments: true,
+    },
+  })
+
+  if (!invoice) {
+    res.status(404).json({ success: false, message: 'Invoice not found' })
+    return
+  }
+
+  try {
+    const pdfBuffer = await generateInvoicePDF(invoice as any)
+    res.setHeader('Content-Type', 'application/pdf')
+    res.setHeader('Content-Disposition', `attachment; filename="invoice-${invoice.invoiceNo}.pdf"`)
+    res.send(pdfBuffer)
+  } catch (error) {
+    console.error('Error generating PDF:', error)
+    res.status(500).json({ success: false, message: 'Failed to generate PDF' })
+  }
 })
 
 // POST /api/v1/finance/payments

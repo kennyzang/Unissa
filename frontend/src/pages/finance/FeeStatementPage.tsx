@@ -4,7 +4,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useForm, Controller } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { CreditCard, CheckCircle, AlertCircle, Receipt, LockKeyhole } from 'lucide-react'
+import { CreditCard, CheckCircle, AlertCircle, Receipt, LockKeyhole, FileText, Download } from 'lucide-react'
 import { apiClient } from '@/lib/apiClient'
 import { useUIStore } from '@/stores/uiStore'
 import Card from '@/components/ui/Card'
@@ -13,6 +13,7 @@ import Button from '@/components/ui/Button'
 import Modal from '@/components/ui/Modal'
 import Input from '@/components/ui/Input'
 import Select from '@/components/ui/Select'
+import InvoicePreviewModal from '@/components/invoice/InvoicePreviewModal'
 import styles from './FeeStatementPage.module.scss'
 
 interface Invoice {
@@ -53,6 +54,7 @@ const FeeStatementPage: React.FC = () => {
   const { t } = useTranslation()
   const [payModal, setPayModal] = useState<Invoice | null>(null)
   const [receipt, setReceipt] = useState<any>(null)
+  const [previewInvoice, setPreviewInvoice] = useState<Invoice | null>(null)
   const addToast = useUIStore(s => s.addToast)
   const qc = useQueryClient()
 
@@ -101,6 +103,25 @@ const FeeStatementPage: React.FC = () => {
     if (!payModal) return
     payMutation.mutate({ ...form, invoiceId: payModal.id })
   })
+
+  const downloadInvoice = async (invoiceId: string, invoiceNo: string) => {
+    try {
+      const response = await apiClient.get(`/finance/invoices/${invoiceId}/pdf`, {
+        responseType: 'blob',
+      })
+      const url = window.URL.createObjectURL(new Blob([response.data], { type: 'application/pdf' }))
+      const link = document.createElement('a')
+      link.href = url
+      link.setAttribute('download', `invoice-${invoiceNo}.pdf`)
+      document.body.appendChild(link)
+      link.click()
+      link.remove()
+      window.URL.revokeObjectURL(url)
+      addToast({ type: 'success', message: 'Invoice downloaded successfully' })
+    } catch (error) {
+      addToast({ type: 'error', message: 'Failed to download invoice' })
+    }
+  }
 
   const totalOutstanding = invoices.reduce((s, i) => s + i.outstandingBalance, 0)
 
@@ -211,15 +232,33 @@ const FeeStatementPage: React.FC = () => {
                 <span className={styles.dueDate}>
                   Due: {new Date(inv.dueDate).toLocaleDateString('en-GB')}
                 </span>
-                {inv.status !== 'paid' && (
+                <div className={styles.invoiceActions}>
                   <Button
                     size="sm"
-                    icon={<CreditCard size={14} />}
-                    onClick={() => setPayModal(inv)}
+                    variant="secondary"
+                    icon={<FileText size={14} />}
+                    onClick={() => setPreviewInvoice(inv)}
                   >
-                    Pay Now
+                    Preview
                   </Button>
-                )}
+                  <Button
+                    size="sm"
+                    variant="secondary"
+                    icon={<Download size={14} />}
+                    onClick={() => downloadInvoice(inv.id, inv.invoiceNo)}
+                  >
+                    Download
+                  </Button>
+                  {inv.status !== 'paid' && (
+                    <Button
+                      size="sm"
+                      icon={<CreditCard size={14} />}
+                      onClick={() => setPayModal(inv)}
+                    >
+                      Pay Now
+                    </Button>
+                  )}
+                </div>
               </div>
             </Card>
           )
@@ -307,6 +346,19 @@ const FeeStatementPage: React.FC = () => {
             </div>
           </form>
         </Modal>
+      )}
+
+      {/* Invoice Preview Modal */}
+      {previewInvoice && (
+        <InvoicePreviewModal
+          invoice={previewInvoice}
+          open={!!previewInvoice}
+          onClose={() => setPreviewInvoice(null)}
+          onDownload={() => {
+            downloadInvoice(previewInvoice.id, previewInvoice.invoiceNo)
+            setPreviewInvoice(null)
+          }}
+        />
       )}
     </div>
   )
