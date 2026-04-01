@@ -1,11 +1,12 @@
 import 'dotenv/config'
 // Patch Express 4 to propagate async route handler rejections to the error handler
 {
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
-  const Layer = require('express/lib/router/layer') as { prototype: { handle_request: (...a: unknown[]) => unknown } }
+  // eslint-disable-next-line @typescript-eslint/no-require-imports, @typescript-eslint/no-explicit-any
+  const Layer = require('express/lib/router/layer') as { prototype: { handle_request: any; handle?: any } }
   const orig = Layer.prototype.handle_request
-  Layer.prototype.handle_request = function (req: unknown, res: unknown, next: (err?: unknown) => void) {
-    if ((this.handle as { length?: number }).length > 3) return orig.call(this, req, res, next)
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  Layer.prototype.handle_request = function (this: any, req: unknown, res: unknown, next: (err?: unknown) => void) {
+    if (((this.handle as { length?: number } | undefined)?.length ?? 0) > 3) return orig.call(this, req, res, next)
     try {
       const ret = orig.call(this, req, res, next) as Promise<unknown> | undefined
       if (ret && typeof ret.catch === 'function') ret.catch(next)
