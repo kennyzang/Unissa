@@ -2,7 +2,7 @@ import { useTranslation } from 'react-i18next'
 import React, { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useForm } from 'react-hook-form'
-import { FlaskConical, Plus, CheckCircle, XCircle, Clock, DollarSign, Search } from 'lucide-react'
+import { FlaskConical, Plus, CheckCircle, XCircle, Clock, DollarSign, Search, Upload, FileText } from 'lucide-react'
 import { Input as AntInput } from 'antd'
 import { apiClient } from '@/lib/apiClient'
 import { useUIStore } from '@/stores/uiStore'
@@ -66,6 +66,42 @@ const ResearchGrantsPage: React.FC = () => {
   const [detailModal, setDetailModal] = useState<Grant | null>(null)
   const [reviewModal, setReviewModal] = useState<{ grant: Grant; type: 'dept' | 'finance'; action: string } | null>(null)
   const [remarks,     setRemarks]     = useState('')
+  const [submissionFiles, setSubmissionFiles] = useState<File[]>([])
+  const [fileErrors, setFileErrors] = useState<string[]>([])
+  const [uploadProgress, setUploadProgress] = useState<number>(0)
+
+  const validateFiles = (files: File[]): { valid: boolean; errors: string[] } => {
+    const errors: string[] = []
+    const allowedTypes = ['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'application/vnd.ms-excel', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', 'text/plain']
+    const allowedExtensions = ['.pdf', '.doc', '.docx', '.xls', '.xlsx', '.txt']
+    const maxSize = 5 * 1024 * 1024 // 5MB per file
+    const maxTotalSize = 20 * 1024 * 1024 // 20MB total
+
+    let totalSize = 0
+    files.forEach((file, index) => {
+      const fileExtension = '.' + file.name.split('.').pop()?.toLowerCase()
+      
+      if (!allowedTypes.includes(file.type) && !allowedExtensions.includes(fileExtension)) {
+        errors.push(`文件 "${file.name}" 格式不支持，仅支持 PDF、Word、Excel、TXT 格式`)
+      }
+      
+      if (file.size > maxSize) {
+        errors.push(`文件 "${file.name}" 超过5MB限制`)
+      }
+      
+      totalSize += file.size
+    })
+
+    if (totalSize > maxTotalSize) {
+      errors.push('总文件大小超过20MB限制')
+    }
+
+    if (files.length > 10) {
+      errors.push('最多只能上传10个文件')
+    }
+
+    return { valid: errors.length === 0, errors }
+  }
 
   const { user }   = useAuthStore()
   const addToast   = useUIStore(s => s.addToast)
@@ -94,14 +130,43 @@ const ResearchGrantsPage: React.FC = () => {
   })
 
   const submitMutation = useMutation({
-    mutationFn: (form: GrantForm) => apiClient.post('/research/grants', form),
+    mutationFn: (form: GrantForm) => {
+      const formData = new FormData()
+      formData.append('title', form.title)
+      formData.append('abstract', form.abstract)
+      formData.append('durationMonths', form.durationMonths.toString())
+      formData.append('totalBudget', form.totalBudget.toString())
+      
+      // Add files
+      submissionFiles.forEach((file) => {
+        formData.append('files', file)
+      })
+      
+      return apiClient.post('/research/grants', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data'
+        },
+        onUploadProgress: (progressEvent) => {
+          if (progressEvent.total) {
+            const progress = Math.round((progressEvent.loaded * 100) / progressEvent.total)
+            setUploadProgress(progress)
+          }
+        }
+      })
+    },
     onSuccess: (res) => {
       addToast({ type: 'success', message: t('researchGrants.grantSubmitted', { ref: res.data.data.referenceNo }) })
       qc.invalidateQueries({ queryKey: ['research'] })
       setSubmitModal(false)
       reset()
+      setSubmissionFiles([])
+      setFileErrors([])
+      setUploadProgress(0)
     },
-    onError: (e: any) => addToast({ type: 'error', message: e.response?.data?.message ?? t('researchGrants.actionFailed') }),
+    onError: (e: any) => {
+      addToast({ type: 'error', message: e.response?.data?.message ?? t('researchGrants.actionFailed') })
+      setUploadProgress(0)
+    },
   })
 
   const reviewMutation = useMutation({
@@ -296,54 +361,191 @@ const ResearchGrantsPage: React.FC = () => {
       <Modal
         open={submitModal}
         title={t('researchGrants.submitTitle')}
-        onClose={() => { setSubmitModal(false); reset() }}
+        onClose={() => { setSubmitModal(false); reset(); setSubmissionFiles([]); setFileErrors([]); setUploadProgress(0) }}
         okText={t('researchGrants.submitProposal')}
-        onOk={handleSubmit(d => submitMutation.mutate(d))}
+        onOk={handleSubmit((d) => {
+          const validation = validateFiles(submissionFiles)
+          if (!validation.valid) {
+            setFileErrors(validation.errors)
+            addToast({ type: 'error', message: validation.errors[0] })
+            return
+          }
+          submitMutation.mutate(d)
+        })}
         okLoading={submitMutation.isPending}
       >
         <form className={styles.form}>
           <div className={styles.formGroup}>
-            <label className={styles.label}>{t('researchGrants.researchTitle')}</label>
+            <label className={styles.label}>
+              {t('researchGrants.researchTitle')} <span className={styles.required}>*</span>
+            </label>
             <AntInput
               className={styles.input}
               placeholder={t('researchGrants.researchTitlePlaceholder')}
-              {...register('title', { required: true })}
+              {...register('title', { 
+                required: t('researchGrants.titleRequired'),
+                maxLength: {
+                  value: 255,
+                  message: t('researchGrants.titleMaxLength')
+                }
+              })}
             />
-            {errors.title && <span className={styles.error}>{t('researchGrants.researchTitle')}</span>}
+            {errors.title && <span className={styles.error}>{errors.title.message}</span>}
+            <div className={styles.ruleHint}>{t('researchGrants.titleRuleHint')}</div>
           </div>
 
           <div className={styles.formGroup}>
-            <label className={styles.label}>{t('researchGrants.abstract')}</label>
+            <label className={styles.label}>
+              {t('researchGrants.abstract')} <span className={styles.required}>*</span>
+            </label>
             <textarea
               className={styles.textarea}
               rows={5}
               placeholder={t('researchGrants.abstractPlaceholder')}
-              {...register('abstract', { required: true, minLength: 50 })}
+              {...register('abstract', { 
+                required: t('researchGrants.abstractRequired'),
+                minLength: {
+                  value: 50,
+                  message: t('researchGrants.abstractMinLength')
+                },
+                maxLength: {
+                  value: 5000,
+                  message: t('researchGrants.abstractMaxLength')
+                }
+              })}
             />
-            {errors.abstract && <span className={styles.error}>{t('researchGrants.abstract')}</span>}
+            {errors.abstract && <span className={styles.error}>{errors.abstract.message}</span>}
+            <div className={styles.ruleHint}>{t('researchGrants.abstractRuleHint')}</div>
           </div>
 
           <div className={styles.twoCol}>
             <div className={styles.formGroup}>
-              <label className={styles.label}>{t('researchGrants.durationMonths')}</label>
+              <label className={styles.label}>
+                {t('researchGrants.durationMonths')} <span className={styles.required}>*</span>
+              </label>
               <AntInput
                 type="number"
                 className={styles.input}
                 placeholder="e.g. 24"
-                {...register('durationMonths', { required: true, min: 1, max: 60 })}
+                {...register('durationMonths', { 
+                  required: t('researchGrants.durationRequired'),
+                  min: {
+                    value: 1,
+                    message: t('researchGrants.durationMin')
+                  },
+                  max: {
+                    value: 60,
+                    message: t('researchGrants.durationMax')
+                  }
+                })}
               />
-              {errors.durationMonths && <span className={styles.error}>{t('researchGrants.durationError')}</span>}
+              {errors.durationMonths && <span className={styles.error}>{errors.durationMonths.message}</span>}
+              <div className={styles.ruleHint}>{t('researchGrants.durationRuleHint')}</div>
             </div>
 
             <div className={styles.formGroup}>
-              <label className={styles.label}>{t('researchGrants.totalBudget')}</label>
+              <label className={styles.label}>
+                {t('researchGrants.totalBudget')} <span className={styles.required}>*</span>
+              </label>
               <AntInput
                 type="number"
                 className={styles.input}
                 placeholder="e.g. 25000"
-                {...register('totalBudget', { required: true, min: 100 })}
+                {...register('totalBudget', { 
+                  required: t('researchGrants.budgetRequired'),
+                  min: {
+                    value: 100,
+                    message: t('researchGrants.budgetMin')
+                  },
+                  max: {
+                    value: 1000000,
+                    message: t('researchGrants.budgetMax')
+                  }
+                })}
               />
-              {errors.totalBudget && <span className={styles.error}>{t('researchGrants.budgetError')}</span>}
+              {errors.totalBudget && <span className={styles.error}>{errors.totalBudget.message}</span>}
+              <div className={styles.ruleHint}>{t('researchGrants.budgetRuleHint')}</div>
+            </div>
+          </div>
+
+          {/* File Upload */}
+          <div className={styles.formGroup}>
+            <label className={styles.label}>{t('researchGrants.attachments')}</label>
+            <div className={styles.fileUpload}>
+              <input
+                type="file"
+                multiple
+                accept=".pdf,.doc,.docx,.xls,.xlsx,.txt"
+                onChange={(e) => {
+                  if (e.target.files) {
+                    const selectedFiles = Array.from(e.target.files)
+                    const validation = validateFiles([...submissionFiles, ...selectedFiles])
+                    
+                    if (validation.valid) {
+                      setSubmissionFiles([...submissionFiles, ...selectedFiles])
+                      setFileErrors([])
+                    } else {
+                      setFileErrors(validation.errors)
+                      addToast({ type: 'error', message: validation.errors[0] })
+                    }
+                  }
+                }}
+                className={styles.fileInput}
+              />
+              <div className={styles.fileButton}>
+                <Upload size={16} />
+                <span>{t('researchGrants.chooseFiles')}</span>
+              </div>
+            </div>
+            
+            {/* File Errors */}
+            {fileErrors.length > 0 && (
+              <div className={styles.fileErrors}>
+                {fileErrors.map((error, index) => (
+                  <div key={index} className={styles.fileError}>
+                    {error}
+                  </div>
+                ))}
+              </div>
+            )}
+            
+            {/* Upload Progress */}
+            {uploadProgress > 0 && uploadProgress < 100 && (
+              <div className={styles.uploadProgress}>
+                <div className={styles.progressBar}>
+                  <div 
+                    className={styles.progressFill} 
+                    style={{ width: `${uploadProgress}%` }}
+                  ></div>
+                </div>
+                <div className={styles.progressText}>{uploadProgress}%</div>
+              </div>
+            )}
+            
+            {/* Selected Files */}
+            {submissionFiles.length > 0 && (
+              <div className={styles.filesList}>
+                {submissionFiles.map((file, index) => (
+                  <div key={index} className={styles.fileItem}>
+                    <FileText size={14} />
+                    <span className={styles.fileName}>{file.name}</span>
+                    <span className={styles.fileSize}>{(file.size / 1024).toFixed(1)} KB</span>
+                    <button
+                      className={styles.removeFile}
+                      onClick={() => {
+                        const newFiles = submissionFiles.filter((_, i) => i !== index)
+                        setSubmissionFiles(newFiles)
+                      }}
+                    >
+                      ×
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+            
+            <div className={styles.fileHint}>
+              {t('researchGrants.fileHint')}
             </div>
           </div>
         </form>

@@ -1,6 +1,7 @@
 import { Router, Response } from 'express'
 import prisma from '../lib/prisma'
 import { authenticate, requireRole, AuthRequest } from '../middleware/auth'
+import { upload } from '../lib/upload'
 
 const router = Router()
 router.use(authenticate)
@@ -57,9 +58,10 @@ router.get('/stats', requireRole('manager', 'admin', 'finance'), async (_req: Au
 })
 
 // POST /api/v1/research/grants  (lecturers submit)
-router.post('/grants', requireRole('lecturer', 'admin'), async (req: AuthRequest, res: Response) => {
+router.post('/grants', requireRole('lecturer', 'admin'), upload.array('files', 10), async (req: AuthRequest, res: Response) => {
   const userId = req.user!.userId
   const { title, abstract, durationMonths, totalBudget, departmentId } = req.body
+  const files = req.files as Express.Multer.File[] || []
 
   const staff = await prisma.staff.findUnique({ where: { userId } })
   if (!staff) { res.status(404).json({ success: false, message: 'Staff record not found' }); return }
@@ -68,6 +70,7 @@ router.post('/grants', requireRole('lecturer', 'admin'), async (req: AuthRequest
   const seq  = String(Math.floor(Math.random() * 90000) + 10000)
   const referenceNo = `RG-${year}-${seq}`
 
+  // Create research grant
   const grant = await prisma.researchGrant.create({
     data: {
       referenceNo,
@@ -81,6 +84,33 @@ router.post('/grants', requireRole('lecturer', 'admin'), async (req: AuthRequest
       submittedAt: new Date(),
     },
   })
+
+  // Create file assets for uploaded files
+  if (files.length > 0) {
+    const fileAssets = []
+    for (const file of files) {
+      const asset = await prisma.fileAsset.create({
+        data: {
+          fileName: file.filename,
+          originalName: file.originalname,
+          fileUrl: `/uploads/submissions/${file.filename}`,
+          mimeType: file.mimetype,
+          fileSizeBytes: file.size,
+          uploadedById: userId,
+        },
+      })
+      
+      // Associate file with research grant
+      await prisma.researchGrantFile.create({
+        data: {
+          researchGrantId: grant.id,
+          fileAssetId: asset.id,
+        },
+      })
+      
+      fileAssets.push(asset)
+    }
+  }
 
   res.json({ success: true, data: grant, message: `Grant proposal submitted. Reference: ${referenceNo}` })
 })

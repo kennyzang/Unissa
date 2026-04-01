@@ -128,6 +128,7 @@ model FileAsset {
   appointmentLetters   Staff[]         @relation("AppointmentLetter")
   offerLetters         Applicant[]     @relation("OfferLetter")
   receiptPayments      Payment[]
+  researchGrantFiles   ResearchGrantFile[]
 
   @@map("file_assets")
 }
@@ -847,7 +848,21 @@ model ResearchGrant {
   l3Remarks             String? 
   submittedAt           DateTime @default(now())
 
+  files ResearchGrantFile[]
+
   @@map("research_grants")
+}
+
+model ResearchGrantFile {
+  id              String       @id @default(cuid())
+  researchGrantId String
+  researchGrant   ResearchGrant @relation(fields: [researchGrantId], references: [id])
+  fileAssetId     String
+  fileAsset       FileAsset    @relation(fields: [fileAssetId], references: [id])
+  createdAt       DateTime     @default(now())
+
+  @@unique([researchGrantId, fileAssetId])
+  @@map("research_grant_files")
 }
 
 // ============================================================
