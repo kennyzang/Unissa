@@ -40,6 +40,7 @@
     "zustand": "^4.5.5"
   },
   "devDependencies": {
+    "@testing-library/dom": "^10.4.1",
     "@testing-library/jest-dom": "^6.5.0",
     "@testing-library/react": "^16.0.1",
     "@testing-library/user-event": "^14.5.2",
@@ -48,10 +49,12 @@
     "@typescript-eslint/eslint-plugin": "^8.8.0",
     "@typescript-eslint/parser": "^8.8.0",
     "@vitejs/plugin-react": "^4.3.2",
+    "@vitest/coverage-v8": "^2.1.1",
     "@vitest/ui": "^2.1.1",
     "eslint": "^9.11.1",
     "eslint-plugin-react-hooks": "^5.1.0",
     "eslint-plugin-react-refresh": "^0.4.12",
+    "happy-dom": "^20.8.9",
     "jsdom": "^25.0.1",
     "prettier": "^3.3.3",
     "sass": "^1.79.4",
