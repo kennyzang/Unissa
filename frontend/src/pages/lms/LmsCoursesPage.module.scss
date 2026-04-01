@@ -302,4 +302,99 @@
 .emptyState { display: flex; flex-direction: column; align-items: center; gap: v.$space-3; padding: 80px v.$space-6; color: var(--color-gray-5); text-align: center; h3 { font-size: v.$font-size-lg; font-weight: v.$font-weight-semibold; color: var(--color-gray-6); } p { font-size: v.$font-size-sm; } }
 .emptyBtn { padding: v.$space-3 v.$space-6; background: v.$brand-primary; color: white; border: none; border-radius: v.$border-radius; cursor: pointer; font-size: v.$font-size-sm; &:hover { background: v.$brand-primary-5; } }
 
+// Enhanced calendar styles
+.availableSlot {
+  background: #f0fdf4;
+  border-color: #22c55e;
+  cursor: pointer;
+
+  &:hover {
+    background: #dcfce7;
+  }
+}
+
+.blockedSlot {
+  background: #f3f4f6;
+  border-color: #d1d5db;
+  cursor: default;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  min-height: 80px;
+
+  &:hover {
+    box-shadow: none;
+    transform: none;
+  }
+}
+
+.slotTime {
+  font-size: v.$font-size-xs;
+  font-weight: v.$font-weight-medium;
+  color: var(--color-gray-6);
+  margin-bottom: 4px;
+}
+
+.slotStatus {
+  font-size: v.$font-size-xs;
+  color: var(--color-gray-5);
+  font-style: italic;
+}
+
+.calendarSlots {
+  min-height: 400px;
+  max-height: 600px;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-gray-300) var(--color-gray-100);
+
+  &::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  &::-webkit-scrollbar-track {
+    background: var(--color-gray-100);
+    border-radius: 3px;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background: var(--color-gray-300);
+    border-radius: 3px;
+  }
+
+  &::-webkit-scrollbar-thumb:hover {
+    background: var(--color-gray-400);
+  }
+}
+
+.calendarLegend {
+  display: flex;
+  gap: v.$space-4;
+  padding: v.$space-3 v.$space-4;
+  border-top: 1px solid var(--color-gray-2);
+  background: var(--color-gray-1);
+  flex-wrap: wrap;
+
+  @media (max-width: v.$bp-md) {
+    gap: v.$space-3;
+    padding: v.$space-2 v.$space-3;
+  }
+}
+
+.legendItem {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: v.$font-size-xs;
+  color: var(--color-gray-6);
+}
+
+.legendColor {
+  width: 16px;
+  height: 16px;
+  border-radius: 4px;
+  border: 1px solid var(--color-gray-300);
+}
+
 @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }

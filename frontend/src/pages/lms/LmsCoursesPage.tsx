@@ -293,7 +293,7 @@ const StudentCoursesView: React.FC = () => {
     enabled: !!user,
   })
 
-  const { data: enrolments = [], isLoading } = useQuery<Enrolment[]>({
+  const { data: enrolments = [], isLoading: enrolmentsLoading } = useQuery<Enrolment[]>({
     queryKey: ['lms', 'courses', studentProfile?.id],
     queryFn: async () => {
       const { data } = await apiClient.get(`/lms/courses/${studentProfile!.id}`)
@@ -302,12 +302,23 @@ const StudentCoursesView: React.FC = () => {
     enabled: !!studentProfile?.id,
   })
 
+  const { data: availableOfferings = [], isLoading: offeringsLoading } = useQuery({
+    queryKey: ['offerings'],
+    queryFn: async () => {
+      const { data } = await apiClient.get('/students/offerings')
+      return (data.data ?? []).length > 0 ? data.data : []
+    },
+    enabled: !!user,
+  })
+
   const totalCH = enrolments.reduce((s, e) => s + (e.offering?.course?.creditHours ?? 0), 0)
   const totalAssignments = enrolments.reduce((s, e) => s + (e.offering?.assignments?.length ?? 0), 0)
 
+  const isLoading = enrolmentsLoading || offeringsLoading
+
   if (isLoading) return <div className={styles.loading}>{t('lmsCourses.loading')}</div>
 
-  if (enrolments.length === 0) {
+  if (enrolments.length === 0 && availableOfferings.length === 0) {
     return (
       <div className={styles.page}>
         <div className={styles.header}>
@@ -327,6 +338,53 @@ const StudentCoursesView: React.FC = () => {
 
   const colorMap: Record<string, typeof COURSE_COLORS[0]> = {}
   enrolments.forEach((e, i) => { colorMap[e.offering?.id] = COURSE_COLORS[i % COURSE_COLORS.length] })
+
+  // Generate all possible time slots
+  const generateTimeSlots = () => {
+    const timeSlots = []
+    const startHour = 8
+    const endHour = 18
+    const slotDuration = 60 // minutes
+
+    for (let hour = startHour; hour < endHour; hour++) {
+      for (let minute = 0; minute < 60; minute += slotDuration) {
+        const startTime = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`
+        const endHourCalc = hour + Math.floor((minute + slotDuration) / 60)
+        const endMinute = (minute + slotDuration) % 60
+        const endTime = `${endHourCalc.toString().padStart(2, '0')}:${endMinute.toString().padStart(2, '0')}`
+        timeSlots.push({ startTime, endTime })
+      }
+    }
+    return timeSlots
+  }
+
+  const timeSlots = generateTimeSlots()
+
+  // Categorize time slots
+  const categorizeTimeSlots = (day: string) => {
+    const enrolledSlots = enrolments
+      .filter(e => e.offering?.dayOfWeek === day)
+      .map(e => e.offering!)
+    
+    const availableSlots = availableOfferings
+      .filter(o => o.dayOfWeek === day)
+      .filter(o => !enrolledSlots.some(es => es.startTime === o.startTime && es.endTime === o.endTime))
+    
+    const categorizedSlots = timeSlots.map(slot => {
+      const enrolledSlot = enrolledSlots.find(es => es.startTime === slot.startTime && es.endTime === slot.endTime)
+      const availableSlot = availableSlots.find(as => as.startTime === slot.startTime && as.endTime === slot.endTime)
+      
+      if (enrolledSlot) {
+        return { ...slot, type: 'enrolled' as const, data: enrolledSlot }
+      } else if (availableSlot) {
+        return { ...slot, type: 'available' as const, data: availableSlot }
+      } else {
+        return { ...slot, type: 'blocked' as const, data: null }
+      }
+    })
+    
+    return categorizedSlots
+  }
 
   const renderCardView = () => (
     <div className={styles.courseGrid}>
@@ -389,45 +447,72 @@ const StudentCoursesView: React.FC = () => {
   )
 
   const renderCalendarView = () => {
-    const byDay: Record<string, Enrolment[]> = {}
-    WEEK_DAYS.forEach(d => { byDay[d] = [] })
-    enrolments.forEach(e => {
-      const day = e.offering?.dayOfWeek
-      if (day && byDay[day] !== undefined) byDay[day].push(e)
-    })
-
-    const activeDays = WEEK_DAYS.filter(d => byDay[d].length > 0)
-    const displayDays = activeDays.length > 0 ? activeDays : WEEK_DAYS.slice(0, 5)
+    const displayDays = WEEK_DAYS
     const currentMobileDay = mobileDay && displayDays.includes(mobileDay) ? mobileDay : displayDays[0]
 
-    const renderSlots = (day: string) =>
-      byDay[day].map(enrolment => {
-        const off = enrolment.offering
-        const color = colorMap[off.id]
-        const pendingCount = off.assignments?.filter(a => a.dueDate && new Date(a.dueDate) > new Date()).length ?? 0
-        return (
-          <div
-            key={enrolment.id}
-            className={styles.calendarSlot}
-            style={{ background: color.bg, borderColor: color.border }}
-            onClick={() => navigate(`/lms/courses/${off.id}`)}
-          >
-            <div className={styles.slotCode} style={{ color: color.text }}>{off.course?.code}</div>
-            <div className={styles.slotName}>{off.course?.name}</div>
-            <div className={styles.slotMeta}><Clock size={11} /><span>{off.startTime}–{off.endTime}</span></div>
-            <div className={styles.slotMeta}><MapPin size={11} /><span>{off.room}</span></div>
-            <div className={styles.slotFooter}>
-              <Badge color="blue" size="sm">{off.course?.creditHours} CH</Badge>
-              {pendingCount > 0 && <Badge color="orange" size="sm"><AlertTriangle size={9} /> {pendingCount}</Badge>}
-              {enrolment.finalGrade && (
-                <Badge color={GRADE_COLORS[enrolment.finalGrade] ?? 'gray'} size="sm">
-                  {GRADE_LABELS[enrolment.finalGrade]}
-                </Badge>
-              )}
+    const renderSlots = (day: string) => {
+      const slots = categorizeTimeSlots(day)
+      
+      return slots.map((slot, index) => {
+        if (slot.type === 'enrolled') {
+          const off = slot.data
+          const color = colorMap[off.id]
+          const pendingCount = off.assignments?.filter(a => a.dueDate && new Date(a.dueDate) > new Date()).length ?? 0
+          const enrolment = enrolments.find(e => e.offering?.id === off.id)
+          
+          return (
+            <div
+              key={`${day}-${slot.startTime}-${index}`}
+              className={styles.calendarSlot}
+              style={{ background: color.bg, borderColor: color.border }}
+              onClick={() => navigate(`/lms/courses/${off.id}`)}
+            >
+              <div className={styles.slotCode} style={{ color: color.text }}>{off.course?.code}</div>
+              <div className={styles.slotName}>{off.course?.name}</div>
+              <div className={styles.slotMeta}><Clock size={11} /><span>{slot.startTime}–{slot.endTime}</span></div>
+              <div className={styles.slotMeta}><MapPin size={11} /><span>{off.room}</span></div>
+              <div className={styles.slotFooter}>
+                <Badge color="blue" size="sm">{off.course?.creditHours} CH</Badge>
+                {pendingCount > 0 && <Badge color="orange" size="sm"><AlertTriangle size={9} /> {pendingCount}</Badge>}
+                {enrolment?.finalGrade && (
+                  <Badge color={GRADE_COLORS[enrolment.finalGrade] ?? 'gray'} size="sm">
+                    {GRADE_LABELS[enrolment.finalGrade]}
+                  </Badge>
+                )}
+              </div>
             </div>
-          </div>
-        )
+          )
+        } else if (slot.type === 'available') {
+          const off = slot.data
+          return (
+            <div
+              key={`${day}-${slot.startTime}-${index}`}
+              className={`${styles.calendarSlot} ${styles.availableSlot}`}
+              onClick={() => navigate('/student/courses')}
+            >
+              <div className={styles.slotCode} style={{ color: '#10b981' }}>{off.course?.code}</div>
+              <div className={styles.slotName}>{off.course?.name}</div>
+              <div className={styles.slotMeta}><Clock size={11} /><span>{slot.startTime}–{slot.endTime}</span></div>
+              <div className={styles.slotMeta}><MapPin size={11} /><span>{off.room}</span></div>
+              <div className={styles.slotFooter}>
+                <Badge color="green" size="sm">{off.course?.creditHours} CH</Badge>
+                <Badge color="green" size="sm">Available</Badge>
+              </div>
+            </div>
+          )
+        } else {
+          return (
+            <div
+              key={`${day}-${slot.startTime}-${index}`}
+              className={`${styles.calendarSlot} ${styles.blockedSlot}`}
+            >
+              <div className={styles.slotTime}>{slot.startTime}–{slot.endTime}</div>
+              <div className={styles.slotStatus}>Unavailable</div>
+            </div>
+          )
+        }
       })
+    }
 
     return (
       <div className={styles.calendarView}>
@@ -439,31 +524,37 @@ const StudentCoursesView: React.FC = () => {
               onClick={() => setMobileDay(day)}
             >
               <span className={styles.mobileDayTabName}>{t(`lmsCourses.days.${day.toLowerCase()}`, { defaultValue: day.slice(0, 3) })}</span>
-              {byDay[day].length > 0 && <span className={styles.mobileDayTabDot} />}
             </button>
           ))}
         </div>
         <div className={styles.mobileDayContent}>
-          {byDay[currentMobileDay].length === 0
-            ? <div className={styles.calendarEmpty}>—</div>
-            : renderSlots(currentMobileDay)
-          }
+          {renderSlots(currentMobileDay)}
         </div>
         <div className={styles.calendarGrid} style={{ gridTemplateColumns: `repeat(${displayDays.length}, 1fr)` }}>
           {displayDays.map(day => (
             <div key={day} className={styles.calendarColumn}>
-              <div className={`${styles.calendarDayHeader} ${byDay[day].length > 0 ? styles.calendarDayHeaderActive : ''}`}>
+              <div className={styles.calendarDayHeader}>
                 <span className={styles.calendarDayName}>{t(`lmsCourses.days.${day.toLowerCase()}`, { defaultValue: day.slice(0, 3) })}</span>
-                {byDay[day].length > 0 && <span className={styles.calendarDayCount}>{byDay[day].length}</span>}
               </div>
               <div className={styles.calendarSlots}>
-                {byDay[day].length === 0
-                  ? <div className={styles.calendarEmpty}>—</div>
-                  : renderSlots(day)
-                }
+                {renderSlots(day)}
               </div>
             </div>
           ))}
+        </div>
+        <div className={styles.calendarLegend}>
+          <div className={styles.legendItem}>
+            <div className={styles.legendColor} style={{ background: '#eff6ff', borderColor: '#3b82f6' }}></div>
+            <span>Enrolled</span>
+          </div>
+          <div className={styles.legendItem}>
+            <div className={styles.legendColor} style={{ background: '#f0fdf4', borderColor: '#22c55e' }}></div>
+            <span>Available</span>
+          </div>
+          <div className={styles.legendItem}>
+            <div className={styles.legendColor} style={{ background: '#f3f4f6', borderColor: '#d1d5db' }}></div>
+            <span>Unavailable</span>
+          </div>
         </div>
       </div>
     )
