@@ -11,6 +11,12 @@ interface AuthStore {
   hasRole: (...roles: UserRole[]) => boolean
 }
 
+const clearSessionStorage = () => {
+  sessionStorage.removeItem('admission-apply-step')
+  sessionStorage.removeItem('admission-apply-form')
+  sessionStorage.removeItem('admission-apply-resubmit')
+}
+
 export const useAuthStore = create<AuthStore>()(
   persist(
     (set, get) => ({
@@ -18,9 +24,15 @@ export const useAuthStore = create<AuthStore>()(
       token: null,
       isAuthenticated: false,
 
-      setAuth: (user, token) => set({ user, token, isAuthenticated: true }),
+      setAuth: (user, token) => {
+        clearSessionStorage()
+        set({ user, token, isAuthenticated: true })
+      },
 
-      clearAuth: () => set({ user: null, token: null, isAuthenticated: false }),
+      clearAuth: () => {
+        clearSessionStorage()
+        set({ user: null, token: null, isAuthenticated: false })
+      },
 
       hasRole: (...roles) => {
         const { user } = get()

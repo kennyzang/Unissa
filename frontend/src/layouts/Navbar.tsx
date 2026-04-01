@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useNavigate, useLocation, Link } from 'react-router-dom'
-import { useQuery } from '@tanstack/react-query'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import { Bell, Settings, LogOut, Check } from 'lucide-react'
 import { useAuthStore } from '@/stores/authStore'
@@ -18,6 +18,7 @@ interface Notification {
   type: string
   isRead: boolean
   createdAt: string
+  triggeredByEvent?: string
 }
 
 const Navbar = () => {
@@ -26,6 +27,7 @@ const Navbar = () => {
   const { t }                   = useTranslation()
   const navigate                = useNavigate()
   const location                = useLocation()
+  const qc                      = useQueryClient()
   const [notifOpen, setNotifOpen]   = useState(false)
   const [avatarOpen, setAvatarOpen] = useState(false)
   const { language, setLanguage }   = useLanguageStore()
@@ -75,6 +77,25 @@ const Navbar = () => {
     clearAuth()
     addToast({ type: 'info', message: t('navbar.signedOut') })
     navigate('/login', { replace: true })
+  }
+
+  const handleNotificationClick = async (notification: Notification) => {
+    setNotifOpen(false)
+    
+    if (!notification.isRead) {
+      try {
+        await apiClient.patch(`/notifications/${notification.id}/read`)
+        qc.invalidateQueries({ queryKey: ['notifications'] })
+      } catch (e) {
+        console.error('Failed to mark notification as read:', e)
+      }
+    }
+
+    if (notification.type === 'grade_updated') {
+      navigate('/student/transcript')
+    } else if (notification.type === 'assignment_submission') {
+      navigate('/lms/grading')
+    }
   }
 
   return (
@@ -128,7 +149,12 @@ const Navbar = () => {
                   <div className={styles.notifEmpty}>{t('navbar.noNotifications')}</div>
                 ) : (
                   notifications.slice(0, 8).map(n => (
-                    <div key={n.id} className={`${styles.notifItem} ${!n.isRead ? styles.notifUnread : ''}`}>
+                    <div 
+                      key={n.id} 
+                      className={`${styles.notifItem} ${!n.isRead ? styles.notifUnread : ''}`}
+                      onClick={() => handleNotificationClick(n)}
+                      style={{ cursor: 'pointer' }}
+                    >
                       <div className={styles.notifSubject}>{n.subject}</div>
                       <div className={styles.notifBody}>{n.body}</div>
                       <div className={styles.notifTime}>{new Date(n.createdAt).toLocaleDateString('en-GB')}</div>

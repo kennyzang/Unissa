@@ -59,11 +59,14 @@ const LmsGradingPage: React.FC = () => {
   const [gradingSubmission, setGradingSubmission] = useState<Submission | null>(null)
   const [rubricScores, setRubricScores] = useState<RubricScore[]>([])
   const [finalMarks, setFinalMarks] = useState<number>(0)
+  const [statusFilter, setStatusFilter] = useState<'pending' | 'graded' | 'all'>('pending')
 
-  const { data: pendingSubmissions = [], isLoading } = useQuery<Submission[]>({
-    queryKey: ['lms', 'submissions', 'pending', user?.id],
+  const { data: submissions = [], isLoading } = useQuery<Submission[]>({
+    queryKey: ['lms', 'submissions', 'lecturer', user?.id, statusFilter],
     queryFn: async () => {
-      const { data } = await apiClient.get(`/lms/submissions/pending/${user!.id}`)
+      const { data } = await apiClient.get(`/lms/submissions/lecturer/${user!.id}`, {
+        params: { status: statusFilter === 'all' ? undefined : statusFilter }
+      })
       return data.data
     },
     enabled: !!user,
@@ -87,10 +90,28 @@ const LmsGradingPage: React.FC = () => {
         message: `Grade confirmed! Student GPA updated to ${data.data.currentGpa.toFixed(2)}`,
       })
       setGradingSubmission(null)
-      qc.invalidateQueries({ queryKey: ['lms', 'submissions', 'pending'] })
+      qc.invalidateQueries({ queryKey: ['lms', 'submissions', 'lecturer'] })
     },
     onError: (e: any) => {
       addToast({ type: 'error', message: e.response?.data?.message ?? 'Grading failed' })
+    },
+  })
+
+  const acceptAiMutation = useMutation({
+    mutationFn: async (submissionId: string) => {
+      const { data } = await apiClient.patch(`/lms/submissions/${submissionId}/accept-ai`)
+      return data
+    },
+    onSuccess: (data) => {
+      addToast({
+        type: 'success',
+        message: `AI scores accepted! Student GPA updated to ${data.data.currentGpa.toFixed(2)}`,
+      })
+      setGradingSubmission(null)
+      qc.invalidateQueries({ queryKey: ['lms', 'submissions', 'lecturer'] })
+    },
+    onError: (e: any) => {
+      addToast({ type: 'error', message: e.response?.data?.message ?? 'Failed to accept AI scores' })
     },
   })
 
@@ -163,17 +184,41 @@ const LmsGradingPage: React.FC = () => {
         </p>
       </div>
 
-      {pendingSubmissions.length === 0 ? (
+      <div className={styles.filterBar}>
+        <button
+          className={`${styles.filterBtn} ${statusFilter === 'pending' ? styles.active : ''}`}
+          onClick={() => setStatusFilter('pending')}
+        >
+          <Clock size={14} />
+          待评分 ({submissions.filter(s => !s.finalMarks).length})
+        </button>
+        <button
+          className={`${styles.filterBtn} ${statusFilter === 'graded' ? styles.active : ''}`}
+          onClick={() => setStatusFilter('graded')}
+        >
+          <CheckCircle size={14} />
+          已评分 ({submissions.filter(s => s.finalMarks).length})
+        </button>
+        <button
+          className={`${styles.filterBtn} ${statusFilter === 'all' ? styles.active : ''}`}
+          onClick={() => setStatusFilter('all')}
+        >
+          <FileText size={14} />
+          全部 ({submissions.length})
+        </button>
+      </div>
+
+      {submissions.length === 0 ? (
         <Card>
           <div className={styles.emptyState}>
             <CheckCircle size={48} />
             <h3>{t('lmsGrading.allGraded', { defaultValue: 'All caught up!' })}</h3>
-            <p>{t('lmsGrading.noPending', { defaultValue: 'No pending submissions to grade.' })}</p>
+            <p>{t('lmsGrading.noPending', { defaultValue: 'No submissions found.' })}</p>
           </div>
         </Card>
       ) : (
         <div className={styles.submissionList}>
-          {pendingSubmissions.map(submission => (
+          {submissions.map((submission: Submission) => (
             <Card key={submission.id} className={styles.submissionCard}>
               <div className={styles.submissionHeader}>
                 <div className={styles.submissionInfo}>
@@ -189,12 +234,23 @@ const LmsGradingPage: React.FC = () => {
                   </div>
                 </div>
                 <div className={styles.submissionMeta}>
-                  <Badge color="orange" size="sm">
-                    <Clock size={11} /> Pending Review
-                  </Badge>
+                  {submission.finalMarks !== undefined ? (
+                    <Badge color="green" size="sm">
+                      <CheckCircle size={11} /> 已评分
+                    </Badge>
+                  ) : (
+                    <Badge color="orange" size="sm">
+                      <Clock size={11} /> 待评分
+                    </Badge>
+                  )}
                   <div className={styles.maxMarks}>
                     Max: {submission.assignment.maxMarks} marks
                   </div>
+                  {submission.finalMarks !== undefined && (
+                    <div className={styles.grade}>
+                      成绩: {submission.finalMarks}/{submission.assignment.maxMarks}
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -225,8 +281,17 @@ const LmsGradingPage: React.FC = () => {
               </div>
 
               <div className={styles.submissionActions}>
+                {submission.finalMarks === undefined && submission.aiRubricScores && (
+                  <Button
+                    variant="secondary"
+                    onClick={() => acceptAiMutation.mutate(submission.id)}
+                    disabled={acceptAiMutation.isPending}
+                  >
+                    <Sparkles size={14} /> 接受AI评分
+                  </Button>
+                )}
                 <Button onClick={() => openGradingModal(submission)}>
-                  <Star size={14} /> Grade Submission
+                  <Star size={14} /> {submission.finalMarks !== undefined ? '查看评分' : '评分'}
                 </Button>
               </div>
             </Card>

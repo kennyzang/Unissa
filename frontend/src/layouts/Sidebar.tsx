@@ -197,7 +197,7 @@ const Sidebar = () => {
   })
 
   const isStudentEnrolled = user?.role === 'student' && !!studentProfile
-  const isStudentUnenrolled = user?.role === 'student' && !studentLoading && !studentProfile
+  const isStudentUnenrolled = user?.role === 'student' && !studentLoading && studentProfile === null
 
   const [expanded, setExpanded] = useState<Set<string>>(
     () => new Set(NAV_STRUCTURE.filter(g => g.children).map(g => g.key))

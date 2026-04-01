@@ -47,6 +47,11 @@
 
 // Assignments
 .emptyAssignments { padding: v.$space-8; text-align: center; color: var(--color-gray-4); }
+
+// Tabs
+.tabs { display: flex; gap: v.$space-2; margin-bottom: v.$space-4; border-bottom: 1px solid var(--color-gray-2); }
+.tab { padding: v.$space-3 v.$space-4; background: none; border: none; font-size: v.$font-size-sm; font-weight: v.$font-weight-medium; color: var(--color-gray-5); cursor: pointer; border-bottom: 2px solid transparent; transition: all 0.2s ease; &:hover { color: v.$brand-primary; } &.active { color: v.$brand-primary; border-bottom-color: v.$brand-primary; } }
+
 .assignmentList { display: flex; flex-direction: column; gap: 0; }
 .assignmentItem {
   display: flex;
@@ -65,6 +70,15 @@
 .dueSoon { color: v.$color-warning !important; display: flex; align-items: center; gap: 2px; }
 .assignmentActions { display: flex; gap: v.$space-2; align-items: center; }
 .gradeChip { display: flex; align-items: center; gap: 3px; font-size: v.$font-size-sm; font-weight: v.$font-weight-bold; color: v.$color-success; background: v.$color-success-bg; padding: 3px v.$space-3; border-radius: v.$border-radius; }
+
+// History
+.historyList { display: flex; flex-direction: column; gap: 0; }
+.historyItem { display: flex; align-items: center; gap: v.$space-4; padding: v.$space-4; border-bottom: 1px solid var(--color-gray-2); &:last-child { border-bottom: none; } &:hover { background: var(--color-gray-1); } }
+.historyIcon { width: 36px; height: 36px; background: v.$brand-primary-1; border-radius: v.$border-radius-md; display: flex; align-items: center; justify-content: center; color: v.$brand-primary; flex-shrink: 0; }
+.historyInfo { flex: 1; }
+.historyTitle { font-size: v.$font-size-sm; font-weight: v.$font-weight-semibold; color: var(--color-gray-8); }
+.historyMeta { display: flex; gap: v.$space-3; font-size: v.$font-size-xs; color: var(--color-gray-5); margin-top: 3px; flex-wrap: wrap; }
+.historyStatus { display: flex; gap: v.$space-2; align-items: center; }
 
 // Demo section
 .demoSubmit { display: flex; flex-direction: column; gap: v.$space-3; }
@@ -86,4 +100,20 @@
 .rubricFill { height: 100%; background: linear-gradient(90deg, v.$brand-primary, v.$brand-primary-5); border-radius: 3px; transition: width 0.5s ease; }
 .rubricComment { font-size: v.$font-size-xs; color: var(--color-gray-6); margin: 0; }
 
+// Submit Confirmation Modal
+.confirmationModal { text-align: center; padding: v.$space-6; }
+.successIcon { color: v.$color-success; margin-bottom: v.$space-4; animation: scaleIn 0.3s ease; }
+.confirmationTitle { font-size: v.$font-size-xl; font-weight: v.$font-weight-bold; color: var(--color-gray-8); margin: 0 0 v.$space-2; }
+.confirmationMessage { font-size: v.$font-size-sm; color: var(--color-gray-6); margin: 0 0 v.$space-5; }
+
+.aiSummary { background: v.$brand-primary-1; border-radius: v.$border-radius-lg; padding: v.$space-5; margin-bottom: v.$space-5; }
+.aiSummaryTitle { font-size: v.$font-size-sm; font-weight: v.$font-weight-semibold; color: v.$brand-primary; margin: 0 0 v.$space-3; }
+.aiScoreDisplay { display: flex; align-items: baseline; justify-content: center; gap: 4px; margin-bottom: v.$space-2; }
+.aiScoreValue { font-size: 48px; font-weight: v.$font-weight-bold; color: v.$brand-primary; line-height: 1; }
+.aiScoreLabel { font-size: v.$font-size-lg; color: var(--color-gray-5); }
+.aiSummaryNote { font-size: v.$font-size-xs; color: var(--color-gray-5); margin: 0; }
+
+.confirmationActions { display: flex; gap: v.$space-3; justify-content: center; }
+
 @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes scaleIn { from { transform: scale(0); opacity: 0; } to { transform: scale(1); opacity: 1; } }

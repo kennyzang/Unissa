@@ -191,12 +191,24 @@ router.patch('/applications/:id/decision', authenticate, requireRole('admissions
   if (!app) { res.status(404).json({ success: false, message: 'Application not found' }); return }
 
   // Update applicant status
+  const previousStatus = app.status
   const updated = await prisma.applicant.update({
     where: { id: String(req.params.id) },
     data: {
       status: action,
       officerRemarks: remarks,
       decisionMadeAt: new Date(),
+    },
+  })
+
+  // Record history
+  await prisma.applicantHistory.create({
+    data: {
+      applicantId: app.id,
+      previousStatus,
+      newStatus: action,
+      reason: remarks,
+      changedBy: req.user?.userId,
     },
   })
 
@@ -304,6 +316,100 @@ router.get('/stats', authenticate, requireRole('admissions', 'admin', 'manager')
     prisma.applicant.count({ where: { status: 'waitlisted' } }),
   ])
   res.json({ success: true, data: { total, submitted, underReview, accepted, rejected, waitlisted } })
+})
+
+// PATCH /api/v1/admissions/:id/resubmit — resubmit a rejected application
+router.patch('/:id/resubmit', authenticate, async (req: AuthRequest, res: Response) => {
+  const {
+    fullName, icPassport, dateOfBirth, gender, nationality, email, mobile,
+    homeAddress, highestQualification, previousInstitution, yearOfCompletion,
+    cgpa, intakeId, programmeId, modeOfStudy, scholarshipApplied, scholarshipType,
+    subjectGrades,
+  } = req.body
+
+  const app = await prisma.applicant.findUnique({
+    where: { id: String(req.params.id) },
+    include: { subjectGrades: true },
+  })
+
+  if (!app) {
+    res.status(404).json({ success: false, message: 'Application not found' })
+    return
+  }
+
+  if (app.userId !== req.user?.userId) {
+    res.status(403).json({ success: false, message: 'You can only resubmit your own application' })
+    return
+  }
+
+  if (app.status !== 'rejected') {
+    res.status(400).json({ success: false, message: 'Only rejected applications can be resubmitted' })
+    return
+  }
+
+  const cgpaNum = cgpa !== undefined && cgpa !== null && cgpa !== '' ? Number(cgpa) : null
+  if (cgpaNum !== null && (isNaN(cgpaNum) || cgpaNum < 0 || cgpaNum > 4)) {
+    res.status(400).json({ success: false, message: 'CGPA must be between 0 and 4' })
+    return
+  }
+
+  const previousStatus = app.status
+  const updated = await prisma.applicant.update({
+    where: { id: String(req.params.id) },
+    data: {
+      fullName: fullName ?? app.fullName,
+      icPassport: icPassport ?? app.icPassport,
+      dateOfBirth: dateOfBirth ? new Date(dateOfBirth) : app.dateOfBirth,
+      gender: gender ?? app.gender,
+      nationality: nationality ?? app.nationality,
+      email: email ?? app.email,
+      mobile: mobile ?? app.mobile,
+      homeAddress: homeAddress ?? app.homeAddress,
+      highestQualification: highestQualification ?? app.highestQualification,
+      previousInstitution: previousInstitution ?? app.previousInstitution,
+      yearOfCompletion: yearOfCompletion ? Number(yearOfCompletion) : app.yearOfCompletion,
+      cgpa: cgpaNum,
+      intakeId: intakeId ?? app.intakeId,
+      programmeId: programmeId ?? app.programmeId,
+      modeOfStudy: modeOfStudy ?? app.modeOfStudy,
+      scholarshipApplied: scholarshipApplied !== undefined ? Boolean(scholarshipApplied) : app.scholarshipApplied,
+      scholarshipType: scholarshipApplied ? (scholarshipType ?? app.scholarshipType) : null,
+      status: 'under_review',
+      submittedAt: new Date(),
+      officerRemarks: null,
+      decisionMadeAt: null,
+    },
+  })
+
+  await prisma.applicantHistory.create({
+    data: {
+      applicantId: app.id,
+      previousStatus,
+      newStatus: 'under_review',
+      reason: 'Application resubmitted after rejection',
+      changedBy: req.user?.userId,
+    },
+  })
+
+  if (Array.isArray(subjectGrades) && subjectGrades.length > 0) {
+    await prisma.applicantSubjectGrade.deleteMany({ where: { applicantId: app.id } })
+    for (const g of subjectGrades) {
+      await prisma.applicantSubjectGrade.create({
+        data: {
+          applicantId: app.id,
+          subjectName: String(g.subjectName ?? '').slice(0, 100),
+          grade: String(g.grade ?? '').slice(0, 10),
+          qualificationType: g.qualificationType ?? updated.highestQualification,
+        },
+      })
+    }
+  }
+
+  res.status(200).json({
+    success: true,
+    data: updated,
+    message: 'Application resubmitted successfully. Reference: ' + updated.applicationRef,
+  })
 })
 
 // PATCH /api/v1/admissions/:id/status — simplified status update (test-compatible alias)

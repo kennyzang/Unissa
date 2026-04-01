@@ -47,6 +47,47 @@
   margin: 0;
 }
 
+// ── Filter Bar ───────────────────────────────────────────────
+.filterBar {
+  display: flex;
+  gap: v.$space-2;
+  padding: v.$space-4;
+  background: var(--color-white);
+  border-radius: v.$border-radius-lg;
+  border: 1px solid var(--color-gray-2);
+
+  @media (max-width: v.$bp-md) {
+    flex-wrap: wrap;
+    padding: v.$space-3;
+  }
+}
+
+.filterBtn {
+  display: flex;
+  align-items: center;
+  gap: v.$space-2;
+  padding: v.$space-3 v.$space-4;
+  background: var(--color-gray-1);
+  border: 1px solid var(--color-gray-2);
+  border-radius: v.$border-radius-md;
+  font-size: v.$font-size-sm;
+  font-weight: v.$font-weight-medium;
+  color: var(--color-gray-6);
+  cursor: pointer;
+  transition: all 0.2s ease;
+
+  &:hover {
+    background: var(--color-gray-2);
+    color: var(--color-gray-8);
+  }
+
+  &.active {
+    background: v.$brand-primary-1;
+    border-color: v.$brand-primary;
+    color: v.$brand-primary;
+  }
+}
+
 // ── Empty State ───────────────────────────────────────────────
 .emptyState {
   display: flex;
@@ -138,6 +179,13 @@
   margin-top: v.$space-2;
   font-size: v.$font-size-sm;
   color: var(--color-gray-5);
+}
+
+.grade {
+  margin-top: v.$space-2;
+  font-size: v.$font-size-sm;
+  font-weight: v.$font-weight-semibold;
+  color: v.$color-success;
 }
 
 // ── AI Preview ────────────────────────────────────────────────

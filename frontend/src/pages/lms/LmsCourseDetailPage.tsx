@@ -28,6 +28,13 @@ interface Submission {
   finalMarks?: number
   gradedAt?: string
   aiRubricScores?: string
+  submittedAt?: string
+  assignment?: {
+    id: string
+    title: string
+    maxMarks: number
+    dueDate?: string
+  }
 }
 
 const LmsCourseDetailPage: React.FC = () => {
@@ -41,6 +48,9 @@ const LmsCourseDetailPage: React.FC = () => {
   const [submitModal, setSubmitModal] = useState<Assignment | null>(null)
   const [submissionContent, setSubmissionContent] = useState('')
   const [viewAI, setViewAI] = useState<Submission | null>(null)
+  const [showSubmitConfirmation, setShowSubmitConfirmation] = useState(false)
+  const [lastSubmission, setLastSubmission] = useState<Submission | null>(null)
+  const [activeTab, setActiveTab] = useState<'assignments' | 'history'>('assignments')
 
   const { data: studentProfile } = useQuery({
     queryKey: ['student', 'me'],
@@ -72,6 +82,16 @@ const LmsCourseDetailPage: React.FC = () => {
     },
   })
 
+  const { data: submissionHistory = [] } = useQuery<Submission[]>({
+    queryKey: ['submissions', 'history', offeringId, studentProfile?.id],
+    queryFn: async () => {
+      if (!studentProfile?.id || !offeringId) return []
+      const { data } = await apiClient.get(`/lms/submissions/history/${offeringId}/${studentProfile!.id}`)
+      return data.data ?? []
+    },
+    enabled: !!studentProfile?.id && !!offeringId && activeTab === 'history',
+  })
+
   const submitMutation = useMutation({
     mutationFn: async ({ assignmentId, content }: { assignmentId: string; content: string }) => {
       const { data } = await apiClient.post('/lms/submissions', {
@@ -82,10 +102,10 @@ const LmsCourseDetailPage: React.FC = () => {
       return data
     },
     onSuccess: (data) => {
-      addToast({ type: 'success', message: 'Assignment submitted! AI rubric scores generated.' })
+      setLastSubmission(data.data)
+      setShowSubmitConfirmation(true)
       setSubmitModal(null)
       setSubmissionContent('')
-      setViewAI(data.data)
       qc.invalidateQueries({ queryKey: ['submissions', offeringId] })
     },
     onError: (e: any) => {
@@ -134,8 +154,25 @@ const LmsCourseDetailPage: React.FC = () => {
         </div>
       </div>
 
+      {/* Tabs */}
+      <div className={styles.tabs}>
+        <button
+          className={`${styles.tab} ${activeTab === 'assignments' ? styles.active : ''}`}
+          onClick={() => setActiveTab('assignments')}
+        >
+          作业列表
+        </button>
+        <button
+          className={`${styles.tab} ${activeTab === 'history' ? styles.active : ''}`}
+          onClick={() => setActiveTab('history')}
+        >
+          提交历史
+        </button>
+      </div>
+
       {/* Assignments */}
-      <Card title="Assignments & Assessments">
+      {activeTab === 'assignments' && (
+        <Card title="Assignments & Assessments">
         {assignments.length === 0 ? (
           <div className={styles.emptyAssignments}>No assignments posted yet.</div>
         ) : (
@@ -193,6 +230,45 @@ const LmsCourseDetailPage: React.FC = () => {
           </div>
         )}
       </Card>
+      )}
+
+      {/* Submission History */}
+      {activeTab === 'history' && (
+        <Card title="提交历史">
+          {submissionHistory.length === 0 ? (
+            <div className={styles.emptyAssignments}>暂无提交记录</div>
+          ) : (
+            <div className={styles.historyList}>
+              {submissionHistory.map(sub => (
+                <div key={sub.id} className={styles.historyItem}>
+                  <div className={styles.historyIcon}>
+                    <FileText size={18} />
+                  </div>
+                  <div className={styles.historyInfo}>
+                    <div className={styles.historyTitle}>{sub.assignment?.title}</div>
+                    <div className={styles.historyMeta}>
+                      <span>满分: {sub.assignment?.maxMarks}分</span>
+                      <span>提交时间: {sub.submittedAt ? new Date(sub.submittedAt).toLocaleString('zh-CN') : '未知'}</span>
+                    </div>
+                  </div>
+                  <div className={styles.historyStatus}>
+                    {sub.finalMarks !== undefined ? (
+                      <div className={styles.gradeChip}>
+                        <Star size={13} />
+                        {sub.finalMarks}/{sub.assignment?.maxMarks}
+                      </div>
+                    ) : (
+                      <Badge color="blue" size="sm">
+                        <Clock size={11} /> 待评分
+                      </Badge>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </Card>
+      )}
 
       {/* Submit Modal */}
       {submitModal && (
@@ -247,6 +323,62 @@ const LmsCourseDetailPage: React.FC = () => {
                 return <p>No rubric data available.</p>
               }
             })()}
+          </div>
+        </Modal>
+      )}
+
+      {/* Submit Confirmation Modal */}
+      {showSubmitConfirmation && lastSubmission && (
+        <Modal
+          open
+          title=""
+          onClose={() => setShowSubmitConfirmation(false)}
+          footer={null}
+        >
+          <div className={styles.confirmationModal}>
+            <div className={styles.successIcon}>
+              <CheckCircle size={48} />
+            </div>
+            <h2 className={styles.confirmationTitle}>作业提交成功</h2>
+            <p className={styles.confirmationMessage}>您的作业已成功提交</p>
+            
+            {lastSubmission.aiRubricScores && (
+              <div className={styles.aiSummary}>
+                <h3 className={styles.aiSummaryTitle}>AI评分建议</h3>
+                {(() => {
+                  try {
+                    const scores = JSON.parse(lastSubmission.aiRubricScores)
+                    const avgScore = scores.reduce((sum: number, s: any) => sum + s.ai_score, 0) / scores.length
+                    return (
+                      <div className={styles.aiScoreDisplay}>
+                        <span className={styles.aiScoreValue}>{avgScore.toFixed(1)}</span>
+                        <span className={styles.aiScoreLabel}>/ 10</span>
+                      </div>
+                    )
+                  } catch {
+                    return null
+                  }
+                })()}
+                <p className={styles.aiSummaryNote}>AI评分仅供参考，最终成绩由讲师评定</p>
+              </div>
+            )}
+
+            <div className={styles.confirmationActions}>
+              <Button
+                onClick={() => {
+                  setShowSubmitConfirmation(false)
+                  setViewAI(lastSubmission)
+                }}
+              >
+                查看AI评分详情
+              </Button>
+              <Button
+                variant="secondary"
+                onClick={() => setShowSubmitConfirmation(false)}
+              >
+                返回课程
+              </Button>
+            </div>
           </div>
         </Modal>
       )}

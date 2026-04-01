@@ -213,6 +213,7 @@ model Applicant {
   subjectGrades  ApplicantSubjectGrade[]
   documents      ApplicantDocument[]
   student        Student?
+  history        ApplicantHistory[]
 
   @@map("applicants")
 }
@@ -238,6 +239,19 @@ model ApplicantDocument {
   uploadedAt  DateTime  @default(now())
 
   @@map("applicant_documents")
+}
+
+model ApplicantHistory {
+  id              String   @id @default(cuid())
+  applicantId     String
+  applicant       Applicant @relation(fields: [applicantId], references: [id], onDelete: Cascade)
+  previousStatus  String
+  newStatus       String
+  reason          String?
+  changedBy       String?
+  changedAt       DateTime @default(now())
+
+  @@map("applicant_history")
 }
 
 model Student {

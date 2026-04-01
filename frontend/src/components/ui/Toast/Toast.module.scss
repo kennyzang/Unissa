@@ -2,7 +2,7 @@
 
 .container {
   position: fixed;
-  top: 20px;
+  top: calc(v.$navbar-height + 20px);
   right: 20px;
   z-index: v.$z-toast;
   display: flex;

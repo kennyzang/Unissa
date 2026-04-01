@@ -35,6 +35,12 @@ const EnrolledStudentCard: React.FC = () => {
     },
   })
 
+  useEffect(() => {
+    if (!isLoading && profile) {
+      navigate('/student/profile', { replace: true })
+    }
+  }, [isLoading, profile, navigate])
+
   if (isLoading) {
     return (
       <div style={{ display: 'flex', justifyContent: 'center', padding: '80px 0' }}>
@@ -210,6 +216,7 @@ const PendingApplicationCard: React.FC<{ app: any }> = ({ app }) => {
   const { t } = useTranslation()
   const addToast = useUIStore(s => s.addToast)
   const qc = useQueryClient()
+  const navigate = useNavigate()
 
   const statusColor: Record<string, string> = {
     submitted: 'blue', under_review: 'orange', waitlisted: 'purple',
@@ -236,8 +243,25 @@ const PendingApplicationCard: React.FC<{ app: any }> = ({ app }) => {
     },
   })
 
+  const resubmitMutation = useMutation({
+    mutationFn: (payload: Record<string, unknown>) => apiClient.patch(`/admissions/${app.id}/resubmit`, payload),
+    onSuccess: (res) => {
+      addToast({ type: 'success', message: res.data.message ?? t('admissionApply.resubmitted', { defaultValue: 'Application resubmitted successfully!' }) })
+      qc.invalidateQueries({ queryKey: ['admissions', 'my-application'] })
+      qc.invalidateQueries({ queryKey: ['dashboard', 'kpi'] })
+    },
+    onError: (e: any) => {
+      addToast({ type: 'error', message: e.response?.data?.message ?? t('admissionApply.resubmitFailed', { defaultValue: 'Failed to resubmit application. Please try again.' }) })
+    },
+  })
+
   const isAccepted = app.status === 'accepted'
   const isRejected = app.status === 'rejected'
+
+  const handleResubmit = () => {
+    navigate('/admission/apply')
+    sessionStorage.setItem('admission-apply-resubmit', JSON.stringify(app))
+  }
 
   return (
     <div className={styles.page}>
@@ -428,6 +452,21 @@ const PendingApplicationCard: React.FC<{ app: any }> = ({ app }) => {
             </Button>
           </div>
         )}
+
+        {/* Bottom resubmit button for rejected state */}
+        {isRejected && (
+          <div style={{ marginTop: 24, textAlign: 'center' }}>
+            <Button
+              type="primary"
+              size="large"
+              icon={<LoadingOutlined />}
+              onClick={handleResubmit}
+              style={{ background: '#1890ff', borderColor: '#1890ff', fontWeight: 600, minWidth: 200 }}
+            >
+              {t('admissionApply.resubmitApplication', { defaultValue: 'Resubmit Application' })}
+            </Button>
+          </div>
+        )}
       </Card>
     </div>
   )
@@ -481,6 +520,7 @@ const AdmissionApplyPage: React.FC = () => {
       return saved ? JSON.parse(saved) : {}
     } catch { return {} }
   })
+  const [resubmitData, setResubmitData] = useState<any | null>(null)
   const addToast                  = useUIStore(s => s.addToast)
   const qc                        = useQueryClient()
 
@@ -496,8 +536,41 @@ const AdmissionApplyPage: React.FC = () => {
     if (submitted) {
       sessionStorage.removeItem('admission-apply-step')
       sessionStorage.removeItem('admission-apply-form')
+      sessionStorage.removeItem('admission-apply-resubmit')
     }
   }, [submitted])
+
+  useEffect(() => {
+    try {
+      const resubmit = sessionStorage.getItem('admission-apply-resubmit')
+      if (resubmit) {
+        const app = JSON.parse(resubmit)
+        setResubmitData(app)
+        setFormData({
+          fullName: app.fullName,
+          icPassport: app.icPassport,
+          dateOfBirth: app.dateOfBirth ? dayjs(app.dateOfBirth).format('YYYY-MM-DD') : '',
+          gender: app.gender,
+          nationality: app.nationality,
+          email: app.email,
+          mobile: app.mobile,
+          homeAddress: app.homeAddress,
+          highestQualification: app.highestQualification,
+          previousInstitution: app.previousInstitution,
+          yearOfCompletion: String(app.yearOfCompletion),
+          cgpa: app.cgpa ? String(app.cgpa) : '',
+          programmeId: app.programmeId,
+          intakeId: app.intakeId,
+          modeOfStudy: app.modeOfStudy,
+          scholarshipApplied: app.scholarshipApplied,
+          scholarshipType: app.scholarshipType,
+        })
+        setStep(0)
+      }
+    } catch (e) {
+      console.error('Failed to load resubmit data:', e)
+    }
+  }, [])
 
   // Animate auto-check steps after submission
   useEffect(() => {
@@ -555,8 +628,21 @@ const AdmissionApplyPage: React.FC = () => {
     onError: (e: any) => addToast({ type: 'error', message: e.response?.data?.message ?? t('admissionApply.submissionFailed') }),
   })
 
-  const submitErrorMsg: string | null = submitMutation.isError
-    ? ((submitMutation.error as any)?.response?.data?.message ?? t('admissionApply.submissionFailed'))
+  const resubmitMutation = useMutation({
+    mutationFn: (payload: Record<string, unknown>) => apiClient.patch(`/admissions/${resubmitData?.id}/resubmit`, payload),
+    onSuccess: (res) => {
+      setSubmitted({
+        applicationRef: res.data.data.applicationRef,
+        autoCheckPassed: res.data.autoCheckPassed ?? true,
+      })
+      qc.setQueryData(['admissions', 'my-application'], res.data.data)
+      setResubmitData(null)
+    },
+    onError: (e: any) => addToast({ type: 'error', message: e.response?.data?.message ?? t('admissionApply.submissionFailed') }),
+  })
+
+  const submitErrorMsg: string | null = submitMutation.isError || resubmitMutation.isError
+    ? ((resubmitMutation.error ?? submitMutation.error) as any)?.response?.data?.message ?? t('admissionApply.submissionFailed')
     : null
 
   const form1 = useForm<Step1>({
@@ -743,13 +829,29 @@ const AdmissionApplyPage: React.FC = () => {
   const handleNext1 = form1.handleSubmit(data => { setFormData(p => ({ ...p, ...data })); setStep(1) })
   const handleNext2 = form2.handleSubmit(data => { setFormData(p => ({ ...p, ...data })); setStep(2) })
   const handleNext3 = form3.handleSubmit(data => { setFormData(p => ({ ...p, ...data })); setStep(3) })
-  const handleSubmit = () => submitMutation.mutate({ ...formData })
+  const handleSubmit = () => {
+    if (resubmitData) {
+      resubmitMutation.mutate({ ...formData })
+    } else {
+      submitMutation.mutate({ ...formData })
+    }
+  }
 
   return (
     <div className={styles.page}>
       <div className={styles.header}>
-        <h1 className={styles.pageTitle}>{t('admissionApply.title')}</h1>
-        <p className={styles.pageSub}>{t('admissionApply.subtitle')}</p>
+        <h1 className={styles.pageTitle}>
+          {resubmitData
+            ? t('admissionApply.resubmitTitle', { defaultValue: 'Resubmit Admission Application' })
+            : t('admissionApply.title')
+          }
+        </h1>
+        <p className={styles.pageSub}>
+          {resubmitData
+            ? t('admissionApply.resubmitSubtitle', { defaultValue: 'Update your application details and resubmit for review.' })
+            : t('admissionApply.subtitle')
+          }
+        </p>
       </div>
 
       {/* Steps indicator */}

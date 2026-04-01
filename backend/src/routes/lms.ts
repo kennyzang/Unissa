@@ -63,6 +63,143 @@ router.get('/submissions/pending/:lecturerId', async (req: AuthRequest, res: Res
   res.json({ success: true, data: pendingSubmissions })
 })
 
+// GET /api/v1/lms/submissions/lecturer/:lecturerId
+router.get('/submissions/lecturer/:lecturerId', async (req: AuthRequest, res: Response) => {
+  const { status } = req.query as { status?: 'pending' | 'graded' | 'all' }
+  
+  const staff = await prisma.staff.findFirst({
+    where: { OR: [{ id: req.params.lecturerId }, { staffId: req.params.lecturerId }, { userId: req.params.lecturerId }] },
+  })
+  if (!staff) { res.status(404).json({ success: false, message: 'Lecturer not found' }); return }
+
+  const offerings = await prisma.courseOffering.findMany({
+    where: { lecturerId: staff.id },
+    include: {
+      course: true,
+      assignments: {
+        include: {
+          submissions: {
+            where: status === 'pending' ? { finalMarks: null } : status === 'graded' ? { finalMarks: { not: null } } : undefined,
+            include: {
+              student: { include: { user: { select: { displayName: true } } } },
+            },
+          },
+        },
+      },
+    },
+  })
+
+  const submissions: any[] = []
+  for (const offering of offerings) {
+    for (const assignment of offering.assignments) {
+      for (const submission of assignment.submissions) {
+        submissions.push({
+          ...submission,
+          assignment: { id: assignment.id, title: assignment.title, maxMarks: assignment.maxMarks },
+          offering: { id: offering.id, course: offering.course },
+        })
+      }
+    }
+  }
+
+  res.json({ success: true, data: submissions })
+})
+
+// PATCH /api/v1/lms/submissions/:id/accept-ai
+router.patch('/submissions/:id/accept-ai', async (req: AuthRequest, res: Response) => {
+  const submission = await prisma.submission.findUnique({
+    where: { id: req.params.id },
+    include: {
+      assignment: true,
+      student: true,
+    },
+  })
+
+  if (!submission) {
+    res.status(404).json({ success: false, message: 'Submission not found' })
+    return
+  }
+
+  if (!submission.aiRubricScores) {
+    res.status(400).json({ success: false, message: 'No AI scores available' })
+    return
+  }
+
+  const aiScores: any[] = JSON.parse(submission.aiRubricScores)
+  const avgScore = aiScores.reduce((sum: number, s: any) => sum + s.ai_score, 0) / aiScores.length
+  const finalMarks = Math.round(avgScore * 10)
+
+  const updated = await prisma.submission.update({
+    where: { id: req.params.id },
+    data: {
+      instructorScores: JSON.stringify(aiScores.map((s: any) => ({
+        criterion: s.criterion,
+        ai_score: s.ai_score,
+        ai_comment: s.ai_comment,
+        instructor_score: s.ai_score,
+        instructor_comment: s.ai_comment,
+      }))),
+      finalMarks,
+      gradedAt: new Date(),
+      gradedById: req.user?.userId ?? '',
+    },
+    include: {
+      student: true,
+      assignment: {
+        include: {
+          offering: {
+            include: {
+              course: true,
+              semester: true,
+            },
+          },
+        },
+      },
+    },
+  })
+
+  const gpaRecord = await prisma.studentGpaRecord.findFirst({
+    where: {
+      studentId: submission.studentId,
+      semesterId: submission.assignment.offering.semesterId,
+    },
+  })
+
+  if (gpaRecord) {
+    const totalCredits = gpaRecord.totalCredits + submission.assignment.weightPct ?? 0
+    const currentGpa = gpaRecord.currentGpa
+    const newGpa = ((currentGpa * gpaRecord.totalCredits) + (finalMarks / 10 * (submission.assignment.weightPct ?? 0))) / totalCredits
+
+    await prisma.studentGpaRecord.update({
+      where: { id: gpaRecord.id },
+      data: {
+        totalCredits,
+        currentGpa: newGpa,
+      },
+    })
+  }
+
+  await prisma.notification.create({
+    data: {
+      userId: submission.student.userId,
+      type: 'grade_updated',
+      subject: `Grade updated for ${submission.assignment.title}`,
+      body: `Your grade for ${submission.assignment.title} has been updated to ${finalMarks}/${submission.assignment.maxMarks}. Your current GPA is ${(updated.student.currentCgpa).toFixed(2)}.`,
+      status: 'pending',
+      triggeredByEvent: 'grade_updated',
+    },
+  })
+
+  res.json({
+    success: true,
+    data: {
+      ...updated,
+      currentGpa: updated.student.currentCgpa,
+    },
+    message: 'AI scores accepted and grade confirmed',
+  })
+})
+
 // GET /api/v1/lms/courses/:studentId
 router.get('/courses/:studentId', async (req: AuthRequest, res: Response) => {
   const student = await prisma.student.findFirst({
@@ -145,6 +282,33 @@ router.post('/submissions', async (req: AuthRequest, res: Response) => {
 
   res.status(201).json({ success: true, data: submission, message: 'Submission received' })
 })
+
+// GET /api/v1/lms/submissions/history/:offeringId/:studentId
+  router.get('/submissions/history/:offeringId/:studentId', async (req: AuthRequest, res: Response) => {
+    const { offeringId, studentId } = req.params
+
+    const submissions = await prisma.submission.findMany({
+      where: {
+        studentId,
+        assignment: {
+          offeringId,
+        },
+      },
+      include: {
+        assignment: {
+          select: {
+            id: true,
+            title: true,
+            maxMarks: true,
+            dueDate: true,
+          },
+        },
+      },
+      orderBy: { submittedAt: 'desc' as const },
+    })
+
+    res.json({ success: true, data: submissions })
+  })
 
 // PATCH /api/v1/lms/submissions/:id/grade
 router.patch('/submissions/:id/grade', async (req: AuthRequest, res: Response) => {
