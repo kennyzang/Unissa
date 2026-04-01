@@ -492,7 +492,7 @@ const AdmissionApplyPage: React.FC = () => {
   })
 
   const { data: myApplication, isLoading: appLoading } = useQuery<any>({
-    queryKey: ['admissions', 'my-application'],
+    queryKey: ['admissions', 'my-application', user?.id],
     queryFn: async () => {
       try {
         const { data } = await apiClient.get('/admissions/my-application')
@@ -509,14 +509,14 @@ const AdmissionApplyPage: React.FC = () => {
   })
 
   const [step, setStep]           = useState(() => {
-    const saved = sessionStorage.getItem('admission-apply-step')
+    const saved = sessionStorage.getItem(`admission-apply-step-${user?.id}`)
     return saved ? Number(saved) : 0
   })
   const [submitted, setSubmitted] = useState<{ applicationRef: string; autoCheckPassed: boolean } | null>(null)
   const [checkStep, setCheckStep] = useState(0)
   const [formData, setFormData]   = useState<Partial<Step1 & Step2 & Step3>>(() => {
     try {
-      const saved = sessionStorage.getItem('admission-apply-form')
+      const saved = sessionStorage.getItem(`admission-apply-form-${user?.id}`)
       return saved ? JSON.parse(saved) : {}
     } catch { return {} }
   })
@@ -525,24 +525,28 @@ const AdmissionApplyPage: React.FC = () => {
   const qc                        = useQueryClient()
 
   useEffect(() => {
-    sessionStorage.setItem('admission-apply-step', String(step))
-  }, [step])
-
-  useEffect(() => {
-    sessionStorage.setItem('admission-apply-form', JSON.stringify(formData))
-  }, [formData])
-
-  useEffect(() => {
-    if (submitted) {
-      sessionStorage.removeItem('admission-apply-step')
-      sessionStorage.removeItem('admission-apply-form')
-      sessionStorage.removeItem('admission-apply-resubmit')
+    if (user?.id) {
+      sessionStorage.setItem(`admission-apply-step-${user.id}`, String(step))
     }
-  }, [submitted])
+  }, [step, user?.id])
+
+  useEffect(() => {
+    if (user?.id) {
+      sessionStorage.setItem(`admission-apply-form-${user.id}`, JSON.stringify(formData))
+    }
+  }, [formData, user?.id])
+
+  useEffect(() => {
+    if (submitted && user?.id) {
+      sessionStorage.removeItem(`admission-apply-step-${user.id}`)
+      sessionStorage.removeItem(`admission-apply-form-${user.id}`)
+      sessionStorage.removeItem(`admission-apply-resubmit-${user.id}`)
+    }
+  }, [submitted, user?.id])
 
   useEffect(() => {
     try {
-      const resubmit = sessionStorage.getItem('admission-apply-resubmit')
+      const resubmit = sessionStorage.getItem(`admission-apply-resubmit-${user?.id}`)
       if (resubmit) {
         const app = JSON.parse(resubmit)
         setResubmitData(app)
@@ -570,7 +574,7 @@ const AdmissionApplyPage: React.FC = () => {
     } catch (e) {
       console.error('Failed to load resubmit data:', e)
     }
-  }, [])
+  }, [user?.id])
 
   // Animate auto-check steps after submission
   useEffect(() => {

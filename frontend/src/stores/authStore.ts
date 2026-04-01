@@ -12,9 +12,12 @@ interface AuthStore {
 }
 
 const clearSessionStorage = () => {
-  sessionStorage.removeItem('admission-apply-step')
-  sessionStorage.removeItem('admission-apply-form')
-  sessionStorage.removeItem('admission-apply-resubmit')
+  const keys = Object.keys(sessionStorage)
+  keys.forEach(key => {
+    if (key.startsWith('admission-apply-')) {
+      sessionStorage.removeItem(key)
+    }
+  })
 }
 
 export const useAuthStore = create<AuthStore>()(
