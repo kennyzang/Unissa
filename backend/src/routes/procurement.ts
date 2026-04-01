@@ -5,6 +5,12 @@ import { authenticate, requireRole, AuthRequest } from '../middleware/auth'
 const router = Router()
 router.use(authenticate)
 
+// GET /api/v1/procurement/categories
+router.get('/categories', async (_req: AuthRequest, res: Response) => {
+  const categories = await prisma.itemCategory.findMany({ orderBy: { name: 'asc' } })
+  res.json({ success: true, data: categories })
+})
+
 // GET /api/v1/procurement/pr
 router.get('/pr', async (req: AuthRequest, res: Response) => {
   const { status, page = '1', pageSize = '20' } = req.query as Record<string, string>
@@ -55,12 +61,24 @@ router.get('/pr/:id', async (req: AuthRequest, res: Response) => {
 router.post('/pr', requireRole('manager', 'admin'), async (req: AuthRequest, res: Response) => {
   const body = req.body as {
     itemDescription: string; quantity: number; estimatedUnitPrice: number
-    glCodeId: string; requiredByDate: string; departmentId: string; itemCategoryId?: string
+    glCodeId: string; requiredByDate: string; departmentId: string
+    itemCategoryId?: string; productId?: string
   }
 
   // Get requestor staff record
   const staff = await prisma.staff.findUnique({ where: { userId: req.user!.userId } })
   if (!staff) { res.status(400).json({ success: false, message: 'Staff record not found' }); return }
+
+  // Resolve itemDescription from product if productId supplied
+  let itemDescription = body.itemDescription
+  let itemCategoryId  = body.itemCategoryId
+  if (body.productId) {
+    const product = await prisma.product.findUnique({ where: { id: body.productId } })
+    if (!product) { res.status(400).json({ success: false, message: 'Selected product not found' }); return }
+    if (!product.isActive) { res.status(400).json({ success: false, message: 'Selected product is not active' }); return }
+    itemDescription = product.name
+    itemCategoryId  = product.categoryId ?? itemCategoryId
+  }
 
   const totalAmount = body.quantity * body.estimatedUnitPrice
 
@@ -87,8 +105,9 @@ router.post('/pr', requireRole('manager', 'admin'), async (req: AuthRequest, res
       prNumber,
       requestorId: staff.id,
       departmentId: body.departmentId ?? staff.departmentId,
-      itemCategoryId: body.itemCategoryId,
-      itemDescription: body.itemDescription,
+      itemCategoryId,
+      productId: body.productId,
+      itemDescription,
       quantity: body.quantity,
       estimatedUnitPrice: body.estimatedUnitPrice,
       totalAmount,

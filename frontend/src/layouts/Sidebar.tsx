@@ -96,6 +96,7 @@ const NAV_STRUCTURE: NavGroup[] = [
     children: [
       { key: 'pr',        labelKey: 'nav.procurementApplication', path: '/procurement/requests',  icon: '📝', roles: ['finance'] },
       { key: 'approvals', labelKey: 'nav.procurementApproval',    path: '/procurement/approvals', icon: '✅', roles: ['finance'] },
+      { key: 'products',  labelKey: 'nav.productCatalog',         path: '/procurement/products',  icon: '📦', roles: ['finance'] },
       { key: 'anomalies', labelKey: 'nav.procurementAnomaly',     path: '/procurement/anomalies', icon: '⚠️', roles: ['finance'] },
     ],
   },
@@ -110,6 +111,7 @@ const NAV_STRUCTURE: NavGroup[] = [
     children: [
       { key: 'pr',        labelKey: 'nav.procurementApplication', path: '/procurement/requests',  icon: '📝', roles: ['manager'] },
       { key: 'approvals', labelKey: 'nav.procurementApproval',    path: '/procurement/approvals', icon: '✅', roles: ['manager'] },
+      { key: 'products',  labelKey: 'nav.productCatalog',         path: '/procurement/products',  icon: '📦', roles: ['manager'] },
     ],
   },
   {
@@ -154,6 +156,7 @@ const NAV_STRUCTURE: NavGroup[] = [
     roles: ['admin'],
     children: [
       { key: 'approvals', labelKey: 'nav.procurementApprovalCenter', path: '/procurement/approvals', icon: '✅', roles: ['admin'] },
+      { key: 'products',  labelKey: 'nav.productCatalog',            path: '/procurement/products',  icon: '📦', roles: ['admin'] },
       { key: 'anomalies', labelKey: 'nav.procurementAnomalyControl', path: '/procurement/anomalies', icon: '⚠️', roles: ['admin'] },
     ],
   },

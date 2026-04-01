@@ -34,8 +34,33 @@
 .prForm { display: flex; flex-direction: column; gap: v.$space-4; }
 .formRow { display: grid; grid-template-columns: 1fr 1fr; gap: v.$space-3; }
 .totalPreview { font-size: v.$font-size-sm; background: v.$color-info-bg; border-radius: v.$border-radius; padding: v.$space-3; }
+.totalWarning { background: v.$color-warning-bg; border: 1px solid #{v.$color-warning}40; }
 .tenderNote { color: v.$color-warning; font-weight: v.$font-weight-medium; }
 .formActions { display: flex; justify-content: flex-end; gap: v.$space-2; padding-top: v.$space-2; }
+
+// Validation rules banner
+.validationRules {
+  background: var(--color-gray-1);
+  border: 1px solid var(--color-gray-3);
+  border-radius: v.$border-radius-md;
+  padding: v.$space-3 v.$space-4;
+  margin-bottom: v.$space-1;
+}
+.rulesTitle { font-size: v.$font-size-xs; font-weight: v.$font-weight-semibold; color: var(--color-gray-6); text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: v.$space-2; }
+.rulesList { margin: 0; padding-left: v.$space-4; display: flex; flex-direction: column; gap: v.$space-1; }
+.rulesList li { font-size: v.$font-size-xs; color: var(--color-gray-7); }
+.ruleField { font-weight: v.$font-weight-semibold; color: var(--color-gray-8); }
+.ruleTender { color: v.$color-warning; font-weight: v.$font-weight-medium; font-size: v.$font-size-xs; }
+
+// Product info card
+.productInfo {
+  display: flex; flex-wrap: wrap; gap: v.$space-2; align-items: center;
+  background: #f0f9ff; border: 1px solid #bae6fd; border-radius: v.$border-radius-md;
+  padding: v.$space-2 v.$space-3; font-size: v.$font-size-xs;
+}
+.productCode { font-family: monospace; background: white; border: 1px solid #bae6fd; border-radius: 3px; padding: 1px v.$space-2; font-weight: v.$font-weight-semibold; color: v.$brand-primary; }
+.productUnit { color: var(--color-gray-6); }
+.productPrice { font-weight: v.$font-weight-semibold; color: v.$color-success; margin-left: auto; }
 
 // PR detail
 .prDetail { display: flex; flex-direction: column; gap: v.$space-5; }

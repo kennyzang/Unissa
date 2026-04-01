@@ -38,6 +38,7 @@ interface PR {
 }
 
 interface GlCode { id: string; code: string; description: string; availableBalance: number }
+interface Product { id: string; code: string; name: string; unit: string; defaultUnitPrice: number; category?: { name: string } }
 
 const STATUS_COLOR: Record<string, 'blue' | 'green' | 'red' | 'orange' | 'gray' | 'purple'> = {
   draft:            'gray',
@@ -70,11 +71,16 @@ const ProcurementPRPage: React.FC = () => {
   const [viewPR, setViewPR] = useState<PR | null>(null)
 
   const prSchema = z.object({
-    itemDescription: z.string().min(5, t('procurementPR.itemDescription') + ' required'),
-    quantity: z.coerce.number().min(1, t('procurementPR.quantity') + ' must be at least 1'),
-    estimatedUnitPrice: z.coerce.number().min(0.01, t('procurementPR.unitPrice') + ' required'),
-    glCodeId: z.string().min(1, t('procurementPR.glCode') + ' required'),
-    requiredByDate: z.string().min(1, t('procurementPR.requiredBy') + ' needed'),
+    productId: z.string().min(1, t('procurementPR.validation.productRequired')),
+    quantity: z.coerce
+      .number({ invalid_type_error: t('procurementPR.validation.quantityNumber') })
+      .int(t('procurementPR.validation.quantityInt'))
+      .min(1, t('procurementPR.validation.quantityMin')),
+    estimatedUnitPrice: z.coerce
+      .number({ invalid_type_error: t('procurementPR.validation.priceNumber') })
+      .min(0.01, t('procurementPR.validation.priceMin')),
+    glCodeId: z.string().min(1, t('procurementPR.validation.glCodeRequired')),
+    requiredByDate: z.string().min(1, t('procurementPR.validation.dateRequired')),
     departmentId: z.string().optional(),
   })
   type PRForm = z.infer<typeof prSchema>
@@ -95,16 +101,46 @@ const ProcurementPRPage: React.FC = () => {
     },
   })
 
-  const { register, handleSubmit, watch, reset, control, formState: { errors } } = useForm<PRForm>({
+  const { data: products = [] } = useQuery<Product[]>({
+    queryKey: ['products'],
+    queryFn: async () => {
+      const { data } = await apiClient.get('/products')
+      return data.data
+    },
+  })
+
+  const { handleSubmit, watch, reset, control, setValue, formState: { errors } } = useForm<PRForm>({
     resolver: zodResolver(prSchema),
   })
 
-  const qty   = watch('quantity') ?? 0
-  const price = watch('estimatedUnitPrice') ?? 0
-  const total = qty * price
+  const qty       = watch('quantity') ?? 0
+  const price     = watch('estimatedUnitPrice') ?? 0
+  const productId = watch('productId')
+  const total     = qty * price
+
+  // Group products by category for display
+  const productOptions = products.map(p => ({
+    value: p.id,
+    label: `[${p.code}] ${p.name} — ${p.unit} (BND ${p.defaultUnitPrice.toLocaleString()})`,
+  }))
+
+  const handleProductChange = (id: string | number) => {
+    const selected = products.find(p => p.id === String(id))
+    if (selected) {
+      setValue('estimatedUnitPrice', selected.defaultUnitPrice, { shouldValidate: true })
+    }
+  }
 
   const createMutation = useMutation({
-    mutationFn: (form: PRForm) => apiClient.post('/procurement/pr', form),
+    mutationFn: (form: PRForm) => {
+      const selectedProduct = products.find(p => p.id === form.productId)
+      return apiClient.post('/procurement/pr', {
+        ...form,
+        itemDescription: selectedProduct?.name ?? '',
+        itemCategoryId: selectedProduct?.category ? undefined : undefined,
+        productId: form.productId,
+      })
+    },
     onSuccess: (res) => {
       addToast({ type: 'success', message: res.data.message ?? t('procurementPR.prSubmitted') })
       setCreateModal(false)
@@ -150,6 +186,8 @@ const ProcurementPRPage: React.FC = () => {
   const canCreate = user?.role === 'manager' || user?.role === 'admin'
   const SUMMARY_STATUSES = ['submitted', 'dept_approved', 'finance_approved', 'converted_to_po'] as const
 
+  const selectedProduct = products.find(p => p.id === productId)
+
   return (
     <div className={styles.page}>
       <div className={styles.header}>
@@ -188,18 +226,91 @@ const ProcurementPRPage: React.FC = () => {
         onClose={() => { setCreateModal(false); reset() }}
         footer={null}
       >
+        {/* Validation rules banner */}
+        <div className={styles.validationRules}>
+          <div className={styles.rulesTitle}>{t('procurementPR.rulesTitle')}</div>
+          <ul className={styles.rulesList}>
+            <li><span className={styles.ruleField}>{t('procurementPR.product')}:</span> {t('procurementPR.rules.product')}</li>
+            <li><span className={styles.ruleField}>{t('procurementPR.quantity')}:</span> {t('procurementPR.rules.quantity')}</li>
+            <li><span className={styles.ruleField}>{t('procurementPR.unitPrice')}:</span> {t('procurementPR.rules.unitPrice')}</li>
+            <li><span className={styles.ruleField}>{t('procurementPR.glCode')}:</span> {t('procurementPR.rules.glCode')}</li>
+            <li><span className={styles.ruleField}>{t('procurementPR.requiredBy')}:</span> {t('procurementPR.rules.requiredBy')}</li>
+            <li><span className={styles.ruleTender}>{t('procurementPR.rules.tenderLimit')}</span></li>
+          </ul>
+        </div>
+
         <form onSubmit={handleSubmit(d => createMutation.mutate(d))} className={styles.prForm}>
-          <Input label={t('procurementPR.itemDescription')} required {...register('itemDescription')} error={errors.itemDescription?.message} />
+          {/* Product selector */}
+          <Controller
+            control={control}
+            name="productId"
+            render={({ field }) => (
+              <Select
+                label={t('procurementPR.product')}
+                required
+                value={field.value}
+                onChange={val => { field.onChange(val); handleProductChange(val) }}
+                error={errors.productId?.message}
+                hint={t('procurementPR.hints.product')}
+                placeholder={t('procurementPR.productPlaceholder')}
+                options={productOptions}
+              />
+            )}
+          />
+
+          {/* Selected product info card */}
+          {selectedProduct && (
+            <div className={styles.productInfo}>
+              <span className={styles.productCode}>{selectedProduct.code}</span>
+              <span>{selectedProduct.name}</span>
+              <span className={styles.productUnit}>{t('procurementPR.unitLabel')}: {selectedProduct.unit}</span>
+              <span className={styles.productPrice}>{t('procurementPR.defaultPrice')}: BND {selectedProduct.defaultUnitPrice.toLocaleString()}</span>
+            </div>
+          )}
+
           <div className={styles.formRow}>
-            <Input label={t('procurementPR.quantity')} type="number" required {...register('quantity')} error={errors.quantity?.message} />
-            <Input label={t('procurementPR.unitPrice')} type="number" step="0.01" required {...register('estimatedUnitPrice')} error={errors.estimatedUnitPrice?.message} />
+            <Controller
+              control={control}
+              name="quantity"
+              render={({ field }) => (
+                <Input
+                  label={t('procurementPR.quantity')}
+                  type="number"
+                  required
+                  value={field.value ?? ''}
+                  onChange={field.onChange}
+                  onBlur={field.onBlur}
+                  error={errors.quantity?.message}
+                  hint={t('procurementPR.hints.quantity')}
+                />
+              )}
+            />
+            <Controller
+              control={control}
+              name="estimatedUnitPrice"
+              render={({ field }) => (
+                <Input
+                  label={t('procurementPR.unitPrice')}
+                  type="number"
+                  step="0.01"
+                  required
+                  value={field.value ?? ''}
+                  onChange={field.onChange}
+                  onBlur={field.onBlur}
+                  error={errors.estimatedUnitPrice?.message}
+                  hint={t('procurementPR.hints.unitPrice')}
+                />
+              )}
+            />
           </div>
+
           {total > 0 && (
-            <div className={styles.totalPreview}>
-              {t('procurementPR.total')} <strong>BND {total.toLocaleString()}</strong>
+            <div className={`${styles.totalPreview} ${total >= 2000 ? styles.totalWarning : ''}`}>
+              {t('procurementPR.total')} <strong>BND {total.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</strong>
               {total >= 2000 && <span className={styles.tenderNote}> ⚠ {t('procurementPR.tenderNote')}</span>}
             </div>
           )}
+
           <Controller
             control={control}
             name="glCodeId"
@@ -210,6 +321,8 @@ const ProcurementPRPage: React.FC = () => {
                 value={field.value}
                 onChange={val => field.onChange(val)}
                 error={errors.glCodeId?.message}
+                hint={t('procurementPR.hints.glCode')}
+                placeholder={t('procurementPR.glCodePlaceholder')}
                 options={glCodes.map(g => ({
                   value: g.id,
                   label: `${g.code} – ${g.description} (BND ${g.availableBalance?.toLocaleString()} ${t('procurementPR.available')})`,
@@ -217,10 +330,27 @@ const ProcurementPRPage: React.FC = () => {
               />
             )}
           />
-          <Input label={t('procurementPR.requiredBy')} type="date" required {...register('requiredByDate')} error={errors.requiredByDate?.message} />
+
+          <Controller
+            control={control}
+            name="requiredByDate"
+            render={({ field }) => (
+              <Input
+                label={t('procurementPR.requiredBy')}
+                type="date"
+                required
+                value={field.value ?? ''}
+                onChange={field.onChange}
+                onBlur={field.onBlur}
+                error={errors.requiredByDate?.message}
+                hint={t('procurementPR.hints.requiredBy')}
+              />
+            )}
+          />
+
           <div className={styles.formActions}>
             <Button variant="secondary" type="button" onClick={() => { setCreateModal(false); reset() }}>{t('procurementPR.cancelBtn')}</Button>
-            <Button type="submit" loading={createMutation.isPending} icon={<FileText size={14} />}>{t('procurementPR.submitPR')}</Button>
+            <Button type="submit" loading={createMutation.isPending} icon={<FileText size={14} />} disabled={total >= 2000}>{t('procurementPR.submitPR')}</Button>
           </div>
         </form>
       </Modal>

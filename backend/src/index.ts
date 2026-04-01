@@ -31,6 +31,7 @@ import hrRoutes from './routes/hr'
 import researchRoutes from './routes/research'
 import notificationsRoutes from './routes/notifications'
 import adminRoutes from './routes/admin'
+import productsRoutes from './routes/products'
 import { errorHandler, notFound } from './middleware/errorHandler'
 
 const app = express()
@@ -74,6 +75,7 @@ app.use('/api/v1/hr',            hrRoutes)
 app.use('/api/v1/research',     researchRoutes)
 app.use('/api/v1/notifications', notificationsRoutes)
 app.use('/api/v1/admin',         adminRoutes)
+app.use('/api/v1/products',      productsRoutes)
 
 // API docs
 app.get('/api-docs', (_req, res) => {

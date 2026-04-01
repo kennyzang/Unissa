@@ -54,6 +54,7 @@ const AttendancePage           = lazy(() => import('@/pages/lms/AttendancePage')
 const QRCodeScanPage           = lazy(() => import('@/pages/lms/QRCodeScanPage'))
 const ProcurementPRPage        = lazy(() => import('@/pages/procurement/ProcurementPRPage'))
 const ApprovalInboxPage        = lazy(() => import('@/pages/procurement/ApprovalInboxPage'))
+const ProductsPage             = lazy(() => import('@/pages/procurement/ProductsPage'))
 const ProcurementAnomaliesPage = lazy(() => import('@/pages/ai/ProcurementAnomaliesPage'))
 const HrStaffPage              = lazy(() => import('@/pages/hr/HrStaffPage'))
 const LeaveManagementPage      = lazy(() => import('@/pages/hr/LeaveManagementPage'))
@@ -104,6 +105,7 @@ export const router = createBrowserRouter([
       // Procurement
       { path: 'procurement/requests',   element: r(['manager','finance','admin'], <ProcurementPRPage />) },
       { path: 'procurement/approvals',  element: r(['manager','finance','admin'], <ApprovalInboxPage />) },
+      { path: 'procurement/products',   element: r(['manager','finance','admin'], <ProductsPage />) },
       { path: 'procurement/anomalies',  element: r(['finance','admin'], <ProcurementAnomaliesPage />) },
 
       // HR

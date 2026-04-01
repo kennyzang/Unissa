@@ -589,8 +589,27 @@ model ItemCategory {
   vendors            Vendor[]
   vendorPriceHistory VendorPriceHistory[]
   purchaseRequests   PurchaseRequest[]
+  products           Product[]
 
   @@map("item_categories")
+}
+
+model Product {
+  id               String   @id @default(cuid())
+  code             String   @unique
+  name             String
+  description      String?
+  unit             String   @default("pcs")
+  defaultUnitPrice Float
+  categoryId       String?
+  category         ItemCategory? @relation(fields: [categoryId], references: [id])
+  isActive         Boolean  @default(true)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  purchaseRequests PurchaseRequest[]
+
+  @@map("products")
 }
 
 model Vendor {
@@ -635,7 +654,9 @@ model PurchaseRequest {
   department                   Department @relation(fields: [departmentId], references: [id])
   itemCategoryId               String?
   itemCategory                 ItemCategory? @relation(fields: [itemCategoryId], references: [id])
-  itemDescription              String  
+  productId                    String?
+  product                      Product?      @relation(fields: [productId], references: [id])
+  itemDescription              String
   quantity                     Int
   estimatedUnitPrice           Float
   totalAmount                  Float

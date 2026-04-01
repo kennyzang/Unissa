@@ -770,6 +770,24 @@ async function main() {
   const catOFF  = await upsertCat({ code: 'OFF-SUP', name: 'Office Supplies' })
   const catFAC  = await upsertCat({ code: 'FAC-EQP', name: 'Facilities Equipment' })
 
+  // ── Products ──────────────────────────────────────────────────
+  await upsertProduct({ code: 'IT-001', name: 'Laptop Computer',           unit: 'unit', defaultUnitPrice: 1200, categoryId: catIT.id,   description: 'Standard business laptop 15"' })
+  await upsertProduct({ code: 'IT-002', name: 'Desktop Computer',          unit: 'unit', defaultUnitPrice: 900,  categoryId: catIT.id,   description: 'Office desktop workstation' })
+  await upsertProduct({ code: 'IT-003', name: 'Network Switch (24-port)',  unit: 'unit', defaultUnitPrice: 450,  categoryId: catIT.id,   description: '24-port managed network switch' })
+  await upsertProduct({ code: 'IT-004', name: 'Wireless Access Point',    unit: 'unit', defaultUnitPrice: 280,  categoryId: catIT.id,   description: 'Enterprise wireless access point' })
+  await upsertProduct({ code: 'IT-005', name: 'Projector',                unit: 'unit', defaultUnitPrice: 750,  categoryId: catIT.id,   description: 'Full HD classroom projector' })
+  await upsertProduct({ code: 'IT-006', name: 'Laser Printer',            unit: 'unit', defaultUnitPrice: 320,  categoryId: catIT.id,   description: 'A4 monochrome laser printer' })
+  await upsertProduct({ code: 'FN-001', name: 'Ergonomic Office Chair',   unit: 'unit', defaultUnitPrice: 120,  categoryId: catFURN.id, description: 'Height-adjustable ergonomic chair' })
+  await upsertProduct({ code: 'FN-002', name: 'Executive Office Chair',   unit: 'unit', defaultUnitPrice: 380,  categoryId: catFURN.id, description: 'High-back executive leather chair' })
+  await upsertProduct({ code: 'FN-003', name: 'Office Desk (1.2m)',       unit: 'unit', defaultUnitPrice: 250,  categoryId: catFURN.id, description: '1.2m standard office desk' })
+  await upsertProduct({ code: 'FN-004', name: 'Filing Cabinet (3-drawer)','unit': 'unit', defaultUnitPrice: 180, categoryId: catFURN.id, description: '3-drawer metal filing cabinet' })
+  await upsertProduct({ code: 'OS-001', name: 'A4 Paper (Box)',           unit: 'box',  defaultUnitPrice: 22,   categoryId: catOFF.id,  description: '5 reams A4 80gsm copy paper' })
+  await upsertProduct({ code: 'OS-002', name: 'Stationery Pack',          unit: 'set',  defaultUnitPrice: 45,   categoryId: catOFF.id,  description: 'Monthly office stationery bundle' })
+  await upsertProduct({ code: 'OS-003', name: 'Whiteboard Marker Set',    unit: 'set',  defaultUnitPrice: 12,   categoryId: catOFF.id,  description: 'Assorted colour whiteboard markers' })
+  await upsertProduct({ code: 'OS-004', name: 'Toner Cartridge',          unit: 'unit', defaultUnitPrice: 85,   categoryId: catOFF.id,  description: 'Laser printer toner cartridge' })
+  await upsertProduct({ code: 'FC-001', name: 'Air Conditioner (1.5HP)',  unit: 'unit', defaultUnitPrice: 960,  categoryId: catFAC.id,  description: 'Split-type air conditioner 1.5HP' })
+  await upsertProduct({ code: 'FC-002', name: 'Water Dispenser',          unit: 'unit', defaultUnitPrice: 280,  categoryId: catFAC.id,  description: 'Hot and cold water dispenser' })
+
   // ── Vendors ───────────────────────────────────────────────────
   const vTechMart   = await upsertVendor({ name: 'TechMart BN',          cat: catIT.id,   email: 'sales@techmart.com.bn' })
   const vOffSupplies= await upsertVendor({ name: 'Office Supplies Co.',   cat: catOFF.id,  email: 'info@officesupplies.com.bn' })
@@ -1143,6 +1161,14 @@ async function upsertGl(g: { code: string; desc: string; deptId: string; budget:
 
 async function upsertCat(c: { code: string; name: string }) {
   return prisma.itemCategory.upsert({ where: { code: c.code }, create: c, update: {} })
+}
+
+async function upsertProduct(p: { code: string; name: string; unit: string; defaultUnitPrice: number; categoryId: string; description?: string }) {
+  return prisma.product.upsert({
+    where: { code: p.code },
+    create: p,
+    update: { name: p.name, defaultUnitPrice: p.defaultUnitPrice, unit: p.unit, description: p.description },
+  })
 }
 
 async function upsertVendor(v: { name: string; cat: string; email: string }) {
