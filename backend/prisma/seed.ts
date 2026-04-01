@@ -299,6 +299,9 @@ async function main() {
     roomId: roomLH_A.id,
   })
 
+  // ── Clean up existing Noor applicant for clean seed ───────────
+  await prisma.applicant.deleteMany({ where: { userId: uNoor.id } })
+
   // ── Applicant: Noor ──────────────────────────────────────────
   const applicantNoor = await prisma.applicant.upsert({
     where: { icPassport: '00-123456' },
@@ -390,6 +393,27 @@ async function main() {
   await prisma.student.deleteMany({ where: { userId: uZara.id } })
   await prisma.notification.deleteMany({ where: { userId: uZara.id } })
   await prisma.applicant.deleteMany({ where: { userId: uZara.id } })
+
+  // ── Clean up existing new student records for clean seed ───────
+  const newStudentUsernames = ['ali', 'fatimah', 'ahmad', 'aisyah', 'mohd', 'siti', 'hassan', 'nor', 'osman', 'halimah', 'rashid', 'zahra']
+  for (const username of newStudentUsernames) {
+    const user = await prisma.user.findUnique({ where: { username } })
+    if (user) {
+      const student = await prisma.student.findFirst({ where: { userId: user.id } })
+      if (student) {
+        await prisma.studentGpaRecord.deleteMany({ where: { studentId: student.id } })
+        await prisma.studentRiskScore.deleteMany({ where: { studentId: student.id } })
+        await prisma.attendanceRecord.deleteMany({ where: { studentId: student.id } })
+        await prisma.submission.deleteMany({ where: { studentId: student.id } })
+        await prisma.feeInvoice.deleteMany({ where: { studentId: student.id } })
+        await prisma.enrolment.deleteMany({ where: { studentId: student.id } })
+        await prisma.libraryAccount.deleteMany({ where: { studentId: student.id } })
+      }
+      await prisma.student.deleteMany({ where: { userId: user.id } })
+      await prisma.notification.deleteMany({ where: { userId: user.id } })
+      await prisma.applicant.deleteMany({ where: { userId: user.id } })
+    }
+  }
 
   // ── 11 Additional Students for Risk Analytics Demo ────────────
   const riskStudents = []
