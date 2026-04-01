@@ -19,6 +19,8 @@ import express from 'express'
 import cors from 'cors'
 import helmet from 'helmet'
 import morgan from 'morgan'
+import path from 'path'
+import fs from 'fs'
 import authRoutes from './routes/auth'
 import dashboardRoutes from './routes/dashboard'
 import studentRoutes from './routes/students'
@@ -36,6 +38,12 @@ import { errorHandler, notFound } from './middleware/errorHandler'
 
 const app = express()
 const PORT = process.env.PORT ?? 4000
+
+// Ensure uploads directory exists
+const uploadsDir = path.join(process.cwd(), 'uploads')
+if (!fs.existsSync(uploadsDir)) {
+  fs.mkdirSync(uploadsDir, { recursive: true })
+}
 
 // Security
 app.use(helmet({ contentSecurityPolicy: false }))
@@ -55,6 +63,9 @@ app.use(cors({
 // Parsing
 app.use(express.json({ limit: '10mb' }))
 app.use(express.urlencoded({ extended: true }))
+
+// Serve static files from uploads directory
+app.use('/uploads', express.static(uploadsDir))
 
 // Logging
 if (process.env.NODE_ENV !== 'test') app.use(morgan('dev'))

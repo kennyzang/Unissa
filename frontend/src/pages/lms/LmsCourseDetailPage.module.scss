@@ -71,6 +71,18 @@
 .assignmentActions { display: flex; gap: v.$space-2; align-items: center; }
 .gradeChip { display: flex; align-items: center; gap: 3px; font-size: v.$font-size-sm; font-weight: v.$font-weight-bold; color: v.$color-success; background: v.$color-success-bg; padding: 3px v.$space-3; border-radius: v.$border-radius; }
 
+.submissionStatus {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: v.$font-size-xs;
+  color: v.$color-success;
+  margin-top: 4px;
+  background: v.$color-success-bg;
+  padding: 2px v.$space-2;
+  border-radius: v.$border-radius;
+}
+
 // History
 .historyList { display: flex; flex-direction: column; gap: 0; }
 .historyItem { display: flex; align-items: center; gap: v.$space-4; padding: v.$space-4; border-bottom: 1px solid var(--color-gray-2); &:last-child { border-bottom: none; } &:hover { background: var(--color-gray-1); } }
@@ -79,6 +91,26 @@
 .historyTitle { font-size: v.$font-size-sm; font-weight: v.$font-weight-semibold; color: var(--color-gray-8); }
 .historyMeta { display: flex; gap: v.$space-3; font-size: v.$font-size-xs; color: var(--color-gray-5); margin-top: 3px; flex-wrap: wrap; }
 .historyStatus { display: flex; gap: v.$space-2; align-items: center; }
+
+.historyContent {
+  font-size: v.$font-size-xs;
+  color: var(--color-gray-6);
+  margin-top: 4px;
+  line-height: 1.4;
+}
+
+.studentName {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: v.$font-size-xs;
+  color: v.$brand-primary;
+  font-weight: v.$font-weight-medium;
+  margin-bottom: 4px;
+  padding: 2px v.$space-2;
+  background: v.$brand-primary-1;
+  border-radius: v.$border-radius;
+}
 
 // Demo section
 .demoSubmit { display: flex; flex-direction: column; gap: v.$space-3; }
@@ -90,15 +122,156 @@
 .submitTextarea { width: 100%; border: 1px solid var(--color-gray-3); border-radius: v.$border-radius; padding: v.$space-3; font-size: v.$font-size-sm; font-family: v.$font-family; resize: vertical; outline: none; box-sizing: border-box; &:focus { border-color: v.$brand-primary; } }
 .aiNote { font-size: v.$font-size-xs; color: var(--color-gray-5); background: var(--color-gray-1); padding: v.$space-3; border-radius: v.$border-radius; margin: v.$space-3 0 0; }
 
+// File Upload
+.fileUpload {
+  position: relative;
+  margin: v.$space-3 0;
+}
+
+.fileInput {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  cursor: pointer;
+  z-index: 2;
+}
+
+.fileButton {
+  display: flex;
+  align-items: center;
+  gap: v.$space-2;
+  background: var(--color-gray-1);
+  border: 2px dashed var(--color-gray-3);
+  border-radius: v.$border-radius-lg;
+  padding: v.$space-4;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  
+  &:hover {
+    border-color: v.$brand-primary;
+    background: v.$brand-primary-1;
+  }
+  
+  span {
+    font-size: v.$font-size-sm;
+    color: var(--color-gray-6);
+  }
+}
+
+.filesList {
+  display: flex;
+  flex-direction: column;
+  gap: v.$space-2;
+  margin: v.$space-3 0;
+}
+
+.fileItem {
+  display: flex;
+  align-items: center;
+  gap: v.$space-3;
+  padding: v.$space-3;
+  background: var(--color-gray-1);
+  border-radius: v.$border-radius-md;
+  font-size: v.$font-size-sm;
+}
+
+.fileName {
+  flex: 1;
+  color: var(--color-gray-8);
+  font-weight: v.$font-weight-medium;
+}
+
+.fileSize {
+  color: var(--color-gray-5);
+  font-size: v.$font-size-xs;
+  flex-shrink: 0;
+}
+
+.removeFile {
+  width: 20px;
+  height: 20px;
+  border: none;
+  background: var(--color-gray-3);
+  border-radius: 50%;
+  color: var(--color-gray-6);
+  font-size: 14px;
+  font-weight: bold;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  
+  &:hover {
+    background: v.$color-danger;
+    color: white;
+  }
+}
+
+.fileErrors {
+  display: flex;
+  flex-direction: column;
+  gap: v.$space-2;
+  margin: v.$space-3 0;
+}
+
+.fileError {
+  font-size: v.$font-size-xs;
+  color: v.$color-danger;
+  background: v.$color-danger-bg;
+  padding: v.$space-2 v.$space-3;
+  border-radius: v.$border-radius;
+  border-left: 3px solid v.$color-danger;
+}
+
 // Rubric
-.rubricList { display: flex; flex-direction: column; gap: v.$space-5; }
 .rubricItem { display: flex; flex-direction: column; gap: v.$space-2; }
 .rubricHeader { display: flex; justify-content: space-between; align-items: center; }
-.rubricCriterion { font-size: v.$font-size-sm; font-weight: v.$font-weight-semibold; color: var(--color-gray-8); }
+.rubricCriterion { font-size: v.$font-size-sm; font-weight: v.$font-weight-medium; color: var(--color-gray-8); }
 .rubricScore { font-size: v.$font-size-sm; font-weight: v.$font-weight-bold; color: v.$brand-primary; }
-.rubricBar { height: 6px; background: var(--color-gray-2); border-radius: 3px; overflow: hidden; }
-.rubricFill { height: 100%; background: linear-gradient(90deg, v.$brand-primary, v.$brand-primary-5); border-radius: 3px; transition: width 0.5s ease; }
-.rubricComment { font-size: v.$font-size-xs; color: var(--color-gray-6); margin: 0; }
+.rubricBar { width: 100%; height: 8px; background: var(--color-gray-2); border-radius: 4px; overflow: hidden; }
+.rubricFill { height: 100%; background: linear-gradient(90deg, v.$brand-primary, v.$brand-mid); border-radius: 4px; transition: width 0.5s ease; }
+.rubricComment { font-size: v.$font-size-xs; color: var(--color-gray-6); margin: 0; line-height: 1.4; }
+
+// Rubric Feedback
+.rubricFeedback {
+  margin-top: v.$space-3;
+  padding: v.$space-3;
+  background: var(--color-gray-1);
+  border-radius: v.$border-radius-lg;
+  border-left: 3px solid v.$brand-primary;
+}
+
+.feedbackTitle {
+  font-size: v.$font-size-sm;
+  font-weight: v.$font-weight-semibold;
+  color: var(--color-gray-8);
+  margin: 0 0 v.$space-2;
+}
+
+.feedbackSuggestions {
+  margin-top: v.$space-3;
+  padding-top: v.$space-3;
+  border-top: 1px solid var(--color-gray-2);
+}
+
+.suggestionsTitle {
+  font-size: v.$font-size-xs;
+  font-weight: v.$font-weight-semibold;
+  color: var(--color-gray-7);
+  margin: 0 0 v.$space-2;
+}
+
+.suggestionsText {
+  font-size: v.$font-size-xs;
+  color: var(--color-gray-6);
+  margin: 0;
+  line-height: 1.4;
+}
 
 // Submit Confirmation Modal
 .confirmationModal { text-align: center; padding: v.$space-6; }
@@ -117,3 +290,238 @@
 
 @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
 @keyframes scaleIn { from { transform: scale(0); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+
+// Course Materials
+.materialsContainer {
+  display: flex;
+  flex-direction: column;
+  gap: v.$space-5;
+}
+
+.materialsCard {
+  margin-top: v.$space-5;
+}
+
+// Videos
+.videosList {
+  display: flex;
+  flex-direction: column;
+  gap: v.$space-4;
+}
+
+.videoItem {
+  display: flex;
+  gap: v.$space-4;
+  padding: v.$space-4;
+  border: 1px solid var(--color-gray-2);
+  border-radius: v.$border-radius-lg;
+  transition: all 0.2s ease;
+  
+  &:hover {
+    background: var(--color-gray-1);
+    border-color: v.$brand-primary;
+  }
+}
+
+.videoThumbnail {
+  width: 120px;
+  height: 68px;
+  background: linear-gradient(135deg, v.$brand-primary, v.$brand-mid);
+  border-radius: v.$border-radius-md;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  cursor: pointer;
+  flex-shrink: 0;
+  
+  @media (max-width: v.$bp-md) {
+    width: 100px;
+    height: 56px;
+  }
+}
+
+.playButton {
+  color: white;
+  font-size: 24px;
+  opacity: 0.8;
+  transition: all 0.2s ease;
+  
+  .videoThumbnail:hover & {
+    transform: scale(1.1);
+    opacity: 1;
+  }
+}
+
+.videoInfo {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.videoTitle {
+  font-size: v.$font-size-sm;
+  font-weight: v.$font-weight-semibold;
+  color: var(--color-gray-8);
+  margin: 0;
+}
+
+.videoDescription {
+  font-size: v.$font-size-xs;
+  color: var(--color-gray-5);
+  margin: 0;
+  line-height: 1.4;
+}
+
+.videoDuration {
+  font-size: v.$font-size-xs;
+  color: var(--color-gray-4);
+  margin-top: 2px;
+}
+
+// PPT Slides
+.slidesList {
+  display: flex;
+  flex-direction: column;
+  gap: v.$space-4;
+}
+
+.slideItem {
+  display: flex;
+  gap: v.$space-4;
+  padding: v.$space-4;
+  border: 1px solid var(--color-gray-2);
+  border-radius: v.$border-radius-lg;
+  transition: all 0.2s ease;
+  
+  &:hover {
+    background: var(--color-gray-1);
+    border-color: v.$brand-primary;
+  }
+}
+
+.slideThumbnail {
+  width: 60px;
+  height: 60px;
+  background: v.$brand-primary-1;
+  border-radius: v.$border-radius-md;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: v.$brand-primary;
+  flex-shrink: 0;
+}
+
+.slideInfo {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.slideTitle {
+  font-size: v.$font-size-sm;
+  font-weight: v.$font-weight-semibold;
+  color: var(--color-gray-8);
+  margin: 0;
+}
+
+.slideDescription {
+  font-size: v.$font-size-xs;
+  color: var(--color-gray-5);
+  margin: 0;
+  line-height: 1.4;
+}
+
+.slidePages {
+  font-size: v.$font-size-xs;
+  color: var(--color-gray-4);
+  margin-top: 2px;
+}
+
+// Course Sessions
+.sessionsList {
+  display: flex;
+  flex-direction: column;
+  gap: v.$space-3;
+}
+
+.sessionItem {
+  display: flex;
+  gap: v.$space-4;
+  padding: v.$space-4;
+  border: 1px solid var(--color-gray-2);
+  border-radius: v.$border-radius-lg;
+  transition: all 0.2s ease;
+  
+  &:hover {
+    background: var(--color-gray-1);
+    border-color: v.$brand-primary;
+  }
+}
+
+.sessionDate {
+  width: 80px;
+  font-size: v.$font-size-sm;
+  font-weight: v.$font-weight-semibold;
+  color: v.$brand-primary;
+  flex-shrink: 0;
+  
+  @media (max-width: v.$bp-md) {
+    width: 70px;
+  }
+}
+
+.sessionInfo {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.sessionTitle {
+  font-size: v.$font-size-sm;
+  font-weight: v.$font-weight-semibold;
+  color: var(--color-gray-8);
+  margin: 0;
+}
+
+.sessionDescription {
+  font-size: v.$font-size-xs;
+  color: var(--color-gray-5);
+  margin: 0;
+  line-height: 1.4;
+}
+
+// Attendance Sessions
+.attendanceList {
+  display: flex;
+  flex-direction: column;
+  gap: v.$space-3;
+}
+
+.attendanceItem {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: v.$space-4;
+  border: 1px solid var(--color-gray-2);
+  border-radius: v.$border-radius-lg;
+  transition: all 0.2s ease;
+  
+  &:hover {
+    background: var(--color-gray-1);
+    border-color: v.$brand-primary;
+  }
+}
+
+.attendanceDate {
+  font-size: v.$font-size-sm;
+  font-weight: v.$font-weight-semibold;
+  color: var(--color-gray-7);
+}
+
+.attendanceStatus {
+  flex-shrink: 0;
+}

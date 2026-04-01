@@ -2,6 +2,7 @@ import { Router, Response } from 'express'
 import { sign, verify } from 'jsonwebtoken'
 import prisma from '../lib/prisma'
 import { authenticate, AuthRequest } from '../middleware/auth'
+import { upload } from '../lib/upload'
 
 const router = Router()
 router.use(authenticate)
@@ -223,64 +224,110 @@ router.get('/courses/:studentId', async (req: AuthRequest, res: Response) => {
 })
 
 // POST /api/v1/lms/submissions
-router.post('/submissions', async (req: AuthRequest, res: Response) => {
-  const { assignmentId, studentId, content } = req.body as {
-    assignmentId: string; studentId: string; content?: string
-  }
+router.post('/submissions', upload.array('files', 5), async (req: AuthRequest, res: Response) => {
+  try {
+    const { assignmentId, studentId, content } = req.body as {
+      assignmentId: string; studentId: string; content?: string
+    }
+    
+    const files = req.files as Express.Multer.File[] || []
 
-  // Create placeholder file asset
-  const asset = await prisma.fileAsset.create({
-    data: {
-      fileName: `submission_${Date.now()}.txt`,
-      originalName: `submission_${assignmentId}.txt`,
-      fileUrl: `/uploads/submissions/${assignmentId}_${studentId}.txt`,
-      mimeType: 'text/plain',
-      fileSizeBytes: content?.length ?? 0,
-      uploadedById: req.user?.userId ?? '',
-    },
-  })
+    // Create file assets for uploaded files
+    const fileAssets = []
+    for (const file of files) {
+      const asset = await prisma.fileAsset.create({
+        data: {
+          fileName: file.filename,
+          originalName: file.originalname,
+          fileUrl: `/uploads/submissions/${file.filename}`,
+          mimeType: file.mimetype,
+          fileSizeBytes: file.size,
+          uploadedById: req.user?.userId ?? '',
+        },
+      })
+      fileAssets.push(asset)
+    }
 
-  // Pre-seeded AI rubric scores (demo)
-  const aiRubricScores = JSON.stringify([
-    { criterion: 'Clarity', ai_score: 8, ai_comment: 'Well-structured argument with clear thesis' },
-    { criterion: 'References', ai_score: 6, ai_comment: 'Needs more citations from peer-reviewed sources' },
-    { criterion: 'Analysis', ai_score: 7, ai_comment: 'Good critical thinking demonstrated' },
-    { criterion: 'Presentation', ai_score: 9, ai_comment: 'Excellent formatting and organisation' },
-  ])
+    // Create content file if provided
+    let contentAsset = null
+    if (content && content.trim()) {
+      contentAsset = await prisma.fileAsset.create({
+        data: {
+          fileName: `submission_${Date.now()}.txt`,
+          originalName: `submission_content_${assignmentId}_${studentId}.txt`,
+          fileUrl: `/uploads/submissions/submission_${Date.now()}.txt`,
+          mimeType: 'text/plain',
+          fileSizeBytes: content.length,
+          uploadedById: req.user?.userId ?? '',
+        },
+      })
+      
+      // Write content to file
+      const fs = await import('fs')
+      const path = await import('path')
+      const filePath = path.join(process.cwd(), 'uploads', 'submissions', `submission_${Date.now()}.txt`)
+      fs.writeFileSync(filePath, content)
+    }
 
-  const submission = await prisma.submission.upsert({
-    where: { assignmentId_studentId: { assignmentId, studentId } },
-    create: {
-      assignmentId,
-      studentId,
-      assetId: asset.id,
-      aiRubricScores,
-      aiGeneratedAt: new Date(),
-    },
-    update: { assetId: asset.id, aiRubricScores, aiGeneratedAt: new Date() },
-  })
+    // Pre-seeded AI rubric scores (demo)
+    const aiRubricScores = JSON.stringify([
+      { criterion: '内容完整性', ai_score: 8.5, ai_comment: '回答内容较为完整，涵盖了主要知识点，但在某些细节上可以进一步展开。', ai_suggestions: '建议补充具体的例子和实际应用场景，以增强回答的说服力。' },
+      { criterion: '逻辑清晰度', ai_score: 9.0, ai_comment: '逻辑结构清晰，论证过程合理，能够很好地表达思想。', ai_suggestions: '可以尝试使用更简洁的语言表达复杂概念，提高可读性。' },
+      { criterion: '深度与创新性', ai_score: 7.5, ai_comment: '对问题有一定的理解深度，但创新性不足，缺乏独特的见解。', ai_suggestions: '建议从不同角度思考问题，提出一些有创意的解决方案。' },
+      { criterion: '表达准确性', ai_score: 8.0, ai_comment: '表达基本准确，没有明显的错误，但在专业术语的使用上可以更加精确。', ai_suggestions: '建议查阅相关资料，确保专业术语的正确使用。' }
+    ])
 
-  // Get assignment and offering details for notification
-  const assignment = await prisma.assignment.findUnique({
-    where: { id: assignmentId },
-    include: { offering: { include: { lecturer: true } } },
-  })
+    // Use the first file asset or content asset
+    const primaryAssetId = fileAssets.length > 0 ? fileAssets[0].id : (contentAsset?.id ?? null)
+    
+    if (!primaryAssetId) {
+      res.status(400).json({ success: false, message: 'No content or files provided' })
+      return
+    }
 
-  // Create notification for lecturer
-  if (assignment?.offering?.lecturer?.userId) {
-    await prisma.notification.create({
-      data: {
-        userId: assignment.offering.lecturer.userId,
-        type: 'assignment_submission',
-        subject: `New submission for ${assignment.title}`,
-        body: `A student has submitted their work for ${assignment.title}. AI rubric scores are ready for your review.`,
-        status: 'pending',
-        triggeredByEvent: 'submission_created',
+    const submission = await prisma.submission.upsert({
+      where: { assignmentId_studentId: { assignmentId, studentId } },
+      create: {
+        assignmentId,
+        studentId,
+        assetId: primaryAssetId,
+        aiRubricScores,
+        aiGeneratedAt: new Date(),
+        submittedAt: new Date(),
+      },
+      update: { 
+        assetId: primaryAssetId, 
+        aiRubricScores, 
+        aiGeneratedAt: new Date(),
+        submittedAt: new Date()
       },
     })
-  }
 
-  res.status(201).json({ success: true, data: submission, message: 'Submission received' })
+    // Get assignment and offering details for notification
+    const assignment = await prisma.assignment.findUnique({
+      where: { id: assignmentId },
+      include: { offering: { include: { lecturer: true } } },
+    })
+
+    // Create notification for lecturer
+    if (assignment?.offering?.lecturer?.userId) {
+      await prisma.notification.create({
+        data: {
+          userId: assignment.offering.lecturer.userId,
+          type: 'assignment_submission',
+          subject: `New submission for ${assignment.title}`,
+          body: `A student has submitted their work for ${assignment.title}. AI rubric scores are ready for your review.`,
+          status: 'pending',
+          triggeredByEvent: 'submission_created',
+        },
+      })
+    }
+
+    res.status(201).json({ success: true, data: submission, message: 'Submission received' })
+  } catch (error) {
+    console.error('Error creating submission:', error)
+    res.status(500).json({ success: false, message: 'Failed to create submission', error: error instanceof Error ? error.message : 'Unknown error' })
+  }
 })
 
 // GET /api/v1/lms/submissions/history/:offeringId/:studentId
