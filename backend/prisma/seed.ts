@@ -37,8 +37,8 @@ async function main() {
     { key: 'ai_max_tokens',    value: '2048',         description: 'Max response tokens' },
     { key: 'ai_system_prompt', value: '',             description: 'Custom system prompt (empty = default UNIBOT prompt)' },
     // Dashboard KPI reference values (pre-seeded for demo display)
-    { key: 'dashboard_enrollment_total',    value: '1204',                             description: 'Total enrolled students this semester' },
-    { key: 'dashboard_enrollment_trend_7d', value: '[1185,1190,1195,1198,1201,1203,1204]', description: '7-day enrollment sparkline data' },
+    { key: 'dashboard_enrollment_total',    value: '1216',                             description: 'Total enrolled students this semester' },
+    { key: 'dashboard_enrollment_trend_7d', value: '[1197,1202,1207,1210,1213,1215,1216]', description: '7-day enrollment sparkline data' },
     { key: 'hr_total_staff',                value: '312',                              description: 'Total active staff headcount' },
     { key: 'hr_on_leave_today',             value: '7',                               description: 'Staff on approved leave today' },
     { key: 'hr_pending_approvals',          value: '4',                               description: 'Pending HR approval requests' },
@@ -49,6 +49,8 @@ async function main() {
     { key: 'campus_total_rooms',            value: '60',                              description: 'Total bookable campus rooms' },
     { key: 'campus_vehicle_total',          value: '10',                              description: 'Total campus vehicles' },
     { key: 'campus_vehicle_in_use',         value: '6',                               description: 'Vehicles currently in use' },
+    { key: 'student_default_status',        value: 'active',                          description: 'Default status for new enrolled students' },
+    { key: 'applicant_default_status',      value: 'draft',                           description: 'Default status for new applicants' },
   ]
   for (const c of configs) {
     await prisma.systemConfig.upsert({ where: { key: c.key }, create: c, update: {} })
@@ -430,6 +432,77 @@ async function main() {
       update: {},
     })
     riskStudents.push(s)
+  }
+
+  // ── 12 New Students with Complete Information ───────────────
+  const newStudentsData = [
+    { studentId: '2026013', username: 'ali', fullName: 'Ali Bin Abdullah', gender: 'male', dob: '2002-03-15', ic: 'IC-2002031501', mobile: '+673-7123456', address: 'Kampong Kiulap, Bandar Seri Begawan', email: 'ali@unissa.edu.bn', prevSchool: 'Sekolah Menengah Sayyidina Ali', yearComp: 2025, qualification: 'a_level', cgpa: 3.2 },
+    { studentId: '2026014', username: 'fatimah', fullName: 'Fatimah Binti Hassan', gender: 'female', dob: '2002-05-20', ic: 'IC-2002052002', mobile: '+673-7123457', address: 'Kampong Manggis, Bandar Seri Begawan', email: 'fatimah@unissa.edu.bn', prevSchool: 'Sekolah Menengah Pengiran Anak Puteri Hajah Rashidah', yearComp: 2025, qualification: 'a_level', cgpa: 3.5 },
+    { studentId: '2026015', username: 'ahmad', fullName: 'Ahmad Bin Omar', gender: 'male', dob: '2002-07-10', ic: 'IC-2002071003', mobile: '+673-7123458', address: 'Kampong Sengkurong, Brunei-Muara', email: 'ahmad@unissa.edu.bn', prevSchool: 'Sekolah Menengah Paduka Seri Begawan Sultan', yearComp: 2025, qualification: 'a_level', cgpa: 2.8 },
+    { studentId: '2026016', username: 'aisyah', fullName: 'Aisyah Binti Rahman', gender: 'female', dob: '2002-09-25', ic: 'IC-2002092504', mobile: '+673-7123459', address: 'Kampong Jerudong, Brunei-Muara', email: 'aisyah@unissa.edu.bn', prevSchool: 'Sekolah Menengah Masin', yearComp: 2025, qualification: 'a_level', cgpa: 3.7 },
+    { studentId: '2026017', username: 'mohd', fullName: 'Mohd Bin Ibrahim', gender: 'male', dob: '2002-11-08', ic: 'IC-2002110805', mobile: '+673-7123460', address: 'Kampong Tutong, Tutong', email: 'mohd@unissa.edu.bn', prevSchool: 'Sekolah Menengah Muda Hashim', yearComp: 2025, qualification: 'a_level', cgpa: 3.0 },
+    { studentId: '2026018', username: 'siti', fullName: 'Siti Binti Ahmad', gender: 'female', dob: '2002-01-30', ic: 'IC-2002013006', mobile: '+673-7123461', address: 'Kampong Serasa, Brunei-Muara', email: 'siti@unissa.edu.bn', prevSchool: 'Sekolah Menengah Sultan Sharif Ali', yearComp: 2025, qualification: 'a_level', cgpa: 3.4 },
+    { studentId: '2026019', username: 'hassan', fullName: 'Hassan Bin Yusof', gender: 'male', dob: '2002-04-12', ic: 'IC-2002041207', mobile: '+673-7123462', address: 'Kampong Kuala Belait, Belait', email: 'hassan@unissa.edu.bn', prevSchool: 'Sekolah Menengah Anthony Abell', yearComp: 2025, qualification: 'a_level', cgpa: 2.9 },
+    { studentId: '2026020', username: 'nor', fullName: 'Nor Binti Zainal', gender: 'female', dob: '2002-06-18', ic: 'IC-2002061808', mobile: '+673-7123463', address: 'Kampong Mentiri, Brunei-Muara', email: 'nor@unissa.edu.bn', prevSchool: 'Sekolah Menengah Berakas', yearComp: 2025, qualification: 'a_level', cgpa: 3.6 },
+    { studentId: '2026021', username: 'osman', fullName: 'Osman Bin Bakar', gender: 'male', dob: '2002-08-22', ic: 'IC-2002082209', mobile: '+673-7123464', address: 'Kampong Tanah Jambu, Brunei-Muara', email: 'osman@unissa.edu.bn', prevSchool: 'Sekolah Menengah Rimba', yearComp: 2025, qualification: 'a_level', cgpa: 3.1 },
+    { studentId: '2026022', username: 'halimah', fullName: 'Halimah Binti Kassim', gender: 'female', dob: '2002-10-05', ic: 'IC-2002100510', mobile: '+673-7123465', address: 'Kampong Lumapas, Brunei-Muara', email: 'halimah@unissa.edu.bn', prevSchool: 'Sekolah Menengah SOAS', yearComp: 2025, qualification: 'a_level', cgpa: 3.3 },
+    { studentId: '2026023', username: 'rashid', fullName: 'Rashid Bin Haji', gender: 'male', dob: '2002-12-14', ic: 'IC-2002121411', mobile: '+673-7123466', address: 'Kampong Gadong, Brunei-Muara', email: 'rashid@unissa.edu.bn', prevSchool: 'Sekolah Menengah STPRI', yearComp: 2025, qualification: 'a_level', cgpa: 2.7 },
+    { studentId: '2026024', username: 'zahra', fullName: 'Zahra Binti Mohd', gender: 'female', dob: '2002-02-28', ic: 'IC-2002022812', mobile: '+673-7123467', address: 'Kampong Batu Satu, Bandar Seri Begawan', email: 'zahra@unissa.edu.bn', prevSchool: 'Sekolah Menengah PAP Hajah Masnah', yearComp: 2025, qualification: 'a_level', cgpa: 3.8 },
+  ]
+
+  for (const ns of newStudentsData) {
+    const user = await upsertUser({
+      username: ns.username,
+      displayName: ns.fullName,
+      role: 'student',
+      email: ns.email,
+      hash: hash(PASS),
+    })
+
+    const applicant = await upsertApplicant({
+      userId: user.id,
+      applicationRef: `APP-2026-${ns.studentId}`,
+      fullName: ns.fullName,
+      icPassport: ns.ic,
+      dateOfBirth: new Date(ns.dob),
+      gender: ns.gender,
+      nationality: 'Brunei Darussalam',
+      email: ns.email,
+      mobile: ns.mobile,
+      homeAddress: ns.address,
+      highestQualification: ns.qualification,
+      previousInstitution: ns.prevSchool,
+      yearOfCompletion: ns.yearComp,
+      intakeId: intakeBSC.id,
+      programmeId: progBSC.id,
+      modeOfStudy: 'full_time',
+      status: 'accepted',
+      submittedAt: new Date('2026-03-01'),
+      decisionMadeAt: new Date('2026-03-15'),
+    })
+
+    const student = await upsertStudent({
+      studentId: ns.studentId,
+      userId: user.id,
+      applicantId: applicant.id,
+      programmeId: progBSC.id,
+      intakeId: intakeBSC.id,
+      modeOfStudy: 'full_time',
+      nationality: 'Brunei Darussalam',
+      studentType: 'standard',
+      currentCgpa: ns.cgpa,
+      campusCardNo: `CC-${ns.studentId}`,
+      libraryAccountActive: true,
+      emailAccountActive: true,
+      status: 'active',
+      enrolledAt: new Date('2026-04-01'),
+    })
+
+    await prisma.libraryAccount.upsert({
+      where: { studentId: student.id },
+      create: { studentId: student.id, accountNo: `LIB-${ns.studentId}`, isActive: true, activatedAt: new Date('2026-04-01') },
+      update: {},
+    })
   }
 
   // ── Dashboard Demo: 12 New Applications Today ────────────────
@@ -1039,6 +1112,92 @@ async function upsertGrant(g: { ref: string; title: string; piId: string; deptId
       durationMonths: 24, totalBudget: g.budget, amountUtilised: g.utilised, status: g.status,
     },
     update: { totalBudget: g.budget, amountUtilised: g.utilised, status: g.status },
+  })
+}
+
+async function upsertApplicant(a: {
+  userId: string
+  applicationRef: string
+  fullName: string
+  icPassport: string
+  dateOfBirth: Date
+  gender: string
+  nationality: string
+  email: string
+  mobile: string
+  homeAddress: string
+  highestQualification: string
+  previousInstitution: string
+  yearOfCompletion: number
+  intakeId: string
+  programmeId: string
+  modeOfStudy: string
+  status: string
+  submittedAt?: Date
+  decisionMadeAt?: Date
+}) {
+  return prisma.applicant.upsert({
+    where: { applicationRef: a.applicationRef },
+    create: {
+      userId: a.userId,
+      applicationRef: a.applicationRef,
+      fullName: a.fullName,
+      icPassport: a.icPassport,
+      dateOfBirth: a.dateOfBirth,
+      gender: a.gender,
+      nationality: a.nationality,
+      email: a.email,
+      mobile: a.mobile,
+      homeAddress: a.homeAddress,
+      highestQualification: a.highestQualification,
+      previousInstitution: a.previousInstitution,
+      yearOfCompletion: a.yearOfCompletion,
+      intakeId: a.intakeId,
+      programmeId: a.programmeId,
+      modeOfStudy: a.modeOfStudy,
+      status: a.status,
+      submittedAt: a.submittedAt,
+      decisionMadeAt: a.decisionMadeAt,
+    },
+    update: {},
+  })
+}
+
+async function upsertStudent(s: {
+  studentId: string
+  userId: string
+  applicantId: string
+  programmeId: string
+  intakeId: string
+  modeOfStudy: string
+  nationality: string
+  studentType?: string
+  currentCgpa?: number
+  campusCardNo?: string
+  libraryAccountActive?: boolean
+  emailAccountActive?: boolean
+  status?: string
+  enrolledAt?: Date
+}) {
+  return prisma.student.upsert({
+    where: { studentId: s.studentId },
+    create: {
+      studentId: s.studentId,
+      userId: s.userId,
+      applicantId: s.applicantId,
+      programmeId: s.programmeId,
+      intakeId: s.intakeId,
+      modeOfStudy: s.modeOfStudy,
+      nationality: s.nationality,
+      studentType: s.studentType || 'standard',
+      currentCgpa: s.currentCgpa || 0.00,
+      campusCardNo: s.campusCardNo,
+      libraryAccountActive: s.libraryAccountActive || false,
+      emailAccountActive: s.emailAccountActive || false,
+      status: s.status || 'active',
+      enrolledAt: s.enrolledAt || new Date(),
+    },
+    update: {},
   })
 }
 
