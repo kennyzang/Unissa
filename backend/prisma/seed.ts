@@ -35,6 +35,19 @@ async function main() {
     { key: 'ai_temperature',   value: '0.7',          description: 'LLM temperature (0-1)' },
     { key: 'ai_max_tokens',    value: '2048',         description: 'Max response tokens' },
     { key: 'ai_system_prompt', value: '',             description: 'Custom system prompt (empty = default UNIBOT prompt)' },
+    // Dashboard KPI reference values (pre-seeded for demo display)
+    { key: 'dashboard_enrollment_total',    value: '1204',                             description: 'Total enrolled students this semester' },
+    { key: 'dashboard_enrollment_trend_7d', value: '[1185,1190,1195,1198,1201,1203,1204]', description: '7-day enrollment sparkline data' },
+    { key: 'hr_total_staff',                value: '312',                              description: 'Total active staff headcount' },
+    { key: 'hr_on_leave_today',             value: '7',                               description: 'Staff on approved leave today' },
+    { key: 'hr_pending_approvals',          value: '4',                               description: 'Pending HR approval requests' },
+    { key: 'hr_new_hires_month',            value: '2',                               description: 'New staff joined this month' },
+    { key: 'lms_assignments_due_today',     value: '14',                              description: 'LMS assignments with due date today' },
+    { key: 'lms_avg_completion_pct',        value: '82',                              description: 'Average course completion percentage' },
+    { key: 'lms_at_risk_count',             value: '2',                               description: 'At-risk students flagged in LMS' },
+    { key: 'campus_total_rooms',            value: '60',                              description: 'Total bookable campus rooms' },
+    { key: 'campus_vehicle_total',          value: '10',                              description: 'Total campus vehicles' },
+    { key: 'campus_vehicle_in_use',         value: '6',                               description: 'Vehicles currently in use' },
   ]
   for (const c of configs) {
     await prisma.systemConfig.upsert({ where: { key: c.key }, create: c, update: {} })
@@ -100,6 +113,60 @@ async function main() {
   await prisma.department.update({ where: { id: deptIFN.id }, data: { headStaffId: staffSiti.id } })
   await prisma.department.update({ where: { id: deptADM.id }, data: { headStaffId: staffManager.id } })
 
+  // ── New Hires This Month (HR dashboard: 2 new hires) ─────────
+  const uNewHire1 = await upsertUser({ username: 'faizal', displayName: 'Mohd Faizal Bin Aziz', role: 'lecturer', email: 'faizal@unissa.edu.bn', hash: hash(PASS) })
+  const uNewHire2 = await upsertUser({ username: 'aishah', displayName: 'Aishah Binti Yusof',   role: 'manager',  email: 'aishah@unissa.edu.bn',  hash: hash(PASS) })
+  await prisma.staff.upsert({
+    where: { staffId: 'STF-006' },
+    create: { staffId: 'STF-006', userId: uNewHire1.id, departmentId: deptIFN.id, fullName: 'Mohd Faizal Bin Aziz', icPassport: 'IC-STF-006', dateOfBirth: new Date('1990-03-15'), gender: 'male',   designation: 'Lecturer',               employmentType: 'permanent', joinDate: new Date('2026-04-01'), payrollBasicSalary: 3500, lmsInstructorActive: true  },
+    update: {},
+  })
+  await prisma.staff.upsert({
+    where: { staffId: 'STF-007' },
+    create: { staffId: 'STF-007', userId: uNewHire2.id, departmentId: deptADM.id, fullName: 'Aishah Binti Yusof',   icPassport: 'IC-STF-007', dateOfBirth: new Date('1992-07-20'), gender: 'female', designation: 'Administrative Officer', employmentType: 'permanent', joinDate: new Date('2026-04-15'), payrollBasicSalary: 2800, lmsInstructorActive: false },
+    update: {},
+  })
+
+  // ── Leave Requests (HR dashboard: 7 on leave today, 4 pending) ─
+  // 5 approved leaves overlapping today (2026-04-01)
+  for (const lr of [
+    { id: 'lr-001', staffId: staffSiti.id,    type: 'annual',  days: 4, start: '2026-03-30', end: '2026-04-02', reason: 'Family vacation leave' },
+    { id: 'lr-002', staffId: staffManager.id, type: 'medical', days: 1, start: '2026-04-01', end: '2026-04-01', reason: 'Medical appointment' },
+    { id: 'lr-003', staffId: staffFinance.id, type: 'annual',  days: 2, start: '2026-04-01', end: '2026-04-02', reason: 'Personal leave' },
+    { id: 'lr-004', staffId: staffAhmad.id,   type: 'annual',  days: 1, start: '2026-04-01', end: '2026-04-01', reason: 'Conference travel day' },
+    { id: 'lr-005', staffId: staffHr.id,      type: 'medical', days: 2, start: '2026-03-31', end: '2026-04-01', reason: 'Medical leave' },
+  ]) {
+    await prisma.leaveRequest.upsert({
+      where: { id: lr.id },
+      create: {
+        id: lr.id, staffId: lr.staffId, leaveType: lr.type,
+        startDate: new Date(lr.start), endDate: new Date(lr.end),
+        durationDays: lr.days, reason: lr.reason,
+        coveringOfficerId: staffManager.id,
+        status: 'approved', l1ApproverId: uAdmin.id, l1ActedAt: new Date('2026-03-28'),
+      },
+      update: {},
+    })
+  }
+  // 4 pending leave requests (pending approvals count)
+  for (const lr of [
+    { id: 'lr-p01', staffId: staffSiti.id,    type: 'annual',  days: 5, start: '2026-04-15', end: '2026-04-19' },
+    { id: 'lr-p02', staffId: staffAhmad.id,   type: 'annual',  days: 3, start: '2026-04-22', end: '2026-04-24' },
+    { id: 'lr-p03', staffId: staffFinance.id, type: 'medical', days: 2, start: '2026-04-10', end: '2026-04-11' },
+    { id: 'lr-p04', staffId: staffManager.id, type: 'annual',  days: 4, start: '2026-05-02', end: '2026-05-06' },
+  ]) {
+    await prisma.leaveRequest.upsert({
+      where: { id: lr.id },
+      create: {
+        id: lr.id, staffId: lr.staffId, leaveType: lr.type,
+        startDate: new Date(lr.start), endDate: new Date(lr.end),
+        durationDays: lr.days, reason: 'Leave request pending HR approval',
+        coveringOfficerId: staffManager.id, status: 'pending',
+      },
+      update: {},
+    })
+  }
+
   // ── Programmes ───────────────────────────────────────────────
   const progBSC = await upsertProgramme({
     code: 'BSC-IFN', name: 'Bachelor of Science in Information Technology',
@@ -156,6 +223,19 @@ async function main() {
   for (let i = 1; i <= 4; i++) {
     await upsertFacility({ code: `LAB-${i}`, name: `Computer Lab ${i}`, type: 'lab', capacity: 35, building: 'Block B' })
   }
+  // Tutorial rooms TR-01 to TR-20 (20 rooms) — Block D
+  for (let i = 1; i <= 20; i++) {
+    await upsertFacility({ code: `TR-${String(i).padStart(2, '0')}`, name: `Tutorial Room ${i}`, type: 'classroom', capacity: 30, building: 'Block D' })
+  }
+  // Classrooms CR-01 to CR-20 (20 rooms) — Block E
+  for (let i = 1; i <= 20; i++) {
+    await upsertFacility({ code: `CR-${String(i).padStart(2, '0')}`, name: `Classroom ${i}`, type: 'classroom', capacity: 45, building: 'Block E' })
+  }
+  // Staff offices OFF-01 to OFF-09 (9 rooms) — Block F
+  for (let i = 1; i <= 9; i++) {
+    await upsertFacility({ code: `OFF-${String(i).padStart(2, '0')}`, name: `Staff Office ${i}`, type: 'office', capacity: 10, building: 'Block F' })
+  }
+  // Total: 2 LH + 5 MR + 4 LAB + 20 TR + 20 CR + 9 OFF = 60 rooms ✓
 
   // Maintenance ticket for Lab 3 HVAC
   await prisma.maintenanceTicket.upsert({
@@ -210,7 +290,7 @@ async function main() {
     roomId: roomLH_B.id,
   })
   // FND101 offering — gives Noor a 4th no-prereq course (3+3+3+3 = 12 CH minimum)
-  await upsertOffering({
+  const offeringFND101 = await upsertOffering({
     courseId: cFND101.id, semesterId: semSep2026.id, lecturerId: staffSiti.id,
     departmentId: deptFND.id, day: 'Friday', start: '09:00', end: '11:00', room: 'Lecture Hall A',
     roomId: roomLH_A.id,
@@ -330,7 +410,7 @@ async function main() {
         homeAddress: 'Bandar Seri Begawan, Brunei',
         highestQualification: 'a_level', previousInstitution: 'SMSA',
         yearOfCompletion: 2025, intakeId: intakeBSC.id, programmeId: progBSC.id,
-        modeOfStudy: 'full_time', status: 'accepted', submittedAt: new Date(), decisionMadeAt: new Date(),
+        modeOfStudy: 'full_time', status: 'accepted', submittedAt: new Date('2026-01-15'), decisionMadeAt: new Date('2026-02-01'),
       },
       update: {},
     })
@@ -349,6 +429,44 @@ async function main() {
       update: {},
     })
     riskStudents.push(s)
+  }
+
+  // ── Dashboard Demo: 12 New Applications Today ────────────────
+  // 8 accepted + 4 under_review = 12 new applications today
+  const todayAt = new Date(); todayAt.setHours(9, 0, 0, 0)
+  const todayNames = [
+    'Haziq Bin Rosli', 'Nurul Fatin Binti Hamzah', 'Muhammad Aiman Bin Ishak',
+    'Siti Rahmah Binti Ariffin', 'Izzatul Akmal Bin Daud', 'Nor Hidayah Binti Saari',
+    'Amirul Hakimi Bin Rashid', 'Farhana Binti Zakaria',
+    'Khairul Anwar Bin Osman', 'Zulaikha Binti Mansor',
+    'Hafizuddin Bin Abdullah', 'Maisarah Binti Ismail',
+  ]
+  for (let d = 1; d <= 12; d++) {
+    const isAccepted = d <= 8
+    await prisma.applicant.upsert({
+      where: { applicationRef: `APP-2026-T${String(d).padStart(2, '0')}` },
+      create: {
+        applicationRef: `APP-2026-T${String(d).padStart(2, '0')}`,
+        fullName: todayNames[d - 1],
+        icPassport: `TD-${String(d).padStart(6, '0')}`,
+        dateOfBirth: new Date('2001-06-15'),
+        gender: d % 2 === 0 ? 'female' : 'male',
+        nationality: 'Brunei Darussalam',
+        email: `applicant.today${d}@example.com`,
+        mobile: '+673-9000000',
+        homeAddress: 'Bandar Seri Begawan, Brunei Darussalam',
+        highestQualification: 'a_level',
+        previousInstitution: 'Sekolah Menengah Brunei',
+        yearOfCompletion: 2025,
+        intakeId: intakeBSC.id,
+        programmeId: progBSC.id,
+        modeOfStudy: 'full_time',
+        status: isAccepted ? 'accepted' : 'under_review',
+        submittedAt: todayAt,
+        decisionMadeAt: isAccepted ? todayAt : null,
+      },
+      update: {},
+    })
   }
 
   // ── Enrolments: Noor ─────────────────────────────────────────
@@ -391,6 +509,31 @@ async function main() {
     update: {},
   })
 
+  // ── Overdue Fee Invoices (Finance dashboard: 3 overdue) ──────
+  for (let oi = 0; oi < 3; oi++) {
+    const s = riskStudents[oi]
+    const pastDue = new Date('2026-02-28')
+    pastDue.setDate(pastDue.getDate() - oi * 14)
+    await prisma.feeInvoice.upsert({
+      where: { invoiceNo: `INV-2026-OD${String(oi + 1).padStart(2, '0')}` },
+      create: {
+        invoiceNo: `INV-2026-OD${String(oi + 1).padStart(2, '0')}`,
+        studentId: s.id,
+        semesterId: semSep2026.id,
+        tuitionFee: 2400,
+        libraryFee: 50,
+        hostelDeposit: 0,
+        scholarshipDeduction: 0,
+        totalAmount: 2450,
+        amountPaid: 0,
+        outstandingBalance: 2450,
+        dueDate: pastDue,
+        status: 'overdue',
+      },
+      update: {},
+    })
+  }
+
   // ── Assignment ────────────────────────────────────────────────
   const assignment1 = await prisma.assignment.upsert({
     where: { id: 'asn-ifn101-cs1' },
@@ -411,6 +554,32 @@ async function main() {
     },
     update: {},
   })
+
+  // ── 14 Assignments Due Today (LMS dashboard) ─────────────────
+  const dueToday = new Date(); dueToday.setHours(23, 59, 59, 0)
+  const todayAssignments = [
+    { id: 'asn-t-01', offeringId: offeringIFN101.id, title: 'Weekly Quiz 1 – Variables & Loops',          maxMarks: 20,  weight: 5  },
+    { id: 'asn-t-02', offeringId: offeringIFN101.id, title: 'Lab Exercise: Flowchart Design',              maxMarks: 30,  weight: 5  },
+    { id: 'asn-t-03', offeringId: offeringIFN101.id, title: 'Reflection Journal Week 4',                   maxMarks: 10,  weight: 2  },
+    { id: 'asn-t-04', offeringId: offeringIFN102.id, title: 'Lab Report 1 – Linked List Implementation',  maxMarks: 50,  weight: 10 },
+    { id: 'asn-t-05', offeringId: offeringIFN102.id, title: 'Quiz 2 – Tree Traversal Algorithms',         maxMarks: 25,  weight: 5  },
+    { id: 'asn-t-06', offeringId: offeringIFN102.id, title: 'Problem Set 3 – Sorting Comparisons',        maxMarks: 40,  weight: 8  },
+    { id: 'asn-t-07', offeringId: offeringIFN201.id, title: 'ER Diagram Assignment – Library System',     maxMarks: 100, weight: 15 },
+    { id: 'asn-t-08', offeringId: offeringIFN201.id, title: 'SQL Query Lab – Normalisation Exercise',     maxMarks: 50,  weight: 10 },
+    { id: 'asn-t-09', offeringId: offeringIFN201.id, title: 'Weekly Quiz – Relational Algebra',           maxMarks: 20,  weight: 5  },
+    { id: 'asn-t-10', offeringId: offeringARA101.id, title: 'Vocabulary Exercise Week 4',                 maxMarks: 30,  weight: 5  },
+    { id: 'asn-t-11', offeringId: offeringARA101.id, title: 'Listening Comprehension Task 2',             maxMarks: 20,  weight: 4  },
+    { id: 'asn-t-12', offeringId: offeringClashDemo.id, title: 'Arabic Writing Assessment – Unit 3',      maxMarks: 50,  weight: 10 },
+    { id: 'asn-t-13', offeringId: offeringClashDemo.id, title: 'Grammar Quiz – Verb Conjugations',        maxMarks: 20,  weight: 4  },
+    { id: 'asn-t-14', offeringId: offeringFND101.id, title: 'Foundation Maths – Calculus Problem Set',   maxMarks: 60,  weight: 10 },
+  ]
+  for (const a of todayAssignments) {
+    await prisma.assignment.upsert({
+      where: { id: a.id },
+      create: { id: a.id, offeringId: a.offeringId, title: a.title, description: a.title, dueDate: dueToday, maxMarks: a.maxMarks, weightPct: a.weight },
+      update: {},
+    })
+  }
 
   // Pre-seeded submission for Noor with AI scores
   const assetSub = await prisma.fileAsset.upsert({
@@ -465,10 +634,13 @@ async function main() {
   }
 
   // ── GL Codes ──────────────────────────────────────────────────
-  const glIT  = await upsertGl({ code: 'OPEX-IT-2026',  desc: 'IT Operations Budget',     deptId: deptIFN.id, budget: 150000, committed: 45000, spent: 22000 })
-  const glADM = await upsertGl({ code: 'OPEX-ADM-2026', desc: 'Administration Operations', deptId: deptADM.id, budget: 200000, committed: 75000, spent: 40000 })
-  const glFAC = await upsertGl({ code: 'CAPEX-FAC-2026',desc: 'Facilities Capital Budget', deptId: deptFND.id, budget: 500000, committed: 120000, spent: 90000 })
-  const glHR  = await upsertGl({ code: 'OPEX-HR-2026',  desc: 'HR Operations Budget',     deptId: deptADM.id, budget: 100000, committed: 38000, spent: 20000 })
+  // Finance budget: BND 45M total | BND 28.3M committed (62.9%) | BND 16.7M remaining
+  const glTnL = await upsertGl({ code: 'OPEX-TNL-2026', desc: 'Teaching & Learning Operations',  deptId: deptIFN.id, budget: 15000000, committed:  9435000, spent:  7200000 })
+  const glADM = await upsertGl({ code: 'OPEX-ADM-2026', desc: 'Administration & Operations',      deptId: deptADM.id, budget:  8000000, committed:  5040000, spent:  3800000 })
+  const glFAC = await upsertGl({ code: 'CAPEX-FAC-2026',desc: 'Facilities & Capital Projects',    deptId: deptFND.id, budget: 12000000, committed:  7548000, spent:  5900000 })
+  const glHR  = await upsertGl({ code: 'OPEX-HR-2026',  desc: 'HR & Staffing Budget',             deptId: deptADM.id, budget:  7000000, committed:  4403000, spent:  3200000 })
+  const glIT  = await upsertGl({ code: 'OPEX-IT-2026',  desc: 'IT & Digital Infrastructure',      deptId: deptIFN.id, budget:  3000000, committed:  1874000, spent:  1400000 })
+  void glTnL; void glFAC; void glHR // used for finance dashboard totals
 
   // ── Item Categories ───────────────────────────────────────────
   const catIT   = await upsertCat({ code: 'IT-EQP',  name: 'IT Equipment' })
@@ -631,9 +803,37 @@ async function main() {
   })
 
   // ── Research Grants ───────────────────────────────────────────
-  await upsertGrant({ ref: 'RG-2026-001', title: 'AI-Enhanced Adaptive Learning Systems for Tertiary Education', piId: staffAhmad.id, deptId: deptIFN.id, budget: 450000, utilised: 171000, status: 'active' })
-  await upsertGrant({ ref: 'RG-2026-002', title: 'Digital Preservation of Brunei Islamic Manuscripts', piId: staffAhmad.id, deptId: deptARA.id, budget: 380000, utilised: 95000, status: 'active' })
-  await upsertGrant({ ref: 'RG-2026-003', title: 'Cybersecurity Framework for Smart Campus Infrastructure', piId: staffSiti.id, deptId: deptIFN.id, budget: 220000, utilised: 0, status: 'proposal_submitted' })
+  // 12 active grants totalling BND 2.1M | utilisation 38% = BND 798K
+  // 5 proposals pending review
+  await upsertGrant({ ref: 'RG-2026-001', title: 'AI-Enhanced Adaptive Learning Systems for Tertiary Education',  piId: staffAhmad.id, deptId: deptIFN.id, budget: 450000, utilised: 171000, status: 'active' })
+  await upsertGrant({ ref: 'RG-2026-002', title: 'Digital Preservation of Brunei Islamic Manuscripts',            piId: staffAhmad.id, deptId: deptARA.id, budget: 380000, utilised:  95000, status: 'active' })
+  await upsertGrant({ ref: 'RG-2026-003', title: 'Cybersecurity Framework for Smart Campus Infrastructure',       piId: staffSiti.id,  deptId: deptIFN.id, budget: 220000, utilised:       0, status: 'proposal_submitted' })
+  // Additional active grants (10 more → 12 active total; 10 × BND 127K = BND 1,270K → 2.1M total)
+  const additionalActiveGrants = [
+    { ref: 'RG-2026-004', title: 'Green Energy Solutions for UNISSA Campus',                     piId: staffSiti.id,  deptId: deptFND.id },
+    { ref: 'RG-2026-005', title: 'Islamic Finance Innovation in Digital Banking',                 piId: staffAhmad.id, deptId: deptARA.id },
+    { ref: 'RG-2026-006', title: 'Biodiversity Assessment of Brunei Mangrove Ecosystems',        piId: staffSiti.id,  deptId: deptFND.id },
+    { ref: 'RG-2026-007', title: 'Machine Learning for Halal Food Authentication',               piId: staffAhmad.id, deptId: deptIFN.id },
+    { ref: 'RG-2026-008', title: 'Smart Transportation Systems for Bandar Seri Begawan',         piId: staffSiti.id,  deptId: deptIFN.id },
+    { ref: 'RG-2026-009', title: 'Arabic NLP Toolkits for Digital Learning Platforms',           piId: staffAhmad.id, deptId: deptARA.id },
+    { ref: 'RG-2026-010', title: 'Quantum Computing Applications in Post-Quantum Cryptography',  piId: staffSiti.id,  deptId: deptIFN.id },
+    { ref: 'RG-2026-011', title: 'Traditional Medicine Knowledge Digitisation Project',          piId: staffAhmad.id, deptId: deptFND.id },
+    { ref: 'RG-2026-012', title: 'Water Quality Monitoring IoT System for Brunei Rivers',        piId: staffSiti.id,  deptId: deptFND.id },
+    { ref: 'RG-2026-013', title: 'Cultural Heritage 3D Digitalisation and Virtual Museum',       piId: staffAhmad.id, deptId: deptARA.id },
+  ]
+  for (const g of additionalActiveGrants) {
+    await upsertGrant({ ref: g.ref, title: g.title, piId: g.piId, deptId: g.deptId, budget: 127000, utilised: 53200, status: 'active' })
+  }
+  // 4 additional proposals (→ 5 proposals total including RG-2026-003)
+  const additionalProposals = [
+    { ref: 'RG-2026-014', title: 'Carbon Footprint Reduction in University Campus Operations',   piId: staffSiti.id,  deptId: deptFND.id },
+    { ref: 'RG-2026-015', title: 'Social Media Impact on Youth Mental Health in Brunei',         piId: staffAhmad.id, deptId: deptADM.id },
+    { ref: 'RG-2026-016', title: 'Advanced Robotics for Industrial Automation Applications',     piId: staffSiti.id,  deptId: deptIFN.id },
+    { ref: 'RG-2026-017', title: 'Islamic Architecture Digital Archive and Pattern Analysis',    piId: staffAhmad.id, deptId: deptARA.id },
+  ]
+  for (const g of additionalProposals) {
+    await upsertGrant({ ref: g.ref, title: g.title, piId: g.piId, deptId: g.deptId, budget: 180000, utilised: 0, status: 'proposal_submitted' })
+  }
 
   // ── Student Risk Scores ───────────────────────────────────────
   // Student A (riskStudents[0]): high risk
@@ -707,6 +907,7 @@ async function main() {
 
   // ── Executive Insights ────────────────────────────────────────
   const expiresNext = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
+  await prisma.notification.deleteMany({})
   await prisma.executiveInsight.deleteMany({})
   for (const ins of [
     { insightType: 'enrollment', title: 'Enrolment Ahead of Target', body: "Enrolment is 4% ahead of last year's Sep intake (1,204 vs 1,158). Early applications suggest strong demand for BSC-IFN.", severity: 'info', expiresAt: expiresNext },
@@ -814,7 +1015,7 @@ async function upsertGl(g: { code: string; desc: string; deptId: string; budget:
   return prisma.glCode.upsert({
     where: { code: g.code },
     create: { code: g.code, description: g.desc, departmentId: g.deptId, totalBudget: g.budget, committedAmount: g.committed, spentAmount: g.spent, fiscalYear: 2026 },
-    update: {},
+    update: { totalBudget: g.budget, committedAmount: g.committed, spentAmount: g.spent },
   })
 }
 
@@ -836,7 +1037,7 @@ async function upsertGrant(g: { ref: string; title: string; piId: string; deptId
       departmentId: g.deptId, abstract: `Research project: ${g.title}. This grant aims to advance knowledge and innovation in the relevant field at UNISSA.`,
       durationMonths: 24, totalBudget: g.budget, amountUtilised: g.utilised, status: g.status,
     },
-    update: {},
+    update: { totalBudget: g.budget, amountUtilised: g.utilised, status: g.status },
   })
 }
 

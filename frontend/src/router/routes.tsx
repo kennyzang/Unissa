@@ -11,7 +11,7 @@ import type { UserRole } from '@/types'
 const ROLE_HOME: Record<string, string> = {
   admin:      '/dashboard',
   manager:    '/dashboard',
-  finance:    '/dashboard',
+  finance:    '/finance/dashboard',
   admissions: '/admission/review',
   lecturer:   '/lms/courses',
   student:    '/admission/apply',
@@ -79,8 +79,8 @@ export const router = createBrowserRouter([
       { path: 'dashboard', element: r(['admin','manager','finance'], <DashboardPage />) },
 
       // Admission
-      { path: 'admission/apply',  element: r(['student'], <AdmissionApplyPage />) },
-      { path: 'admission/review', element: r(['admissions'], <AdmissionReviewPage />) },
+      { path: 'admission/apply',  element: r(['student','admissions','admin'], <AdmissionApplyPage />) },
+      { path: 'admission/review', element: r(['admissions','admin'], <AdmissionReviewPage />) },
 
       // Student
       { path: 'student/profile',    element: r(['student'], <StudentProfilePage />) },
@@ -88,14 +88,14 @@ export const router = createBrowserRouter([
       { path: 'student/transcript', element: r(['student'], <TranscriptPage />) },
 
       // Finance
-      { path: 'finance/statement',  element: r(['student','finance'], <FeeStatementPage />) },
+      { path: 'finance/statement',  element: r(['student','finance','admin'], <FeeStatementPage />) },
       { path: 'finance/dashboard',  element: r(['finance','admin'], <FinanceDashboardPage />) },
 
       // LMS
       { path: 'lms/courses',              element: r(['student','lecturer','admin'], <LmsCoursesPage />) },
       { path: 'lms/courses/:offeringId',  element: r(['student','lecturer','admin'], <LmsCourseDetailPage />) },
       { path: 'lms/grading',              element: r(['lecturer'], <LmsGradingPage />) },
-      { path: 'lms/attendance',           element: r(['student','lecturer','admin'], <AttendancePage />) },
+      { path: 'lms/attendance',           element: r(['student','lecturer','admin','hradmin'], <AttendancePage />) },
 
       // Procurement
       { path: 'procurement/requests',   element: r(['manager','finance','admin'], <ProcurementPRPage />) },

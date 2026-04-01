@@ -175,7 +175,7 @@ const TranscriptPage: React.FC = () => {
       </div>
 
       {student && (
-        <Card className={styles.studentCard}>
+        <Card>
           <div className={styles.studentInfo}>
             <div className={styles.studentAvatar}>
               <Award size={32} />

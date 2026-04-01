@@ -1,69 +1,95 @@
+@use '@/styles/variables' as v;
+
 .page {
-  padding: 24px;
-  max-width: 1200px;
-  margin: 0 auto;
+  padding: v.$space-6;
+  display: flex;
+  flex-direction: column;
+  gap: v.$space-5;
+  animation: fadeIn 0.2s ease;
+  max-width: 100%;
+  overflow-x: hidden;
+
+  @media (max-width: v.$bp-md) {
+    padding: v.$space-3;
+    gap: v.$space-3;
+  }
 }
 
 .loading {
-  text-align: center;
-  padding: 48px;
-  color: var(--text-secondary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 300px;
+  color: var(--color-gray-5);
 }
 
 .header {
-  margin-bottom: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: v.$space-1;
 }
 
 .pageTitle {
   display: flex;
   align-items: center;
-  gap: 8px;
-  font-size: 1.75rem;
-  font-weight: 600;
-  color: var(--text-primary);
-  margin: 0 0 8px 0;
+  gap: v.$space-2;
+  font-size: v.$font-size-2xl;
+  font-weight: v.$font-weight-bold;
+  color: var(--color-gray-8);
+  margin: 0;
+
+  @media (max-width: v.$bp-md) { font-size: v.$font-size-xl; }
 }
 
 .pageDesc {
-  color: var(--text-secondary);
+  font-size: v.$font-size-sm;
+  color: var(--color-gray-5);
   margin: 0;
 }
 
+// ── Empty State ───────────────────────────────────────────────
 .emptyState {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: v.$space-3;
+  padding: 80px v.$space-6;
+  color: var(--color-gray-5);
   text-align: center;
-  padding: 48px 24px;
-  color: var(--text-secondary);
 
-  svg {
-    color: var(--success);
-    margin-bottom: 16px;
-  }
+  svg { color: v.$color-success; }
 
   h3 {
-    margin: 0 0 8px 0;
-    color: var(--text-primary);
-  }
-
-  p {
+    font-size: v.$font-size-lg;
+    font-weight: v.$font-weight-semibold;
+    color: var(--color-gray-6);
     margin: 0;
   }
+
+  p { font-size: v.$font-size-sm; margin: 0; }
 }
 
+// ── Submission List ───────────────────────────────────────────
 .submissionList {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: v.$space-4;
 }
 
 .submissionCard {
-  padding: 20px !important;
+  padding: v.$space-5 !important;
 }
 
 .submissionHeader {
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
-  margin-bottom: 16px;
+  margin-bottom: v.$space-4;
+
+  @media (max-width: v.$bp-md) {
+    flex-direction: column;
+    gap: v.$space-3;
+  }
 }
 
 .submissionInfo {
@@ -73,90 +99,95 @@
 .courseTag {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
-  background: var(--primary-light);
-  color: var(--primary);
-  padding: 4px 10px;
-  border-radius: 4px;
-  font-size: 0.75rem;
-  font-weight: 500;
-  margin-bottom: 8px;
+  gap: v.$space-1;
+  background: v.$brand-primary-1;
+  color: v.$brand-primary;
+  padding: v.$space-1 v.$space-2;
+  border-radius: v.$border-radius;
+  font-size: v.$font-size-xs;
+  font-weight: v.$font-weight-medium;
+  margin-bottom: v.$space-2;
 }
 
 .assignmentTitle {
-  font-size: 1.125rem;
-  font-weight: 600;
-  color: var(--text-primary);
-  margin: 0 0 8px 0;
+  font-size: v.$font-size-md;
+  font-weight: v.$font-weight-semibold;
+  color: var(--color-gray-8);
+  margin: 0 0 v.$space-2 0;
 }
 
 .studentInfo {
   display: flex;
   align-items: center;
-  gap: 6px;
-  color: var(--text-secondary);
-  font-size: 0.875rem;
+  gap: v.$space-2;
+  color: var(--color-gray-5);
+  font-size: v.$font-size-sm;
 }
 
 .studentId {
-  color: var(--text-muted);
+  color: var(--color-gray-4);
 }
 
 .submissionMeta {
   text-align: right;
+
+  @media (max-width: v.$bp-md) { text-align: left; }
 }
 
 .maxMarks {
-  margin-top: 8px;
-  font-size: 0.875rem;
-  color: var(--text-secondary);
+  margin-top: v.$space-2;
+  font-size: v.$font-size-sm;
+  color: var(--color-gray-5);
 }
 
+// ── AI Preview ────────────────────────────────────────────────
 .aiPreview {
-  background: var(--bg-secondary);
-  border-radius: 8px;
-  padding: 12px 16px;
-  margin-bottom: 16px;
+  background: var(--color-gray-1);
+  border-radius: v.$border-radius-lg;
+  padding: v.$space-3 v.$space-4;
+  margin-bottom: v.$space-4;
 }
 
 .aiHeader {
   display: flex;
   align-items: center;
-  gap: 6px;
-  font-size: 0.875rem;
-  font-weight: 500;
-  color: var(--primary);
-  margin-bottom: 8px;
+  gap: v.$space-2;
+  font-size: v.$font-size-sm;
+  font-weight: v.$font-weight-medium;
+  color: v.$brand-primary;
+  margin-bottom: v.$space-2;
 }
 
 .aiScores {
   display: flex;
   flex-wrap: wrap;
-  gap: 12px;
+  gap: v.$space-3;
 }
 
 .aiScoreItem {
   display: flex;
   align-items: center;
-  gap: 8px;
-  background: var(--bg-primary);
-  padding: 6px 12px;
-  border-radius: 4px;
-  font-size: 0.8125rem;
+  gap: v.$space-2;
+  background: white;
+  padding: v.$space-1 v.$space-3;
+  border-radius: v.$border-radius;
+  font-size: v.$font-size-xs;
+  border: 1px solid var(--color-gray-3);
 }
 
 .criterion {
-  color: var(--text-secondary);
+  color: var(--color-gray-5);
 }
 
 .score {
-  font-weight: 600;
-  color: var(--primary);
+  font-weight: v.$font-weight-semibold;
+  color: v.$brand-primary;
 }
 
 .noAi {
-  color: var(--text-muted);
+  color: var(--color-gray-4);
   font-style: italic;
+  font-size: v.$font-size-sm;
 }
 
 .submissionActions {
@@ -164,175 +195,182 @@
   justify-content: flex-end;
 }
 
+// ── Modal ─────────────────────────────────────────────────────
 .modalFooter {
   display: flex;
-  gap: 12px;
+  gap: v.$space-3;
   justify-content: flex-end;
 }
 
 .gradingContent {
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: v.$space-5;
 }
 
 .studentSection {
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 12px 16px;
-  background: var(--bg-secondary);
-  border-radius: 8px;
-  font-size: 0.9375rem;
+  gap: v.$space-2;
+  padding: v.$space-3 v.$space-4;
+  background: var(--color-gray-1);
+  border-radius: v.$border-radius-lg;
+  font-size: v.$font-size-base;
+  color: var(--color-gray-7);
 }
 
 .rubricSection {
   h4 {
-    margin: 0 0 12px 0;
-    font-size: 1rem;
-    font-weight: 600;
+    margin: 0 0 v.$space-3 0;
+    font-size: v.$font-size-base;
+    font-weight: v.$font-weight-semibold;
+    color: var(--color-gray-8);
   }
 }
 
 .rubricTable {
-  border: 1px solid var(--border);
-  border-radius: 8px;
+  border: 1px solid var(--color-gray-3);
+  border-radius: v.$border-radius-lg;
   overflow: hidden;
 }
 
 .rubricHeader {
   display: grid;
   grid-template-columns: 1fr 80px 1.5fr 80px;
-  background: var(--bg-secondary);
-  padding: 10px 12px;
-  font-size: 0.75rem;
-  font-weight: 600;
-  color: var(--text-secondary);
+  background: var(--color-gray-1);
+  padding: v.$space-2 v.$space-3;
+  font-size: v.$font-size-xs;
+  font-weight: v.$font-weight-semibold;
+  color: var(--color-gray-5);
   text-transform: uppercase;
+  letter-spacing: 0.04em;
+
+  @media (max-width: v.$bp-md) {
+    grid-template-columns: 1fr 60px;
+    gap: v.$space-2;
+  }
 }
 
 .rubricRow {
   display: grid;
   grid-template-columns: 1fr 80px 1.5fr 80px;
-  padding: 12px;
-  border-top: 1px solid var(--border);
+  padding: v.$space-3;
+  border-top: 1px solid var(--color-gray-3);
   align-items: center;
-  font-size: 0.875rem;
+  font-size: v.$font-size-sm;
+  color: var(--color-gray-7);
+
+  @media (max-width: v.$bp-md) {
+    grid-template-columns: 1fr 60px;
+    gap: v.$space-2;
+  }
 }
 
 .colCriterion {
-  font-weight: 500;
+  font-weight: v.$font-weight-medium;
 }
 
 .colAiComment {
-  color: var(--text-secondary);
-  font-size: 0.8125rem;
+  color: var(--color-gray-5);
+  font-size: v.$font-size-xs;
+
+  @media (max-width: v.$bp-md) { display: none; }
+}
+
+.colInstrScore {
+  @media (max-width: v.$bp-md) { display: none; }
 }
 
 .scoreInput {
   width: 60px;
-  padding: 6px 8px;
-  border: 1px solid var(--border);
-  border-radius: 4px;
+  padding: v.$space-1 v.$space-2;
+  border: 1px solid var(--color-gray-3);
+  border-radius: v.$border-radius;
   text-align: center;
-  font-size: 0.875rem;
+  font-size: v.$font-size-sm;
+  color: var(--color-gray-8);
 
   &:focus {
     outline: none;
-    border-color: var(--primary);
+    border-color: v.$brand-primary;
   }
 }
 
 .finalMarksSection {
-  padding: 16px;
-  background: var(--bg-secondary);
-  border-radius: 8px;
+  padding: v.$space-4;
+  background: var(--color-gray-1);
+  border-radius: v.$border-radius-lg;
 }
 
 .finalMarksInput {
   display: flex;
   align-items: center;
-  gap: 12px;
-  margin-bottom: 8px;
+  gap: v.$space-3;
+  margin-bottom: v.$space-2;
 
   label {
-    font-weight: 500;
+    font-weight: v.$font-weight-medium;
+    font-size: v.$font-size-sm;
+    color: var(--color-gray-7);
   }
 }
 
 .marksInput {
   width: 80px;
-  padding: 8px 12px;
-  border: 1px solid var(--border);
-  border-radius: 4px;
-  font-size: 1rem;
-  font-weight: 600;
+  padding: v.$space-2 v.$space-3;
+  border: 1px solid var(--color-gray-3);
+  border-radius: v.$border-radius;
+  font-size: v.$font-size-md;
+  font-weight: v.$font-weight-bold;
   text-align: center;
+  color: var(--color-gray-8);
 
   &:focus {
     outline: none;
-    border-color: var(--primary);
+    border-color: v.$brand-primary;
   }
 }
 
 .marksPreview {
   display: flex;
   align-items: center;
-  gap: 6px;
-  font-size: 0.8125rem;
-  color: var(--text-secondary);
+  gap: v.$space-2;
+  font-size: v.$font-size-xs;
+  color: var(--color-gray-5);
 }
 
 .gradePreview {
   h4 {
-    margin: 0 0 12px 0;
-    font-size: 1rem;
-    font-weight: 600;
+    margin: 0 0 v.$space-3 0;
+    font-size: v.$font-size-base;
+    font-weight: v.$font-weight-semibold;
+    color: var(--color-gray-8);
   }
 }
 
 .gradeScale {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
+  gap: v.$space-2;
 }
 
 .gradeScale span {
-  padding: 6px 12px;
-  background: var(--bg-secondary);
-  border-radius: 4px;
-  font-size: 0.75rem;
-  color: var(--text-secondary);
+  padding: v.$space-1 v.$space-3;
+  background: var(--color-gray-1);
+  border: 1px solid var(--color-gray-3);
+  border-radius: v.$border-radius;
+  font-size: v.$font-size-xs;
+  color: var(--color-gray-5);
 }
 
 .gradeActive {
-  background: var(--primary) !important;
+  background: v.$brand-primary !important;
+  border-color: v.$brand-primary !important;
   color: white !important;
-  font-weight: 600;
+  font-weight: v.$font-weight-semibold;
 }
 
-@media (max-width: 768px) {
-  .page {
-    padding: 16px;
-  }
-
-  .submissionHeader {
-    flex-direction: column;
-    gap: 12px;
-  }
-
-  .submissionMeta {
-    text-align: left;
-  }
-
-  .rubricHeader,
-  .rubricRow {
-    grid-template-columns: 1fr 60px;
-    gap: 8px;
-  }
-
-  .colAiComment,
-  .colInstrScore {
-    display: none;
-  }
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
 }

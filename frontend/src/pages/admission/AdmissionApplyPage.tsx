@@ -80,13 +80,13 @@ const EnrolledStudentCard: React.FC = () => {
               {t('nav.attendance', { defaultValue: 'Attendance' })}
             </Button> */}
             <Button size="small" onClick={() => navigate('/student/courses')}>
-              {t('nav.courseReg', { defaultValue: 'Course Registration' })}
+              {t('nav.courseSelection', { defaultValue: 'Course Selection' })}
             </Button>
             <Button size="small" onClick={() => navigate('/finance/statement')}>
-              {t('nav.feeStatement', { defaultValue: 'Fee Statement' })}
+              {t('nav.myPayment', { defaultValue: 'My Payment' })}
             </Button>
             <Button size="small" onClick={() => navigate('/student/profile')}>
-              {t('nav.myProfile', { defaultValue: 'My Profile' })}
+              {t('nav.myInfo', { defaultValue: 'My Info' })}
             </Button>
           </div>
         </div>
@@ -152,21 +152,23 @@ const step2Schema = z.object({
   highestQualification: z.string().min(1, 'Qualification is required'),
   previousInstitution:  z.string().min(1, 'Previous institution is required').min(2, 'Must be at least 2 characters'),
   yearOfCompletion:     z.string().min(1, 'Year of completion is required').min(4, 'Please enter a valid 4-digit year'),
-  cgpa:                 z.string()
-    .transform(val => val === '' || val == null ? undefined : val)
-    .pipe(z.string().optional())
-    .refine(
-      val => val === undefined || val === '' || (!isNaN(Number(val)) && Number(val) >= 0 && Number(val) <= 4),
-      { message: 'CGPA must be between 0.00 and 4.00' }
-    )
-    .refine(
-      val => val === undefined || val === '' || /^\d+\.\d{2}$/.test(val) || /^\d+$/.test(val),
-      { message: 'CGPA must have exactly 2 decimal places' }
-    ),
+  cgpa: z.preprocess(
+    val => (val === undefined || val === null || val === '') ? undefined : String(val),
+    z.string()
+      .optional()
+      .refine(
+        val => val === undefined || (!isNaN(Number(val)) && Number(val) >= 0 && Number(val) <= 4),
+        { message: 'CGPA must be between 0.00 and 4.00' }
+      )
+      .refine(
+        val => val === undefined || /^\d+\.\d{2}$/.test(val) || /^\d+$/.test(val),
+        { message: 'CGPA must have exactly 2 decimal places' }
+      )
+  ),
 }).refine(
   data => {
     const qual = data.highestQualification?.toUpperCase()
-    return !['DIPLOMA', 'DEGREE', 'MASTERS'].includes(qual ?? '') || (data.cgpa && data.cgpa.trim() !== '')
+    return !['DIPLOMA', 'DEGREE', 'MASTERS'].includes(qual ?? '') || (data.cgpa !== undefined && data.cgpa.trim() !== '')
   },
   { message: 'CGPA is required for Diploma or higher qualifications', path: ['cgpa'] }
 )
@@ -442,11 +444,12 @@ const AdmissionApplyPage: React.FC = () => {
         const { data } = await apiClient.get('/students/me')
         return data.data ?? null
       } catch (e: any) {
-        if (e?.response?.status === 404) return null   // not enrolled yet
+        if (e?.response?.status === 404) return null
         throw e
       }
     },
     retry: false,
+    throwOnError: false,
   })
 
   const { data: myApplication, isLoading: appLoading } = useQuery<any>({
@@ -456,11 +459,12 @@ const AdmissionApplyPage: React.FC = () => {
         const { data } = await apiClient.get('/admissions/my-application')
         return data.data ?? null
       } catch (e: any) {
-        if (e?.response?.status === 404) return null   // no application yet — show the form
+        if (e?.response?.status === 404) return null
         throw e
       }
     },
     retry: false,
+    throwOnError: false,
     enabled: !studentLoading && !studentProfile,
     refetchInterval: 8000,
   })
@@ -529,12 +533,13 @@ const AdmissionApplyPage: React.FC = () => {
     { value: 'MASTERS', label: t('admissionApply.qualMasters') },
   ]
 
-  const { data: intakes = [] } = useQuery<IntakeOption[]>({
+  const { data: intakes = [], isLoading: intakesLoading } = useQuery<IntakeOption[]>({
     queryKey: ['admissions', 'intakes'],
     queryFn: async () => {
       const { data } = await apiClient.get('/admissions/intakes')
       return data.data
     },
+    throwOnError: false,
   })
 
   const submitMutation = useMutation({
