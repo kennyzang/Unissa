@@ -5,7 +5,7 @@ import { Award, BookOpen, TrendingUp, Calendar, FileText, Download } from 'lucid
 import { apiClient } from '@/lib/apiClient'
 import { useAuthStore } from '@/stores/authStore'
 import Card from '@/components/ui/Card'
-import Badge from '@/components/ui/Badge'
+import Badge, { BadgeColor } from '@/components/ui/Badge'
 import Button from '@/components/ui/Button'
 import styles from './TranscriptPage.module.scss'
 
@@ -63,7 +63,7 @@ interface GpaRecord {
   }
 }
 
-const GRADE_COLORS: Record<string, string> = {
+const GRADE_COLORS: Record<string, BadgeColor> = {
   A_plus: 'green',
   A: 'green',
   B_plus: 'blue',
