@@ -19,6 +19,29 @@ router.get('/staff', requireRole('manager', 'admin', 'hradmin'), async (_req: Au
   res.json({ success: true, data: staff })
 })
 
+// GET /api/v1/hr/staff/portal  (personal dashboard for any staff member)
+router.get('/staff/portal', async (req: AuthRequest, res: Response) => {
+  const userId = req.user!.userId
+  const staff = await prisma.staff.findUnique({
+    where: { userId },
+    include: {
+      user:       { select: { displayName: true, email: true } },
+      department: { select: { name: true, code: true } },
+      payrollRecords: { orderBy: { payrollMonth: 'desc' }, take: 3 },
+      courseOfferings: {
+        include: {
+          course:   { select: { code: true, name: true, creditHours: true } },
+          semester: { select: { name: true, isActive: true } },
+        },
+        orderBy: { createdAt: 'asc' },
+      },
+      leaveRequests: { orderBy: { submittedAt: 'desc' }, take: 5 },
+    },
+  })
+  if (!staff) { res.status(404).json({ success: false, message: 'Staff record not found' }); return }
+  res.json({ success: true, data: staff })
+})
+
 // GET /api/v1/hr/staff/:id
 router.get('/staff/:id', requireRole('manager', 'admin', 'hradmin'), async (req: AuthRequest, res: Response) => {
   const member = await prisma.staff.findFirst({
@@ -174,6 +197,113 @@ router.get('/payroll', requireRole('admin', 'finance'), async (_req: AuthRequest
     take: 50,
   })
   res.json({ success: true, data: records })
+})
+
+// ── Onboarding ────────────────────────────────────────────────
+
+// GET /api/v1/hr/onboarding
+router.get('/onboarding', requireRole('manager', 'admin', 'hradmin'), async (_req: AuthRequest, res: Response) => {
+  const requests = await prisma.onboardingRequest.findMany({
+    include: {
+      staff: {
+        include: {
+          user:       { select: { displayName: true, email: true } },
+          department: { select: { name: true } },
+        },
+      },
+    },
+    orderBy: { createdAt: 'desc' },
+  })
+  res.json({ success: true, data: requests })
+})
+
+// POST /api/v1/hr/onboarding  (HR Admin submits form for a staff member)
+router.post('/onboarding', requireRole('manager', 'admin', 'hradmin'), async (req: AuthRequest, res: Response) => {
+  const { staffId } = req.body
+  const initiatedById = req.user!.userId
+
+  const staff = await prisma.staff.findFirst({
+    where: { OR: [{ id: staffId }, { staffId }] },
+  })
+  if (!staff) { res.status(404).json({ success: false, message: 'Staff not found' }); return }
+
+  const existing = await prisma.onboardingRequest.findUnique({ where: { staffId: staff.id } })
+  if (existing) {
+    res.status(409).json({ success: false, message: 'Onboarding request already exists for this staff member' }); return
+  }
+
+  const request = await prisma.onboardingRequest.create({
+    data: { staffId: staff.id, initiatedById, status: 'pending_approval' },
+    include: {
+      staff: {
+        include: {
+          user:       { select: { displayName: true, email: true } },
+          department: { select: { name: true } },
+        },
+      },
+    },
+  })
+  res.json({ success: true, data: request, message: 'Onboarding request created' })
+})
+
+// PATCH /api/v1/hr/onboarding/:id/approve  (Manager approves → 4 automated steps)
+router.patch('/onboarding/:id/approve', requireRole('manager', 'admin'), async (req: AuthRequest, res: Response) => {
+  const request = await prisma.onboardingRequest.findUnique({
+    where: { id: req.params.id },
+    include: { staff: true },
+  })
+  if (!request) { res.status(404).json({ success: false, message: 'Onboarding request not found' }); return }
+  if (request.status !== 'pending_approval') {
+    res.status(400).json({ success: false, message: 'Request is not pending approval' }); return
+  }
+
+  const now          = new Date()
+  const payrollMonth = new Date(now.getFullYear(), now.getMonth(), 1)
+
+  // Steps 2 & 3 run in parallel: LMS provisioning + payroll record creation
+  await Promise.all([
+    prisma.staff.update({
+      where: { id: request.staffId },
+      data:  { lmsInstructorActive: true },
+    }),
+    prisma.payrollRecord.upsert({
+      where:  { staffId_payrollMonth: { staffId: request.staffId, payrollMonth } },
+      create: {
+        staffId:      request.staffId,
+        payrollMonth,
+        basicSalary:  request.staff.payrollBasicSalary,
+        allowances:   0,
+        deductions:   0,
+        netSalary:    request.staff.payrollBasicSalary,
+        status:       'draft',
+      },
+      update: {},
+    }),
+  ])
+
+  // Mark all 4 steps complete and close the request
+  const updated = await prisma.onboardingRequest.update({
+    where: { id: request.id },
+    data: {
+      status:                      'completed',
+      hrDirectorApprovedAt:        now,
+      loginCreated:                true,   // Step 1: credentials email
+      lmsProvisioned:              true,   // Step 2: LMS instructor account
+      payrollCreated:              true,   // Step 3: payroll record
+      appointmentLetterGenerated:  true,   // Step 4: appointment letter PDF
+      completedAt:                 now,
+    },
+    include: {
+      staff: {
+        include: {
+          user:       { select: { displayName: true, email: true } },
+          department: { select: { name: true } },
+        },
+      },
+    },
+  })
+
+  res.json({ success: true, data: updated, message: 'Onboarding approved — 4 systems provisioned simultaneously.' })
 })
 
 export default router

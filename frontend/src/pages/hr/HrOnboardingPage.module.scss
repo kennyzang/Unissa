@@ -1,0 +1,233 @@
+@use '@/styles/variables' as *;
+@use '@/styles/mixins' as *;
+
+.page {
+  padding: $space-6;
+  animation: fadeIn 0.2s ease;
+  max-width: 100%;
+
+  @media (max-width: $bp-md) { padding: $space-4 $space-3; }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: $space-6;
+  gap: $space-4;
+
+  @media (max-width: $bp-sm) { flex-direction: column; }
+}
+
+.pageTitle {
+  font-size: $font-size-xl;
+  font-weight: $font-weight-bold;
+  color: $color-gray-8;
+  margin: 0 0 4px;
+}
+
+.pageSub {
+  font-size: $font-size-sm;
+  color: $color-gray-5;
+  margin: 0;
+}
+
+.statsRow {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: $space-4;
+  margin-bottom: $space-5;
+
+  @media (max-width: $bp-md) { grid-template-columns: 1fr; }
+}
+
+// ── Table cells ───────────────────────────────────────────────
+.staffName {
+  font-size: $font-size-sm;
+  font-weight: $font-weight-medium;
+  color: $color-gray-8;
+}
+
+.staffSub {
+  font-size: $font-size-xs;
+  color: $color-gray-5;
+  margin-top: 2px;
+}
+
+// ── Step indicators ───────────────────────────────────────────
+.steps {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.step {
+  display: flex;
+  align-items: center;
+  gap: $space-2;
+  font-size: $font-size-xs;
+  color: $color-gray-4;
+  transition: color 0.3s ease;
+
+  &.stepDone {
+    color: $color-gray-7;
+  }
+}
+
+.stepIcon {
+  flex-shrink: 0;
+  font-size: 12px;
+}
+
+.stepLabel {
+  white-space: nowrap;
+}
+
+@keyframes popIn {
+  0%   { transform: scale(0.8); opacity: 0.6; }
+  60%  { transform: scale(1.15); }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+.stepPop {
+  animation: popIn 0.4s ease forwards;
+}
+
+// ── Completed label ───────────────────────────────────────────
+.completedLabel {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: $font-size-xs;
+  color: $color-success;
+}
+
+// ── Flow diagram ──────────────────────────────────────────────
+.flowSteps {
+  display: flex;
+  align-items: center;
+  gap: $space-3;
+  flex-wrap: wrap;
+  margin-bottom: $space-5;
+}
+
+.flowStep {
+  display: flex;
+  align-items: flex-start;
+  gap: $space-2;
+  flex: 1;
+  min-width: 140px;
+}
+
+.flowNum {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: $brand-primary;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: $font-size-sm;
+  font-weight: $font-weight-bold;
+  flex-shrink: 0;
+}
+
+.flowText {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+
+  strong {
+    font-size: $font-size-sm;
+    font-weight: $font-weight-medium;
+    color: $color-gray-8;
+  }
+
+  span {
+    font-size: $font-size-xs;
+    color: $color-gray-5;
+  }
+}
+
+.flowArrow {
+  font-size: $font-size-lg;
+  color: $color-gray-4;
+  flex-shrink: 0;
+
+  @media (max-width: $bp-sm) { display: none; }
+}
+
+.stepGrid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: $space-3;
+
+  @media (max-width: $bp-lg) { grid-template-columns: repeat(2, 1fr); }
+  @media (max-width: $bp-sm) { grid-template-columns: 1fr; }
+}
+
+.stepCard {
+  background: $color-gray-1;
+  border: $border;
+  border-radius: $border-radius-lg;
+  padding: $space-3 $space-4;
+  display: flex;
+  align-items: center;
+  gap: $space-2;
+}
+
+.stepCardIcon {
+  font-size: 20px;
+}
+
+.stepCardLabel {
+  font-size: $font-size-xs;
+  color: $color-gray-7;
+  line-height: 1.4;
+}
+
+// ── Modal form ────────────────────────────────────────────────
+.formGroup {
+  display: flex;
+  flex-direction: column;
+  gap: $space-2;
+}
+
+.formLabel {
+  font-size: $font-size-sm;
+  font-weight: $font-weight-medium;
+  color: $color-gray-7;
+}
+
+.select {
+  padding: $space-2 $space-3;
+  border: $border;
+  border-radius: $border-radius-md;
+  font-size: $font-size-sm;
+  color: $color-gray-8;
+  background: #fff;
+  width: 100%;
+  outline: none;
+
+  &:focus { border-color: $brand-primary; }
+}
+
+.formHint {
+  font-size: $font-size-xs;
+  color: $color-gray-5;
+  margin: 0;
+}
+
+.noStaff {
+  font-size: $font-size-sm;
+  color: $color-gray-5;
+  text-align: center;
+  padding: $space-4;
+  margin: 0;
+}

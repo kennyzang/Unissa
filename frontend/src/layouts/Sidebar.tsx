@@ -58,6 +58,7 @@ const NAV_STRUCTURE: NavGroup[] = [
     key: 'g-teaching', labelKey: 'nav.teachingManagement', icon: '🎓',
     roles: ['lecturer'],
     children: [
+      { key: 'staff-portal',  labelKey: 'nav.staffPortal',      path: '/staff/portal',   icon: '🏠', roles: ['lecturer'] },
       { key: 'lms',           labelKey: 'nav.courseManagement', path: '/lms/courses',    icon: '📖', roles: ['lecturer'] },
       { key: 'grading',       labelKey: 'nav.gradeManagement',  path: '/lms/grading',    icon: '📊', roles: ['lecturer'] },
       { key: 'attendance',    labelKey: 'nav.attendanceMgmt',   path: '/lms/attendance', icon: '🕒', roles: ['lecturer'] },
@@ -76,9 +77,10 @@ const NAV_STRUCTURE: NavGroup[] = [
     key: 'g-hr', labelKey: 'nav.humanResources', icon: '👥',
     roles: ['hradmin'],
     children: [
-      { key: 'hr',       labelKey: 'nav.staffInfo',     path: '/hr/staff',  icon: '📝', roles: ['hradmin'] },
-      { key: 'hr-leave', labelKey: 'nav.leaveApproval', path: '/hr/leave',  icon: '✅', roles: ['hradmin'] },
-      { key: 'hr-attend', labelKey: 'nav.attendanceStats', path: '/lms/attendance', icon: '🕒', roles: ['hradmin'] },
+      { key: 'hr',            labelKey: 'nav.staffInfo',       path: '/hr/staff',       icon: '📝', roles: ['hradmin'] },
+      { key: 'hr-onboarding', labelKey: 'nav.hrOnboarding',    path: '/hr/onboarding',  icon: '🆕', roles: ['hradmin'] },
+      { key: 'hr-leave',      labelKey: 'nav.leaveApproval',   path: '/hr/leave',       icon: '✅', roles: ['hradmin'] },
+      { key: 'hr-attend',     labelKey: 'nav.attendanceStats', path: '/lms/attendance', icon: '🕒', roles: ['hradmin'] },
     ],
   },
   {
@@ -114,8 +116,10 @@ const NAV_STRUCTURE: NavGroup[] = [
     key: 'g-manager-hr', labelKey: 'nav.humanResources', icon: '👥',
     roles: ['manager'],
     children: [
-      { key: 'hr',       labelKey: 'nav.staffInfo',     path: '/hr/staff',  icon: '📝', roles: ['manager'] },
-      { key: 'hr-leave', labelKey: 'nav.leaveApproval', path: '/hr/leave',  icon: '✅', roles: ['manager'] },
+      { key: 'staff-portal',  labelKey: 'nav.staffPortal',    path: '/staff/portal',  icon: '🏠', roles: ['manager'] },
+      { key: 'hr',            labelKey: 'nav.staffInfo',      path: '/hr/staff',      icon: '📝', roles: ['manager'] },
+      { key: 'hr-onboarding', labelKey: 'nav.hrOnboarding',   path: '/hr/onboarding', icon: '🆕', roles: ['manager'] },
+      { key: 'hr-leave',      labelKey: 'nav.leaveApproval',  path: '/hr/leave',      icon: '✅', roles: ['manager'] },
     ],
   },
   {
@@ -157,8 +161,9 @@ const NAV_STRUCTURE: NavGroup[] = [
     key: 'g-admin-hr', labelKey: 'nav.hrManagement', icon: '👥',
     roles: ['admin'],
     children: [
-      { key: 'hr',       labelKey: 'nav.globalHrManagement', path: '/hr/staff',  icon: '📝', roles: ['admin'] },
-      { key: 'hr-leave', labelKey: 'nav.leaveApprovalCenter', path: '/hr/leave', icon: '✅', roles: ['admin'] },
+      { key: 'hr',            labelKey: 'nav.globalHrManagement',  path: '/hr/staff',      icon: '📝', roles: ['admin'] },
+      { key: 'hr-onboarding', labelKey: 'nav.hrOnboarding',        path: '/hr/onboarding', icon: '🆕', roles: ['admin'] },
+      { key: 'hr-leave',      labelKey: 'nav.leaveApprovalCenter', path: '/hr/leave',      icon: '✅', roles: ['admin'] },
     ],
   },
   {

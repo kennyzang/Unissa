@@ -130,6 +130,30 @@ async function main() {
     update: {},
   })
 
+  // ── Payroll Records (Dr. Siti — last 3 months for Staff Portal) ─
+  for (const [monthOffset, status] of [[-2, 'paid'], [-1, 'paid'], [0, 'draft']] as [number, string][]) {
+    const d = new Date(2026, 3 + monthOffset, 1) // April 2026 = month index 3
+    await prisma.payrollRecord.upsert({
+      where: { staffId_payrollMonth: { staffId: staffSiti.id, payrollMonth: d } },
+      create: {
+        staffId: staffSiti.id, payrollMonth: d,
+        basicSalary: 4500, allowances: 300, deductions: 450, netSalary: 4350, status,
+        ...(status === 'paid' ? { paidAt: new Date(d.getFullYear(), d.getMonth() + 1, 5) } : {}),
+      },
+      update: {},
+    })
+  }
+
+  // ── Onboarding Request (new hire Mohd Faizal — pending approval demo) ─
+  const staffFaizal = await prisma.staff.findUnique({ where: { staffId: 'STF-006' } })
+  if (staffFaizal) {
+    await prisma.onboardingRequest.upsert({
+      where: { staffId: staffFaizal.id },
+      create: { staffId: staffFaizal.id, initiatedById: uHrAdmin.id, status: 'pending_approval' },
+      update: {},
+    })
+  }
+
   // ── Leave Requests (HR dashboard: 7 on leave today, 4 pending) ─
   // 5 approved leaves overlapping today (2026-04-01)
   for (const lr of [

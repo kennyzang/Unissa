@@ -57,6 +57,8 @@ const ApprovalInboxPage        = lazy(() => import('@/pages/procurement/Approval
 const ProcurementAnomaliesPage = lazy(() => import('@/pages/ai/ProcurementAnomaliesPage'))
 const HrStaffPage              = lazy(() => import('@/pages/hr/HrStaffPage'))
 const LeaveManagementPage      = lazy(() => import('@/pages/hr/LeaveManagementPage'))
+const HrOnboardingPage         = lazy(() => import('@/pages/hr/HrOnboardingPage'))
+const StaffPortalPage          = lazy(() => import('@/pages/hr/StaffPortalPage'))
 const ResearchGrantsPage       = lazy(() => import('@/pages/research/ResearchGrantsPage'))
 const RiskDashboardPage        = lazy(() => import('@/pages/ai/RiskDashboardPage'))
 const CampusServicesPage       = lazy(() => import('@/pages/campus/CampusServicesPage'))
@@ -105,8 +107,10 @@ export const router = createBrowserRouter([
       { path: 'procurement/anomalies',  element: r(['finance','admin'], <ProcurementAnomaliesPage />) },
 
       // HR
-      { path: 'hr/staff',  element: r(['manager','admin','hradmin'], <HrStaffPage />) },
-      { path: 'hr/leave',  element: r(['lecturer','manager','admin','finance','hradmin'], <LeaveManagementPage />) },
+      { path: 'hr/staff',       element: r(['manager','admin','hradmin'], <HrStaffPage />) },
+      { path: 'hr/leave',       element: r(['lecturer','manager','admin','finance','hradmin'], <LeaveManagementPage />) },
+      { path: 'hr/onboarding',  element: r(['manager','admin','hradmin'], <HrOnboardingPage />) },
+      { path: 'staff/portal',   element: r(['lecturer','manager','admin','hradmin'], <StaffPortalPage />) },
 
       // Research
       { path: 'research/grants', element: r(['lecturer','manager','admin'], <ResearchGrantsPage />) },
