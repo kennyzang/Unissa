@@ -30,26 +30,27 @@ const Navbar = () => {
   const [avatarOpen, setAvatarOpen] = useState(false)
   const { language, setLanguage }   = useLanguageStore()
 
-  // Breadcrumb map using translated labels
+  // Breadcrumb map using translated labels (aligned with sidebar nav.* keys)
   const BREADCRUMBS: Record<string, string[]> = {
-    '/dashboard':              [t('navbar.breadcrumbs.commandCenter')],
-    '/admission/apply':        [t('navbar.breadcrumbs.admission'), t('navbar.breadcrumbs.applyLabel')],
-    '/admission/review':       [t('navbar.breadcrumbs.admission'), t('navbar.breadcrumbs.applicationsLabel')],
-    '/student/profile':        [t('navbar.breadcrumbs.student'), t('navbar.breadcrumbs.myProfile')],
-    '/student/courses':        [t('navbar.breadcrumbs.student'), t('navbar.breadcrumbs.courseRegistration')],
-    '/finance/statement':      [t('navbar.breadcrumbs.finance'), t('navbar.breadcrumbs.feeStatement')],
-    '/finance/dashboard':      [t('navbar.breadcrumbs.finance'), t('navbar.breadcrumbs.dashboard')],
-    '/lms/courses':            [t('navbar.breadcrumbs.lms'), t('navbar.breadcrumbs.myCourses')],
-    '/lms/attendance':         [t('navbar.breadcrumbs.lms'), t('navbar.breadcrumbs.attendance')],
-    '/procurement/requests':   [t('navbar.breadcrumbs.procurement'), t('navbar.breadcrumbs.purchaseRequests')],
-    '/procurement/approvals':  [t('navbar.breadcrumbs.procurement'), t('navbar.breadcrumbs.approvalInbox')],
-    '/procurement/anomalies':  [t('navbar.breadcrumbs.procurement'), t('navbar.breadcrumbs.anomalyDetection')],
-    '/hr/staff':               [t('navbar.breadcrumbs.hr'), t('navbar.breadcrumbs.staffManagement')],
-    '/hr/leave':               [t('navbar.breadcrumbs.hr'), t('navbar.breadcrumbs.leaveManagement')],
-    '/research/grants':        [t('navbar.breadcrumbs.research'), t('navbar.breadcrumbs.grants')],
-    '/ai/risk':                [t('navbar.breadcrumbs.ai'), t('navbar.breadcrumbs.riskAnalytics')],
-    '/campus/services':        [t('navbar.breadcrumbs.campus'), t('navbar.breadcrumbs.services')],
-    '/admin/settings':         [t('navbar.breadcrumbs.admin'), t('navbar.breadcrumbs.settingsLabel')],
+    '/dashboard':              [t('nav.commandCenter')],
+    '/admission/apply':        [t('nav.admissions'), t('nav.apply')],
+    '/admission/review':       [t('nav.admissions'), t('nav.applications')],
+    '/student/profile':        [t('nav.myCampus'), t('nav.myInfo')],
+    '/student/courses':        [t('nav.myCampus'), t('nav.courseSelection')],
+    '/student/transcript':     [t('nav.myCampus'), t('nav.myGrades')],
+    '/finance/statement':      [t('nav.myCampus'), t('nav.myPayment')],
+    '/finance/dashboard':      [t('nav.financeControlCenter'), t('nav.financeOverview')],
+    '/lms/courses':            [t('nav.myLearning'), t('nav.myCourses')],
+    '/lms/attendance':         [t('nav.myLearning'), t('nav.myAttendance')],
+    '/procurement/requests':   [t('nav.procurementManagement'), t('nav.procurementApplication')],
+    '/procurement/approvals':  [t('nav.procurementManagement'), t('nav.procurementApproval')],
+    '/procurement/anomalies':  [t('nav.procurementManagement'), t('nav.procurementAnomaly')],
+    '/hr/staff':               [t('nav.humanResources'), t('nav.staffInfo')],
+    '/hr/leave':               [t('nav.humanResources'), t('nav.leaveApproval')],
+    '/research/grants':        [t('nav.researchManagement'), t('nav.researchFund')],
+    '/ai/risk':                [t('nav.learningAnalysis')],
+    '/campus/services':        [t('nav.myCampus'), t('nav.campusServices')],
+    '/admin/settings':         [t('nav.systemOperation')],
   }
 
   const crumbs = BREADCRUMBS[location.pathname] ?? ['UNISSA']

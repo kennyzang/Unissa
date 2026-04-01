@@ -171,11 +171,7 @@ const NAV_STRUCTURE: NavGroup[] = [
   {
     key: 'g-admin-ops', labelKey: 'nav.systemOperation', icon: '⚙️',
     roles: ['admin'],
-    children: [
-      { key: 'admin-settings', labelKey: 'nav.settings',          path: '/admin/settings', icon: '⚙️', roles: ['admin'] },
-      { key: 'admin-perms',    labelKey: 'nav.permissionManagement', path: '/admin/settings', icon: '🔐', roles: ['admin'] },
-      { key: 'admin-audit',    labelKey: 'nav.logAudit',          path: '/admin/settings', icon: '📜', roles: ['admin'] },
-    ],
+    path: '/admin/settings',
   },
 ]
 
