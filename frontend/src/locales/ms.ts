@@ -567,6 +567,20 @@ const ms = {
     warning: 'Amaran',
     critical: 'Kritikal',
     selectToView: 'Pilih kursus di atas untuk melihat laporan kehadiran.',
+    // Imbas Kod QR (POC)
+    scanQRCode: 'Imbas Kod QR',
+    scanInstruction: 'Imbas kod QR yang dipaparkan oleh pensyarah anda untuk merekod kehadiran.',
+    startScan: 'Mula Mengimbas',
+    scanning: 'Sedang mengimbas kod QR...',
+    scanSuccess: 'Kehadiran Direkodkan!',
+    scanAnother: 'Imbas Lagi',
+    notLoggedIn: 'Belum Log Masuk',
+    pleaseLogin: 'Sila log masuk untuk meneruskan',
+    invalidQRCode: 'Format kod QR tidak sah',
+    courseCode: 'Kod Kursus',
+    sessionId: 'ID Sesi',
+    timestamp: 'Cap Masa',
+    session: 'Sesi',
   },
 
   procurementPR: {

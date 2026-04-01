@@ -570,6 +570,20 @@ const zh = {
     warning: '预警',
     critical: '严重',
     selectToView: '请在上方选择课程以查看出勤报告。',
+    // 二维码扫码（POC）
+    scanQRCode: '扫码签到',
+    scanInstruction: '扫描讲师显示的二维码来记录您的出勤。',
+    startScan: '开始扫码',
+    scanning: '正在扫描二维码...',
+    scanSuccess: '签到成功！',
+    scanAnother: '再次扫码',
+    notLoggedIn: '未登录',
+    pleaseLogin: '请先登录',
+    invalidQRCode: '无效的二维码格式',
+    courseCode: '课程代码',
+    sessionId: '会话ID',
+    timestamp: '时间戳',
+    session: '会话',
   },
 
   procurementPR: {

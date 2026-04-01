@@ -1,0 +1,121 @@
+.container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  padding: 20px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.card {
+  width: 100%;
+  max-width: 480px;
+  border-radius: 16px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+}
+
+.header {
+  text-align: center;
+  padding: 32px 24px;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.icon {
+  font-size: 64px;
+  color: #667eea;
+  margin-bottom: 16px;
+}
+
+.title {
+  font-size: 28px;
+  font-weight: 600;
+  color: #1a1a1a;
+  margin: 0 0 16px 0;
+}
+
+.subtitle {
+  font-size: 16px;
+  color: #666;
+  margin: 0 0 32px 0;
+  line-height: 1.6;
+}
+
+.actions {
+  display: flex;
+  justify-content: center;
+  padding: 32px;
+}
+
+.scanButton {
+  width: 100%;
+  height: 56px;
+  font-size: 18px;
+  font-weight: 600;
+  border-radius: 12px;
+}
+
+.scanning {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 48px;
+  min-height: 300px;
+}
+
+.scanningText {
+  font-size: 16px;
+  color: #666;
+  margin-top: 24px;
+}
+
+.result {
+  padding: 32px;
+}
+
+.recording {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 48px;
+  min-height: 300px;
+}
+
+.recordingText {
+  font-size: 16px;
+  color: #666;
+  margin-top: 24px;
+}
+
+.error {
+  margin: 24px;
+}
+
+.details {
+  padding: 24px 32px 32px;
+  background: #f9f9f9;
+  border-radius: 8px;
+  margin-top: 24px;
+}
+
+.detailItem {
+  display: flex;
+  justify-content: space-between;
+  padding: 12px 0;
+  border-bottom: 1px solid #e8e8e8;
+}
+
+.detailItem:last-child {
+  border-bottom: none;
+}
+
+.detailLabel {
+  font-weight: 600;
+  color: #333;
+}
+
+.detailValue {
+  color: #666;
+  font-family: 'Courier New', monospace;
+}

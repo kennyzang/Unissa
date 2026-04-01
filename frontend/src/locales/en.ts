@@ -582,6 +582,20 @@ const en = {
     warning: 'Warning',
     critical: 'Critical',
     selectToView: 'Select a course above to view its attendance report.',
+    // QR Code Scan (POC)
+    scanQRCode: 'Scan QR Code',
+    scanInstruction: 'Scan the QR code displayed by your lecturer to mark your attendance.',
+    startScan: 'Start Scanning',
+    scanning: 'Scanning QR code...',
+    scanSuccess: 'Attendance Recorded!',
+    scanAnother: 'Scan Another',
+    notLoggedIn: 'Not Logged In',
+    pleaseLogin: 'Please login to continue',
+    invalidQRCode: 'Invalid QR code format',
+    courseCode: 'Course Code',
+    sessionId: 'Session ID',
+    timestamp: 'Timestamp',
+    session: 'Session',
   },
 
   // Procurement PR

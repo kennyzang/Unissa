@@ -51,6 +51,7 @@ const LmsCoursesPage           = lazy(() => import('@/pages/lms/LmsCoursesPage')
 const LmsCourseDetailPage      = lazy(() => import('@/pages/lms/LmsCourseDetailPage'))
 const LmsGradingPage           = lazy(() => import('@/pages/lms/LmsGradingPage'))
 const AttendancePage           = lazy(() => import('@/pages/lms/AttendancePage'))
+const QRCodeScanPage           = lazy(() => import('@/pages/lms/QRCodeScanPage'))
 const ProcurementPRPage        = lazy(() => import('@/pages/procurement/ProcurementPRPage'))
 const ApprovalInboxPage        = lazy(() => import('@/pages/procurement/ApprovalInboxPage'))
 const ProcurementAnomaliesPage = lazy(() => import('@/pages/ai/ProcurementAnomaliesPage'))
@@ -96,6 +97,7 @@ export const router = createBrowserRouter([
       { path: 'lms/courses/:offeringId',  element: r(['student','lecturer','admin'], <LmsCourseDetailPage />) },
       { path: 'lms/grading',              element: r(['lecturer'], <LmsGradingPage />) },
       { path: 'lms/attendance',           element: r(['student','lecturer','admin','hradmin'], <AttendancePage />) },
+      { path: 'lms/attendance/scan',      element: r(['student'], <QRCodeScanPage />) },
 
       // Procurement
       { path: 'procurement/requests',   element: r(['manager','finance','admin'], <ProcurementPRPage />) },
