@@ -245,6 +245,11 @@ async function main() {
   const cARA101 = await upsertCourse({ code: 'ARA101', name: 'Arabic Language I',             departmentId: deptARA.id, ch: 3, level: 100 })
   const cARA102 = await upsertCourse({ code: 'ARA102', name: 'Arabic Language II',            departmentId: deptARA.id, ch: 3, level: 100 })
   const cFND101 = await upsertCourse({ code: 'FND101', name: 'Foundation Mathematics',        departmentId: deptFND.id, ch: 3, level: 100 })
+  // New courses (4 additional courses to reach 10 total)
+  const cIFN202 = await upsertCourse({ code: 'IFN202', name: 'Web Development Fundamentals', departmentId: deptIFN.id, ch: 3, level: 200 })
+  const cIFN301 = await upsertCourse({ code: 'IFN301', name: 'Software Engineering', departmentId: deptIFN.id, ch: 3, level: 300 })
+  const cARA201 = await upsertCourse({ code: 'ARA201', name: 'Arabic Literature', departmentId: deptARA.id, ch: 3, level: 200 })
+  const cFND102 = await upsertCourse({ code: 'FND102', name: 'Foundation English', departmentId: deptFND.id, ch: 3, level: 100 })
 
   // Prerequisites: IFN102 requires IFN101
   await prisma.coursePrerequisite.upsert({
@@ -335,6 +340,27 @@ async function main() {
   const offeringFND101 = await upsertOffering({
     courseId: cFND101.id, semesterId: semSep2026.id, lecturerId: staffSiti.id,
     departmentId: deptFND.id, day: 'Friday', start: '09:00', end: '11:00', room: 'Lecture Hall A',
+    roomId: roomLH_A.id,
+  })
+  // New course offerings (4 additional offerings for new courses)
+  const offeringIFN202 = await upsertOffering({
+    courseId: cIFN202.id, semesterId: semSep2026.id, lecturerId: staffSiti.id,
+    departmentId: deptIFN.id, day: 'Monday', start: '14:00', end: '16:00', room: 'Lab 3',
+    roomId: roomLab3.id,
+  })
+  const offeringIFN301 = await upsertOffering({
+    courseId: cIFN301.id, semesterId: semSep2026.id, lecturerId: staffAhmad.id,
+    departmentId: deptIFN.id, day: 'Tuesday', start: '09:00', end: '11:00', room: 'Lecture Hall A',
+    roomId: roomLH_A.id,
+  })
+  const offeringARA201 = await upsertOffering({
+    courseId: cARA201.id, semesterId: semSep2026.id, lecturerId: staffAhmad.id,
+    departmentId: deptARA.id, day: 'Wednesday', start: '14:00', end: '16:00', room: 'Lecture Hall B',
+    roomId: roomLH_B.id,
+  })
+  const offeringFND102 = await upsertOffering({
+    courseId: cFND102.id, semesterId: semSep2026.id, lecturerId: staffSiti.id,
+    departmentId: deptFND.id, day: 'Thursday', start: '14:00', end: '16:00', room: 'Lecture Hall A',
     roomId: roomLH_A.id,
   })
 
@@ -434,7 +460,7 @@ async function main() {
   await prisma.applicant.deleteMany({ where: { userId: uZara.id } })
 
   // ── Clean up existing new student records for clean seed ───────
-  const newStudentUsernames = ['ali', 'fatimah', 'ahmad', 'aisyah', 'mohd', 'siti', 'hassan', 'nor', 'osman', 'halimah', 'rashid', 'zahra']
+  const newStudentUsernames = ['ali', 'fatimah', 'ahmad', 'aisyah', 'mohd', 'siti', 'hassan', 'nor', 'osman', 'halimah', 'rashid', 'zahra', 'farid', 'diana', 'kamil', 'linda', 'aziz', 'sarah', 'razi', 'maya', 'faisal', 'nadia', 'wafi', 'hanna']
   for (const username of newStudentUsernames) {
     const user = await prisma.user.findUnique({ where: { username } })
     if (user) {
@@ -542,6 +568,77 @@ async function main() {
       status: 'accepted',
       submittedAt: new Date('2026-03-01'),
       decisionMadeAt: new Date('2026-03-15'),
+    })
+
+    const student = await upsertStudent({
+      studentId: ns.studentId,
+      userId: user.id,
+      applicantId: applicant.id,
+      programmeId: progBSC.id,
+      intakeId: intakeBSC.id,
+      modeOfStudy: 'full_time',
+      nationality: 'Brunei Darussalam',
+      studentType: 'standard',
+      currentCgpa: ns.cgpa,
+      campusCardNo: `CC-${ns.studentId}`,
+      libraryAccountActive: true,
+      emailAccountActive: true,
+      status: 'active',
+      enrolledAt: new Date('2026-04-01'),
+    })
+
+    await prisma.libraryAccount.upsert({
+      where: { studentId: student.id },
+      create: { studentId: student.id, accountNo: `LIB-${ns.studentId}`, isActive: true, activatedAt: new Date('2026-04-01') },
+      update: {},
+    })
+  }
+
+  // ── 12 Additional New Students (Status: Accepted) ───────────────
+  const additionalStudentsData = [
+    { studentId: '2026025', username: 'farid', fullName: 'Farid Bin Ismail', gender: 'male', dob: '2002-01-12', ic: 'IC-2002011213', mobile: '+673-7123468', address: 'Kampong Lambak, Brunei-Muara', email: 'farid@unissa.edu.bn', prevSchool: 'Sekolah Menengah Lambak', yearComp: 2025, qualification: 'a_level', cgpa: 3.3 },
+    { studentId: '2026026', username: 'diana', fullName: 'Diana Binti Abdullah', gender: 'female', dob: '2002-03-18', ic: 'IC-2002031814', mobile: '+673-7123469', address: 'Kampong Berakas, Brunei-Muara', email: 'diana@unissa.edu.bn', prevSchool: 'Sekolah Menengah Berakas', yearComp: 2025, qualification: 'a_level', cgpa: 3.6 },
+    { studentId: '2026027', username: 'kamil', fullName: 'Kamil Bin Rahman', gender: 'male', dob: '2002-05-22', ic: 'IC-2002052215', mobile: '+673-7123470', address: 'Kampong Kilanas, Brunei-Muara', email: 'kamil@unissa.edu.bn', prevSchool: 'Sekolah Menengah Kilanas', yearComp: 2025, qualification: 'a_level', cgpa: 2.9 },
+    { studentId: '2026028', username: 'linda', fullName: 'Linda Binti Mahmud', gender: 'female', dob: '2002-07-30', ic: 'IC-2002073016', mobile: '+673-7123471', address: 'Kampong Sengkurong, Brunei-Muara', email: 'linda@unissa.edu.bn', prevSchool: 'Sekolah Menengah Sengkurong', yearComp: 2025, qualification: 'a_level', cgpa: 3.4 },
+    { studentId: '2026029', username: 'aziz', fullName: 'Aziz Bin Hamid', gender: 'male', dob: '2002-09-14', ic: 'IC-2002091417', mobile: '+673-7123472', address: 'Kampong Mulia, Brunei-Muara', email: 'aziz@unissa.edu.bn', prevSchool: 'Sekolah Menengah Mulia', yearComp: 2025, qualification: 'a_level', cgpa: 3.1 },
+    { studentId: '2026030', username: 'sarah', fullName: 'Sarah Binti Kamal', gender: 'female', dob: '2002-11-28', ic: 'IC-2002112818', mobile: '+673-7123473', address: 'Kampong Rimba, Brunei-Muara', email: 'sarah@unissa.edu.bn', prevSchool: 'Sekolah Menengah Rimba', yearComp: 2025, qualification: 'a_level', cgpa: 3.7 },
+    { studentId: '2026031', username: 'razi', fullName: 'Razi Bin Othman', gender: 'male', dob: '2002-02-06', ic: 'IC-2002020619', mobile: '+673-7123474', address: 'Kampong Bengkurong, Brunei-Muara', email: 'razi@unissa.edu.bn', prevSchool: 'Sekolah Menengah Bengkurong', yearComp: 2025, qualification: 'a_level', cgpa: 2.8 },
+    { studentId: '2026032', username: 'maya', fullName: 'Maya Binti Salleh', gender: 'female', dob: '2002-04-20', ic: 'IC-2002042020', mobile: '+673-7123475', address: 'Kampong Katok, Brunei-Muara', email: 'maya@unissa.edu.bn', prevSchool: 'Sekolah Menengah Katok', yearComp: 2025, qualification: 'a_level', cgpa: 3.5 },
+    { studentId: '2026033', username: 'faisal', fullName: 'Faisal Bin Yusof', gender: 'male', dob: '2002-06-08', ic: 'IC-2002060821', mobile: '+673-7123476', address: 'Kampong Tanah Jambu, Brunei-Muara', email: 'faisal@unissa.edu.bn', prevSchool: 'Sekolah Menengah Tanah Jambu', yearComp: 2025, qualification: 'a_level', cgpa: 3.2 },
+    { studentId: '2026034', username: 'nadia', fullName: 'Nadia Binti Hashim', gender: 'female', dob: '2002-08-16', ic: 'IC-2002081622', mobile: '+673-7123477', address: 'Kampong Salambigar, Brunei-Muara', email: 'nadia@unissa.edu.bn', prevSchool: 'Sekolah Menengah Salambigar', yearComp: 2025, qualification: 'a_level', cgpa: 3.9 },
+    { studentId: '2026035', username: 'wafi', fullName: 'Wafi Bin Azlan', gender: 'male', dob: '2002-10-24', ic: 'IC-2002102423', mobile: '+673-7123478', address: 'Kampong Jerudong, Brunei-Muara', email: 'wafi@unissa.edu.bn', prevSchool: 'Sekolah Menengah Jerudong', yearComp: 2025, qualification: 'a_level', cgpa: 3.0 },
+    { studentId: '2026036', username: 'hanna', fullName: 'Hanna Binti Karim', gender: 'female', dob: '2002-12-02', ic: 'IC-2002120224', mobile: '+673-7123479', address: 'Kampong Mata-Mata, Brunei-Muara', email: 'hanna@unissa.edu.bn', prevSchool: 'Sekolah Menengah Mata-Mata', yearComp: 2025, qualification: 'a_level', cgpa: 3.4 },
+  ]
+
+  for (const ns of additionalStudentsData) {
+    const user = await upsertUser({
+      username: ns.username,
+      displayName: ns.fullName,
+      role: 'student',
+      email: ns.email,
+      hash: hash(PASS),
+    })
+
+    const applicant = await upsertApplicant({
+      userId: user.id,
+      applicationRef: `APP-2026-${ns.studentId}`,
+      fullName: ns.fullName,
+      icPassport: ns.ic,
+      dateOfBirth: new Date(ns.dob),
+      gender: ns.gender,
+      nationality: 'Brunei Darussalam',
+      email: ns.email,
+      mobile: ns.mobile,
+      homeAddress: ns.address,
+      highestQualification: ns.qualification,
+      previousInstitution: ns.prevSchool,
+      yearOfCompletion: ns.yearComp,
+      intakeId: intakeBSC.id,
+      programmeId: progBSC.id,
+      modeOfStudy: 'full_time',
+      status: 'accepted',
+      submittedAt: new Date('2026-03-05'),
+      decisionMadeAt: new Date('2026-03-20'),
     })
 
     const student = await upsertStudent({
