@@ -2,7 +2,7 @@ import { Router, Response } from 'express'
 import { sign, verify } from 'jsonwebtoken'
 import prisma from '../lib/prisma'
 import { authenticate, AuthRequest } from '../middleware/auth'
-import { upload } from '../lib/upload'
+import { upload, sessionMaterialUpload } from '../lib/upload'
 
 const router = Router()
 router.use(authenticate)
@@ -496,7 +496,11 @@ router.patch('/submissions/:id/grade', async (req: AuthRequest, res: Response) =
 
 // POST /api/v1/attendance/sessions  — Lecturer starts QR session
 router.post('/attendance/sessions', async (req: AuthRequest, res: Response) => {
-  const { offeringId } = req.body as { offeringId: string }
+  const { offeringId, name, description } = req.body as {
+    offeringId: string
+    name?: string
+    description?: string
+  }
 
   const expiresAt = new Date(Date.now() + 30 * 60 * 1000) // 30 min
   const sessionToken = sign(
@@ -505,11 +509,55 @@ router.post('/attendance/sessions', async (req: AuthRequest, res: Response) => {
   )
 
   const session = await prisma.attendanceSession.create({
-    data: { offeringId, sessionToken, qrExpiresAt: expiresAt },
+    data: {
+      offeringId,
+      sessionToken,
+      qrExpiresAt: expiresAt,
+      name: name?.trim() || null,
+      description: description?.trim() || null,
+    },
   })
 
   res.status(201).json({ success: true, data: { ...session, qrData: sessionToken } })
 })
+
+// GET /api/v1/attendance/sessions/:sessionId  — Fetch single session details
+router.get('/attendance/sessions/:sessionId', async (req: AuthRequest, res: Response) => {
+  const session = await prisma.attendanceSession.findUnique({
+    where: { id: req.params.sessionId },
+    include: {
+      records: { select: { id: true, status: true, scannedAt: true, studentId: true } },
+    },
+  })
+  if (!session) { res.status(404).json({ success: false, message: 'Session not found' }); return }
+  res.json({ success: true, data: { ...session, qrData: session.sessionToken } })
+})
+
+// POST /api/v1/attendance/sessions/:sessionId/materials  — Upload course materials
+router.post(
+  '/attendance/sessions/:sessionId/materials',
+  sessionMaterialUpload.array('files', 10),
+  async (req: AuthRequest, res: Response) => {
+    const files = (req.files ?? []) as Express.Multer.File[]
+    const session = await prisma.attendanceSession.findUnique({ where: { id: req.params.sessionId } })
+    if (!session) { res.status(404).json({ success: false, message: 'Session not found' }); return }
+
+    const existing: any[] = session.materials ? JSON.parse(session.materials as string) : []
+    const added = files.map(f => ({
+      filename: f.originalname,
+      path: f.path,
+      size: f.size,
+      mimetype: f.mimetype,
+      uploadedAt: new Date().toISOString(),
+    }))
+
+    const updated = await prisma.attendanceSession.update({
+      where: { id: req.params.sessionId },
+      data: { materials: JSON.stringify([...existing, ...added]) },
+    })
+    res.json({ success: true, data: { ...updated, qrData: updated.sessionToken } })
+  },
+)
 
 // POST /api/v1/attendance/check-in  — Student submits token (JWT or sessionId)
 router.post('/attendance/check-in', async (req: AuthRequest, res: Response) => {
@@ -575,7 +623,12 @@ router.get('/attendance/sessions/offering/:offeringId', async (req: AuthRequest,
     },
     orderBy: { startedAt: 'desc' },
   })
-  res.json({ success: true, data: sessions })
+  const parsed = sessions.map(s => ({
+    ...s,
+    materials: s.materials ? JSON.parse(s.materials as string) : [],
+    qrData: s.sessionToken,
+  }))
+  res.json({ success: true, data: parsed })
 })
 
 // PATCH /api/v1/attendance/sessions/:sessionId/close  — Lecturer closes session

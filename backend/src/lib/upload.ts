@@ -32,11 +32,36 @@ export const upload = multer({
     const allowedTypes = /jpeg|jpg|png|pdf|doc|docx|txt/
     const extname = allowedTypes.test(path.extname(file.originalname).toLowerCase())
     const mimetype = allowedTypes.test(file.mimetype)
-    
+
     if (extname && mimetype) {
       return cb(null, true)
     } else {
       cb(new Error('Invalid file type. Only JPEG, PNG, PDF, DOC, DOCX, and TXT files are allowed.'))
     }
   }
+})
+
+// Session materials upload — broader types, 50 MB limit
+const sessionMaterialStorage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    const dir = path.join(uploadsDir, 'session-materials')
+    if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true })
+    cb(null, dir)
+  },
+  filename: (req, file, cb) => {
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9)
+    cb(null, 'material-' + uniqueSuffix + path.extname(file.originalname))
+  },
+})
+
+export const sessionMaterialUpload = multer({
+  storage: sessionMaterialStorage,
+  limits: { fileSize: 50 * 1024 * 1024 }, // 50 MB
+  fileFilter: (req, file, cb) => {
+    const allowedExt = /\.(pdf|ppt|pptx|doc|docx|xls|xlsx|txt|zip|png|jpg|jpeg)$/i
+    if (allowedExt.test(path.extname(file.originalname))) {
+      return cb(null, true)
+    }
+    cb(new Error('Unsupported file type. Allowed: PDF, PPT, DOC, XLS, TXT, ZIP, images.'))
+  },
 })

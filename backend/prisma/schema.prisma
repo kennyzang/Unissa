@@ -462,6 +462,9 @@ model AttendanceSession {
   qrExpiresAt  DateTime
   startedAt    DateTime @default(now())
   endedAt      DateTime?
+  name         String?
+  description  String?
+  materials    String?  // JSON-serialised array of { filename, path, size, mimetype, uploadedAt }
 
   records AttendanceRecord[]
 

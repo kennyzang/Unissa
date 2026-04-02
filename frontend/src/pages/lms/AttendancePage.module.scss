@@ -746,3 +746,380 @@
   from { opacity: 0; transform: translateY(4px); }
   to { opacity: 1; transform: translateY(0); }
 }
+
+// ── Session name in history list ─────────────────────────────────────────────
+.sessionName {
+  font-size: v.$font-size-sm;
+  font-weight: v.$font-weight-semibold;
+  color: var(--color-gray-8);
+}
+
+// ── Active panel extras ───────────────────────────────────────────────────────
+.activePanelDesc {
+  font-size: v.$font-size-xs;
+  color: #0369a1;
+  margin: v.$space-1 0 0;
+  line-height: 1.5;
+}
+
+.activePanelMaterials {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: v.$space-2;
+  padding-top: v.$space-3;
+  border-top: 1px solid #bae6fd;
+  font-size: v.$font-size-xs;
+}
+
+.materialsInlineLabel {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  color: #0369a1;
+  font-weight: v.$font-weight-medium;
+}
+
+.materialChip {
+  background: #e0f2fe;
+  color: #0369a1;
+  border: 1px solid #bae6fd;
+  border-radius: v.$border-radius-sm;
+  padding: 2px v.$space-2;
+  font-size: 11px;
+  max-width: 180px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+// ── View Details button (session history row) ────────────────────────────────
+.viewDetailsBtn {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px v.$space-2;
+  background: transparent;
+  border: 1px solid var(--color-border);
+  border-radius: v.$border-radius-md;
+  font-size: v.$font-size-xs;
+  color: v.$brand-primary;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+  white-space: nowrap;
+
+  &:hover {
+    background: var(--color-bg-hover);
+    border-color: v.$brand-primary;
+  }
+}
+
+// ── Create Session Form (inside Modal) ───────────────────────────────────────
+.createForm {
+  display: flex;
+  flex-direction: column;
+  gap: v.$space-4;
+  padding-top: v.$space-1;
+}
+
+.createFormSub {
+  font-size: v.$font-size-sm;
+  color: var(--color-gray-5);
+  margin: 0 0 v.$space-1;
+}
+
+.formField {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.fieldLabel {
+  font-size: v.$font-size-sm;
+  font-weight: v.$font-weight-medium;
+  color: var(--color-gray-7);
+}
+
+.required {
+  color: var(--color-danger);
+}
+
+.fieldInput {
+  padding: v.$space-2 v.$space-3;
+  border: 1.5px solid var(--color-border);
+  border-radius: v.$border-radius-md;
+  font-size: v.$font-size-sm;
+  color: var(--color-gray-8);
+  background: var(--color-bg-input);
+  outline: none;
+  transition: border-color 0.15s, box-shadow 0.15s;
+
+  &:focus {
+    border-color: v.$brand-primary;
+    box-shadow: 0 0 0 3px rgba(v.$brand-primary, 0.12);
+  }
+}
+
+.fieldTextarea {
+  padding: v.$space-2 v.$space-3;
+  border: 1.5px solid var(--color-border);
+  border-radius: v.$border-radius-md;
+  font-size: v.$font-size-sm;
+  color: var(--color-gray-8);
+  background: var(--color-bg-input);
+  outline: none;
+  resize: vertical;
+  min-height: 80px;
+  font-family: inherit;
+  line-height: 1.5;
+  transition: border-color 0.15s, box-shadow 0.15s;
+
+  &:focus {
+    border-color: v.$brand-primary;
+    box-shadow: 0 0 0 3px rgba(v.$brand-primary, 0.12);
+  }
+}
+
+.fieldHint {
+  font-size: v.$font-size-xs;
+  color: var(--color-gray-4);
+}
+
+// ── File upload zone ──────────────────────────────────────────────────────────
+.fileDropZone {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: v.$space-1;
+  padding: v.$space-4;
+  border: 2px dashed var(--color-border);
+  border-radius: v.$border-radius-md;
+  cursor: pointer;
+  text-align: center;
+  color: var(--color-gray-5);
+  transition: border-color 0.15s, background 0.15s;
+
+  &:hover {
+    border-color: v.$brand-primary;
+    background: var(--color-bg-hover);
+    color: v.$brand-primary;
+  }
+}
+
+.fileInputHidden {
+  display: none;
+}
+
+.fileDropText {
+  font-size: v.$font-size-sm;
+  font-weight: v.$font-weight-medium;
+}
+
+.fileHint {
+  font-size: v.$font-size-xs;
+  color: var(--color-gray-4);
+}
+
+.filePreviewList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.filePreviewItem {
+  display: flex;
+  align-items: center;
+  gap: v.$space-2;
+  padding: 4px v.$space-2;
+  background: var(--color-bg-subtle);
+  border-radius: v.$border-radius-sm;
+  font-size: v.$font-size-xs;
+  color: var(--color-gray-7);
+}
+
+.filePreviewName {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.filePreviewSize {
+  color: var(--color-gray-4);
+  white-space: nowrap;
+}
+
+.formError {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: v.$space-2 v.$space-3;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: v.$border-radius-md;
+  font-size: v.$font-size-sm;
+  color: #dc2626;
+}
+
+.formFooter {
+  display: flex;
+  justify-content: flex-end;
+  gap: v.$space-2;
+  padding-top: v.$space-2;
+  border-top: 1px solid var(--color-border);
+}
+
+.cancelBtn {
+  padding: v.$space-2 v.$space-4;
+  background: transparent;
+  border: 1px solid var(--color-border);
+  border-radius: v.$border-radius-md;
+  font-size: v.$font-size-sm;
+  color: var(--color-gray-6);
+  cursor: pointer;
+  transition: background 0.15s;
+
+  &:hover:not(:disabled) { background: var(--color-bg-hover); }
+  &:disabled { opacity: 0.5; cursor: not-allowed; }
+}
+
+.createBtn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: v.$space-2 v.$space-4;
+  background: v.$brand-primary;
+  color: #fff;
+  border: none;
+  border-radius: v.$border-radius-md;
+  font-size: v.$font-size-sm;
+  font-weight: v.$font-weight-medium;
+  cursor: pointer;
+  transition: background 0.15s;
+
+  &:hover:not(:disabled) { background: v.$brand-dark; }
+  &:disabled { opacity: 0.5; cursor: not-allowed; }
+}
+
+// ── Session Details Modal ─────────────────────────────────────────────────────
+.detailsModal {
+  display: flex;
+  flex-direction: column;
+  gap: v.$space-4;
+  padding-top: v.$space-1;
+}
+
+.detailsMeta {
+  display: flex;
+  align-items: center;
+  gap: v.$space-3;
+  flex-wrap: wrap;
+}
+
+.detailsDate {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: v.$font-size-xs;
+  color: var(--color-gray-5);
+}
+
+.detailsDesc {
+  font-size: v.$font-size-sm;
+  color: var(--color-gray-6);
+  line-height: 1.6;
+  margin: 0;
+  background: var(--color-bg-subtle);
+  padding: v.$space-3;
+  border-radius: v.$border-radius-md;
+  border-left: 3px solid v.$brand-primary;
+}
+
+.detailsQrRow {
+  display: flex;
+  gap: v.$space-5;
+  align-items: flex-start;
+  flex-wrap: wrap;
+}
+
+.detailsRight {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: v.$space-3;
+  min-width: 220px;
+}
+
+.detailsAttendance {
+  display: flex;
+  align-items: center;
+  gap: v.$space-2;
+  color: #0369a1;
+  font-size: v.$font-size-sm;
+}
+
+.detailsAttendanceNum {
+  font-size: v.$font-size-xl;
+  font-weight: v.$font-weight-bold;
+  color: #0284c7;
+}
+
+.detailsAttendanceLabel {
+  color: #0369a1;
+  font-size: v.$font-size-sm;
+}
+
+// ── Materials section (in modal) ──────────────────────────────────────────────
+.materialsSection {
+  border-top: 1px solid var(--color-border);
+  padding-top: v.$space-3;
+  display: flex;
+  flex-direction: column;
+  gap: v.$space-2;
+}
+
+.materialsSectionTitle {
+  display: flex;
+  align-items: center;
+  gap: v.$space-1;
+  font-size: v.$font-size-sm;
+  font-weight: v.$font-weight-semibold;
+  color: var(--color-gray-7);
+  margin: 0;
+}
+
+.materialsList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.materialItem {
+  display: flex;
+  align-items: center;
+  gap: v.$space-2;
+  padding: 6px v.$space-2;
+  background: var(--color-bg-subtle);
+  border-radius: v.$border-radius-sm;
+  font-size: v.$font-size-xs;
+}
+
+.materialName {
+  flex: 1;
+  color: var(--color-gray-7);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.materialSize {
+  color: var(--color-gray-4);
+  white-space: nowrap;
+}

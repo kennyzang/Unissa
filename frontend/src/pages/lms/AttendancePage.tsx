@@ -4,12 +4,13 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import {
   QrCode, Users, CheckCircle, Clock, BookOpen, ChevronDown,
   ChevronUp, RefreshCw, X, UserCheck, AlertTriangle, Calendar,
-  Copy, Check,
+  Copy, Check, FileText, Upload, Eye,
 } from 'lucide-react'
 import { QRCode } from 'antd'
 import { apiClient } from '@/lib/apiClient'
 import { useAuthStore } from '@/stores/authStore'
 import Badge from '@/components/ui/Badge'
+import Modal from '@/components/ui/Modal'
 import styles from './AttendancePage.module.scss'
 
 // ─── Clipboard fallback (works on HTTP / non-secure contexts) ─────────────────
@@ -25,6 +26,14 @@ function fallbackCopy(text: string, onDone: () => void) {
 }
 
 // ─── Types ────────────────────────────────────────────────────────────────────
+interface SessionMaterial {
+  filename: string
+  path: string
+  size: number
+  mimetype: string
+  uploadedAt: string
+}
+
 interface AttendanceSession {
   id: string
   offeringId: string
@@ -32,6 +41,9 @@ interface AttendanceSession {
   qrExpiresAt: string
   startedAt: string
   endedAt: string | null
+  name: string | null
+  description: string | null
+  materials: SessionMaterial[]
   qrData?: string
   records?: { id: string; status: string; scannedAt: string; studentId: string }[]
 }
@@ -73,7 +85,275 @@ const fmtTime = (iso: string) =>
 const fmtDate = (iso: string) =>
   new Date(iso).toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' })
 
-// ─── QR Session Panel (Lecturer) ──────────────────────────────────────────────
+const fmtBytes = (bytes: number) => {
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(0)} KB`
+  return `${(bytes / 1024 / 1024).toFixed(1)} MB`
+}
+
+// ─── Create Session Modal ─────────────────────────────────────────────────────
+const CreateSessionModal: React.FC<{
+  offeringId: string
+  offeringLabel: string
+  onCreated: (session: AttendanceSession) => void
+  onClose: () => void
+}> = ({ offeringId, offeringLabel, onCreated, onClose }) => {
+  const { t } = useTranslation()
+  const queryClient = useQueryClient()
+  const [name, setName] = useState('')
+  const [description, setDescription] = useState('')
+  const [files, setFiles] = useState<File[]>([])
+  const [creating, setCreating] = useState(false)
+  const [error, setError] = useState('')
+
+  const handleCreate = async () => {
+    const trimmedName = name.trim()
+    if (!trimmedName) { setError(t('attendance.nameRequired')); return }
+    if (trimmedName.length > 100) { setError(t('attendance.nameTooLong')); return }
+    setCreating(true)
+    setError('')
+    try {
+      const res = await apiClient.post('/lms/attendance/sessions', {
+        offeringId,
+        name: trimmedName,
+        description: description.trim() || undefined,
+      })
+      let session: AttendanceSession = res.data.data
+
+      if (files.length > 0) {
+        const fd = new FormData()
+        files.forEach(f => fd.append('files', f))
+        const matRes = await apiClient.post(
+          `/lms/attendance/sessions/${session.id}/materials`,
+          fd,
+          { headers: { 'Content-Type': 'multipart/form-data' } },
+        )
+        session = matRes.data.data
+      }
+
+      queryClient.invalidateQueries({ queryKey: ['attendance', 'sessions'] })
+      onCreated({ ...session, qrData: session.sessionToken })
+      onClose()
+    } catch (e: any) {
+      setError(e.response?.data?.message ?? t('attendance.createError'))
+    } finally {
+      setCreating(false)
+    }
+  }
+
+  const handleFiles = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const selected = Array.from(e.target.files ?? [])
+    const oversized = selected.filter(f => f.size > 50 * 1024 * 1024)
+    if (oversized.length > 0) {
+      setError(t('attendance.fileTooLarge'))
+      return
+    }
+    setError('')
+    setFiles(selected)
+  }
+
+  return (
+    <Modal
+      open
+      title={t('attendance.createSessionTitle')}
+      onClose={onClose}
+      footer={null}
+      width={560}
+    >
+      <div className={styles.createForm}>
+        <p className={styles.createFormSub}>{offeringLabel}</p>
+
+        <div className={styles.formField}>
+          <label className={styles.fieldLabel}>
+            {t('attendance.sessionName')} <span className={styles.required}>*</span>
+          </label>
+          <input
+            className={styles.fieldInput}
+            value={name}
+            onChange={e => { setName(e.target.value); setError('') }}
+            placeholder={t('attendance.sessionNamePlaceholder')}
+            maxLength={100}
+            autoFocus
+          />
+          <span className={styles.fieldHint}>
+            {name.length}/100 · {t('attendance.sessionNameHint')}
+          </span>
+        </div>
+
+        <div className={styles.formField}>
+          <label className={styles.fieldLabel}>{t('attendance.sessionDescription')}</label>
+          <textarea
+            className={styles.fieldTextarea}
+            value={description}
+            onChange={e => setDescription(e.target.value)}
+            placeholder={t('attendance.sessionDescriptionPlaceholder')}
+            rows={3}
+          />
+        </div>
+
+        <div className={styles.formField}>
+          <label className={styles.fieldLabel}>{t('attendance.uploadMaterials')}</label>
+          <label className={styles.fileDropZone}>
+            <input
+              type="file"
+              multiple
+              accept=".pdf,.ppt,.pptx,.doc,.docx,.xls,.xlsx,.txt,.zip,.png,.jpg,.jpeg"
+              onChange={handleFiles}
+              className={styles.fileInputHidden}
+            />
+            <Upload size={18} />
+            <span className={styles.fileDropText}>
+              {files.length > 0
+                ? t('attendance.filesSelected', { count: files.length })
+                : t('attendance.uploadBtn')}
+            </span>
+            <span className={styles.fileHint}>{t('attendance.uploadMaterialsHint')}</span>
+          </label>
+          {files.length > 0 && (
+            <ul className={styles.filePreviewList}>
+              {files.map((f, i) => (
+                <li key={i} className={styles.filePreviewItem}>
+                  <FileText size={13} />
+                  <span className={styles.filePreviewName}>{f.name}</span>
+                  <span className={styles.filePreviewSize}>{fmtBytes(f.size)}</span>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+
+        {error && (
+          <div className={styles.formError}>
+            <AlertTriangle size={14} /> {error}
+          </div>
+        )}
+
+        <div className={styles.formFooter}>
+          <button className={styles.cancelBtn} onClick={onClose} disabled={creating}>
+            {t('common.cancel')}
+          </button>
+          <button
+            className={styles.createBtn}
+            onClick={handleCreate}
+            disabled={creating || !name.trim()}
+          >
+            <QrCode size={14} />
+            {creating ? t('attendance.starting') : t('attendance.createSession')}
+          </button>
+        </div>
+      </div>
+    </Modal>
+  )
+}
+
+// ─── Session Details Modal ────────────────────────────────────────────────────
+const SessionDetailsModal: React.FC<{
+  session: AttendanceSession
+  onClose: () => void
+}> = ({ session, onClose }) => {
+  const { t } = useTranslation()
+  const [copied, setCopied] = useState(false)
+  const token = session.qrData ?? session.sessionToken
+  const expired = new Date(session.qrExpiresAt) < new Date()
+  const presentCount = session.records?.filter(r => r.status === 'present').length ?? 0
+
+  const handleCopy = () => {
+    const done = () => { setCopied(true); setTimeout(() => setCopied(false), 2500) }
+    if (navigator.clipboard?.writeText) {
+      navigator.clipboard.writeText(token).then(done).catch(() => fallbackCopy(token, done))
+    } else {
+      fallbackCopy(token, done)
+    }
+  }
+
+  return (
+    <Modal
+      open
+      title={session.name ?? t('attendance.sessionDetails')}
+      onClose={onClose}
+      footer={null}
+      width={580}
+    >
+      <div className={styles.detailsModal}>
+        <div className={styles.detailsMeta}>
+          <span className={styles.detailsDate}>
+            <Calendar size={13} /> {fmtDate(session.startedAt)} · {fmtTime(session.startedAt)}
+            {session.endedAt ? ` – ${fmtTime(session.endedAt)}` : ''}
+          </span>
+          <Badge color={session.endedAt ? 'gray' : expired ? 'orange' : 'green'} size="sm">
+            {session.endedAt
+              ? t('attendance.closed')
+              : expired
+              ? t('attendance.expired')
+              : t('attendance.open')}
+          </Badge>
+        </div>
+
+        {session.description && (
+          <p className={styles.detailsDesc}>{session.description}</p>
+        )}
+
+        <div className={styles.detailsQrRow}>
+          <div className={styles.qrWrapper}>
+            {expired || session.endedAt
+              ? (
+                <div className={styles.qrExpired}>
+                  <Clock size={28} />
+                  <span>{t('attendance.qrExpired')}</span>
+                </div>
+              )
+              : <QRCode value={token} size={160} />
+            }
+            <p className={styles.qrHint}>{t('attendance.qrHint')}</p>
+          </div>
+
+          <div className={styles.detailsRight}>
+            <div className={styles.tokenSection}>
+              <div className={styles.tokenLabel}>
+                <QrCode size={13} /> {t('attendance.sessionToken')}
+              </div>
+              <div className={styles.tokenBox}>
+                <span className={styles.tokenText}>{token}</span>
+                <button
+                  className={`${styles.copyBtn} ${copied ? styles.copyBtnDone : ''}`}
+                  onClick={handleCopy}
+                >
+                  {copied ? <Check size={14} /> : <Copy size={14} />}
+                  {copied ? t('attendance.copied') : t('attendance.copyToken')}
+                </button>
+              </div>
+              <p className={styles.tokenNote}>{t('attendance.tokenNote')}</p>
+            </div>
+
+            <div className={styles.detailsAttendance}>
+              <UserCheck size={18} />
+              <span className={styles.detailsAttendanceNum}>{presentCount}</span>
+              <span className={styles.detailsAttendanceLabel}>{t('attendance.present')}</span>
+            </div>
+          </div>
+        </div>
+
+        {session.materials && session.materials.length > 0 && (
+          <div className={styles.materialsSection}>
+            <h4 className={styles.materialsSectionTitle}>
+              <FileText size={14} /> {t('attendance.materialsSection')}
+            </h4>
+            <ul className={styles.materialsList}>
+              {session.materials.map((m, i) => (
+                <li key={i} className={styles.materialItem}>
+                  <FileText size={13} />
+                  <span className={styles.materialName}>{m.filename}</span>
+                  <span className={styles.materialSize}>{fmtBytes(m.size)}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+      </div>
+    </Modal>
+  )
+}
+
+// ─── QR Session Panel (Lecturer active session) ───────────────────────────────
 const ActiveSessionPanel: React.FC<{
   session: AttendanceSession
   onClose: () => void
@@ -120,7 +400,9 @@ const ActiveSessionPanel: React.FC<{
     <div className={styles.activePanel}>
       <div className={styles.activePanelHeader}>
         <div>
-          <h3 className={styles.activePanelTitle}>{t('attendance.activeSession')}</h3>
+          <h3 className={styles.activePanelTitle}>
+            {session.name ?? t('attendance.activeSession')}
+          </h3>
           <span className={styles.activePanelSub}>
             {t('attendance.started')}: {fmtTime(session.startedAt)} &nbsp;·&nbsp;
             {expired
@@ -128,6 +410,9 @@ const ActiveSessionPanel: React.FC<{
               : <span className={styles.activeText}>{t('attendance.expiresAt')} {fmtTime(session.qrExpiresAt)}</span>
             }
           </span>
+          {session.description && (
+            <p className={styles.activePanelDesc}>{session.description}</p>
+          )}
         </div>
         <button
           className={styles.closeSessionBtn}
@@ -180,6 +465,17 @@ const ActiveSessionPanel: React.FC<{
           )}
         </div>
       </div>
+
+      {session.materials && session.materials.length > 0 && (
+        <div className={styles.activePanelMaterials}>
+          <span className={styles.materialsInlineLabel}>
+            <FileText size={13} /> {t('attendance.materialsSection')}:
+          </span>
+          {session.materials.map((m, i) => (
+            <span key={i} className={styles.materialChip}>{m.filename}</span>
+          ))}
+        </div>
+      )}
     </div>
   )
 }
@@ -190,21 +486,14 @@ const LecturerView: React.FC<{ lecturerId: string }> = ({ lecturerId }) => {
   const queryClient = useQueryClient()
   const [activeSession, setActiveSession] = useState<AttendanceSession | null>(null)
   const [expandedOffering, setExpandedOffering] = useState<string | null>(null)
+  const [createModalOfferingId, setCreateModalOfferingId] = useState<string | null>(null)
+  const [viewingSession, setViewingSession] = useState<AttendanceSession | null>(null)
 
   const { data: offerings = [], isLoading: loadingOfferings } = useQuery<OfferingWithCount[]>({
     queryKey: ['attendance', 'offerings', lecturerId],
     queryFn: async () => {
       const { data } = await apiClient.get(`/lms/attendance/offerings/lecturer/${lecturerId}`)
       return data.data
-    },
-  })
-
-  const startSessionMutation = useMutation({
-    mutationFn: (offeringId: string) =>
-      apiClient.post('/lms/attendance/sessions', { offeringId }),
-    onSuccess: (res) => {
-      setActiveSession(res.data.data)
-      queryClient.invalidateQueries({ queryKey: ['attendance', 'sessions'] })
     },
   })
 
@@ -217,6 +506,10 @@ const LecturerView: React.FC<{ lecturerId: string }> = ({ lecturerId }) => {
     },
     enabled: !!expandedOffering,
   })
+
+  const createModalOffering = createModalOfferingId
+    ? offerings.find(o => o.id === createModalOfferingId)
+    : null
 
   if (loadingOfferings) return <div className={styles.loading}>{t('attendance.loading')}</div>
 
@@ -235,6 +528,22 @@ const LecturerView: React.FC<{ lecturerId: string }> = ({ lecturerId }) => {
         <ActiveSessionPanel
           session={activeSession}
           onClose={() => setActiveSession(null)}
+        />
+      )}
+
+      {createModalOffering && (
+        <CreateSessionModal
+          offeringId={createModalOffering.id}
+          offeringLabel={`${createModalOffering.course.code} — ${createModalOffering.course.name}`}
+          onCreated={sess => setActiveSession(sess)}
+          onClose={() => setCreateModalOfferingId(null)}
+        />
+      )}
+
+      {viewingSession && (
+        <SessionDetailsModal
+          session={viewingSession}
+          onClose={() => setViewingSession(null)}
         />
       )}
 
@@ -262,11 +571,10 @@ const LecturerView: React.FC<{ lecturerId: string }> = ({ lecturerId }) => {
                   </div>
                   <button
                     className={styles.startBtn}
-                    onClick={() => startSessionMutation.mutate(off.id)}
-                    disabled={startSessionMutation.isPending}
+                    onClick={() => setCreateModalOfferingId(off.id)}
                   >
                     <QrCode size={14} />
-                    {startSessionMutation.isPending ? t('attendance.starting') : t('attendance.startSession')}
+                    {t('attendance.startNewSession')}
                   </button>
                   <button
                     className={styles.expandBtn}
@@ -288,9 +596,11 @@ const LecturerView: React.FC<{ lecturerId: string }> = ({ lecturerId }) => {
                         return (
                           <div key={sess.id} className={styles.sessionRow}>
                             <div className={styles.sessionRowLeft}>
-                              <span className={styles.sessionDate}>{fmtDate(sess.startedAt)}</span>
+                              <span className={styles.sessionName}>
+                                {sess.name ?? `${t('attendance.session')} — ${fmtDate(sess.startedAt)}`}
+                              </span>
                               <span className={styles.sessionTime}>
-                                {fmtTime(sess.startedAt)}
+                                {fmtDate(sess.startedAt)} · {fmtTime(sess.startedAt)}
                                 {sess.endedAt ? ` – ${fmtTime(sess.endedAt)}` : ''}
                               </span>
                             </div>
@@ -299,8 +609,19 @@ const LecturerView: React.FC<{ lecturerId: string }> = ({ lecturerId }) => {
                                 <CheckCircle size={10} /> {count} {t('attendance.present')}
                               </Badge>
                               <Badge color={isExpired || sess.endedAt ? 'gray' : 'orange'} size="sm">
-                                {sess.endedAt ? t('attendance.closed') : isExpired ? t('attendance.expired') : t('attendance.open')}
+                                {sess.endedAt
+                                  ? t('attendance.closed')
+                                  : isExpired
+                                  ? t('attendance.expired')
+                                  : t('attendance.open')}
                               </Badge>
+                              <button
+                                className={styles.viewDetailsBtn}
+                                onClick={() => setViewingSession(sess)}
+                                title={t('attendance.viewDetails')}
+                              >
+                                <Eye size={13} /> {t('attendance.viewDetails')}
+                              </button>
                             </div>
                           </div>
                         )
@@ -435,7 +756,6 @@ const AdminView: React.FC = () => {
   const { data: offerings = [], isLoading: loadingOfferings } = useQuery<OfferingWithCount[]>({
     queryKey: ['attendance', 'all-offerings'],
     queryFn: async () => {
-      // Admin sees all offerings — reuse lecturer endpoint with a sentinel
       const { data } = await apiClient.get('/lms/attendance/offerings/lecturer/all')
       return data.data
     },
