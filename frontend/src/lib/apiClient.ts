@@ -1,5 +1,6 @@
 import axios from 'axios'
 import { useAuthStore } from '@/stores/authStore'
+import { queryClient } from '@/lib/queryClient'
 
 export const apiClient = axios.create({
   baseURL: '/api/v1',
@@ -14,13 +15,14 @@ apiClient.interceptors.request.use(config => {
   return config
 })
 
-// Response interceptor – handle 401
+// Response interceptor – handle 401 (expired/invalid token)
 apiClient.interceptors.response.use(
   res => res,
   err => {
     if (err.response?.status === 401) {
       useAuthStore.getState().clearAuth()
-      window.location.href = '/login'
+      queryClient.clear()
+      window.location.replace('/login')
     }
     return Promise.reject(err)
   }

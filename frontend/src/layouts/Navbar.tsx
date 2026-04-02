@@ -75,8 +75,10 @@ const Navbar = () => {
 
   const handleLogout = () => {
     clearAuth()
-    addToast({ type: 'info', message: t('navbar.signedOut') })
-    navigate('/login', { replace: true })
+    qc.clear()
+    // Hard reload to /login resets all in-memory JS state (React Query cache,
+    // Zustand slices, axios instances, etc.) so no data leaks to the next user.
+    window.location.replace('/login')
   }
 
   const handleNotificationClick = async (notification: Notification) => {

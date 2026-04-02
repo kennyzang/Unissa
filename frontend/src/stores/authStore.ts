@@ -11,12 +11,15 @@ interface AuthStore {
   hasRole: (...roles: UserRole[]) => boolean
 }
 
-const clearSessionStorage = () => {
-  const keys = Object.keys(sessionStorage)
-  keys.forEach(key => {
-    if (key.startsWith('admission-apply-')) {
-      sessionStorage.removeItem(key)
-    }
+const clearAllClientStorage = () => {
+  // Clear all localStorage (includes persisted auth token)
+  localStorage.clear()
+  // Clear all sessionStorage (includes multi-step form drafts, etc.)
+  sessionStorage.clear()
+  // Clear all cookies for this origin
+  document.cookie.split(';').forEach(c => {
+    const name = c.trim().split('=')[0]
+    document.cookie = `${name}=;expires=Thu, 01 Jan 1970 00:00:00 UTC;path=/`
   })
 }
 
@@ -28,13 +31,12 @@ export const useAuthStore = create<AuthStore>()(
       isAuthenticated: false,
 
       setAuth: (user, token) => {
-        clearSessionStorage()
         set({ user, token, isAuthenticated: true })
       },
 
       clearAuth: () => {
-        clearSessionStorage()
         set({ user: null, token: null, isAuthenticated: false })
+        clearAllClientStorage()
       },
 
       hasRole: (...roles) => {
