@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next'
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useRef, useCallback } from 'react'
 import { Controller, useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
@@ -13,6 +13,8 @@ import {
   CheckCircleOutlined, UserOutlined, BookOutlined,
   TrophyOutlined, FileTextOutlined, IdcardOutlined, ClockCircleOutlined,
   BellOutlined, CloseCircleOutlined, LoadingOutlined,
+  UploadOutlined, FilePdfOutlined, FileWordOutlined, FileImageOutlined,
+  DeleteOutlined, EyeOutlined, PaperClipOutlined,
 } from '@ant-design/icons'
 import dayjs from 'dayjs'
 import { useNavigate } from 'react-router-dom'
@@ -479,6 +481,182 @@ const PendingApplicationCard: React.FC<{ app: any }> = ({ app }) => {
   )
 }
 
+// ── Document upload types & helpers ──────────────────────────────────────────
+const ALLOWED_DOC_TYPES = ['application/pdf', 'application/msword',
+  'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+  'image/jpeg', 'image/jpg', 'image/png']
+const ALLOWED_DOC_EXTS = ['.pdf', '.doc', '.docx', '.jpg', '.jpeg', '.png']
+const MAX_FILE_SIZE_BYTES = 10 * 1024 * 1024 // 10 MB
+
+interface UploadFileItem {
+  id: string
+  file: File
+  docType: string
+  progress: number   // 0–100
+  status: 'pending' | 'uploading' | 'done' | 'error'
+  error?: string
+}
+
+const DOC_TYPE_OPTIONS = [
+  { value: 'transcript',      label: 'Academic Transcript' },
+  { value: 'ic_passport',     label: 'IC / Passport' },
+  { value: 'passport_photo',  label: 'Passport Photo' },
+  { value: 'supporting',      label: 'Supporting Document' },
+]
+
+function fileIcon(mime: string) {
+  if (mime === 'application/pdf') return <FilePdfOutlined style={{ color: '#e53935' }} />
+  if (mime.includes('word')) return <FileWordOutlined style={{ color: '#1565c0' }} />
+  if (mime.startsWith('image/')) return <FileImageOutlined style={{ color: '#2e7d32' }} />
+  return <PaperClipOutlined />
+}
+
+function fmtBytes(b: number) {
+  return b < 1024 * 1024 ? `${(b / 1024).toFixed(0)} KB` : `${(b / 1024 / 1024).toFixed(1)} MB`
+}
+
+// ── Document Upload Section (used inside Review step) ─────────────────────────
+interface DocumentUploadSectionProps {
+  files: UploadFileItem[]
+  onAdd: (items: UploadFileItem[]) => void
+  onRemove: (id: string) => void
+  onTypeChange: (id: string, docType: string) => void
+  onPreview: (item: UploadFileItem) => void
+  disabled?: boolean
+}
+
+const DocumentUploadSection: React.FC<DocumentUploadSectionProps> = ({
+  files, onAdd, onRemove, onTypeChange, onPreview, disabled,
+}) => {
+  const { t } = useTranslation()
+  const inputRef = useRef<HTMLInputElement>(null)
+  const [dragOver, setDragOver] = useState(false)
+  const [validationError, setValidationError] = useState('')
+
+  const validateAndAdd = useCallback((rawFiles: File[]) => {
+    setValidationError('')
+    const items: UploadFileItem[] = []
+    const errors: string[] = []
+    for (const f of rawFiles) {
+      const ext = '.' + (f.name.split('.').pop() ?? '').toLowerCase()
+      const typeOk = ALLOWED_DOC_TYPES.includes(f.type) || ALLOWED_DOC_EXTS.includes(ext)
+      if (!typeOk) { errors.push(`"${f.name}" — unsupported format`); continue }
+      if (f.size > MAX_FILE_SIZE_BYTES) { errors.push(`"${f.name}" — exceeds 10 MB`); continue }
+      items.push({ id: `${f.name}-${Date.now()}-${Math.random()}`, file: f, docType: 'supporting', progress: 0, status: 'pending' })
+    }
+    if (errors.length) setValidationError(errors.join(' · '))
+    if (items.length) onAdd(items)
+  }, [onAdd])
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    validateAndAdd(Array.from(e.target.files ?? []))
+    e.target.value = ''
+  }
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault(); setDragOver(false)
+    validateAndAdd(Array.from(e.dataTransfer.files))
+  }
+
+  return (
+    <div className={styles.docUploadSection}>
+      <div
+        className={`${styles.docDropZone} ${dragOver ? styles.docDropZoneOver : ''} ${disabled ? styles.docDropZoneDisabled : ''}`}
+        onDragOver={e => { e.preventDefault(); !disabled && setDragOver(true) }}
+        onDragLeave={() => setDragOver(false)}
+        onDrop={handleDrop}
+        onClick={() => !disabled && inputRef.current?.click()}
+      >
+        <input
+          ref={inputRef}
+          type="file"
+          multiple
+          accept={ALLOWED_DOC_EXTS.join(',')}
+          onChange={handleInputChange}
+          style={{ display: 'none' }}
+          disabled={disabled}
+        />
+        <UploadOutlined style={{ fontSize: 28, color: '#1677ff' }} />
+        <div className={styles.docDropText}>
+          {t('admissionApply.docDropTitle', { defaultValue: 'Click or drag files here to upload' })}
+        </div>
+        <div className={styles.docDropHint}>
+          {t('admissionApply.docDropHint', { defaultValue: 'PDF, Word, JPG, PNG · Max 10 MB per file' })}
+        </div>
+      </div>
+
+      {validationError && (
+        <div className={styles.docValidationError}>
+          ⚠ {validationError}
+        </div>
+      )}
+
+      {files.length > 0 && (
+        <div className={styles.docFileList}>
+          {files.map(item => (
+            <div key={item.id} className={styles.docFileItem}>
+              <div className={styles.docFileIcon}>{fileIcon(item.file.type)}</div>
+              <div className={styles.docFileInfo}>
+                <div className={styles.docFileName}>{item.file.name}</div>
+                <div className={styles.docFileMeta}>{fmtBytes(item.file.size)}</div>
+                {/* Progress bar */}
+                {(item.status === 'uploading' || item.status === 'done') && (
+                  <div className={styles.docProgressBar}>
+                    <div
+                      className={`${styles.docProgressFill} ${item.status === 'done' ? styles.docProgressDone : ''}`}
+                      style={{ width: `${item.progress}%` }}
+                    />
+                  </div>
+                )}
+                {item.status === 'error' && (
+                  <div className={styles.docFileError}>{item.error}</div>
+                )}
+              </div>
+              <select
+                className={styles.docTypeSelect}
+                value={item.docType}
+                onChange={e => onTypeChange(item.id, e.target.value)}
+                disabled={disabled || item.status === 'uploading'}
+              >
+                {DOC_TYPE_OPTIONS.map(o => (
+                  <option key={o.value} value={o.value}>{o.label}</option>
+                ))}
+              </select>
+              <div className={styles.docFileActions}>
+                {item.file.type.startsWith('image/') && (
+                  <button
+                    type="button"
+                    className={styles.docActionBtn}
+                    onClick={() => onPreview(item)}
+                    title="Preview"
+                  >
+                    <EyeOutlined />
+                  </button>
+                )}
+                <button
+                  type="button"
+                  className={`${styles.docActionBtn} ${styles.docDeleteBtn}`}
+                  onClick={() => onRemove(item.id)}
+                  disabled={disabled || item.status === 'uploading'}
+                  title="Remove"
+                >
+                  <DeleteOutlined />
+                </button>
+              </div>
+              {item.status === 'done' && (
+                <CheckCircleOutlined style={{ color: '#52c41a', fontSize: 18, flexShrink: 0 }} />
+              )}
+              {item.status === 'uploading' && (
+                <LoadingOutlined style={{ color: '#1677ff', fontSize: 18, flexShrink: 0 }} />
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
 const AdmissionApplyPage: React.FC = () => {
   const { t } = useTranslation()
   const user = useAuthStore(s => s.user)
@@ -528,8 +706,47 @@ const AdmissionApplyPage: React.FC = () => {
     } catch { return {} }
   })
   const [resubmitData, setResubmitData] = useState<any | null>(null)
+  const [docFiles, setDocFiles] = useState<UploadFileItem[]>([])
+  const [previewSrc, setPreviewSrc] = useState<string | null>(null)
   const addToast                  = useUIStore(s => s.addToast)
   const qc                        = useQueryClient()
+
+  const handleDocAdd = (items: UploadFileItem[]) => setDocFiles(p => [...p, ...items])
+  const handleDocRemove = (id: string) => setDocFiles(p => p.filter(f => f.id !== id))
+  const handleDocTypeChange = (id: string, docType: string) =>
+    setDocFiles(p => p.map(f => f.id === id ? { ...f, docType } : f))
+  const handleDocPreview = (item: UploadFileItem) => {
+    const url = URL.createObjectURL(item.file)
+    setPreviewSrc(url)
+  }
+
+  const uploadDocuments = async (applicantId: string) => {
+    const pending = docFiles.filter(f => f.status === 'pending')
+    if (!pending.length) return
+
+    for (const item of pending) {
+      setDocFiles(p => p.map(f => f.id === item.id ? { ...f, status: 'uploading', progress: 10 } : f))
+      const fd = new FormData()
+      fd.append('files', item.file)
+      fd.append('docTypes', item.docType)
+      try {
+        // Simulate gradual progress
+        setDocFiles(p => p.map(f => f.id === item.id ? { ...f, progress: 50 } : f))
+        await apiClient.post(`/admissions/${applicantId}/documents`, fd, {
+          headers: { 'Content-Type': 'multipart/form-data' },
+          onUploadProgress: (ev) => {
+            if (ev.total) {
+              const pct = Math.round((ev.loaded / ev.total) * 100)
+              setDocFiles(prev => prev.map(f => f.id === item.id ? { ...f, progress: pct } : f))
+            }
+          },
+        })
+        setDocFiles(p => p.map(f => f.id === item.id ? { ...f, status: 'done', progress: 100 } : f))
+      } catch (e: any) {
+        setDocFiles(p => p.map(f => f.id === item.id ? { ...f, status: 'error', error: e.response?.data?.message ?? 'Upload failed' } : f))
+      }
+    }
+  }
 
   useEffect(() => {
     if (user?.id) {
@@ -635,7 +852,11 @@ const AdmissionApplyPage: React.FC = () => {
 
   const submitMutation = useMutation({
     mutationFn: (payload: Record<string, unknown>) => apiClient.post('/admissions/apply', payload),
-    onSuccess: (res) => {
+    onSuccess: async (res) => {
+      const applicantId: string = res.data.data.id
+      if (docFiles.some(f => f.status === 'pending')) {
+        await uploadDocuments(applicantId)
+      }
       setSubmitted({
         applicationRef: res.data.data.applicationRef,
         autoCheckPassed: res.data.autoCheckPassed ?? true,
@@ -648,7 +869,11 @@ const AdmissionApplyPage: React.FC = () => {
 
   const resubmitMutation = useMutation({
     mutationFn: (payload: Record<string, unknown>) => apiClient.patch(`/admissions/${resubmitData?.id}/resubmit`, payload),
-    onSuccess: (res) => {
+    onSuccess: async (res) => {
+      const applicantId: string = resubmitData?.id ?? res.data.data.id
+      if (docFiles.some(f => f.status === 'pending')) {
+        await uploadDocuments(applicantId)
+      }
       setSubmitted({
         applicationRef: res.data.data.applicationRef,
         autoCheckPassed: res.data.autoCheckPassed ?? true,
@@ -1128,6 +1353,16 @@ const AdmissionApplyPage: React.FC = () => {
         </Card>
       )}
 
+      {/* Image preview modal */}
+      {previewSrc && (
+        <div
+          style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+          onClick={() => { setPreviewSrc(null); URL.revokeObjectURL(previewSrc) }}
+        >
+          <img src={previewSrc} alt="preview" style={{ maxWidth: '90vw', maxHeight: '90vh', borderRadius: 8, boxShadow: '0 4px 32px rgba(0,0,0,0.5)' }} />
+        </div>
+      )}
+
       {/* ── Step 4: Review ────────────────────────────────────── */}
       {step === 3 && (
         <Card title={t('admissionApply.step4Title')}>
@@ -1167,6 +1402,25 @@ const AdmissionApplyPage: React.FC = () => {
               </Descriptions>
             </Col>
           </Row>
+          {/* Supporting Documents */}
+          <Col xs={24}>
+            <div style={{ fontWeight: 600, fontSize: 13, color: '#165DFF', marginBottom: 8, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+              <PaperClipOutlined style={{ marginRight: 5 }} />
+              {t('admissionApply.supportingDocuments', { defaultValue: 'Supporting Documents' })}
+              <span style={{ fontSize: 12, fontWeight: 400, color: '#888', marginLeft: 8, textTransform: 'none', letterSpacing: 0 }}>
+                {t('admissionApply.documentsOptional', { defaultValue: '(Optional — PDF, Word, JPG · Max 10 MB each)' })}
+              </span>
+            </div>
+            <DocumentUploadSection
+              files={docFiles}
+              onAdd={handleDocAdd}
+              onRemove={handleDocRemove}
+              onTypeChange={handleDocTypeChange}
+              onPreview={handleDocPreview}
+              disabled={submitMutation.isPending || resubmitMutation.isPending}
+            />
+          </Col>
+
           <Alert
             style={{ margin: '20px 0 16px' }}
             type="info"

@@ -1,7 +1,9 @@
 import { Router, Response } from 'express'
 import prisma from '../lib/prisma'
 import bcrypt from 'bcryptjs'
+import path from 'path'
 import { authenticate, requireRole, AuthRequest } from '../middleware/auth'
+import { upload } from '../lib/upload'
 
 const router: Router = Router()
 
@@ -444,6 +446,69 @@ router.get('/', authenticate, requireRole('admissions', 'admin'), async (req: Au
     take: Number(limit),
   })
   res.json({ success: true, data: apps })
+})
+
+// POST /api/v1/admissions/:applicantId/documents  — Upload application supporting documents
+router.post(
+  '/:applicantId/documents',
+  authenticate,
+  upload.array('files', 10),
+  async (req: AuthRequest, res: Response) => {
+    const { applicantId } = req.params
+    const files = (req.files ?? []) as Express.Multer.File[]
+    const docTypes = req.body.docTypes
+      ? (Array.isArray(req.body.docTypes) ? req.body.docTypes : [req.body.docTypes])
+      : []
+
+    if (!files.length) {
+      res.status(400).json({ success: false, message: 'No files provided' })
+      return
+    }
+
+    const applicant = await prisma.applicant.findUnique({ where: { id: applicantId } })
+    if (!applicant) {
+      res.status(404).json({ success: false, message: 'Application not found' })
+      return
+    }
+
+    const userId = req.user?.userId
+    if (!userId) {
+      res.status(401).json({ success: false, message: 'Unauthorized' })
+      return
+    }
+
+    const created: any[] = []
+    for (let i = 0; i < files.length; i++) {
+      const f = files[i]
+      const docType = docTypes[i] ?? 'supporting'
+      const asset = await prisma.fileAsset.create({
+        data: {
+          fileName: f.filename,
+          originalName: f.originalname,
+          fileUrl: `/uploads/submissions/${f.filename}`,
+          mimeType: f.mimetype,
+          fileSizeBytes: f.size,
+          uploadedById: userId,
+        },
+      })
+      const doc = await prisma.applicantDocument.create({
+        data: { applicantId, assetId: asset.id, docType },
+      })
+      created.push({ ...doc, asset })
+    }
+
+    res.status(201).json({ success: true, data: created, message: `${created.length} document(s) uploaded` })
+  },
+)
+
+// GET /api/v1/admissions/:applicantId/documents  — List uploaded documents for an application
+router.get('/:applicantId/documents', authenticate, async (req: AuthRequest, res: Response) => {
+  const docs = await prisma.applicantDocument.findMany({
+    where: { applicantId: req.params.applicantId },
+    include: { asset: true },
+    orderBy: { uploadedAt: 'desc' },
+  })
+  res.json({ success: true, data: docs })
 })
 
 export default router

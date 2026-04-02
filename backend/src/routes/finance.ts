@@ -61,15 +61,19 @@ router.post('/payments', async (req: AuthRequest, res: Response) => {
     res.status(400).json({ success: false, message: 'Invoice already paid' }); return
   }
 
-  // Simulate 2-second processing delay (by returning immediately with "processing" — real delay on client)
+  const VALID_METHODS = ['card', 'online_banking', 'e_wallet', 'qr_pay', 'bank_transfer']
+  if (!VALID_METHODS.includes(method)) {
+    res.status(400).json({ success: false, message: `Invalid payment method: ${method}` }); return
+  }
+
   const amount = invoice.outstandingBalance
+  const txRef = `TXN-${new Date().getFullYear()}-${String(Math.floor(Math.random() * 900000) + 100000)}`
 
   // Demo: decline card 4000 0000 0000 0002
   const last4 = cardNumber?.replace(/\s/g, '').slice(-4)
-  const isDeclined = cardNumber?.replace(/\s/g, '') === '4000000000000002'
+  const isDeclined = method === 'card' && cardNumber?.replace(/\s/g, '') === '4000000000000002'
 
   if (isDeclined) {
-    const txRef = `TXN-${new Date().getFullYear()}-${String(Math.floor(Math.random() * 900000) + 100000)}`
     await prisma.payment.create({
       data: {
         transactionRef: txRef,
@@ -84,8 +88,7 @@ router.post('/payments', async (req: AuthRequest, res: Response) => {
     res.status(400).json({ success: false, message: 'Card declined – Insufficient funds' }); return
   }
 
-  const txRef = `TXN-${new Date().getFullYear()}-${String(Math.floor(Math.random() * 900000) + 100000)}`
-  const cardBrand = detectCardBrand(cardNumber)
+  const cardBrand = method === 'card' ? detectCardBrand(cardNumber) : undefined
 
   const [payment] = await prisma.$transaction([
     prisma.payment.create({
@@ -94,9 +97,9 @@ router.post('/payments', async (req: AuthRequest, res: Response) => {
         invoiceId,
         amount,
         method,
-        cardLast4: last4,
+        cardLast4: method === 'card' ? last4 : undefined,
         cardBrand,
-        bankName: method === 'online_banking' ? bankName : undefined,
+        bankName: ['online_banking', 'bank_transfer'].includes(method) ? bankName : undefined,
         status: 'success',
         paidAt: new Date(),
       },
@@ -107,10 +110,15 @@ router.post('/payments', async (req: AuthRequest, res: Response) => {
     }),
   ])
 
+  const methodLabel: Record<string, string> = {
+    card: 'Credit/Debit Card', online_banking: 'Online Banking',
+    e_wallet: 'E-Wallet', qr_pay: 'QR Pay', bank_transfer: 'Bank Transfer',
+  }
+
   res.json({
     success: true,
     data: { payment, transactionRef: txRef, amount },
-    message: 'Payment successful',
+    message: `Payment via ${methodLabel[method] ?? method} successful`,
   })
 })
 

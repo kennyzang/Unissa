@@ -1,10 +1,13 @@
 import { useTranslation } from 'react-i18next'
 import React, { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { useForm, Controller } from 'react-hook-form'
+import { useForm, Controller, useController } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { CreditCard, CheckCircle, AlertCircle, Receipt, LockKeyhole, FileText, Download } from 'lucide-react'
+import {
+  CreditCard, CheckCircle, AlertCircle, Receipt, LockKeyhole,
+  FileText, Download, Smartphone, Building2, QrCode as QrIcon,
+} from 'lucide-react'
 import { apiClient } from '@/lib/apiClient'
 import { useUIStore } from '@/stores/uiStore'
 import Card from '@/components/ui/Card'
@@ -34,7 +37,7 @@ interface Invoice {
 }
 
 const paySchema = z.object({
-  method: z.enum(['card', 'online_banking', 'e_wallet']),
+  method: z.enum(['card', 'online_banking', 'e_wallet', 'qr_pay', 'bank_transfer']),
   cardNumber: z.string().optional(),
   cardExpiry: z.string().optional(),
   cardCvv: z.string().optional(),
@@ -42,6 +45,119 @@ const paySchema = z.object({
   bankName: z.string().optional(),
 })
 type PayForm = z.infer<typeof paySchema>
+
+// ── Payment method meta ────────────────────────────────────────────────────────
+const PAYMENT_METHODS = [
+  {
+    value: 'card' as const,
+    icon: <CreditCard size={22} />,
+    label: 'Credit / Debit Card',
+    desc: 'Visa, Mastercard, JCB',
+    color: '#1677ff',
+    bg: '#e6f4ff',
+  },
+  {
+    value: 'online_banking' as const,
+    icon: <Building2 size={22} />,
+    label: 'Online Banking',
+    desc: 'BIBD, Baiduri, HSBC, Maybank',
+    color: '#389e0d',
+    bg: '#f6ffed',
+  },
+  {
+    value: 'e_wallet' as const,
+    icon: <Smartphone size={22} />,
+    label: 'E-Wallet',
+    desc: 'Auto-approved in demo',
+    color: '#722ed1',
+    bg: '#f9f0ff',
+  },
+  {
+    value: 'qr_pay' as const,
+    icon: <QrIcon size={22} />,
+    label: 'QR Pay',
+    desc: 'Scan & pay via banking app',
+    color: '#d46b08',
+    bg: '#fff7e6',
+  },
+  {
+    value: 'bank_transfer' as const,
+    icon: <Building2 size={22} />,
+    label: 'Bank Transfer',
+    desc: 'Transfer to UNISSA account',
+    color: '#08979c',
+    bg: '#e6fffb',
+  },
+]
+
+// ── Formatted card number field ───────────────────────────────────────────────
+const CardNumberField: React.FC<{ control: any; error?: string }> = ({ control, error }) => {
+  const { field } = useController({ name: 'cardNumber', control })
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const digits = e.target.value.replace(/\D/g, '').slice(0, 16)
+    const formatted = digits.replace(/(.{4})/g, '$1 ').trimEnd()
+    field.onChange(formatted)
+  }
+
+  return (
+    <Input
+      label="Card Number"
+      placeholder="4111 1111 1111 1111"
+      hint="Use 4000 0000 0000 0002 to test decline"
+      value={field.value ?? ''}
+      onChange={handleChange}
+      onBlur={field.onBlur}
+      name={field.name}
+      inputMode="numeric"
+      maxLength={19}
+      error={error}
+    />
+  )
+}
+
+// ── Formatted expiry field ────────────────────────────────────────────────────
+const ExpiryField: React.FC<{ control: any; error?: string }> = ({ control, error }) => {
+  const { field } = useController({ name: 'cardExpiry', control })
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    let raw = e.target.value.replace(/\D/g, '').slice(0, 6) // strip non-digits, max 6 (MMYYYY)
+    let out = ''
+    if (raw.length >= 2) {
+      const month = parseInt(raw.slice(0, 2), 10)
+      // Clamp month to 01–12
+      const mm = String(Math.min(Math.max(month, 1), 12)).padStart(2, '0')
+      out = mm + (raw.length > 2 ? '/' + raw.slice(2, 6) : '/')
+    } else {
+      out = raw
+    }
+    field.onChange(out)
+  }
+
+  // On backspace over the slash, remove it cleanly
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    const val = field.value ?? ''
+    if (e.key === 'Backspace' && val.endsWith('/')) {
+      e.preventDefault()
+      field.onChange(val.slice(0, -1))
+    }
+  }
+
+  return (
+    <Input
+      label="Expiry"
+      placeholder="MM/YY"
+      value={field.value ?? ''}
+      onChange={handleChange}
+      onKeyDown={handleKeyDown}
+      onBlur={field.onBlur}
+      name={field.name}
+      inputMode="numeric"
+      maxLength={7}
+      error={error}
+    />
+  )
+}
 
 const STATUS_BADGE: Record<string, { color: 'green' | 'red' | 'orange' | 'gray'; label: string }> = {
   unpaid:  { color: 'orange', label: 'Unpaid' },
@@ -272,69 +388,129 @@ const FeeStatementPage: React.FC = () => {
           title="Make Payment"
           onClose={() => { setPayModal(null); reset() }}
           footer={null}
+          width={560}
         >
           <div className={styles.payAmount}>
             Amount: <strong>BND {payModal.outstandingBalance.toLocaleString()}</strong>
           </div>
 
           <form onSubmit={onPay} className={styles.payForm}>
+            {/* ── Visual payment method selector ── */}
             <Controller
               control={control}
               name="method"
               render={({ field }) => (
-                <Select
-                  label="Payment Method"
-                  value={field.value}
-                  onChange={val => field.onChange(val)}
-                  options={[
-                    { value: 'card', label: 'Credit / Debit Card' },
-                    { value: 'online_banking', label: 'Online Banking' },
-                    { value: 'e_wallet', label: 'E-Wallet' },
-                  ]}
-                />
+                <div>
+                  <div className={styles.methodLabel}>Payment Method</div>
+                  <div className={styles.methodGrid}>
+                    {PAYMENT_METHODS.map(pm => (
+                      <button
+                        key={pm.value}
+                        type="button"
+                        className={`${styles.methodCard} ${field.value === pm.value ? styles.methodCardActive : ''}`}
+                        style={field.value === pm.value ? { borderColor: pm.color, background: pm.bg } : {}}
+                        onClick={() => field.onChange(pm.value)}
+                      >
+                        <span className={styles.methodIcon} style={{ color: pm.color }}>{pm.icon}</span>
+                        <span className={styles.methodName}>{pm.label}</span>
+                        <span className={styles.methodDesc}>{pm.desc}</span>
+                        {field.value === pm.value && (
+                          <span className={styles.methodCheck} style={{ background: pm.color }}>
+                            <CheckCircle size={12} />
+                          </span>
+                        )}
+                      </button>
+                    ))}
+                  </div>
+                </div>
               )}
             />
 
+            {/* ── Credit / Debit Card ── */}
             {method === 'card' && (
-              <>
-                <Input
-                  label="Card Number"
-                  placeholder="4111 1111 1111 1111"
-                  hint="Use 4000 0000 0000 0002 to test decline"
-                  {...register('cardNumber')}
-                  error={errors.cardNumber?.message}
-                />
+              <div className={styles.methodForm}>
+                <CardNumberField control={control} error={errors.cardNumber?.message} />
                 <div className={styles.cardRow}>
-                  <Input label="Expiry" placeholder="MM/YY" {...register('cardExpiry')} />
-                  <Input label="CVV" placeholder="123" {...register('cardCvv')} />
+                  <ExpiryField control={control} error={errors.cardExpiry?.message} />
+                  <Input label="CVV" placeholder="123" {...register('cardCvv')} inputMode="numeric" maxLength={4} />
                 </div>
                 <Input label="Cardholder Name" {...register('cardHolder')} />
-              </>
+              </div>
             )}
 
+            {/* ── Online Banking ── */}
             {method === 'online_banking' && (
-              <Controller
-                control={control}
-                name="bankName"
-                render={({ field }) => (
-                  <Select
-                    label="Bank"
-                    value={field.value}
-                    onChange={val => field.onChange(val)}
-                    options={[
-                      { value: 'BIBD', label: 'BIBD (Baiduri)' },
-                      { value: 'Baiduri', label: 'Baiduri Bank' },
-                      { value: 'HSBC', label: 'HSBC Brunei' },
-                      { value: 'Maybank', label: 'Maybank' },
-                    ]}
-                  />
-                )}
-              />
+              <div className={styles.methodForm}>
+                <Controller
+                  control={control}
+                  name="bankName"
+                  render={({ field }) => (
+                    <Select
+                      label="Select Bank"
+                      value={field.value}
+                      onChange={val => field.onChange(val)}
+                      options={[
+                        { value: 'BIBD',    label: 'BIBD (Baiduri)' },
+                        { value: 'Baiduri', label: 'Baiduri Bank' },
+                        { value: 'HSBC',    label: 'HSBC Brunei' },
+                        { value: 'Maybank', label: 'Maybank' },
+                      ]}
+                    />
+                  )}
+                />
+                <div className={styles.methodInfoBox}>
+                  You will be redirected to your bank's secure online portal to complete payment.
+                </div>
+              </div>
             )}
 
+            {/* ── E-Wallet ── */}
             {method === 'e_wallet' && (
-              <div className={styles.ewalletNote}>
-                You will be redirected to complete payment via e-wallet.
+              <div className={styles.methodForm}>
+                <div className={styles.methodInfoBox}>
+                  You will be redirected to complete payment via e-wallet. <em>(Demo: auto-approved)</em>
+                </div>
+              </div>
+            )}
+
+            {/* ── QR Pay ── */}
+            {method === 'qr_pay' && (
+              <div className={styles.methodForm}>
+                <div className={styles.qrPayBox}>
+                  <div className={styles.qrPayTitle}>Scan QR Code to Pay</div>
+                  {/* Static demo QR placeholder */}
+                  <div className={styles.qrPayPlaceholder}>
+                    <QrIcon size={72} strokeWidth={1.5} />
+                    <div className={styles.qrPayAmount}>BND {payModal.outstandingBalance.toLocaleString()}</div>
+                  </div>
+                  <p className={styles.qrPayHint}>
+                    Open your banking or payment app → Scan → Confirm payment of BND {payModal.outstandingBalance.toLocaleString()}.<br />
+                    <em>Demo: payment will be auto-confirmed on submit.</em>
+                  </p>
+                </div>
+              </div>
+            )}
+
+            {/* ── Bank Transfer ── */}
+            {method === 'bank_transfer' && (
+              <div className={styles.methodForm}>
+                <div className={styles.bankTransferBox}>
+                  <div className={styles.bankTransferTitle}>UNISSA Bank Transfer Details</div>
+                  <table className={styles.bankTransferTable}>
+                    <tbody>
+                      <tr><td>Bank</td><td><strong>BIBD — Bank Islam Brunei Darussalam</strong></td></tr>
+                      <tr><td>Account Name</td><td><strong>Universiti Islam Sultan Sharif Ali</strong></td></tr>
+                      <tr><td>Account No.</td><td><strong>01-234567-001</strong></td></tr>
+                      <tr><td>Reference</td><td><strong>{payModal.invoiceNo ?? payModal.id.slice(-8).toUpperCase()}</strong></td></tr>
+                      <tr><td>Amount</td><td><strong>BND {payModal.outstandingBalance.toLocaleString()}</strong></td></tr>
+                    </tbody>
+                  </table>
+                  <p className={styles.bankTransferNote}>
+                    ⚠ Please use your Invoice No. as the payment reference so we can match your transfer.
+                    Send your bank receipt to <strong>finance@unissa.edu.bn</strong>.
+                    <em> Demo: confirmed on submit.</em>
+                  </p>
+                </div>
               </div>
             )}
 
