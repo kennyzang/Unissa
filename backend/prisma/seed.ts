@@ -365,6 +365,21 @@ async function main() {
   })
 
   // ── Clean up existing Noor applicant for clean seed ───────────
+  const existingStudentNoor = await prisma.student.findFirst({ where: { userId: uNoor.id } })
+  if (existingStudentNoor) {
+    await prisma.studentGpaRecord.deleteMany({ where: { studentId: existingStudentNoor.id } })
+    await prisma.studentRiskScore.deleteMany({ where: { studentId: existingStudentNoor.id } })
+    await prisma.attendanceRecord.deleteMany({ where: { studentId: existingStudentNoor.id } })
+    await prisma.submission.deleteMany({ where: { studentId: existingStudentNoor.id } })
+    const feeInvoices = await prisma.feeInvoice.findMany({ where: { studentId: existingStudentNoor.id }, select: { id: true } })
+    for (const inv of feeInvoices) {
+      await prisma.payment.deleteMany({ where: { invoiceId: inv.id } })
+    }
+    await prisma.feeInvoice.deleteMany({ where: { studentId: existingStudentNoor.id } })
+    await prisma.enrolment.deleteMany({ where: { studentId: existingStudentNoor.id } })
+    await prisma.libraryAccount.deleteMany({ where: { studentId: existingStudentNoor.id } })
+    await prisma.student.delete({ where: { id: existingStudentNoor.id } })
+  }
   await prisma.applicant.deleteMany({ where: { userId: uNoor.id } })
 
   // ── Applicant: Noor ──────────────────────────────────────────
