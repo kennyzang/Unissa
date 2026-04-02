@@ -91,3 +91,5 @@ nginx/ssl/
 # 操作系统
 __pycache__/
 *.py[cod]
+backend/prisma/dev.db
+backend/prisma/dev.db

@@ -62,19 +62,20 @@ const LmsCourseDetailPage: React.FC = () => {
     const maxSize = 10 * 1024 * 1024 // 10MB
 
     files.forEach((file, index) => {
-      const fileExtension = '.' + file.name.split('.').pop()?.toLowerCase()
+      const ext = file.name.split('.').pop()?.toLowerCase()
+      const fileExtension = ext ? `.${ext}` : undefined
       
-      if (!allowedTypes.includes(file.type) && !allowedExtensions.includes(fileExtension)) {
-        errors.push(`文件 "${file.name}" 格式不支持，仅支持 PDF、DOC、DOCX、TXT、JPG、JPEG、PNG 格式`)
+      if (!allowedTypes.includes(file.type) && !(fileExtension && allowedExtensions.includes(fileExtension))) {
+        errors.push(t('lmsCourseDetail.fileFormatError', { fileName: file.name }))
       }
       
       if (file.size > maxSize) {
-        errors.push(`文件 "${file.name}" 超过10MB限制`)
+        errors.push(t('lmsCourseDetail.fileSizeError', { fileName: file.name }))
       }
     })
 
     if (files.length > 5) {
-      errors.push('最多只能上传5个文件')
+      errors.push(t('lmsCourseDetail.maxFilesError'))
     }
 
     return { valid: errors.length === 0, errors }
@@ -107,38 +108,38 @@ const LmsCourseDetailPage: React.FC = () => {
     queryKey: ['submissions', 'all', offeringId],
     queryFn: async () => {
       // Mock data for teacher view
-      return [
-        {
-          id: '1',
-          assignmentId: '1',
-          studentId: '101',
-          studentName: 'John Doe',
-          content: 'This is my assignment submission',
-          submittedAt: new Date().toISOString(),
-          finalMarks: 85,
-          aiRubricScores: JSON.stringify([
-            { criterion: 'Content', ai_score: 8.5, ai_comment: 'Good content', ai_suggestions: 'Add more examples' },
-            { criterion: 'Structure', ai_score: 9.0, ai_comment: 'Well structured', ai_suggestions: 'Improve conclusion' },
-            { criterion: 'Depth', ai_score: 7.5, ai_comment: 'Good depth', ai_suggestions: 'Explore more concepts' },
-            { criterion: 'Accuracy', ai_score: 8.0, ai_comment: 'Accurate information', ai_suggestions: 'Check references' }
-          ])
-        },
-        {
-          id: '2',
-          assignmentId: '1',
-          studentId: '102',
-          studentName: 'Jane Smith',
-          content: 'Here is my assignment',
-          submittedAt: new Date().toISOString(),
-          finalMarks: 90,
-          aiRubricScores: JSON.stringify([
-            { criterion: 'Content', ai_score: 9.0, ai_comment: 'Excellent content', ai_suggestions: 'Very good' },
-            { criterion: 'Structure', ai_score: 9.5, ai_comment: 'Perfect structure', ai_suggestions: 'No suggestions' },
-            { criterion: 'Depth', ai_score: 8.5, ai_comment: 'Great depth', ai_suggestions: 'Excellent analysis' },
-            { criterion: 'Accuracy', ai_score: 9.0, ai_comment: 'Very accurate', ai_suggestions: 'Well researched' }
-          ])
-        }
-      ]
+          return [
+            {
+              id: '1',
+              assignmentId: '1',
+              studentId: '101',
+              studentName: 'John Doe',
+              content: 'This is my assignment submission',
+              submittedAt: new Date().toISOString(),
+              finalMarks: 85,
+              aiRubricScores: JSON.stringify([
+                { criterion: t('lmsCourseDetail.rubricContent'), ai_score: 8.5, ai_comment: t('lmsCourseDetail.rubricContentComment'), ai_suggestions: t('lmsCourseDetail.rubricContentSuggestions') },
+                { criterion: t('lmsCourseDetail.rubricStructure'), ai_score: 9.0, ai_comment: t('lmsCourseDetail.rubricStructureComment'), ai_suggestions: t('lmsCourseDetail.rubricStructureSuggestions') },
+                { criterion: t('lmsCourseDetail.rubricDepth'), ai_score: 7.5, ai_comment: t('lmsCourseDetail.rubricDepthComment'), ai_suggestions: t('lmsCourseDetail.rubricDepthSuggestions') },
+                { criterion: t('lmsCourseDetail.rubricAccuracy'), ai_score: 8.0, ai_comment: t('lmsCourseDetail.rubricAccuracyComment'), ai_suggestions: t('lmsCourseDetail.rubricAccuracySuggestions') }
+              ])
+            },
+            {
+              id: '2',
+              assignmentId: '1',
+              studentId: '102',
+              studentName: 'Jane Smith',
+              content: 'Here is my assignment',
+              submittedAt: new Date().toISOString(),
+              finalMarks: 90,
+              aiRubricScores: JSON.stringify([
+                { criterion: t('lmsCourseDetail.rubricContent'), ai_score: 9.0, ai_comment: t('lmsCourseDetail.rubricContentCommentExcellent'), ai_suggestions: t('lmsCourseDetail.rubricContentSuggestionsExcellent') },
+                { criterion: t('lmsCourseDetail.rubricStructure'), ai_score: 9.5, ai_comment: t('lmsCourseDetail.rubricStructureCommentPerfect'), ai_suggestions: t('lmsCourseDetail.rubricStructureSuggestionsPerfect') },
+                { criterion: t('lmsCourseDetail.rubricDepth'), ai_score: 8.5, ai_comment: t('lmsCourseDetail.rubricDepthCommentGreat'), ai_suggestions: t('lmsCourseDetail.rubricDepthSuggestionsExcellent') },
+                { criterion: t('lmsCourseDetail.rubricAccuracy'), ai_score: 9.0, ai_comment: t('lmsCourseDetail.rubricAccuracyCommentVeryAccurate'), ai_suggestions: t('lmsCourseDetail.rubricAccuracySuggestionsWellResearched') }
+              ])
+            }
+          ]
     },
     enabled: !!offeringId && user?.role === 'lecturer',
   })
@@ -197,7 +198,7 @@ const LmsCourseDetailPage: React.FC = () => {
   if (!offering) {
     return (
       <div className={styles.page}>
-        <div className={styles.loading}>{t('lmsCourseDetail.loading')}</div>
+        <div className={styles.loading}>{t('lmsCourseDetail.loading', { defaultValue: 'Loading course details...' })}</div>
       </div>
     )
   }
@@ -210,26 +211,26 @@ const LmsCourseDetailPage: React.FC = () => {
       {/* Header */}
       <div className={styles.header}>
         <button className={styles.backBtn} onClick={() => navigate('/lms/courses')}>
-          <ArrowLeft size={16} /> Back to Courses
-        </button>
+                    <ArrowLeft size={16} /> {t('lmsCourseDetail.backToCourses')}
+                  </button>
         <div className={styles.courseHero}>
           <div className={styles.heroLeft}>
             <div className={styles.courseCode}>{offering.course?.code}</div>
             <h1 className={styles.courseName}>{offering.course?.name}</h1>
             <div className={styles.courseMeta}>
-              <span>👤 {offering.lecturer?.user?.displayName ?? 'TBA'}</span>
-              <span>🕐 {offering.dayOfWeek} {offering.startTime}–{offering.endTime}</span>
-              <span>📍 {offering.room}</span>
-            </div>
+            <span>👤 {offering.lecturer?.user?.displayName ?? t('lmsCourseDetail.tba')}</span>
+            <span>🕐 {offering.dayOfWeek} {offering.startTime}–{offering.endTime}</span>
+            <span>📍 {offering.room}</span>
+          </div>
           </div>
           <div className={styles.heroStats}>
             <div className={styles.heroStat}>
               <span>{offering.course?.creditHours}</span>
-              <label>Credit Hours</label>
+              <label>{t('lmsCourseDetail.creditHours')}</label>
             </div>
             <div className={styles.heroStat}>
               <span>{assignments.length}</span>
-              <label>Assignments</label>
+              <label>{t('lmsCourseDetail.assignments')}</label>
             </div>
           </div>
         </div>
@@ -241,19 +242,19 @@ const LmsCourseDetailPage: React.FC = () => {
           className={`${styles.tab} ${activeTab === 'materials' ? styles.active : ''}`}
           onClick={() => setActiveTab('materials')}
         >
-          课程材料
+          {t('lmsCourseDetail.courseMaterials')}
         </button>
         <button
           className={`${styles.tab} ${activeTab === 'assignments' ? styles.active : ''}`}
           onClick={() => setActiveTab('assignments')}
         >
-          作业列表
+          {t('lmsCourseDetail.assignments')}
         </button>
         <button
           className={`${styles.tab} ${activeTab === 'history' ? styles.active : ''}`}
           onClick={() => setActiveTab('history')}
         >
-          提交历史
+          {t('lmsCourseDetail.submissionHistory')}
         </button>
       </div>
 
@@ -261,16 +262,16 @@ const LmsCourseDetailPage: React.FC = () => {
       {activeTab === 'materials' && (
         <div className={styles.materialsContainer}>
           {/* Videos */}
-          <Card title="课程视频">
+          <Card title={t('lmsCourseDetail.courseVideos')}>
             <div className={styles.videosList}>
               <div className={styles.videoItem}>
                 <div className={styles.videoThumbnail}>
                   <div className={styles.playButton}>▶</div>
                 </div>
                 <div className={styles.videoInfo}>
-                  <h4 className={styles.videoTitle}>课程介绍 - {offering.course?.name}</h4>
-                  <p className={styles.videoDescription}>课程概述和学习目标</p>
-                  <span className={styles.videoDuration}>03:45</span>
+                  <h4 className={styles.videoTitle}>{t('lmsCourseDetail.courseIntroduction')} - {offering.course?.name}</h4>
+                  <p className={styles.videoDescription}>{t('lmsCourseDetail.courseOverviewLearningObjectives')}</p>
+                  <span className={styles.videoDuration}>{t('lmsCourseDetail.duration')}: 03:45</span>
                 </div>
               </div>
               <div className={styles.videoItem}>
@@ -278,25 +279,25 @@ const LmsCourseDetailPage: React.FC = () => {
                   <div className={styles.playButton}>▶</div>
                 </div>
                 <div className={styles.videoInfo}>
-                  <h4 className={styles.videoTitle}>第1章 - 基础知识</h4>
-                  <p className={styles.videoDescription}>课程核心概念讲解</p>
-                  <span className={styles.videoDuration}>15:20</span>
+                  <h4 className={styles.videoTitle}>{t('lmsCourseDetail.chapter1')} - {t('lmsCourseDetail.basicKnowledge')}</h4>
+                  <p className={styles.videoDescription}>{t('lmsCourseDetail.courseCoreConceptsExplanation')}</p>
+                  <span className={styles.videoDuration}>{t('lmsCourseDetail.duration')}: 15:20</span>
                 </div>
               </div>
             </div>
           </Card>
 
           {/* PPT Slides */}
-          <Card title="PPT课件" className={styles.materialsCard}>
+          <Card title={t('lmsCourseDetail.pptSlides')} className={styles.materialsCard}>
             <div className={styles.slidesList}>
               <div className={styles.slideItem}>
                 <div className={styles.slideThumbnail}>
                   <FileText size={24} />
                 </div>
                 <div className={styles.slideInfo}>
-                  <h4 className={styles.slideTitle}>课程大纲 PPT</h4>
-                  <p className={styles.slideDescription}>课程整体结构和安排</p>
-                  <span className={styles.slidePages}>12 页</span>
+                  <h4 className={styles.slideTitle}>{t('lmsCourseDetail.courseOutlinePpt')}</h4>
+                  <p className={styles.slideDescription}>{t('lmsCourseDetail.courseOverallStructureArrangement')}</p>
+                  <span className={styles.slidePages}>{t('lmsCourseDetail.pages', { count: 12 })}</span>
                 </div>
               </div>
               <div className={styles.slideItem}>
@@ -304,48 +305,48 @@ const LmsCourseDetailPage: React.FC = () => {
                   <FileText size={24} />
                 </div>
                 <div className={styles.slideInfo}>
-                  <h4 className={styles.slideTitle}>第1章 - 基础知识</h4>
-                  <p className={styles.slideDescription}>核心概念和理论基础</p>
-                  <span className={styles.slidePages}>25 页</span>
+                  <h4 className={styles.slideTitle}>{t('lmsCourseDetail.chapter1')} - {t('lmsCourseDetail.basicKnowledge')}</h4>
+                  <p className={styles.slideDescription}>{t('lmsCourseDetail.coreConceptsTheoreticalFoundation')}</p>
+                  <span className={styles.slidePages}>{t('lmsCourseDetail.pages', { count: 25 })}</span>
                 </div>
               </div>
             </div>
           </Card>
 
           {/* Course Sessions */}
-          <Card title="课程会话" className={styles.materialsCard}>
+          <Card title={t('lmsCourseDetail.courseSessions')} className={styles.materialsCard}>
             <div className={styles.sessionsList}>
               <div className={styles.sessionItem}>
                 <div className={styles.sessionDate}>2026-03-15</div>
                 <div className={styles.sessionInfo}>
-                  <h4 className={styles.sessionTitle}>第1讲：课程介绍</h4>
-                  <p className={styles.sessionDescription}>课程概述、学习目标、评估方式</p>
+                  <h4 className={styles.sessionTitle}>{t('lmsCourseDetail.lecture1')}: {t('lmsCourseDetail.courseIntroduction')}</h4>
+                  <p className={styles.sessionDescription}>{t('lmsCourseDetail.courseOverviewLearningObjectivesAssessmentMethods')}</p>
                 </div>
               </div>
               <div className={styles.sessionItem}>
                 <div className={styles.sessionDate}>2026-03-22</div>
                 <div className={styles.sessionInfo}>
-                  <h4 className={styles.sessionTitle}>第2讲：基础知识</h4>
-                  <p className={styles.sessionDescription}>核心概念讲解和案例分析</p>
+                  <h4 className={styles.sessionTitle}>{t('lmsCourseDetail.lecture2')}: {t('lmsCourseDetail.basicKnowledge')}</h4>
+                  <p className={styles.sessionDescription}>{t('lmsCourseDetail.coreConceptsExplanationCaseAnalysis')}</p>
                 </div>
               </div>
             </div>
           </Card>
 
           {/* Attendance Sessions */}
-          <Card title="出勤记录" className={styles.materialsCard}>
+          <Card title={t('lmsCourseDetail.attendanceRecords')} className={styles.materialsCard}>
             <div className={styles.attendanceList}>
               <div className={styles.attendanceItem}>
                 <div className={styles.attendanceDate}>2026-03-15</div>
                 <div className={styles.attendanceStatus}>
-                  <Badge color="green">已出勤</Badge>
-                </div>
+                    <Badge color="green">{t('lmsCourseDetail.attended')}</Badge>
+                  </div>
               </div>
               <div className={styles.attendanceItem}>
                 <div className={styles.attendanceDate}>2026-03-22</div>
                 <div className={styles.attendanceStatus}>
-                  <Badge color="green">已出勤</Badge>
-                </div>
+                    <Badge color="green">{t('lmsCourseDetail.attended')}</Badge>
+                  </div>
               </div>
             </div>
           </Card>
@@ -354,9 +355,9 @@ const LmsCourseDetailPage: React.FC = () => {
 
       {/* Assignments */}
       {activeTab === 'assignments' && (
-        <Card title="Assignments & Assessments">
+        <Card title={t('lmsCourseDetail.assignmentsAssessments')}>
         {assignments.length === 0 ? (
-          <div className={styles.emptyAssignments}>No assignments posted yet.</div>
+          <div className={styles.emptyAssignments}>{t('lmsCourseDetail.noAssignments')}</div>
         ) : (
           <div className={styles.assignmentList}>
             {assignments.map(a => {
@@ -372,21 +373,21 @@ const LmsCourseDetailPage: React.FC = () => {
                   <div className={styles.assignmentInfo}>
                     <div className={styles.assignmentTitle}>{a.title}</div>
                     <div className={styles.assignmentMeta}>
-                      <span>Max: {a.maxMarks} marks</span>
-                      <span>Weight: {a.weight}%</span>
+                      <span>{t('lmsCourseDetail.maxMarks')}: {a.maxMarks} {t('lmsCourseDetail.marks')}</span>
+                      <span>{t('lmsCourseDetail.weight')}: {a.weight}%</span>
                       {a.dueDate && (
                         <span className={isDue ? styles.overdue : styles.dueSoon}>
                           <Clock size={11} />
-                          Due: {new Date(a.dueDate).toLocaleDateString('en-GB')}
+                          {t('lmsCourseDetail.due')}: {new Date(a.dueDate).toLocaleDateString()}
                         </span>
                       )}
                     </div>
                     {hasSubmitted && (
-                      <div className={styles.submissionStatus}>
-                        <CheckCircle size={11} />
-                        <span>Submitted on: {submission?.submittedAt ? new Date(submission.submittedAt).toLocaleString('zh-CN') : 'Unknown'}</span>
-                      </div>
-                    )}
+                        <div className={styles.submissionStatus}>
+                          <CheckCircle size={11} />
+                          <span>{t('lmsCourseDetail.submittedOn')}: {submission?.submittedAt ? new Date(submission.submittedAt).toLocaleString() : t('lmsCourseDetail.unknown')}</span>
+                        </div>
+                      )}
                   </div>
                   <div className={styles.assignmentActions}>
                     {submission?.finalMarks !== undefined ? (
@@ -396,7 +397,7 @@ const LmsCourseDetailPage: React.FC = () => {
                       </div>
                     ) : submission ? (
                       <Badge color="blue" size="sm">
-                        <CheckCircle size={11} /> Submitted
+                        <CheckCircle size={11} /> {t('lmsCourseDetail.submitted')}
                       </Badge>
                     ) : !isDue ? (
                       <Button
@@ -404,16 +405,16 @@ const LmsCourseDetailPage: React.FC = () => {
                         icon={<Upload size={13} />}
                         onClick={() => { setSubmitModal(a); setSubmissionContent(''); setSubmissionFiles([]) }}
                       >
-                        Submit
+                        {t('lmsCourseDetail.submit')}
                       </Button>
                     ) : (
                       <Badge color="red" size="sm">
-                        <Clock size={11} /> Overdue
+                        <Clock size={11} /> {t('lmsCourseDetail.overdue')}
                       </Badge>
                     )}
                     {submission?.aiRubricScores && (
                       <Button size="sm" variant="ghost" onClick={() => setViewAI(submission)}>
-                        AI Rubric
+                        {t('lmsCourseDetail.aiRubric')}
                       </Button>
                     )}
                   </div>
@@ -427,12 +428,12 @@ const LmsCourseDetailPage: React.FC = () => {
 
       {/* Submission History */}
       {activeTab === 'history' && (
-        <Card title={user?.role === 'lecturer' ? '学生提交记录' : '提交历史'}>
+        <Card title={user?.role === 'lecturer' ? t('lmsCourseDetail.studentSubmissions') : t('lmsCourseDetail.submissionHistory')}>
           {submissionHistory.length === 0 ? (
-            <div className={styles.emptyAssignments}>
-              {user?.role === 'lecturer' ? '暂无学生提交记录' : '暂无提交记录'}
-            </div>
-          ) : (
+              <div className={styles.emptyAssignments}>
+                {user?.role === 'lecturer' ? t('lmsCourseDetail.noStudentSubmissions') : t('lmsCourseDetail.noSubmissions')}
+              </div>
+            ) : (
             <div className={styles.historyList}>
               {submissionHistory.map((sub: any) => (
                 <div key={sub.id} className={styles.historyItem}>
@@ -443,16 +444,16 @@ const LmsCourseDetailPage: React.FC = () => {
                     {user?.role === 'lecturer' && (
                       <div className={styles.studentName}>
                         <User size={12} />
-                        <span>{sub.studentName}</span>
+                        <span>{t('lmsCourseDetail.student')}: {sub.studentName}</span>
                       </div>
                     )}
-                    <div className={styles.historyTitle}>{sub.assignment?.title || sub.assignmentTitle || '作业'}</div>
+                    <div className={styles.historyTitle}>{sub.assignment?.title || sub.assignmentTitle || t('lmsCourseDetail.assignment')}</div>
                     <div className={styles.historyMeta}>
-                      <span>满分: {sub.assignment?.maxMarks}分</span>
-                      <span>提交时间: {sub.submittedAt ? new Date(sub.submittedAt).toLocaleString('zh-CN') : '未知'}</span>
+                      <span>{t('lmsCourseDetail.maxMarks')}: {sub.assignment?.maxMarks}</span>
+                      <span>{t('lmsCourseDetail.submittedAt')}: {sub.submittedAt ? new Date(sub.submittedAt).toLocaleString() : t('lmsCourseDetail.unknown')}</span>
                     </div>
                     <div className={styles.historyContent}>
-                      {sub.content?.substring(0, 100)}...
+                      {sub.content ? `${sub.content.substring(0, 100)}...` : t('lmsCourseDetail.noSubmissionContent')}
                     </div>
                   </div>
                   <div className={styles.historyStatus}>
@@ -463,7 +464,7 @@ const LmsCourseDetailPage: React.FC = () => {
                       </div>
                     ) : (
                       <Badge color="blue" size="sm">
-                        <Clock size={11} /> 待评分
+                        <Clock size={11} /> {t('lmsCourseDetail.pendingGrading')}
                       </Badge>
                     )}
                   </div>
@@ -478,12 +479,12 @@ const LmsCourseDetailPage: React.FC = () => {
       {submitModal && (
         <Modal
           open
-          title={`Submit: ${submitModal.title}`}
+          title={`${t('lmsCourseDetail.submit')}: ${submitModal.title}`}
           onClose={() => {
             setSubmitModal(null)
             setSubmissionFiles([])
           }}
-          okText="Submit Assignment"
+          okText={t('lmsCourseDetail.submitAssignment')}
           onOk={() => submitMutation.mutate({ 
             assignmentId: submitModal.id, 
             content: submissionContent,
@@ -491,18 +492,18 @@ const LmsCourseDetailPage: React.FC = () => {
           })}
           okLoading={submitMutation.isPending}
         >
-          <p className={styles.submitInfo}>Max marks: {submitModal.maxMarks} · Weight: {submitModal.weight}%</p>
-          <label className={styles.submitLabel}>Your Answer / Notes</label>
+          <p className={styles.submitInfo}>{t('lmsCourseDetail.maxMarks')}: {submitModal.maxMarks} · {t('lmsCourseDetail.weight')}: {submitModal.weight}%</p>
+          <label className={styles.submitLabel}>{t('lmsCourseDetail.yourAnswerNotes')}</label>
           <textarea
             className={styles.submitTextarea}
             rows={6}
-            placeholder="Type your response or paste your essay here…"
+            placeholder={t('lmsCourseDetail.typeYourResponse')}
             value={submissionContent}
             onChange={e => setSubmissionContent(e.target.value)}
           />
           
           {/* File Upload */}
-          <label className={styles.submitLabel}>Upload Files</label>
+          <label className={styles.submitLabel}>{t('lmsCourseDetail.uploadFiles')}</label>
           <div className={styles.fileUpload}>
             <input
               type="file"
@@ -525,9 +526,9 @@ const LmsCourseDetailPage: React.FC = () => {
               className={styles.fileInput}
             />
             <div className={styles.fileButton}>
-              <Upload size={16} />
-              <span>Choose Files</span>
-            </div>
+                <Upload size={16} />
+                <span>{t('lmsCourseDetail.chooseFiles')}</span>
+              </div>
           </div>
           
           {/* File Errors */}
@@ -555,6 +556,7 @@ const LmsCourseDetailPage: React.FC = () => {
                       const newFiles = submissionFiles.filter((_, i) => i !== index)
                       setSubmissionFiles(newFiles)
                     }}
+                    title={t('lmsCourseDetail.removeFile')}
                   >
                     ×
                   </button>
@@ -564,7 +566,7 @@ const LmsCourseDetailPage: React.FC = () => {
           )}
           
           <p className={styles.aiNote}>
-            🤖 AI rubric grading will automatically score your submission across multiple criteria.
+            🤖 {t('lmsCourseDetail.aiRubricGrading')}
           </p>
         </Modal>
       )}
@@ -573,9 +575,9 @@ const LmsCourseDetailPage: React.FC = () => {
       {viewAI && viewAI.aiRubricScores && (
         <Modal
           open
-          title="AI Rubric Assessment"
+          title={t('lmsCourseDetail.aiRubricAssessment')}
           onClose={() => setViewAI(null)}
-          footer={<Button onClick={() => setViewAI(null)}>Close</Button>}
+          footer={<Button onClick={() => setViewAI(null)}>{t('lmsCourseDetail.close')}</Button>}
         >
           <div className={styles.rubricList}>
             {(() => {
@@ -591,11 +593,11 @@ const LmsCourseDetailPage: React.FC = () => {
                       <div className={styles.rubricFill} style={{ width: `${s.ai_score * 10}%` }} />
                     </div>
                     <div className={styles.rubricFeedback}>
-                      <h5 className={styles.feedbackTitle}>评分说明</h5>
+                      <h5 className={styles.feedbackTitle}>{t('lmsCourseDetail.gradingExplanation')}</h5>
                       <p className={styles.rubricComment}>{s.ai_comment}</p>
                       {s.ai_suggestions && (
                         <div className={styles.feedbackSuggestions}>
-                          <h6 className={styles.suggestionsTitle}>改进建议</h6>
+                          <h6 className={styles.suggestionsTitle}>{t('lmsCourseDetail.improvementSuggestions')}</h6>
                           <p className={styles.suggestionsText}>{s.ai_suggestions}</p>
                         </div>
                       )}
@@ -606,28 +608,28 @@ const LmsCourseDetailPage: React.FC = () => {
                 // 生成默认的评分标准
                 const defaultCriteria = [
                   {
-                    criterion: "内容完整性",
+                    criterion: t('lmsCourseDetail.rubricContentCompleteness'),
                     ai_score: 8.5,
-                    ai_comment: "回答内容较为完整，涵盖了主要知识点，但在某些细节上可以进一步展开。",
-                    ai_suggestions: "建议补充具体的例子和实际应用场景，以增强回答的说服力。"
+                    ai_comment: t('lmsCourseDetail.rubricContentCompletenessComment'),
+                    ai_suggestions: t('lmsCourseDetail.rubricContentCompletenessSuggestions')
                   },
                   {
-                    criterion: "逻辑清晰度",
+                    criterion: t('lmsCourseDetail.rubricLogicalClarity'),
                     ai_score: 9.0,
-                    ai_comment: "逻辑结构清晰，论证过程合理，能够很好地表达思想。",
-                    ai_suggestions: "可以尝试使用更简洁的语言表达复杂概念，提高可读性。"
+                    ai_comment: t('lmsCourseDetail.rubricLogicalClarityComment'),
+                    ai_suggestions: t('lmsCourseDetail.rubricLogicalClaritySuggestions')
                   },
                   {
-                    criterion: "深度与创新性",
+                    criterion: t('lmsCourseDetail.rubricDepthInnovation'),
                     ai_score: 7.5,
-                    ai_comment: "对问题有一定的理解深度，但创新性不足，缺乏独特的见解。",
-                    ai_suggestions: "建议从不同角度思考问题，提出一些有创意的解决方案。"
+                    ai_comment: t('lmsCourseDetail.rubricDepthInnovationComment'),
+                    ai_suggestions: t('lmsCourseDetail.rubricDepthInnovationSuggestions')
                   },
                   {
-                    criterion: "表达准确性",
+                    criterion: t('lmsCourseDetail.rubricExpressionAccuracy'),
                     ai_score: 8.0,
-                    ai_comment: "表达基本准确，没有明显的错误，但在专业术语的使用上可以更加精确。",
-                    ai_suggestions: "建议查阅相关资料，确保专业术语的正确使用。"
+                    ai_comment: t('lmsCourseDetail.rubricExpressionAccuracyComment'),
+                    ai_suggestions: t('lmsCourseDetail.rubricExpressionAccuracySuggestions')
                   }
                 ]
                 return defaultCriteria.map((s: any, i: number) => (
@@ -640,10 +642,10 @@ const LmsCourseDetailPage: React.FC = () => {
                       <div className={styles.rubricFill} style={{ width: `${s.ai_score * 10}%` }} />
                     </div>
                     <div className={styles.rubricFeedback}>
-                      <h5 className={styles.feedbackTitle}>评分说明</h5>
+                      <h5 className={styles.feedbackTitle}>{t('lmsCourseDetail.gradingExplanation')}</h5>
                       <p className={styles.rubricComment}>{s.ai_comment}</p>
                       <div className={styles.feedbackSuggestions}>
-                        <h6 className={styles.suggestionsTitle}>改进建议</h6>
+                        <h6 className={styles.suggestionsTitle}>{t('lmsCourseDetail.improvementSuggestions')}</h6>
                         <p className={styles.suggestionsText}>{s.ai_suggestions}</p>
                       </div>
                     </div>
@@ -667,12 +669,12 @@ const LmsCourseDetailPage: React.FC = () => {
             <div className={styles.successIcon}>
               <CheckCircle size={48} />
             </div>
-            <h2 className={styles.confirmationTitle}>作业提交成功</h2>
-            <p className={styles.confirmationMessage}>您的作业已成功提交</p>
+            <h2 className={styles.confirmationTitle}>{t('lmsCourseDetail.submissionSuccess')}</h2>
+            <p className={styles.confirmationMessage}>{t('lmsCourseDetail.yourAssignmentSubmitted')}</p>
             
             {lastSubmission.aiRubricScores && (
               <div className={styles.aiSummary}>
-                <h3 className={styles.aiSummaryTitle}>AI评分建议</h3>
+                <h3 className={styles.aiSummaryTitle}>{t('lmsCourseDetail.aiGradingSuggestions')}</h3>
                 {(() => {
                   try {
                     const scores = JSON.parse(lastSubmission.aiRubricScores)
@@ -687,7 +689,7 @@ const LmsCourseDetailPage: React.FC = () => {
                     return null
                   }
                 })()}
-                <p className={styles.aiSummaryNote}>AI评分仅供参考，最终成绩由讲师评定</p>
+                <p className={styles.aiSummaryNote}>{t('lmsCourseDetail.aiScoreReference')}</p>
               </div>
             )}
 
@@ -698,13 +700,13 @@ const LmsCourseDetailPage: React.FC = () => {
                   setViewAI(lastSubmission)
                 }}
               >
-                查看AI评分详情
+                {t('lmsCourseDetail.viewAiGradingDetails')}
               </Button>
               <Button
                 variant="secondary"
                 onClick={() => setShowSubmitConfirmation(false)}
               >
-                返回课程
+                {t('lmsCourseDetail.returnToCourse')}
               </Button>
             </div>
           </div>
