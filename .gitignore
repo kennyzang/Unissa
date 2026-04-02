@@ -15,6 +15,20 @@ dev.db-wal
 *.db-shm
 *.db-wal
 
+# 数据文件（Excel、Word等）
+*.xlsx
+*.xls
+*.docx
+*.doc
+*.csv
+*.pdf
+
+# 上传文件（附件、作业提交等）
+uploads/
+backend/uploads/
+frontend/public/uploads/
+public/uploads/
+
 # IDE / 编辑器
 .idea/
 .vscode/
@@ -42,6 +56,16 @@ bin/
 *.ear
 *.tar.gz
 
+# 缓存文件
+.cache/
+.turbo/
+.yarn/
+.yarn-integrity/
+.next/
+.nuxt/
+coverage/
+*.tsbuildinfo
+
 # 日志 / 临时文件
 logs/
 log/
@@ -56,6 +80,7 @@ temp/
 .env.local
 .env.*.local
 .env.prod          # 生产环境真实配置，禁止提交
+.env.example       # 示例配置文件，允许提交
 *.secret
 *.pem
 *.key
