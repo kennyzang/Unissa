@@ -89,6 +89,15 @@
 .cardMeta { display: flex; gap: v.$space-4; font-size: v.$font-size-xs; color: var(--color-gray-6); span { display: flex; align-items: center; gap: 3px; } }
 .cardFooter { display: flex; gap: v.$space-2; flex-wrap: wrap; }
 
+// Enrolled styles
+.enrolledCard {
+  border-color: v.$color-success !important;
+  background: v.$color-success-bg !important;
+  cursor: default !important;
+  &:hover { border-color: v.$color-success; box-shadow: none; }
+}
+.selectToggle.enrolledToggle { background: v.$color-success; border-color: v.$color-success; color: white; }
+
 // Conflict styles
 .conflictCard {
   border-color: v.$color-danger !important;
@@ -165,6 +174,6 @@
 .successDetails { display: flex; gap: v.$space-6; }
 .successStat { text-align: center; span { display: block; font-size: v.$font-size-xl; font-weight: v.$font-weight-bold; color: v.$brand-primary; } label { font-size: v.$font-size-xs; color: var(--color-gray-5); } }
 .campusCardMsg { font-size: v.$font-size-sm; background: v.$color-success-bg; border-radius: v.$border-radius; padding: v.$space-3; color: v.$color-success; }
-.successActions { display: flex; gap: v.$space-3; }
+.successActions { display: flex; gap: v.$space-3; flex-wrap: wrap; justify-content: center; }
 
 @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }

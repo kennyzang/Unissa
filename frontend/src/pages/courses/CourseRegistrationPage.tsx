@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useMemo } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
@@ -51,7 +51,12 @@ const CourseRegistrationPage: React.FC = () => {
 
   const [selected, setSelected] = useState<string[]>([])
   const [confirmModal, setConfirmModal] = useState(false)
-  const [successData, setSuccessData] = useState<any>(null)
+  const [successData, setSuccessData] = useState<any>(() => {
+    try {
+      const saved = sessionStorage.getItem('courseRegSuccess')
+      return saved ? JSON.parse(saved) : null
+    } catch { return null }
+  })
 
   const { data: studentProfile, isLoading: profileLoading } = useQuery<StudentProfile>({
     queryKey: ['student', 'me'],
@@ -71,6 +76,20 @@ const CourseRegistrationPage: React.FC = () => {
     },
   })
 
+  const { data: enrolledOfferings = [] } = useQuery<{ id: string }[]>({
+    queryKey: ['student', 'timetable', studentProfile?.id],
+    queryFn: async () => {
+      const { data } = await apiClient.get(`/students/${studentProfile!.id}/timetable`)
+      return data.data ?? []
+    },
+    enabled: !!studentProfile?.id,
+  })
+
+  const enrolledOfferingIds = useMemo(
+    () => new Set(enrolledOfferings.map(o => o.id)),
+    [enrolledOfferings]
+  )
+
   const registerMutation = useMutation({
     mutationFn: async (offeringIds: string[]) => {
       const semesterId = offerings.find(o => offeringIds.includes(o.id))?.semester?.id ?? 'sem-1'
@@ -79,11 +98,14 @@ const CourseRegistrationPage: React.FC = () => {
       return data
     },
     onSuccess: (data) => {
+      try { sessionStorage.setItem('courseRegSuccess', JSON.stringify(data)) } catch {}
       setSuccessData(data)
+      setSelected([])
       setConfirmModal(false)
+      qc.invalidateQueries({ queryKey: ['offerings'] })
+      qc.invalidateQueries({ queryKey: ['student', 'timetable'] })
       qc.invalidateQueries({ queryKey: ['lms'], exact: false })
       qc.invalidateQueries({ queryKey: ['student'], exact: false })
-      qc.invalidateQueries({ queryKey: ['lms', 'courses'], exact: false })
       qc.invalidateQueries({ queryKey: ['campus-services'], exact: false })
       qc.invalidateQueries({ queryKey: ['invoices'], exact: false })
       addToast({ type: 'success', message: data.message ?? t('courseReg.successTitle') })
@@ -124,7 +146,13 @@ const CourseRegistrationPage: React.FC = () => {
     )
   }
 
+  const clearSuccess = () => {
+    try { sessionStorage.removeItem('courseRegSuccess') } catch {}
+    setSuccessData(null)
+  }
+
   const toggle = (id: string) => {
+    if (enrolledOfferingIds.has(id)) return
     setSelected(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id])
   }
 
@@ -205,9 +233,10 @@ const CourseRegistrationPage: React.FC = () => {
           </div>
 
           <div className={styles.successActions}>
-            <Button variant="secondary" onClick={() => navigate('/finance/statement')}>{t('courseReg.viewInvoice')}</Button>
-            <Button variant="secondary" onClick={() => navigate('/campus/services')}>{t('courseReg.viewCampus')}</Button>
-            <Button onClick={() => navigate('/lms/courses')}>{t('courseReg.goToLms')}</Button>
+            <Button variant="ghost" onClick={clearSuccess}>{t('courseReg.backToList', { defaultValue: 'Back to Course List' })}</Button>
+            <Button variant="secondary" onClick={() => { clearSuccess(); navigate('/finance/statement') }}>{t('courseReg.viewInvoice')}</Button>
+            <Button variant="secondary" onClick={() => { clearSuccess(); navigate('/campus/services') }}>{t('courseReg.viewCampus')}</Button>
+            <Button onClick={() => { clearSuccess(); navigate('/lms/courses') }}>{t('courseReg.goToLms')}</Button>
           </div>
         </div>
       </div>
@@ -278,7 +307,8 @@ const CourseRegistrationPage: React.FC = () => {
           <div className={styles.loading}>{t('courseReg.loading')}</div>
         ) : (
           offerings.map(offering => {
-            const isSelected = selected.includes(offering.id)
+            const isEnrolled = enrolledOfferingIds.has(offering.id)
+            const isSelected = !isEnrolled && selected.includes(offering.id)
             const isConflicting = isSelected && conflictingIds.has(offering.id)
             const seats = offering.seatsTaken ?? 0
             const maxSeats = offering.course?.maxSeats ?? 30
@@ -288,7 +318,12 @@ const CourseRegistrationPage: React.FC = () => {
             return (
               <div
                 key={offering.id}
-                className={`${styles.courseCard} ${isSelected ? styles.selectedCard : ''} ${isConflicting ? styles.conflictCard : ''}`}
+                className={[
+                  styles.courseCard,
+                  isEnrolled ? styles.enrolledCard : '',
+                  isSelected ? styles.selectedCard : '',
+                  isConflicting ? styles.conflictCard : '',
+                ].filter(Boolean).join(' ')}
                 onClick={() => toggle(offering.id)}
               >
                 <div className={styles.cardTop}>
@@ -296,8 +331,11 @@ const CourseRegistrationPage: React.FC = () => {
                     <div className={styles.courseCode}>{offering.course?.code}</div>
                     <div className={styles.courseName}>{offering.course?.name}</div>
                   </div>
-                  <div className={`${styles.selectToggle} ${isSelected ? (isConflicting ? styles.conflict : styles.selected) : ''}`}>
-                    {isSelected ? <Minus size={16} /> : <Plus size={16} />}
+                  <div className={[
+                    styles.selectToggle,
+                    isEnrolled ? styles.enrolledToggle : (isSelected ? (isConflicting ? styles.conflict : styles.selected) : ''),
+                  ].filter(Boolean).join(' ')}>
+                    {isEnrolled ? <CheckCircle size={16} /> : isSelected ? <Minus size={16} /> : <Plus size={16} />}
                   </div>
                 </div>
                 <div className={styles.cardMeta}>
@@ -314,9 +352,13 @@ const CourseRegistrationPage: React.FC = () => {
                   </div>
                 )}
                 <div className={styles.cardFooter}>
-                  <Badge color={getAvailabilityColor(seats, maxSeats)} size="sm">
-                    {seatsLeft > 0 ? `${seatsLeft} ${t('courseReg.seatsLeft')}` : t('courseReg.full')}
-                  </Badge>
+                  {isEnrolled ? (
+                    <Badge color="green" size="sm">✓ {t('courseReg.enrolled', { defaultValue: 'Enrolled' })}</Badge>
+                  ) : (
+                    <Badge color={getAvailabilityColor(seats, maxSeats)} size="sm">
+                      {seatsLeft > 0 ? `${seatsLeft} ${t('courseReg.seatsLeft')}` : t('courseReg.full')}
+                    </Badge>
+                  )}
                   <Badge color="gray" size="sm">Level {offering.course?.level}</Badge>
                   {isConflicting && <Badge color="red" size="sm">⚠ {t('courseReg.conflict')}</Badge>}
                 </div>
