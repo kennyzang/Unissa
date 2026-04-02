@@ -309,14 +309,21 @@ router.post('/submissions', upload.array('files', 5), async (req: AuthRequest, r
       include: { offering: { include: { lecturer: true } } },
     })
 
+    // Get student details for notification
+    const student = await prisma.student.findUnique({
+      where: { id: studentId },
+      include: { user: true, applicant: true }
+    })
+    const studentName = student?.applicant?.fullName || student?.user?.displayName || 'Student'
+
     // Create notification for lecturer
     if (assignment?.offering?.lecturer?.userId) {
       await prisma.notification.create({
         data: {
           userId: assignment.offering.lecturer.userId,
           type: 'assignment_submission',
-          subject: `New submission for ${assignment.title}`,
-          body: `A student has submitted their work for ${assignment.title}. AI rubric scores are ready for your review.`,
+          subject: `New submission for ${assignment.title} - ${studentName}`,
+          body: `${studentName} has submitted their work for ${assignment.title}. AI rubric scores are ready for your review.`,
           status: 'pending',
           triggeredByEvent: 'submission_created',
         },

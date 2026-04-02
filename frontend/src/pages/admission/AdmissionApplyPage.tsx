@@ -259,8 +259,15 @@ const PendingApplicationCard: React.FC<{ app: any }> = ({ app }) => {
   const isRejected = app.status === 'rejected'
 
   const handleResubmit = () => {
+    console.log('Resubmit button clicked')
+    console.log('App data:', app)
+    // Use app.id as fallback if userId is not available
+    const key = app.userId ? `admission-apply-resubmit-${app.userId}` : 'admission-apply-resubmit'
+    console.log('SessionStorage key:', key)
+    sessionStorage.setItem(key, JSON.stringify(app))
+    console.log('SessionStorage set successfully')
+    console.log('Navigating to /admission/apply')
     navigate('/admission/apply')
-    sessionStorage.setItem('admission-apply-resubmit', JSON.stringify(app))
   }
 
   return (
@@ -459,7 +466,7 @@ const PendingApplicationCard: React.FC<{ app: any }> = ({ app }) => {
             <Button
               type="primary"
               size="large"
-              icon={<LoadingOutlined />}
+              loading={resubmitMutation.isPending}
               onClick={handleResubmit}
               style={{ background: '#1890ff', borderColor: '#1890ff', fontWeight: 600, minWidth: 200 }}
             >
@@ -546,7 +553,14 @@ const AdmissionApplyPage: React.FC = () => {
 
   useEffect(() => {
     try {
-      const resubmit = sessionStorage.getItem(`admission-apply-resubmit-${user?.id}`)
+      // Try to get resubmit data with user ID
+      let resubmit = sessionStorage.getItem(`admission-apply-resubmit-${user?.id}`)
+      
+      // Fallback: try without user ID for backward compatibility
+      if (!resubmit) {
+        resubmit = sessionStorage.getItem('admission-apply-resubmit')
+      }
+      
       if (resubmit) {
         const app = JSON.parse(resubmit)
         setResubmitData(app)

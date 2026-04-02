@@ -131,6 +131,9 @@ router.post('/leave', async (req: AuthRequest, res: Response) => {
     }); return
   }
 
+  // Determine initial status based on duration
+  const initialStatus = duration >= 3 ? 'pending_hr' : 'pending'
+
   const leave = await prisma.leaveRequest.create({
     data: {
       staffId: staff.id,
@@ -140,7 +143,7 @@ router.post('/leave', async (req: AuthRequest, res: Response) => {
       durationDays: duration,
       reason,
       coveringOfficerId: coveringOfficerId ?? '',
-      status: 'pending',
+      status: initialStatus,
     },
   })
 
@@ -158,18 +161,35 @@ router.patch('/leave/:id/approve', requireRole('manager', 'admin', 'hradmin'), a
   })
   if (!leave) { res.status(404).json({ success: false, message: 'Leave request not found' }); return }
 
+  let updateData: any = {
+    l1ApproverId: userId,
+    l1ActedAt: new Date(),
+    ...(remarks && { rejectRemarks: remarks }),
+  }
+
+  // Handle different approval stages
+  if (action === 'rejected') {
+    updateData.status = 'rejected'
+  } else if (leave.status === 'pending_hr' && action === 'approved') {
+    // HR approved, now requires Manager approval for leaves >= 3 days
+    updateData.status = 'pending_manager'
+  } else if (leave.status === 'pending_manager' && action === 'approved') {
+    // Manager approved, final approval
+    updateData.status = 'approved'
+    updateData.l2ApproverId = userId
+    updateData.l2ActedAt = new Date()
+  } else if (leave.status === 'pending' && action === 'approved') {
+    // Direct approval for leaves < 3 days
+    updateData.status = 'approved'
+  }
+
   const updated = await prisma.leaveRequest.update({
     where: { id: req.params.id },
-    data: {
-      status:       action,
-      l1ApproverId: userId,
-      l1ActedAt:    new Date(),
-      ...(remarks && { rejectRemarks: remarks }),
-    },
+    data: updateData,
   })
 
-  // Deduct leave balance if approved
-  if (action === 'approved') {
+  // Deduct leave balance if fully approved
+  if (updated.status === 'approved') {
     const field = leave.leaveType === 'annual' ? 'leaveBalanceAnnual' : 'leaveBalanceMedical'
     if (leave.leaveType !== 'unpaid') {
       await prisma.staff.update({

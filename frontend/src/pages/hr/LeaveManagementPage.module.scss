@@ -134,6 +134,18 @@
   border-radius: $border-radius-md;
 }
 
+.errorMessage {
+  display: flex;
+  align-items: center;
+  gap: $space-2;
+  background: $color-danger-1;
+  color: $color-danger;
+  font-size: $font-size-sm;
+  padding: $space-2 $space-3;
+  border-radius: $border-radius-md;
+  margin: $space-3 0;
+}
+
 // ── Review Info ───────────────────────────────────────────────
 .reviewInfo {
   display: flex;

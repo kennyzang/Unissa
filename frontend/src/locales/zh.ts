@@ -873,6 +873,8 @@ const zh = {
     submitSuccess: '请假申请提交成功',
     submitFailed: '提交失败',
     actionFailed: '操作失败',
+    pending_hr: '等待HR审批',
+    pending_manager: '等待经理审批',
   },
 
   researchGrants: {

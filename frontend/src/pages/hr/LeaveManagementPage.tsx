@@ -25,6 +25,7 @@ interface LeaveRequest {
   status: string
   submittedAt: string
   rejectRemarks?: string
+  coveringOfficerId?: string
   staff: {
     staffId: string
     fullName: string
@@ -41,10 +42,12 @@ interface LeaveFormValues {
 }
 
 const STATUS_COLOR: Record<string, 'blue' | 'green' | 'red' | 'orange' | 'gray'> = {
-  pending:   'orange',
-  approved:  'green',
-  rejected:  'red',
-  cancelled: 'gray',
+  pending:         'orange',
+  pending_hr:      'blue',
+  pending_manager: 'purple',
+  approved:        'green',
+  rejected:        'red',
+  cancelled:       'gray',
 }
 
 const LEAVE_TYPE_KEYS = ['annual', 'medical', 'unpaid', 'maternity', 'paternity', 'emergency']
@@ -54,6 +57,7 @@ const LeaveManagementPage: React.FC = () => {
   const [applyModal,  setApplyModal]  = useState(false)
   const [reviewModal, setReviewModal] = useState<{ leave: LeaveRequest; action: 'approved' | 'rejected' } | null>(null)
   const [remarks,     setRemarks]     = useState('')
+  const [errorMessage, setErrorMessage] = useState<string | null>(null)
 
   const { user }  = useAuthStore()
   const addToast  = useUIStore(s => s.addToast)
@@ -91,8 +95,9 @@ const LeaveManagementPage: React.FC = () => {
       qc.invalidateQueries({ queryKey: ['hr', 'leave'] })
       setApplyModal(false)
       applyForm.resetFields()
+      setErrorMessage(null)
     },
-    onError: (e: any) => addToast({ type: 'error', message: e.response?.data?.message ?? t('leaveManagement.submitFailed') }),
+    onError: (e: any) => setErrorMessage(e.response?.data?.message ?? t('leaveManagement.submitFailed')),
   })
 
   const approveMutation = useMutation({
@@ -111,7 +116,7 @@ const LeaveManagementPage: React.FC = () => {
     applyForm.validateFields().then(values => applyMutation.mutate(values))
   }
 
-  const pending  = leaves.filter(l => l.status === 'pending').length
+  const pending  = leaves.filter(l => ['pending', 'pending_hr', 'pending_manager'].includes(l.status)).length
   const approved = leaves.filter(l => l.status === 'approved').length
   const rejected = leaves.filter(l => l.status === 'rejected').length
 
@@ -134,6 +139,7 @@ const LeaveManagementPage: React.FC = () => {
       </div>
     )},
     { key: 'reason', title: t('leaveManagement.reasonCol'), render: v => <span className={styles.reason}>{v.reason}</span> },
+    { key: 'coveringOfficerId', title: t('leaveManagement.coveringOfficer'), render: v => v.coveringOfficerId || '-' },
     { key: 'status', title: t('common.status'), render: v => {
       const color = STATUS_COLOR[v.status] ?? 'gray'
       const label = t(`leaveManagement.${v.status}` as any, { defaultValue: v.status })
@@ -143,7 +149,7 @@ const LeaveManagementPage: React.FC = () => {
     ...(isManager ? [{
       key: 'actions' as keyof LeaveRequest,
       title: '',
-      render: (v: LeaveRequest) => v.status === 'pending' ? (
+      render: (v: LeaveRequest) => ['pending', 'pending_hr', 'pending_manager'].includes(v.status) ? (
         <div className={styles.actionBtns}>
           <Button size="sm" variant="ghost" icon={<CheckCircle size={14} />}
             onClick={() => { setReviewModal({ leave: v, action: 'approved' }); setRemarks('') }}>
@@ -232,6 +238,12 @@ const LeaveManagementPage: React.FC = () => {
             <div className={styles.durationBadge}>
               <Calendar size={14} />
               {days} {t('leaveManagement.daysRequested')}
+            </div>
+          )}
+
+          {errorMessage && (
+            <div className={styles.errorMessage}>
+              {errorMessage}
             </div>
           )}
 

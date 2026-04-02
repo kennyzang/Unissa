@@ -214,17 +214,20 @@ router.patch('/applications/:id/decision', authenticate, requireRole('admissions
 
   // ── Create in-app notification for the applicant ────────────
   if (app.userId) {
+    const applicantName = app.fullName || 'Applicant'
+    const applicationRef = app.applicationRef || 'N/A'
+    
     const notifBody = action === 'accepted'
-      ? 'Congratulations, you have been admitted to UNISSA! Please log in to accept your offer and complete enrolment.'
+      ? `Congratulations ${applicantName}, you have been admitted to UNISSA! Please log in to accept your offer and complete enrolment. Application Ref: ${applicationRef}`
       : action === 'rejected'
-        ? `Sorry, you have not been admitted.${remarks ? ' Reason: ' + remarks : ''}`
-        : 'Your application has been waitlisted. You will be notified if a place becomes available.'
+        ? `Sorry ${applicantName}, you have not been admitted.${remarks ? ' Reason: ' + remarks : ''} Application Ref: ${applicationRef}`
+        : `Hello ${applicantName}, your application has been waitlisted. You will be notified if a place becomes available. Application Ref: ${applicationRef}`
 
     await prisma.notification.create({
       data: {
         userId: app.userId,
         type: 'push',
-        subject: 'Admission Result',
+        subject: `Admission Result - ${applicantName} (${applicationRef})`,
         body: notifBody,
         status: 'sent',
         sentAt: new Date(),
