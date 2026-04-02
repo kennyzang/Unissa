@@ -87,7 +87,8 @@ const NAV_STRUCTURE: NavGroup[] = [
     key: 'g-finance', labelKey: 'nav.financeControlCenter', icon: '💹',
     roles: ['finance'],
     children: [
-      { key: 'finance', labelKey: 'nav.financeOverview', path: '/finance/dashboard', icon: '📊', roles: ['finance'] },
+      { key: 'finance',  labelKey: 'nav.financeOverview', path: '/finance/dashboard', icon: '📊', roles: ['finance'] },
+      { key: 'payroll',  labelKey: 'nav.payrollMgmt',    path: '/finance/payroll',   icon: '💵', roles: ['finance'] },
     ],
   },
   {
@@ -139,8 +140,9 @@ const NAV_STRUCTURE: NavGroup[] = [
     key: 'g-admin-finance', labelKey: 'nav.globalOverview', icon: '📊',
     roles: ['admin'],
     children: [
-      { key: 'finance', labelKey: 'nav.globalFinanceDashboard', path: '/finance/dashboard', icon: '💹', roles: ['admin'] },
-      { key: 'risk',    labelKey: 'nav.globalRiskAnalysis',     path: '/ai/risk',           icon: '⚠️', roles: ['admin'] },
+      { key: 'finance',  labelKey: 'nav.globalFinanceDashboard', path: '/finance/dashboard', icon: '💹', roles: ['admin'] },
+      { key: 'payroll',  labelKey: 'nav.payrollMgmt',            path: '/finance/payroll',   icon: '💵', roles: ['admin'] },
+      { key: 'risk',     labelKey: 'nav.globalRiskAnalysis',     path: '/ai/risk',           icon: '⚠️', roles: ['admin'] },
     ],
   },
   {

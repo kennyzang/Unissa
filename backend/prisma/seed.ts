@@ -130,18 +130,33 @@ async function main() {
     update: {},
   })
 
-  // ── Payroll Records (Dr. Siti — last 3 months for Staff Portal) ─
-  for (const [monthOffset, status] of [[-2, 'paid'], [-1, 'paid'], [0, 'draft']] as [number, string][]) {
-    const d = new Date(2026, 3 + monthOffset, 1) // April 2026 = month index 3
-    await prisma.payrollRecord.upsert({
-      where: { staffId_payrollMonth: { staffId: staffSiti.id, payrollMonth: d } },
-      create: {
-        staffId: staffSiti.id, payrollMonth: d,
-        basicSalary: 4500, allowances: 300, deductions: 450, netSalary: 4350, status,
-        ...(status === 'paid' ? { paidAt: new Date(d.getFullYear(), d.getMonth() + 1, 5) } : {}),
-      },
-      update: {},
-    })
+  // ── Payroll Records (all staff — last 3 months for Payroll Management demo) ─
+  // Brunei statutory: TAP employee 5% + SCP employee 3.5% = 8.5% of basic salary
+  const payrollStaff = [
+    // staffId, fullName, basicSalary, monthlyAllowances
+    { ref: staffSiti,    basic: 4500, allowances: 300  },
+    { ref: staffManager, basic: 5500, allowances: 500  },
+    { ref: staffFinance, basic: 3800, allowances: 200  },
+    { ref: staffAhmad,   basic: 6000, allowances: 600  },
+    { ref: staffHr,      basic: 3200, allowances: 150  },
+  ]
+
+  for (const s of payrollStaff) {
+    const deductions = parseFloat((s.basic * 0.085).toFixed(2))
+    const netSalary  = parseFloat((s.basic + s.allowances - deductions).toFixed(2))
+
+    for (const [monthOffset, status] of [[-2, 'paid'], [-1, 'paid'], [0, 'draft']] as [number, string][]) {
+      const d = new Date(2026, 3 + monthOffset, 1) // April 2026 = month index 3
+      await prisma.payrollRecord.upsert({
+        where: { staffId_payrollMonth: { staffId: s.ref.id, payrollMonth: d } },
+        create: {
+          staffId: s.ref.id, payrollMonth: d,
+          basicSalary: s.basic, allowances: s.allowances, deductions, netSalary, status,
+          ...(status === 'paid' ? { paidAt: new Date(d.getFullYear(), d.getMonth() + 1, 5) } : {}),
+        },
+        update: {},
+      })
+    }
   }
 
   // ── Onboarding Request (new hire Mohd Faizal — pending approval demo) ─

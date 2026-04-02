@@ -47,6 +47,7 @@ const TranscriptPage           = lazy(() => import('@/pages/student/TranscriptPa
 const CourseRegistrationPage   = lazy(() => import('@/pages/courses/CourseRegistrationPage'))
 const FeeStatementPage         = lazy(() => import('@/pages/finance/FeeStatementPage'))
 const FinanceDashboardPage     = lazy(() => import('@/pages/finance/FinanceDashboardPage'))
+const PayrollManagementPage    = lazy(() => import('@/pages/finance/PayrollManagementPage'))
 const LmsCoursesPage           = lazy(() => import('@/pages/lms/LmsCoursesPage'))
 const LmsCourseDetailPage      = lazy(() => import('@/pages/lms/LmsCourseDetailPage'))
 const LmsGradingPage           = lazy(() => import('@/pages/lms/LmsGradingPage'))
@@ -94,6 +95,7 @@ export const router = createBrowserRouter([
       // Finance
       { path: 'finance/statement',  element: r(['student','finance','admin'], <FeeStatementPage />) },
       { path: 'finance/dashboard',  element: r(['finance','admin'], <FinanceDashboardPage />) },
+      { path: 'finance/payroll',    element: r(['finance','admin'], <PayrollManagementPage />) },
 
       // LMS
       { path: 'lms/courses',              element: r(['student','lecturer','admin'], <LmsCoursesPage />) },

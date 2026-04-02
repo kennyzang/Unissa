@@ -154,6 +154,211 @@ router.get('/gl-codes', async (_req, res: Response) => {
   })
 })
 
+// ── Payroll Management ────────────────────────────────────────
+
+// GET /api/v1/finance/payroll  (list records, optionally filtered by month)
+router.get('/payroll', requireRole('finance', 'admin'), async (req: AuthRequest, res: Response) => {
+  const { month, status, search } = req.query as Record<string, string>
+
+  const where: any = {}
+  if (month) {
+    const d = new Date(month)
+    const start = new Date(d.getFullYear(), d.getMonth(), 1)
+    const end   = new Date(d.getFullYear(), d.getMonth() + 1, 0, 23, 59, 59)
+    where.payrollMonth = { gte: start, lte: end }
+  }
+  if (status && status !== 'all') where.status = status
+
+  const records = await prisma.payrollRecord.findMany({
+    where,
+    include: {
+      staff: {
+        include: {
+          user:       { select: { displayName: true } },
+          department: { select: { name: true, code: true } },
+        },
+      },
+    },
+    orderBy: [{ payrollMonth: 'desc' }, { createdAt: 'asc' }],
+  })
+
+  const filtered = search
+    ? records.filter(r =>
+        r.staff.fullName.toLowerCase().includes(search.toLowerCase()) ||
+        r.staff.staffId.toLowerCase().includes(search.toLowerCase()) ||
+        r.staff.department.name.toLowerCase().includes(search.toLowerCase())
+      )
+    : records
+
+  res.json({ success: true, data: filtered })
+})
+
+// GET /api/v1/finance/payroll/summary  (aggregate stats for a given month)
+router.get('/payroll/summary', requireRole('finance', 'admin'), async (req: AuthRequest, res: Response) => {
+  const { month } = req.query as Record<string, string>
+
+  const where: any = {}
+  if (month) {
+    const d = new Date(month)
+    const start = new Date(d.getFullYear(), d.getMonth(), 1)
+    const end   = new Date(d.getFullYear(), d.getMonth() + 1, 0, 23, 59, 59)
+    where.payrollMonth = { gte: start, lte: end }
+  }
+
+  const [agg, paidCount, draftCount, totalStaff] = await Promise.all([
+    prisma.payrollRecord.aggregate({
+      where,
+      _sum: { basicSalary: true, allowances: true, deductions: true, netSalary: true },
+      _count: { id: true },
+    }),
+    prisma.payrollRecord.count({ where: { ...where, status: 'paid' } }),
+    prisma.payrollRecord.count({ where: { ...where, status: 'draft' } }),
+    prisma.staff.count({ where: { status: 'active' } }),
+  ])
+
+  res.json({
+    success: true,
+    data: {
+      totalRecords:   agg._count.id,
+      totalBasic:     agg._sum.basicSalary  ?? 0,
+      totalAllowances:agg._sum.allowances   ?? 0,
+      totalDeductions:agg._sum.deductions   ?? 0,
+      totalNetSalary: agg._sum.netSalary    ?? 0,
+      paidCount,
+      draftCount,
+      totalStaff,
+    },
+  })
+})
+
+// POST /api/v1/finance/payroll/generate  (create draft records for all active staff for a month)
+router.post('/payroll/generate', requireRole('finance', 'admin'), async (req: AuthRequest, res: Response) => {
+  const { month } = req.body as { month: string }
+  if (!month) { res.status(400).json({ success: false, message: 'month is required (YYYY-MM-DD)' }); return }
+
+  const d = new Date(month)
+  const payrollMonth = new Date(d.getFullYear(), d.getMonth(), 1)
+
+  const staff = await prisma.staff.findMany({
+    where: { status: 'active' },
+    select: { id: true, payrollBasicSalary: true },
+  })
+
+  if (staff.length === 0) {
+    res.status(400).json({ success: false, message: 'No active staff found' }); return
+  }
+
+  let created = 0
+  let skipped = 0
+
+  for (const s of staff) {
+    // Brunei statutory deductions: TAP 5% + SCP 3.5% = 8.5% of basic salary
+    const deductions  = parseFloat((s.payrollBasicSalary * 0.085).toFixed(2))
+    const netSalary   = parseFloat((s.payrollBasicSalary - deductions).toFixed(2))
+
+    const existing = await prisma.payrollRecord.findUnique({
+      where: { staffId_payrollMonth: { staffId: s.id, payrollMonth } },
+    })
+
+    if (existing) { skipped++; continue }
+
+    await prisma.payrollRecord.create({
+      data: {
+        staffId:      s.id,
+        payrollMonth,
+        basicSalary:  s.payrollBasicSalary,
+        allowances:   0,
+        deductions,
+        netSalary,
+        status:       'draft',
+      },
+    })
+    created++
+  }
+
+  res.json({
+    success: true,
+    message: `Payroll generated: ${created} records created, ${skipped} already existed.`,
+    data: { created, skipped, month: payrollMonth },
+  })
+})
+
+// PUT /api/v1/finance/payroll/:id  (update allowances / deductions)
+router.put('/payroll/:id', requireRole('finance', 'admin'), async (req: AuthRequest, res: Response) => {
+  const { allowances, deductions } = req.body as { allowances: number; deductions: number }
+  const id = String(req.params.id)
+
+  const record = await prisma.payrollRecord.findUnique({ where: { id } })
+  if (!record) { res.status(404).json({ success: false, message: 'Payroll record not found' }); return }
+  if (record.status === 'paid') {
+    res.status(400).json({ success: false, message: 'Cannot edit a paid payroll record' }); return
+  }
+
+  const a = typeof allowances === 'number' ? allowances : record.allowances
+  const d = typeof deductions === 'number' ? deductions : record.deductions
+  const netSalary = parseFloat((record.basicSalary + a - d).toFixed(2))
+
+  const updated = await prisma.payrollRecord.update({
+    where: { id },
+    data:  { allowances: a, deductions: d, netSalary },
+    include: {
+      staff: {
+        include: {
+          user:       { select: { displayName: true } },
+          department: { select: { name: true } },
+        },
+      },
+    },
+  })
+
+  res.json({ success: true, data: updated, message: 'Payroll record updated' })
+})
+
+// PATCH /api/v1/finance/payroll/:id/pay  (mark single record as paid)
+router.patch('/payroll/:id/pay', requireRole('finance', 'admin'), async (req: AuthRequest, res: Response) => {
+  const id = String(req.params.id)
+  const record = await prisma.payrollRecord.findUnique({ where: { id } })
+  if (!record) { res.status(404).json({ success: false, message: 'Payroll record not found' }); return }
+  if (record.status === 'paid') {
+    res.status(400).json({ success: false, message: 'Record already marked as paid' }); return
+  }
+
+  const updated = await prisma.payrollRecord.update({
+    where: { id },
+    data:  { status: 'paid', paidAt: new Date() },
+    include: {
+      staff: {
+        include: {
+          user:       { select: { displayName: true } },
+          department: { select: { name: true } },
+        },
+      },
+    },
+  })
+
+  res.json({ success: true, data: updated, message: 'Payroll record marked as paid' })
+})
+
+// POST /api/v1/finance/payroll/bulk-pay  (mark multiple draft records as paid)
+router.post('/payroll/bulk-pay', requireRole('finance', 'admin'), async (req: AuthRequest, res: Response) => {
+  const { ids } = req.body as { ids: string[] }
+  if (!Array.isArray(ids) || ids.length === 0) {
+    res.status(400).json({ success: false, message: 'ids array is required' }); return
+  }
+
+  const now = new Date()
+  const result = await prisma.payrollRecord.updateMany({
+    where: { id: { in: ids }, status: 'draft' },
+    data:  { status: 'paid', paidAt: now },
+  })
+
+  res.json({
+    success: true,
+    message: `${result.count} payroll record(s) marked as paid`,
+    data: { count: result.count },
+  })
+})
+
 function detectCardBrand(cardNumber?: string): string | undefined {
   if (!cardNumber) return undefined
   const n = cardNumber.replace(/\s/g, '')

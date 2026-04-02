@@ -1,0 +1,242 @@
+@use '@/styles/variables' as v;
+
+.page {
+  padding: v.$space-6;
+  display: flex;
+  flex-direction: column;
+  gap: v.$space-5;
+  animation: fadeIn 0.2s ease;
+  max-width: 100%;
+  overflow-x: hidden;
+
+  @media (max-width: v.$bp-md) {
+    padding: v.$space-4 v.$space-3;
+    gap: v.$space-4;
+  }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+// ── Header ────────────────────────────────────────────────────
+
+.header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: v.$space-4;
+  flex-wrap: wrap;
+}
+
+.pageTitle {
+  font-size: v.$font-size-2xl;
+  font-weight: v.$font-weight-bold;
+  color: var(--color-gray-8);
+  margin: 0;
+}
+
+.pageSub {
+  font-size: v.$font-size-sm;
+  color: var(--color-gray-5);
+  margin: v.$space-1 0 0;
+}
+
+.headerActions {
+  display: flex;
+  align-items: center;
+  gap: v.$space-3;
+  flex-wrap: wrap;
+}
+
+.monthPicker {
+  width: 160px;
+}
+
+// ── KPI Row ───────────────────────────────────────────────────
+
+.kpiRow {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: v.$space-4;
+
+  @media (max-width: v.$bp-lg) { grid-template-columns: repeat(2, 1fr); }
+  @media (max-width: v.$bp-sm) { grid-template-columns: 1fr; }
+}
+
+// ── Deduction Info Banner ────────────────────────────────────
+
+.deductionInfo {
+  display: flex;
+  align-items: center;
+  gap: v.$space-2;
+  padding: v.$space-3 v.$space-4;
+  background: #EFF6FF;
+  border: 1px solid #BFDBFE;
+  border-radius: v.$border-radius-lg;
+  font-size: v.$font-size-sm;
+  color: #1D4ED8;
+}
+
+// ── Table Controls ────────────────────────────────────────────
+
+.tableControls {
+  display: flex;
+  align-items: center;
+  gap: v.$space-3;
+  flex-wrap: wrap;
+}
+
+.filterBtns {
+  display: flex;
+  border: 1px solid var(--color-gray-3);
+  border-radius: v.$border-radius-md;
+  overflow: hidden;
+}
+
+.filterBtn {
+  padding: 4px 12px;
+  font-size: v.$font-size-xs;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--color-gray-6);
+  transition: background 0.15s, color 0.15s;
+
+  &:not(:last-child) { border-right: 1px solid var(--color-gray-3); }
+  &:hover { background: var(--color-gray-1); }
+  &.active {
+    background: v.$brand-primary;
+    color: #fff;
+    font-weight: v.$font-weight-medium;
+  }
+}
+
+// ── Table Cells ───────────────────────────────────────────────
+
+.staffName {
+  font-size: v.$font-size-sm;
+  font-weight: v.$font-weight-medium;
+  color: var(--color-gray-8);
+}
+
+.staffMeta {
+  font-size: v.$font-size-xs;
+  color: var(--color-gray-5);
+  margin-top: 2px;
+}
+
+.mono {
+  font-family: monospace;
+  font-size: v.$font-size-xs;
+  background: var(--color-gray-1);
+  padding: 2px 6px;
+  border-radius: 3px;
+}
+
+.amount {
+  font-size: v.$font-size-sm;
+  color: var(--color-gray-7);
+}
+
+.positive {
+  color: #059669;
+  font-size: v.$font-size-sm;
+}
+
+.negative {
+  color: v.$color-danger;
+  font-size: v.$font-size-sm;
+}
+
+.deductNote {
+  font-size: v.$font-size-xs;
+  color: var(--color-gray-5);
+  margin-top: 2px;
+}
+
+.net {
+  font-size: v.$font-size-sm;
+  font-weight: v.$font-weight-semibold;
+  color: v.$brand-primary;
+}
+
+.actions {
+  display: flex;
+  align-items: center;
+  gap: v.$space-2;
+}
+
+.paidDate {
+  font-size: v.$font-size-xs;
+  color: var(--color-gray-5);
+}
+
+// ── Edit Modal ────────────────────────────────────────────────
+
+.editForm {
+  display: flex;
+  flex-direction: column;
+  gap: v.$space-4;
+}
+
+.editStaff {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding-bottom: v.$space-3;
+  border-bottom: 1px solid var(--color-gray-2);
+
+  strong { font-size: v.$font-size-base; color: var(--color-gray-8); }
+  span   { font-size: v.$font-size-sm; color: var(--color-gray-5); }
+}
+
+.editRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: v.$space-4;
+
+  label {
+    font-size: v.$font-size-sm;
+    color: var(--color-gray-6);
+    min-width: 120px;
+  }
+}
+
+.readOnly {
+  font-size: v.$font-size-sm;
+  color: var(--color-gray-7);
+  font-weight: v.$font-weight-medium;
+}
+
+.editInput {
+  border: 1px solid var(--color-gray-3);
+  border-radius: v.$border-radius-md;
+  padding: 6px 10px;
+  font-size: v.$font-size-sm;
+  width: 160px;
+  outline: none;
+  text-align: right;
+
+  &:focus { border-color: v.$brand-primary; }
+}
+
+.editDivider {
+  border-top: 1px dashed var(--color-gray-3);
+}
+
+.tapNote {
+  font-size: v.$font-size-xs;
+  color: var(--color-gray-5);
+  background: var(--color-gray-1);
+  padding: v.$space-2 v.$space-3;
+  border-radius: v.$border-radius-md;
+}
+
+.modalFooter {
+  display: flex;
+  justify-content: flex-end;
+  gap: v.$space-3;
+}
