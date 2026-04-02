@@ -606,6 +606,16 @@ const zh = {
     sessionId: '会话ID',
     timestamp: '时间戳',
     session: '会话',
+    // 相机扫码
+    startCamera: '打开相机扫码',
+    stopScan: '停止扫码',
+    alignQRCode: '请将二维码对准扫描框',
+    cameraPlaceholder: '点击下方按钮启动相机',
+    cameraPermissionDenied: '无法访问相机，请检查相机权限设置',
+    cameraError: '相机启动失败，请重试',
+    scanVerificationFailed: '扫码验证失败',
+    uploadFallback: '上传二维码文件',
+    fallbackNote: '如果相机无法使用，可以上传包含二维码信息的文件'
   },
 
   procurementPR: {

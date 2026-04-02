@@ -36,7 +36,7 @@ const ALL_TABS: TabItem[] = [
 
 // Which tabs appear as primary (bottom bar) per role – max 4
 const PRIMARY_KEYS: Record<string, string[]> = {
-  student:    ['lms', 'apply', 'profile', 'statement'],
+  student:    ['lms', 'attendance', 'profile', 'statement'],
   admissions: ['admission'],
   lecturer:   ['lms', 'attendance', 'research', 'hr-leave'],
   manager:    ['dashboard', 'pr', 'hr', 'hr-leave'],

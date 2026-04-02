@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useNavigate, useLocation, Link } from 'react-router-dom'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
-import { Bell, Settings, LogOut, Check } from 'lucide-react'
+import { Bell, Settings, LogOut, Check, QrCode } from 'lucide-react'
 import { useAuthStore } from '@/stores/authStore'
 import { useUIStore } from '@/stores/uiStore'
 import { useLanguageStore } from '@/stores/languageStore'
@@ -165,6 +165,13 @@ const Navbar = () => {
             </div>
           )}
         </div>
+
+        {/* QR Code Scan for Attendance (Student only) */}
+        {user?.role === 'student' && (
+          <Link to="/lms/attendance/scan" className={styles.iconBtn} title="扫一扫">
+            <QrCode size={16} />
+          </Link>
+        )}
 
         {/* Settings link (admin only) */}
         {user?.role === 'admin' && (
