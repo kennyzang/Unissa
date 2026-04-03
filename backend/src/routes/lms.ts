@@ -83,6 +83,7 @@ router.get('/submissions/lecturer/:lecturerId', async (req: AuthRequest, res: Re
             where: status === 'pending' ? { finalMarks: null } : status === 'graded' ? { finalMarks: { not: null } } : undefined,
             include: {
               student: { include: { user: { select: { displayName: true } } } },
+              asset: true,
             },
           },
         },

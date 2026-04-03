@@ -6,7 +6,6 @@
 // Brand Colors
 $brand-primary:    #165DFF;
 $brand-primary-5:  #4080FF;
-$brand-primary-light:    #165DFF;
 $brand-primary-6:  #165DFF;   // LUI primary-6
 $brand-primary-5:  #4080FF;
 $brand-primary-4:  #6AA1FF;
@@ -14,10 +13,11 @@ $brand-primary-3:  #94BFFF;
 $brand-primary-2:  #BEDAFF;
 $brand-primary-1:  #E8F3FF;
 
-$brand-dark:       #1A3A5C;
-$brand-mid:        #2E6DA4;
-$brand-light:      #D5E8F0;
-$brand-accent:     #E8F4FD;
+$brand-dark:          #1A3A5C;
+$brand-mid:           #2E6DA4;
+$brand-light:         #D5E8F0;
+$brand-accent:        #E8F4FD;
+$brand-primary-light: #E8F3FF;
 
 // Neutral Colors (LUI grey scale)
 $color-gray-1:     #F7F8FA;
@@ -36,6 +36,7 @@ $color-warning:    #FF7D00;
 $color-warning-bg: #FFF7E8;
 $color-danger:     #F53F3F;
 $color-danger-bg:  #FFECE8;
+$color-danger-1:   #FFECE8;
 $color-info:       #165DFF;
 $color-info-bg:    #E8F3FF;
 

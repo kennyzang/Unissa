@@ -254,6 +254,9 @@
   display: flex;
   flex-direction: column;
   gap: v.$space-5;
+  max-height: calc(50vh - 60px);
+  overflow-y: auto;
+  padding-right: v.$space-1;
 }
 
 .studentSection {

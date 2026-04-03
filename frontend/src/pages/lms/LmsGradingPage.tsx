@@ -81,6 +81,16 @@ const LmsGradingPage: React.FC = () => {
     enabled: !!user,
   })
 
+  // Separate query always fetching all submissions for accurate tab counts
+  const { data: allSubmissions = [] } = useQuery<Submission[]>({
+    queryKey: ['lms', 'submissions', 'lecturer', user?.id, 'all'],
+    queryFn: async () => {
+      const { data } = await apiClient.get(`/lms/submissions/lecturer/${user!.id}`)
+      return data.data
+    },
+    enabled: !!user,
+  })
+
   const gradeMutation = useMutation({
     mutationFn: async ({ submissionId, instructorScores, finalMarks }: {
       submissionId: string
@@ -99,7 +109,7 @@ const LmsGradingPage: React.FC = () => {
         message: `Grade confirmed! Student GPA updated to ${data.data.currentGpa.toFixed(2)}`,
       })
       setGradingSubmission(null)
-      qc.invalidateQueries({ queryKey: ['lms', 'submissions', 'lecturer'] })
+      qc.invalidateQueries({ queryKey: ['lms', 'submissions', 'lecturer', user?.id] })
       qc.invalidateQueries({ queryKey: ['submissions', 'all'] })
       qc.invalidateQueries({ queryKey: ['submissions', 'history'] })
     },
@@ -119,7 +129,7 @@ const LmsGradingPage: React.FC = () => {
         message: `AI scores accepted! Student GPA updated to ${data.data.currentGpa.toFixed(2)}`,
       })
       setGradingSubmission(null)
-      qc.invalidateQueries({ queryKey: ['lms', 'submissions', 'lecturer'] })
+      qc.invalidateQueries({ queryKey: ['lms', 'submissions', 'lecturer', user?.id] })
       qc.invalidateQueries({ queryKey: ['submissions', 'all'] })
       qc.invalidateQueries({ queryKey: ['submissions', 'history'] })
     },
@@ -203,21 +213,21 @@ const LmsGradingPage: React.FC = () => {
           onClick={() => setStatusFilter('pending')}
         >
           <Clock size={14} />
-          待评分 ({submissions.filter(s => !s.finalMarks).length})
+          待评分 ({allSubmissions.filter(s => s.finalMarks === undefined || s.finalMarks === null).length})
         </button>
         <button
           className={`${styles.filterBtn} ${statusFilter === 'graded' ? styles.active : ''}`}
           onClick={() => setStatusFilter('graded')}
         >
           <CheckCircle size={14} />
-          已评分 ({submissions.filter(s => s.finalMarks).length})
+          已评分 ({allSubmissions.filter(s => s.finalMarks !== undefined && s.finalMarks !== null).length})
         </button>
         <button
           className={`${styles.filterBtn} ${statusFilter === 'all' ? styles.active : ''}`}
           onClick={() => setStatusFilter('all')}
         >
           <FileText size={14} />
-          全部 ({submissions.length})
+          全部 ({allSubmissions.length})
         </button>
       </div>
 
@@ -247,21 +257,22 @@ const LmsGradingPage: React.FC = () => {
                   </div>
                 </div>
                 <div className={styles.submissionMeta}>
-                  {submission.finalMarks !== undefined ? (
+                  {submission.finalMarks !== undefined && submission.finalMarks !== null ? (
                     <Badge color="green" size="sm">
-                      <CheckCircle size={11} /> 已评分
+                      <CheckCircle size={11} /> 教师已评分
+                    </Badge>
+                  ) : submission.aiRubricScores ? (
+                    <Badge color="blue" size="sm">
+                      <Sparkles size={11} /> AI已评分（待确认）
                     </Badge>
                   ) : (
                     <Badge color="orange" size="sm">
                       <Clock size={11} /> 待评分
                     </Badge>
                   )}
-                  <div className={styles.maxMarks}>
-                    Max: {submission.assignment.maxMarks} marks
-                  </div>
-                  {submission.finalMarks !== undefined && (
+                  {submission.finalMarks !== undefined && submission.finalMarks !== null && (
                     <div className={styles.grade}>
-                      成绩: {submission.finalMarks}/{submission.assignment.maxMarks}
+                      成绩: {submission.finalMarks}/100
                     </div>
                   )}
                 </div>
@@ -430,11 +441,11 @@ const LmsGradingPage: React.FC = () => {
 
             <div className={styles.finalMarksSection}>
               <div className={styles.finalMarksInput}>
-                <label>Final Marks (out of {gradingSubmission.assignment.maxMarks}):</label>
+                <label>Final Score (0–100):</label>
                 <input
                   type="number"
                   min={0}
-                  max={gradingSubmission.assignment.maxMarks}
+                  max={100}
                   value={finalMarks}
                   onChange={e => setFinalMarks(Number(e.target.value))}
                   className={styles.marksInput}
@@ -442,7 +453,7 @@ const LmsGradingPage: React.FC = () => {
               </div>
               <div className={styles.marksPreview}>
                 <AlertCircle size={14} />
-                Calculated from rubric: {calculateFinalMarks()} / {gradingSubmission.assignment.maxMarks}
+                Calculated from rubric: {calculateFinalMarks()} / 100
               </div>
             </div>
 
