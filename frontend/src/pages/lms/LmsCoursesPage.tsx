@@ -1,11 +1,12 @@
 import { useTranslation } from 'react-i18next'
 import React, { useState } from 'react'
-import { useQuery } from '@tanstack/react-query'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useNavigate } from 'react-router-dom'
 import { BookOpen, Clock, MapPin, User, ChevronRight, AlertTriangle, LayoutGrid, CalendarDays, Users } from 'lucide-react'
 import { apiClient } from '@/lib/apiClient'
 import { useAuthStore } from '@/stores/authStore'
 import Badge from '@/components/ui/Badge'
+import CourseCalendar, { type CalendarEntry } from './CourseCalendar'
 import styles from './LmsCoursesPage.module.scss'
 
 interface Enrolment {
@@ -52,8 +53,6 @@ const GRADE_LABELS: Record<string, string> = {
   A_plus: 'A+', A: 'A', B_plus: 'B+', B: 'B', C_plus: 'C+', C: 'C', D: 'D', F: 'F',
 }
 
-const WEEK_DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
-
 const COURSE_COLORS = [
   { bg: '#eff6ff', border: '#3b82f6', text: '#1d4ed8' },
   { bg: '#f0fdf4', border: '#22c55e', text: '#15803d' },
@@ -67,11 +66,11 @@ type ViewMode = 'card' | 'calendar'
 
 // ─── Lecturer View ────────────────────────────────────────────────────────────
 const LecturerCoursesView: React.FC = () => {
-  const navigate = useNavigate()
-  const user = useAuthStore(s => s.user)
-  const { t } = useTranslation()
+  const navigate    = useNavigate()
+  const user        = useAuthStore(s => s.user)
+  const { t }       = useTranslation()
+  const queryClient = useQueryClient()
   const [viewMode, setViewMode] = useState<ViewMode>('card')
-  const [mobileDay, setMobileDay] = useState<string>('')
 
   const { data: offerings = [], isLoading } = useQuery<LecturerOffering[]>({
     queryKey: ['lms', 'lecturer-offerings', user?.id],
@@ -99,11 +98,33 @@ const LecturerCoursesView: React.FC = () => {
     )
   }
 
-  const totalCH = offerings.reduce((s, o) => s + (o.course?.creditHours ?? 0), 0)
+  const totalCH       = offerings.reduce((s, o) => s + (o.course?.creditHours ?? 0), 0)
   const totalStudents = offerings.reduce((s, o) => s + (o._count?.enrolments ?? 0), 0)
 
   const colorMap: Record<string, typeof COURSE_COLORS[0]> = {}
   offerings.forEach((o, i) => { colorMap[o.id] = COURSE_COLORS[i % COURSE_COLORS.length] })
+
+  // Normalize for CalendarView
+  const calendarEntries: CalendarEntry[] = offerings.map(o => {
+    const color = colorMap[o.id]
+    return {
+      id:           o.id,
+      courseCode:   o.course?.code ?? '',
+      courseName:   o.course?.name ?? '',
+      creditHours:  o.course?.creditHours ?? 0,
+      dayOfWeek:    o.dayOfWeek,
+      startTime:    o.startTime,
+      endTime:      o.endTime,
+      room:         o.room,
+      color,
+      href:         '/lms/attendance',
+      badges: [
+        { label: `${o.course?.creditHours} CH`,                color: 'blue'  as const },
+        { label: `${o._count?.enrolments ?? 0} students`,      color: 'green' as const },
+        { label: `${o._count?.attendanceSessions ?? 0} sessions`, color: 'gray' as const },
+      ],
+    }
+  })
 
   const renderCardView = () => (
     <div className={styles.courseGrid}>
@@ -156,81 +177,6 @@ const LecturerCoursesView: React.FC = () => {
     </div>
   )
 
-  const renderCalendarView = () => {
-    const byDay: Record<string, LecturerOffering[]> = {}
-    WEEK_DAYS.forEach(d => { byDay[d] = [] })
-    offerings.forEach(o => {
-      if (o.dayOfWeek && byDay[o.dayOfWeek] !== undefined) byDay[o.dayOfWeek].push(o)
-    })
-
-    const activeDays = WEEK_DAYS.filter(d => byDay[d].length > 0)
-    const displayDays = activeDays.length > 0 ? activeDays : WEEK_DAYS.slice(0, 5)
-    const currentMobileDay = mobileDay && displayDays.includes(mobileDay) ? mobileDay : displayDays[0]
-
-    const renderSlots = (day: string) =>
-      byDay[day].map(offering => {
-        const color = colorMap[offering.id]
-        return (
-          <div
-            key={offering.id}
-            className={styles.calendarSlot}
-            style={{ background: color.bg, borderColor: color.border }}
-            onClick={() => navigate(`/lms/attendance`)}
-          >
-            <div className={styles.slotCode} style={{ color: color.text }}>{offering.course?.code}</div>
-            <div className={styles.slotName}>{offering.course?.name}</div>
-            <div className={styles.slotMeta}><Clock size={11} /><span>{offering.startTime}–{offering.endTime}</span></div>
-            <div className={styles.slotMeta}><MapPin size={11} /><span>{offering.room}</span></div>
-            <div className={styles.slotFooter}>
-              <Badge color="blue" size="sm">{offering.course?.creditHours} CH</Badge>
-              <Badge color="green" size="sm">
-                <Users size={9} /> {offering._count?.enrolments ?? 0}
-              </Badge>
-            </div>
-          </div>
-        )
-      })
-
-    return (
-      <div className={styles.calendarView}>
-        <div className={styles.mobileDayTabs}>
-          {displayDays.map(day => (
-            <button
-              key={day}
-              className={`${styles.mobileDayTab} ${currentMobileDay === day ? styles.mobileDayTabActive : ''}`}
-              onClick={() => setMobileDay(day)}
-            >
-              <span className={styles.mobileDayTabName}>{t(`lmsCourses.days.${day.toLowerCase()}`, { defaultValue: day.slice(0, 3) })}</span>
-              {byDay[day].length > 0 && <span className={styles.mobileDayTabDot} />}
-            </button>
-          ))}
-        </div>
-        <div className={styles.mobileDayContent}>
-          {byDay[currentMobileDay].length === 0
-            ? <div className={styles.calendarEmpty}>—</div>
-            : renderSlots(currentMobileDay)
-          }
-        </div>
-        <div className={styles.calendarGrid} style={{ gridTemplateColumns: `repeat(${displayDays.length}, 1fr)` }}>
-          {displayDays.map(day => (
-            <div key={day} className={styles.calendarColumn}>
-              <div className={`${styles.calendarDayHeader} ${byDay[day].length > 0 ? styles.calendarDayHeaderActive : ''}`}>
-                <span className={styles.calendarDayName}>{t(`lmsCourses.days.${day.toLowerCase()}`, { defaultValue: day.slice(0, 3) })}</span>
-                {byDay[day].length > 0 && <span className={styles.calendarDayCount}>{byDay[day].length}</span>}
-              </div>
-              <div className={styles.calendarSlots}>
-                {byDay[day].length === 0
-                  ? <div className={styles.calendarEmpty}>—</div>
-                  : renderSlots(day)
-                }
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-    )
-  }
-
   return (
     <div className={styles.page}>
       <div className={styles.header}>
@@ -271,18 +217,27 @@ const LecturerCoursesView: React.FC = () => {
           </div>
         </div>
       </div>
-      {viewMode === 'card' ? renderCardView() : renderCalendarView()}
+
+      {viewMode === 'card'
+        ? renderCardView()
+        : (
+          <CourseCalendar
+            entries={calendarEntries}
+            onRefresh={() => queryClient.invalidateQueries({ queryKey: ['lms', 'lecturer-offerings'] })}
+          />
+        )
+      }
     </div>
   )
 }
 
 // ─── Student View ─────────────────────────────────────────────────────────────
 const StudentCoursesView: React.FC = () => {
-  const navigate = useNavigate()
-  const user = useAuthStore(s => s.user)
-  const { t } = useTranslation()
+  const navigate    = useNavigate()
+  const user        = useAuthStore(s => s.user)
+  const { t }       = useTranslation()
+  const queryClient = useQueryClient()
   const [viewMode, setViewMode] = useState<ViewMode>('card')
-  const [mobileDay, setMobileDay] = useState<string>('')
 
   const { data: studentProfile } = useQuery({
     queryKey: ['student', 'me'],
@@ -311,10 +266,9 @@ const StudentCoursesView: React.FC = () => {
     enabled: !!user,
   })
 
-  const totalCH = enrolments.reduce((s, e) => s + (e.offering?.course?.creditHours ?? 0), 0)
+  const totalCH          = enrolments.reduce((s, e) => s + (e.offering?.course?.creditHours ?? 0), 0)
   const totalAssignments = enrolments.reduce((s, e) => s + (e.offering?.assignments?.length ?? 0), 0)
-
-  const isLoading = enrolmentsLoading || offeringsLoading
+  const isLoading        = enrolmentsLoading || offeringsLoading
 
   if (isLoading) return <div className={styles.loading}>{t('lmsCourses.loading')}</div>
 
@@ -339,52 +293,41 @@ const StudentCoursesView: React.FC = () => {
   const colorMap: Record<string, typeof COURSE_COLORS[0]> = {}
   enrolments.forEach((e, i) => { colorMap[e.offering?.id] = COURSE_COLORS[i % COURSE_COLORS.length] })
 
-  // Generate all possible time slots
-  const generateTimeSlots = () => {
-    const timeSlots = []
-    const startHour = 8
-    const endHour = 18
-    const slotDuration = 60 // minutes
+  // Normalize enrolled courses for CalendarView
+  const calendarEntries: CalendarEntry[] = enrolments
+    .filter(enr => !!enr.offering)
+    .map(enr => {
+      const off    = enr.offering
+      const color  = colorMap[off.id]
+      const pending = off.assignments?.filter(a => a.dueDate && new Date(a.dueDate) > new Date()) ?? []
 
-    for (let hour = startHour; hour < endHour; hour++) {
-      for (let minute = 0; minute < 60; minute += slotDuration) {
-        const startTime = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`
-        const endHourCalc = hour + Math.floor((minute + slotDuration) / 60)
-        const endMinute = (minute + slotDuration) % 60
-        const endTime = `${endHourCalc.toString().padStart(2, '0')}:${endMinute.toString().padStart(2, '0')}`
-        timeSlots.push({ startTime, endTime })
+      const badges: CalendarEntry['badges'] = [
+        { label: `${off.course?.creditHours} CH`, color: 'blue' as const },
+      ]
+      if (pending.length > 0) badges.push({ label: `${pending.length} due`, color: 'orange' as const })
+      if (enr.finalGrade) {
+        badges.push({
+          label: GRADE_LABELS[enr.finalGrade] ?? enr.finalGrade,
+          color: (GRADE_COLORS[enr.finalGrade] ?? 'gray') as CalendarEntry['badges'][0]['color'],
+        })
       }
-    }
-    return timeSlots
-  }
 
-  const timeSlots = generateTimeSlots()
-
-  // Categorize time slots
-  const categorizeTimeSlots = (day: string) => {
-    const enrolledSlots = enrolments
-      .filter(e => e.offering?.dayOfWeek === day)
-      .map(e => e.offering!)
-    
-    const availableSlots = availableOfferings
-      .filter(o => o.dayOfWeek === day)
-      .filter(o => !enrolledSlots.some(es => es.startTime === o.startTime && es.endTime === o.endTime))
-    
-    const categorizedSlots = timeSlots.map(slot => {
-      const enrolledSlot = enrolledSlots.find(es => es.startTime === slot.startTime && es.endTime === slot.endTime)
-      const availableSlot = availableSlots.find(as => as.startTime === slot.startTime && as.endTime === slot.endTime)
-      
-      if (enrolledSlot) {
-        return { ...slot, type: 'enrolled' as const, data: enrolledSlot }
-      } else if (availableSlot) {
-        return { ...slot, type: 'available' as const, data: availableSlot }
-      } else {
-        return { ...slot, type: 'blocked' as const, data: null }
+      return {
+        id:              off.id,
+        courseCode:      off.course?.code ?? '',
+        courseName:      off.course?.name ?? '',
+        creditHours:     off.course?.creditHours ?? 0,
+        dayOfWeek:       off.dayOfWeek,
+        startTime:       off.startTime,
+        endTime:         off.endTime,
+        room:            off.room,
+        instructorName:  off.lecturer?.user?.displayName,
+        color,
+        href:            `/lms/courses/${off.id}`,
+        badges,
+        availability:    'enrolled' as const,
       }
     })
-    
-    return categorizedSlots
-  }
 
   const renderCardView = () => (
     <div className={styles.courseGrid}>
@@ -446,120 +389,6 @@ const StudentCoursesView: React.FC = () => {
     </div>
   )
 
-  const renderCalendarView = () => {
-    const displayDays = WEEK_DAYS
-    const currentMobileDay = mobileDay && displayDays.includes(mobileDay) ? mobileDay : displayDays[0]
-
-    const renderSlots = (day: string) => {
-      const slots = categorizeTimeSlots(day)
-      
-      return slots.map((slot, index) => {
-        if (slot.type === 'enrolled') {
-          const off = slot.data
-          const color = colorMap[off.id]
-          const pendingCount = off.assignments?.filter(a => a.dueDate && new Date(a.dueDate) > new Date()).length ?? 0
-          const enrolment = enrolments.find(e => e.offering?.id === off.id)
-          
-          return (
-            <div
-              key={`${day}-${slot.startTime}-${index}`}
-              className={styles.calendarSlot}
-              style={{ background: color.bg, borderColor: color.border }}
-              onClick={() => navigate(`/lms/courses/${off.id}`)}
-            >
-              <div className={styles.slotCode} style={{ color: color.text }}>{off.course?.code}</div>
-              <div className={styles.slotName}>{off.course?.name}</div>
-              <div className={styles.slotMeta}><Clock size={11} /><span>{slot.startTime}–{slot.endTime}</span></div>
-              <div className={styles.slotMeta}><MapPin size={11} /><span>{off.room}</span></div>
-              <div className={styles.slotFooter}>
-                <Badge color="blue" size="sm">{off.course?.creditHours} CH</Badge>
-                {pendingCount > 0 && <Badge color="orange" size="sm"><AlertTriangle size={9} /> {pendingCount}</Badge>}
-                {enrolment?.finalGrade && (
-                  <Badge color={GRADE_COLORS[enrolment.finalGrade] ?? 'gray'} size="sm">
-                    {GRADE_LABELS[enrolment.finalGrade]}
-                  </Badge>
-                )}
-              </div>
-            </div>
-          )
-        } else if (slot.type === 'available') {
-          const off = slot.data
-          return (
-            <div
-              key={`${day}-${slot.startTime}-${index}`}
-              className={`${styles.calendarSlot} ${styles.availableSlot}`}
-              onClick={() => navigate('/student/courses')}
-            >
-              <div className={styles.slotCode} style={{ color: '#10b981' }}>{off.course?.code}</div>
-              <div className={styles.slotName}>{off.course?.name}</div>
-              <div className={styles.slotMeta}><Clock size={11} /><span>{slot.startTime}–{slot.endTime}</span></div>
-              <div className={styles.slotMeta}><MapPin size={11} /><span>{off.room}</span></div>
-              <div className={styles.slotFooter}>
-                <Badge color="green" size="sm">{off.course?.creditHours} CH</Badge>
-                <Badge color="green" size="sm">Available</Badge>
-              </div>
-            </div>
-          )
-        } else {
-          return (
-            <div
-              key={`${day}-${slot.startTime}-${index}`}
-              className={`${styles.calendarSlot} ${styles.blockedSlot}`}
-            >
-              <div className={styles.slotTime}>{slot.startTime}–{slot.endTime}</div>
-              <div className={styles.slotStatus}>Unavailable</div>
-            </div>
-          )
-        }
-      })
-    }
-
-    return (
-      <div className={styles.calendarView}>
-        <div className={styles.mobileDayTabs}>
-          {displayDays.map(day => (
-            <button
-              key={day}
-              className={`${styles.mobileDayTab} ${currentMobileDay === day ? styles.mobileDayTabActive : ''}`}
-              onClick={() => setMobileDay(day)}
-            >
-              <span className={styles.mobileDayTabName}>{t(`lmsCourses.days.${day.toLowerCase()}`, { defaultValue: day.slice(0, 3) })}</span>
-            </button>
-          ))}
-        </div>
-        <div className={styles.mobileDayContent}>
-          {renderSlots(currentMobileDay)}
-        </div>
-        <div className={styles.calendarGrid} style={{ gridTemplateColumns: `repeat(${displayDays.length}, 1fr)` }}>
-          {displayDays.map(day => (
-            <div key={day} className={styles.calendarColumn}>
-              <div className={styles.calendarDayHeader}>
-                <span className={styles.calendarDayName}>{t(`lmsCourses.days.${day.toLowerCase()}`, { defaultValue: day.slice(0, 3) })}</span>
-              </div>
-              <div className={styles.calendarSlots}>
-                {renderSlots(day)}
-              </div>
-            </div>
-          ))}
-        </div>
-        <div className={styles.calendarLegend}>
-          <div className={styles.legendItem}>
-            <div className={styles.legendColor} style={{ background: '#eff6ff', borderColor: '#3b82f6' }}></div>
-            <span>Enrolled</span>
-          </div>
-          <div className={styles.legendItem}>
-            <div className={styles.legendColor} style={{ background: '#f0fdf4', borderColor: '#22c55e' }}></div>
-            <span>Available</span>
-          </div>
-          <div className={styles.legendItem}>
-            <div className={styles.legendColor} style={{ background: '#f3f4f6', borderColor: '#d1d5db' }}></div>
-            <span>Unavailable</span>
-          </div>
-        </div>
-      </div>
-    )
-  }
-
   return (
     <div className={styles.page}>
       <div className={styles.header}>
@@ -600,7 +429,19 @@ const StudentCoursesView: React.FC = () => {
           </div>
         </div>
       </div>
-      {viewMode === 'card' ? renderCardView() : renderCalendarView()}
+
+      {viewMode === 'card'
+        ? renderCardView()
+        : (
+          <CourseCalendar
+            entries={calendarEntries}
+            onRefresh={() => {
+              queryClient.invalidateQueries({ queryKey: ['lms', 'courses'] })
+              queryClient.invalidateQueries({ queryKey: ['offerings'] })
+            }}
+          />
+        )
+      }
     </div>
   )
 }
