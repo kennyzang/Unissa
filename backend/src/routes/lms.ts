@@ -355,6 +355,14 @@ router.post('/submissions', upload.array('files', 5), async (req: AuthRequest, r
             title: true,
             maxMarks: true,
             dueDate: true,
+          },        asset: {
+          select: {
+            id: true,
+            fileName: true,
+            originalName: true,
+            fileUrl: true,
+            mimeType: true,
+            fileSizeBytes: true,
           },
         },
       },

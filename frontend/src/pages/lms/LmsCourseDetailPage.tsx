@@ -29,6 +29,15 @@ interface Submission {
   gradedAt?: string
   aiRubricScores?: string
   submittedAt?: string
+  content?: string
+  asset?: {
+    id: string
+    fileName: string
+    originalName?: string
+    fileUrl: string
+    mimeType?: string
+    fileSizeBytes: number
+  }
   assignment?: {
     id: string
     title: string
@@ -54,11 +63,12 @@ const LmsCourseDetailPage: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'materials' | 'assignments' | 'history'>('materials')
   const [viewSubmission, setViewSubmission] = useState<Submission | null>(null)
   const [fileErrors, setFileErrors] = useState<string[]>([])
+  const [aiLoading, setAiLoading] = useState(false)
 
   const validateFiles = (files: File[]): { valid: boolean; errors: string[] } => {
     const errors: string[] = []
-    const allowedTypes = ['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'text/plain', 'image/jpeg', 'image/jpg', 'image/png']
-    const allowedExtensions = ['.pdf', '.doc', '.docx', '.txt', '.jpg', '.jpeg', '.png']
+    const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp']
+    const allowedExtensions = ['.jpg', '.jpeg', '.png', '.gif', '.webp']
     const maxSize = 10 * 1024 * 1024 // 10MB
 
     files.forEach((file, index) => {
@@ -66,7 +76,7 @@ const LmsCourseDetailPage: React.FC = () => {
       const fileExtension = ext ? `.${ext}` : undefined
       
       if (!allowedTypes.includes(file.type) && !(fileExtension && allowedExtensions.includes(fileExtension))) {
-        errors.push(t('lmsCourseDetail.fileFormatError', { fileName: file.name }))
+        errors.push(t('lmsCourseDetail.imageFormatError', { fileName: file.name }))
       }
       
       if (file.size > maxSize) {
@@ -174,23 +184,31 @@ const LmsCourseDetailPage: React.FC = () => {
         formData.append('files', file)
       })
       
+      setAiLoading(true)
+      
       const { data } = await apiClient.post('/lms/submissions', formData, {
         headers: {
           'Content-Type': 'multipart/form-data'
         }
       })
+      
+      await new Promise(resolve => setTimeout(resolve, 2000))
+      
       return data
     },
     onSuccess: (data) => {
+      setAiLoading(false)
       setLastSubmission(data.data)
       setShowSubmitConfirmation(true)
       setSubmitModal(null)
       setSubmissionContent('')
       setSubmissionFiles([])
       setFileErrors([])
-      qc.invalidateQueries({ queryKey: ['submissions', offeringId] })
+      qc.invalidateQueries({ queryKey: ['submissions', 'history', offeringId, studentProfile?.id] })
+      qc.invalidateQueries({ queryKey: ['lms', 'courses', studentProfile?.id] })
     },
     onError: (e: any) => {
+      setAiLoading(false)
       addToast({ type: 'error', message: e.response?.data?.message ?? e.message ?? 'Submission failed' })
     },
   })
@@ -455,6 +473,29 @@ const LmsCourseDetailPage: React.FC = () => {
                     <div className={styles.historyContent}>
                       {sub.content ? `${sub.content.substring(0, 100)}...` : t('lmsCourseDetail.noSubmissionContent')}
                     </div>
+                    {sub.asset && (
+                      <div className={styles.historyAttachments}>
+                        <div className={styles.attachmentLabel}>
+                          <FileText size={12} />
+                          <span>{t('lmsCourseDetail.attachedFiles')}:</span>
+                        </div>
+                        <div className={styles.attachmentItem}>
+                          {sub.asset.mimeType && sub.asset.mimeType.startsWith('image/') ? (
+                            <img 
+                              src={sub.asset.fileUrl} 
+                              alt={sub.asset.originalName || sub.asset.fileName}
+                              className={styles.attachmentImage}
+                              onClick={() => window.open(sub.asset.fileUrl, '_blank')}
+                            />
+                          ) : (
+                            <>
+                              <span className={styles.attachmentName}>{sub.asset.originalName || sub.asset.fileName}</span>
+                              <span className={styles.attachmentSize}>({(sub.asset.fileSizeBytes / 1024).toFixed(1)} KB)</span>
+                            </>
+                          )}
+                        </div>
+                      </div>
+                    )}
                   </div>
                   <div className={styles.historyStatus}>
                     {sub.finalMarks !== undefined ? (
@@ -467,6 +508,13 @@ const LmsCourseDetailPage: React.FC = () => {
                         <Clock size={11} /> {t('lmsCourseDetail.pendingGrading')}
                       </Badge>
                     )}
+                    <Button 
+                      size="sm" 
+                      variant="ghost" 
+                      onClick={() => setViewSubmission(sub)}
+                    >
+                      {t('lmsCourseDetail.viewSubmission')}
+                    </Button>
                   </div>
                 </div>
               ))}
@@ -483,91 +531,115 @@ const LmsCourseDetailPage: React.FC = () => {
           onClose={() => {
             setSubmitModal(null)
             setSubmissionFiles([])
+            setAiLoading(false)
           }}
-          okText={t('lmsCourseDetail.submitAssignment')}
+          okText={aiLoading ? t('lmsCourseDetail.aiGrading') : t('lmsCourseDetail.submitAssignment')}
           onOk={() => submitMutation.mutate({ 
             assignmentId: submitModal.id, 
             content: submissionContent,
             files: submissionFiles
           })}
-          okLoading={submitMutation.isPending}
+          okLoading={submitMutation.isPending || aiLoading}
         >
-          <p className={styles.submitInfo}>{t('lmsCourseDetail.maxMarks')}: {submitModal.maxMarks} · {t('lmsCourseDetail.weight')}: {submitModal.weight}%</p>
-          <label className={styles.submitLabel}>{t('lmsCourseDetail.yourAnswerNotes')}</label>
-          <textarea
-            className={styles.submitTextarea}
-            rows={6}
-            placeholder={t('lmsCourseDetail.typeYourResponse')}
-            value={submissionContent}
-            onChange={e => setSubmissionContent(e.target.value)}
-          />
-          
-          {/* File Upload */}
-          <label className={styles.submitLabel}>{t('lmsCourseDetail.uploadFiles')}</label>
-          <div className={styles.fileUpload}>
-            <input
-              type="file"
-              multiple
-              accept=".pdf,.doc,.docx,.txt,.jpg,.jpeg,.png"
-              onChange={(e) => {
-                if (e.target.files) {
-                  const selectedFiles = Array.from(e.target.files)
-                  const validation = validateFiles(selectedFiles)
-                  
-                  if (validation.valid) {
-                    setSubmissionFiles(selectedFiles)
-                    setFileErrors([])
-                  } else {
-                    setFileErrors(validation.errors)
-                    addToast({ type: 'error', message: validation.errors[0] })
-                  }
-                }
-              }}
-              className={styles.fileInput}
-            />
-            <div className={styles.fileButton}>
-                <Upload size={16} />
-                <span>{t('lmsCourseDetail.chooseFiles')}</span>
+          {aiLoading ? (
+            <div className={styles.aiLoadingContainer}>
+              <div className={styles.aiLoadingSpinner}></div>
+              <h3 className={styles.aiLoadingTitle}>{t('lmsCourseDetail.aiGradingInProgress')}</h3>
+              <p className={styles.aiLoadingMessage}>{t('lmsCourseDetail.aiGradingMessage')}</p>
+              <div className={styles.aiLoadingSteps}>
+                <div className={styles.aiLoadingStep}>
+                  <CheckCircle size={16} />
+                  <span>{t('lmsCourseDetail.analyzingContent')}</span>
+                </div>
+                <div className={styles.aiLoadingStep}>
+                  <CheckCircle size={16} />
+                  <span>{t('lmsCourseDetail.evaluatingRubric')}</span>
+                </div>
+                <div className={styles.aiLoadingStep}>
+                  <div className={styles.spinner}></div>
+                  <span>{t('lmsCourseDetail.generatingFeedback')}</span>
+                </div>
               </div>
-          </div>
-          
-          {/* File Errors */}
-          {fileErrors.length > 0 && (
-            <div className={styles.fileErrors}>
-              {fileErrors.map((error, index) => (
-                <div key={index} className={styles.fileError}>
-                  {error}
-                </div>
-              ))}
             </div>
-          )}
-          
-          {/* Selected Files */}
-          {submissionFiles.length > 0 && (
-            <div className={styles.filesList}>
-              {submissionFiles.map((file, index) => (
-                <div key={index} className={styles.fileItem}>
-                  <FileText size={14} />
-                  <span className={styles.fileName}>{file.name}</span>
-                  <span className={styles.fileSize}>{(file.size / 1024).toFixed(1)} KB</span>
-                  <button
-                    className={styles.removeFile}
-                    onClick={() => {
-                      const newFiles = submissionFiles.filter((_, i) => i !== index)
-                      setSubmissionFiles(newFiles)
-                    }}
-                    title={t('lmsCourseDetail.removeFile')}
-                  >
-                    ×
-                  </button>
+          ) : (
+            <>
+              <p className={styles.submitInfo}>{t('lmsCourseDetail.maxMarks')}: {submitModal.maxMarks} · {t('lmsCourseDetail.weight')}: {submitModal.weight}%</p>
+              <label className={styles.submitLabel}>{t('lmsCourseDetail.yourAnswerNotes')}</label>
+              <textarea
+                className={styles.submitTextarea}
+                rows={6}
+                placeholder={t('lmsCourseDetail.typeYourResponse')}
+                value={submissionContent}
+                onChange={e => setSubmissionContent(e.target.value)}
+              />
+              
+              {/* File Upload */}
+              <label className={styles.submitLabel}>{t('lmsCourseDetail.uploadImages')}</label>
+              <div className={styles.fileUpload}>
+                <input
+                  type="file"
+                  multiple
+                  accept="image/jpeg,image/jpg,image/png,image/gif,image/webp"
+                  onChange={(e) => {
+                    if (e.target.files) {
+                      const selectedFiles = Array.from(e.target.files)
+                      const validation = validateFiles(selectedFiles)
+                      
+                      if (validation.valid) {
+                        setSubmissionFiles(selectedFiles)
+                        setFileErrors([])
+                      } else {
+                        setFileErrors(validation.errors)
+                      }
+                    }
+                  }}
+                  className={styles.fileInput}
+                />
+                <div className={styles.fileButton}>
+                    <Upload size={16} />
+                    <span>{t('lmsCourseDetail.chooseImages')}</span>
+                  </div>
+              </div>
+              
+              {/* File Errors */}
+              {fileErrors.length > 0 && (
+                <div className={styles.fileErrors}>
+                  {fileErrors.map((error, index) => (
+                    <div key={index} className={styles.fileError}>
+                      {error}
+                    </div>
+                  ))}
                 </div>
-              ))}
-            </div>
+              )}
+              
+              {/* Selected Files */}
+              {submissionFiles.length > 0 && (
+                <div className={styles.filesList}>
+                  {submissionFiles.map((file, index) => (
+                    <div key={index} className={styles.fileItem}>
+                      <FileText size={14} />
+                      <span className={styles.fileName}>{file.name}</span>
+                      <span className={styles.fileSize}>{(file.size / 1024).toFixed(1)} KB</span>
+                      <button
+                        className={styles.removeFile}
+                        onClick={() => {
+                          const newFiles = submissionFiles.filter((_, i) => i !== index)
+                          setSubmissionFiles(newFiles)
+                        }}
+                        title={t('lmsCourseDetail.removeFile')}
+                      >
+                        ×
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+              
+              <p className={styles.aiNote}>
+                🤖 {t('lmsCourseDetail.aiRubricGrading')}
+              </p>
+            </>
           )}
-          
-          <p className={styles.aiNote}>
-            🤖 {t('lmsCourseDetail.aiRubricGrading')}
-          </p>
         </Modal>
       )}
 
@@ -704,11 +776,86 @@ const LmsCourseDetailPage: React.FC = () => {
               </Button>
               <Button
                 variant="secondary"
-                onClick={() => setShowSubmitConfirmation(false)}
+                onClick={() => {
+                  setShowSubmitConfirmation(false)
+                  qc.refetchQueries({ queryKey: ['submissions', 'history', offeringId, studentProfile?.id] })
+                  qc.refetchQueries({ queryKey: ['lms', 'courses', studentProfile?.id] })
+                }}
               >
                 {t('lmsCourseDetail.returnToCourse')}
               </Button>
             </div>
+          </div>
+        </Modal>
+      )}
+
+      {/* View Submission Modal */}
+      {viewSubmission && (
+        <Modal
+          open
+          title={t('lmsCourseDetail.submissionDetails')}
+          onClose={() => setViewSubmission(null)}
+          footer={<Button onClick={() => setViewSubmission(null)}>{t('lmsCourseDetail.close')}</Button>}
+        >
+          <div className={styles.submissionDetails}>
+            <div className={styles.detailSection}>
+              <h4 className={styles.detailLabel}>{t('lmsCourseDetail.assignment')}:</h4>
+              <p className={styles.detailValue}>{viewSubmission.assignment?.title || t('lmsCourseDetail.assignment')}</p>
+            </div>
+            
+            <div className={styles.detailSection}>
+              <h4 className={styles.detailLabel}>{t('lmsCourseDetail.submittedAt')}:</h4>
+              <p className={styles.detailValue}>
+                {viewSubmission.submittedAt ? new Date(viewSubmission.submittedAt).toLocaleString() : t('lmsCourseDetail.unknown')}
+              </p>
+            </div>
+            
+            {viewSubmission.content && (
+              <div className={styles.detailSection}>
+                <h4 className={styles.detailLabel}>{t('lmsCourseDetail.submissionContent')}:</h4>
+                <div className={styles.contentBox}>
+                  {viewSubmission.content}
+                </div>
+              </div>
+            )}
+            
+            {viewSubmission.asset && (
+              <div className={styles.detailSection}>
+                <h4 className={styles.detailLabel}>{t('lmsCourseDetail.attachedFiles')}:</h4>
+                {viewSubmission.asset.mimeType && viewSubmission.asset.mimeType.startsWith('image/') ? (
+                  <div className={styles.imagePreview}>
+                    <img 
+                      src={viewSubmission.asset.fileUrl} 
+                      alt={viewSubmission.asset.originalName || viewSubmission.asset.fileName}
+                      className={styles.previewImage}
+                    />
+                    <p className={styles.imageInfo}>
+                      {viewSubmission.asset.originalName || viewSubmission.asset.fileName} 
+                      ({(viewSubmission.asset.fileSizeBytes / 1024).toFixed(1)} KB)
+                    </p>
+                  </div>
+                ) : (
+                  <div className={styles.fileInfo}>
+                    <FileText size={16} />
+                    <span>{viewSubmission.asset.originalName || viewSubmission.asset.fileName}</span>
+                    <span className={styles.fileSizeText}>
+                      ({(viewSubmission.asset.fileSizeBytes / 1024).toFixed(1)} KB)
+                    </span>
+                  </div>
+                )}
+              </div>
+            )}
+            
+            {viewSubmission.finalMarks !== undefined && (
+              <div className={styles.detailSection}>
+                <h4 className={styles.detailLabel}>{t('lmsCourseDetail.grade')}:</h4>
+                <div className={styles.gradeDisplay}>
+                  <Star size={16} />
+                  <span className={styles.gradeValue}>{viewSubmission.finalMarks}</span>
+                  <span className={styles.gradeMax}>/ {viewSubmission.assignment?.maxMarks}</span>
+                </div>
+              </div>
+            )}
           </div>
         </Modal>
       )}
