@@ -1,0 +1,384 @@
+@use '@/styles/variables' as v;
+
+.page {
+  padding: v.$space-6;
+  display: flex;
+  flex-direction: column;
+  gap: v.$space-5;
+  animation: fadeIn 0.2s ease;
+  max-width: 100%;
+  overflow-x: hidden;
+
+  @media (max-width: v.$bp-md) {
+    padding: v.$space-3;
+    gap: v.$space-3;
+  }
+}
+
+.loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 300px;
+  color: var(--color-gray-5);
+}
+
+.header {
+  display: flex;
+  flex-direction: column;
+  gap: v.$space-1;
+}
+
+.pageTitle {
+  display: flex;
+  align-items: center;
+  gap: v.$space-2;
+  font-size: v.$font-size-2xl;
+  font-weight: v.$font-weight-bold;
+  color: var(--color-gray-8);
+  margin: 0;
+
+  @media (max-width: v.$bp-md) { font-size: v.$font-size-xl; }
+}
+
+.pageDesc {
+  font-size: v.$font-size-sm;
+  color: var(--color-gray-5);
+  margin: 0;
+}
+
+.cardGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: v.$space-4;
+
+  @media (max-width: v.$bp-md) {
+    grid-template-columns: 1fr;
+  }
+}
+
+.balanceCard {
+  background: linear-gradient(135deg, v.$brand-primary 0%, #0D47A1 100%);
+  color: white;
+  position: relative;
+  overflow: hidden;
+
+  &::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    right: -50%;
+    width: 200%;
+    height: 200%;
+    background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+    pointer-events: none;
+  }
+}
+
+.cardHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: v.$space-4;
+}
+
+.balanceInfo {
+  margin-bottom: v.$space-4;
+}
+
+.balanceLabel {
+  font-size: v.$font-size-sm;
+  opacity: 0.9;
+  margin-bottom: v.$space-2;
+}
+
+.balanceAmount {
+  font-size: v.$font-size-4xl;
+  font-weight: v.$font-weight-bold;
+  margin-bottom: v.$space-2;
+}
+
+.cardNumber {
+  font-size: v.$font-size-sm;
+  opacity: 0.8;
+}
+
+.topUpBtn {
+  width: 100%;
+  background: rgba(255, 255, 255, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  color: white;
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.3);
+  }
+}
+
+.statsCard {
+  display: flex;
+  flex-direction: column;
+  gap: v.$space-4;
+}
+
+.statItem {
+  display: flex;
+  align-items: center;
+  gap: v.$space-3;
+  padding: v.$space-3;
+  background: var(--color-gray-1);
+  border-radius: v.$border-radius;
+
+  svg {
+    color: v.$brand-primary;
+  }
+}
+
+.statContent {
+  flex: 1;
+}
+
+.statValue {
+  font-size: v.$font-size-lg;
+  font-weight: v.$font-weight-bold;
+  color: var(--color-gray-8);
+}
+
+.statLabel {
+  font-size: v.$font-size-xs;
+  color: var(--color-gray-5);
+}
+
+.emptyState {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: v.$space-8;
+  color: var(--color-gray-4);
+  text-align: center;
+
+  svg {
+    margin-bottom: v.$space-3;
+    opacity: 0.5;
+  }
+
+  h3 {
+    margin: 0 0 v.$space-2 0;
+    font-size: v.$font-size-lg;
+    color: var(--color-gray-6);
+  }
+
+  p {
+    margin: 0;
+    font-size: v.$font-size-sm;
+  }
+}
+
+.transactionList {
+  display: flex;
+  flex-direction: column;
+  gap: v.$space-2;
+}
+
+.transactionItem {
+  display: flex;
+  align-items: center;
+  gap: v.$space-3;
+  padding: v.$space-3;
+  background: var(--color-gray-1);
+  border-radius: v.$border-radius;
+  transition: all 0.2s ease;
+
+  &:hover {
+    background: var(--color-gray-2);
+  }
+}
+
+.transactionIcon {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--color-gray-2);
+  color: var(--color-gray-6);
+}
+
+.transactionInfo {
+  flex: 1;
+}
+
+.transactionDesc {
+  font-size: v.$font-size-sm;
+  font-weight: v.$font-weight-medium;
+  color: var(--color-gray-8);
+  margin-bottom: 2px;
+}
+
+.transactionDate {
+  font-size: v.$font-size-xs;
+  color: var(--color-gray-5);
+}
+
+.transactionAmount {
+  text-align: right;
+}
+
+.positive {
+  font-size: v.$font-size-md;
+  font-weight: v.$font-weight-bold;
+  color: v.$color-success;
+}
+
+.negative {
+  font-size: v.$font-size-md;
+  font-weight: v.$font-weight-bold;
+  color: v.$color-error;
+}
+
+.balanceAfter {
+  font-size: v.$font-size-xs;
+  color: var(--color-gray-5);
+  margin-top: 2px;
+}
+
+.modalFooter {
+  display: flex;
+  gap: v.$space-3;
+  justify-content: flex-end;
+}
+
+.topUpForm {
+  display: flex;
+  flex-direction: column;
+  gap: v.$space-4;
+}
+
+.formGroup {
+  display: flex;
+  flex-direction: column;
+  gap: v.$space-2;
+
+  label {
+    font-size: v.$font-size-sm;
+    font-weight: v.$font-weight-medium;
+    color: var(--color-gray-7);
+  }
+}
+
+.amountOptions {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: v.$space-2;
+
+  @media (max-width: v.$bp-md) {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+.amountBtn {
+  padding: v.$space-2 v.$space-3;
+  border: 1px solid var(--color-gray-3);
+  border-radius: v.$border-radius;
+  background: white;
+  cursor: pointer;
+  font-size: v.$font-size-sm;
+  font-weight: v.$font-weight-medium;
+  color: var(--color-gray-7);
+  transition: all 0.2s ease;
+
+  &:hover {
+    border-color: v.$brand-primary;
+    color: v.$brand-primary;
+  }
+
+  &.active {
+    background: v.$brand-primary;
+    border-color: v.$brand-primary;
+    color: white;
+  }
+}
+
+.amountInput {
+  padding: v.$space-2 v.$space-3;
+  border: 1px solid var(--color-gray-3);
+  border-radius: v.$border-radius;
+  font-size: v.$font-size-base;
+
+  &:focus {
+    outline: none;
+    border-color: v.$brand-primary;
+  }
+}
+
+.hint {
+  font-size: v.$font-size-xs;
+  color: var(--color-gray-5);
+}
+
+.paymentMethods {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: v.$space-2;
+
+  @media (max-width: v.$bp-md) {
+    grid-template-columns: 1fr;
+  }
+}
+
+.methodBtn {
+  padding: v.$space-3;
+  border: 1px solid var(--color-gray-3);
+  border-radius: v.$border-radius;
+  background: white;
+  cursor: pointer;
+  font-size: v.$font-size-sm;
+  font-weight: v.$font-weight-medium;
+  color: var(--color-gray-7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: v.$space-2;
+  transition: all 0.2s ease;
+
+  &:hover {
+    border-color: v.$brand-primary;
+    color: v.$brand-primary;
+  }
+
+  &.active {
+    background: v.$brand-primary-light;
+    border-color: v.$brand-primary;
+    color: v.$brand-primary;
+  }
+}
+
+.summary {
+  padding: v.$space-3;
+  background: var(--color-gray-1);
+  border-radius: v.$border-radius;
+}
+
+.summaryRow {
+  display: flex;
+  justify-content: space-between;
+  padding: v.$space-2 0;
+  font-size: v.$font-size-sm;
+  color: var(--color-gray-6);
+
+  &:not(:last-child) {
+    border-bottom: 1px solid var(--color-gray-3);
+  }
+
+  &.total {
+    font-weight: v.$font-weight-bold;
+    color: var(--color-gray-8);
+    font-size: v.$font-size-base;
+  }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}

@@ -34,6 +34,7 @@ import researchRoutes from './routes/research'
 import notificationsRoutes from './routes/notifications'
 import adminRoutes from './routes/admin'
 import productsRoutes from './routes/products'
+import campusCardRoutes from './routes/campusCard'
 import { errorHandler, notFound } from './middleware/errorHandler'
 
 const app = express()
@@ -87,6 +88,7 @@ app.use('/api/v1/research',     researchRoutes)
 app.use('/api/v1/notifications', notificationsRoutes)
 app.use('/api/v1/admin',         adminRoutes)
 app.use('/api/v1/products',      productsRoutes)
+app.use('/api/v1/campus-card',   campusCardRoutes)
 
 // API docs
 app.get('/api-docs', (_req, res) => {

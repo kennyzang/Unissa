@@ -6,6 +6,70 @@ import { generateInvoicePDF } from '../services/invoiceService'
 const router = Router()
 router.use(authenticate)
 
+async function createNotification(userId: string, subject: string, body: string, type: string = 'info') {
+  await prisma.notification.create({
+    data: {
+      userId,
+      subject,
+      body,
+      type,
+      isRead: false,
+    },
+  })
+}
+
+async function activateStudentServices(studentId: string, userId: string) {
+  const student = await prisma.student.findUnique({
+    where: { id: studentId },
+    include: { libraryAccount: true, campusCard: true },
+  })
+
+  if (!student) return
+
+  const notifications = []
+
+  if (!student.libraryAccount) {
+    await prisma.libraryAccount.create({
+      data: {
+        studentId,
+        cardNumber: `LIB-${student.studentId}`,
+        status: 'active',
+        borrowedBooks: 0,
+        overdueBooks: 0,
+        fines: 0,
+      },
+    })
+    notifications.push(
+      createNotification(
+        userId,
+        'Library Account Activated',
+        'Your library account has been activated. You can now borrow books from the university library.',
+        'success'
+      )
+    )
+  }
+
+  if (!student.campusCard) {
+    await prisma.campusCard.create({
+      data: {
+        studentId,
+        balance: 0,
+        status: 'active',
+      },
+    })
+    notifications.push(
+      createNotification(
+        userId,
+        'Campus Card Activated',
+        'Your campus card has been activated. You can now top up your card and use it for campus services.',
+        'success'
+      )
+    )
+  }
+
+  await Promise.all(notifications)
+}
+
 // GET /api/v1/finance/invoices/:studentId
 router.get('/invoices/:studentId', async (req: AuthRequest, res: Response) => {
   const studentId = Array.isArray(req.params.studentId) ? req.params.studentId[0] : req.params.studentId
@@ -113,6 +177,22 @@ router.post('/payments', async (req: AuthRequest, res: Response) => {
   const methodLabel: Record<string, string> = {
     card: 'Credit/Debit Card', online_banking: 'Online Banking',
     e_wallet: 'E-Wallet', qr_pay: 'QR Pay', bank_transfer: 'Bank Transfer',
+  }
+
+  const student = await prisma.student.findUnique({
+    where: { id: invoice.studentId },
+    select: { userId: true },
+  })
+
+  if (student) {
+    await createNotification(
+      student.userId,
+      'Payment Successful',
+      `Your payment of BND ${amount.toFixed(2)} has been successfully processed. Transaction Reference: ${txRef}`,
+      'success'
+    )
+
+    await activateStudentServices(invoice.studentId, student.userId)
   }
 
   res.json({
@@ -375,5 +455,83 @@ function detectCardBrand(cardNumber?: string): string | undefined {
   if (n.startsWith('35')) return 'jcb'
   return undefined
 }
+
+router.get('/revenue-summary', requireRole('finance', 'admin'), async (_req, res: Response) => {
+  const tuitionPayments = await prisma.payment.aggregate({
+    where: { status: 'success' },
+    _sum: { amount: true },
+    _count: true,
+  })
+
+  const campusCardTopUps = await prisma.campusCardTransaction.aggregate({
+    where: { type: 'top_up' },
+    _sum: { amount: true },
+    _count: true,
+  })
+
+  const recentTuitionPayments = await prisma.payment.findMany({
+    where: { status: 'success' },
+    include: {
+      invoice: {
+        include: {
+          student: {
+            include: {
+              user: { select: { displayName: true } },
+            },
+          },
+        },
+      },
+    },
+    orderBy: { paidAt: 'desc' },
+    take: 5,
+  })
+
+  const recentCampusCardTopUps = await prisma.campusCardTransaction.findMany({
+    where: { type: 'top_up' },
+    include: {
+      card: {
+        include: {
+          student: {
+            include: {
+              user: { select: { displayName: true } },
+            },
+          },
+        },
+      },
+    },
+    orderBy: { createdAt: 'desc' },
+    take: 5,
+  })
+
+  const totalTuitionRevenue = tuitionPayments._sum.amount ?? 0
+  const totalCampusCardRevenue = campusCardTopUps._sum.amount ?? 0
+  const totalRevenue = totalTuitionRevenue + totalCampusCardRevenue
+
+  res.json({
+    success: true,
+    data: {
+      totalRevenue,
+      tuitionRevenue: totalTuitionRevenue,
+      campusCardRevenue: totalCampusCardRevenue,
+      tuitionPaymentCount: tuitionPayments._count,
+      campusCardTopUpCount: campusCardTopUps._count,
+      recentTuitionPayments: recentTuitionPayments.map(p => ({
+        id: p.id,
+        transactionRef: p.transactionRef,
+        amount: p.amount,
+        method: p.method,
+        paidAt: p.paidAt,
+        studentName: p.invoice.student.user.displayName,
+      })),
+      recentCampusCardTopUps: recentCampusCardTopUps.map((t: any) => ({
+        id: t.id,
+        amount: t.amount,
+        description: t.description,
+        createdAt: t.createdAt,
+        studentName: t.card.student.user.displayName,
+      })),
+    },
+  })
+})
 
 export default router

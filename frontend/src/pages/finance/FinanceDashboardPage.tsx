@@ -2,7 +2,7 @@ import { useTranslation } from 'react-i18next'
 import React from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts'
-import { DollarSign, TrendingUp, AlertCircle } from 'lucide-react'
+import { DollarSign, TrendingUp, AlertCircle, CreditCard, Wallet } from 'lucide-react'
 import { apiClient } from '@/lib/apiClient'
 import Card from '@/components/ui/Card'
 import Badge from '@/components/ui/Badge'
@@ -14,6 +14,29 @@ interface BudgetSummary {
   committed: number
   spent: number
   glCodes: GlCodeRow[]
+}
+
+interface RevenueSummary {
+  totalRevenue: number
+  tuitionRevenue: number
+  campusCardRevenue: number
+  tuitionPaymentCount: number
+  campusCardTopUpCount: number
+  recentTuitionPayments: Array<{
+    id: string
+    transactionRef: string
+    amount: number
+    method: string
+    paidAt: string
+    studentName: string
+  }>
+  recentCampusCardTopUps: Array<{
+    id: string
+    amount: number
+    description: string
+    createdAt: string
+    studentName: string
+  }>
 }
 
 interface GlCodeRow {
@@ -33,6 +56,14 @@ const FinanceDashboardPage: React.FC = () => {
     queryKey: ['finance', 'budget-summary'],
     queryFn: async () => {
       const { data } = await apiClient.get('/finance/budget-summary')
+      return data.data
+    },
+  })
+
+  const { data: revenueData } = useQuery<RevenueSummary>({
+    queryKey: ['finance', 'revenue-summary'],
+    queryFn: async () => {
+      const { data } = await apiClient.get('/finance/revenue-summary')
       return data.data
     },
   })
@@ -64,6 +95,14 @@ const FinanceDashboardPage: React.FC = () => {
         <StatCard title={t('financeDashboard.spent')} value={`BND ${spent.toLocaleString()}`} sub={`${Math.round(spent / totalBudget * 100)}% ${t('financeDashboard.ofTotal')}`} icon={<DollarSign size={16} />} color="green" />
         <StatCard title={t('financeDashboard.available')} value={`BND ${available.toLocaleString()}`} sub={t('financeDashboard.remainingBudget')} icon={<AlertCircle size={16} />} color={available < 50000 ? 'red' : 'blue'} />
       </div>
+
+      {revenueData && (
+        <div className={styles.kpiRow}>
+          <StatCard title={t('financeDashboard.totalRevenue')} value={`BND ${revenueData.totalRevenue.toLocaleString()}`} sub={`${revenueData.tuitionPaymentCount + revenueData.campusCardTopUpCount} transactions`} icon={<DollarSign size={16} />} color="green" />
+          <StatCard title={t('financeDashboard.tuitionRevenue')} value={`BND ${revenueData.tuitionRevenue.toLocaleString()}`} sub={`${revenueData.tuitionPaymentCount} payments`} icon={<CreditCard size={16} />} color="blue" />
+          <StatCard title={t('financeDashboard.campusCardRevenue')} value={`BND ${revenueData.campusCardRevenue.toLocaleString()}`} sub={`${revenueData.campusCardTopUpCount} top-ups`} icon={<Wallet size={16} />} color="purple" />
+        </div>
+      )}
 
       <Card title={t('financeDashboard.glUtilisation')}>
         <ResponsiveContainer width="100%" height={240}>

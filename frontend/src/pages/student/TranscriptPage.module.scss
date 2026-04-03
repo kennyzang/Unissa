@@ -330,3 +330,48 @@
   from { opacity: 0; transform: translateY(6px); }
   to   { opacity: 1; transform: translateY(0); }
 }
+
+// ── Print Styles ────────────────────────────────────────────────
+@media print {
+  .page {
+    padding: 20px;
+    gap: 20px;
+  }
+
+  .headerRight {
+    display: none;
+  }
+
+  .statsGrid {
+    display: none;
+  }
+
+  .card {
+    box-shadow: none;
+    border: 1px solid #ddd;
+    page-break-inside: avoid;
+  }
+
+  .studentAvatar {
+    display: none;
+  }
+
+  .transcriptTable,
+  .gpaTable {
+    border: 1px solid #000;
+  }
+
+  .semesterHeader {
+    background: #f0f0f0;
+    color: #000;
+  }
+
+  .transcriptRow,
+  .gpaRow {
+    border-top: 1px solid #ddd;
+  }
+
+  .gradeScale {
+    display: none;
+  }
+}

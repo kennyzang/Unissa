@@ -285,6 +285,7 @@ model Student {
   riskScores       StudentRiskScore[]
   gpaRecords       StudentGpaRecord[]
   libraryAccount   LibraryAccount?
+  campusCard       CampusCard?
 
   @@map("students")
 }
@@ -542,6 +543,33 @@ model Payment {
   createdAt      DateTime @default(now())
 
   @@map("payments")
+}
+
+model CampusCard {
+  id        String   @id @default(cuid())
+  studentId String   @unique
+  student   Student  @relation(fields: [studentId], references: [id])
+  balance   Float    @default(0.00)
+  status    String   @default("active")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  transactions CampusCardTransaction[]
+
+  @@map("campus_cards")
+}
+
+model CampusCardTransaction {
+  id          String   @id @default(cuid())
+  cardId      String
+  card        CampusCard @relation(fields: [cardId], references: [id])
+  type        String
+  amount      Float
+  description String
+  balanceAfter Float
+  createdAt   DateTime @default(now())
+
+  @@map("campus_card_transactions")
 }
 
 model PayrollRecord {

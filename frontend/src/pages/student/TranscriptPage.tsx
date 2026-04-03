@@ -89,6 +89,10 @@ const TranscriptPage: React.FC = () => {
   const { t } = useTranslation()
   const user = useAuthStore(s => s.user)
 
+  const handleDownloadPDF = () => {
+    window.print()
+  }
+
   const { data: student, isLoading: loadingStudent } = useQuery<Student>({
     queryKey: ['student', 'me'],
     queryFn: async () => {
@@ -168,7 +172,7 @@ const TranscriptPage: React.FC = () => {
           </p>
         </div>
         <div className={styles.headerRight}>
-          <Button variant="secondary" icon={<Download size={16} />}>
+          <Button variant="secondary" icon={<Download size={16} />} onClick={handleDownloadPDF}>
             {t('transcript.download', { defaultValue: 'Download PDF' })}
           </Button>
         </div>
