@@ -1273,6 +1273,11 @@ const zh = {
     desc: '审核AI建议评分并确认学生成绩',
     allGraded: '已全部完成！',
     noPending: '暂无待评分作业。',
+    submissionContent: '提交内容',
+    textContent: '文本内容',
+    attachedFiles: '附件文件',
+    viewFile: '查看',
+    noSubmissionContent: '暂无提交内容',
   },
 
   // 薪资管理

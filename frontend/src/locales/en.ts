@@ -1286,6 +1286,11 @@ const en = {
     desc: 'Review AI-suggested scores and confirm student grades',
     allGraded: 'All caught up!',
     noPending: 'No pending submissions to grade.',
+    submissionContent: 'Submission Content',
+    textContent: 'Text Content',
+    attachedFiles: 'Attached Files',
+    viewFile: 'View',
+    noSubmissionContent: 'No submission content available',
   },
 
   // Student Transcript

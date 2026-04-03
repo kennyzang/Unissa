@@ -1258,6 +1258,11 @@ const ms = {
     desc: 'Semak skor cadangan AI dan sahkan gred pelajar',
     allGraded: 'Semua selesai!',
     noPending: 'Tiada penyerahan menunggu untuk dinilai.',
+    submissionContent: 'Kandungan Penyerahan',
+    textContent: 'Kandungan Teks',
+    attachedFiles: 'Fail Dilampirkan',
+    viewFile: 'Lihat',
+    noSubmissionContent: 'Tiada kandungan penyerahan tersedia',
   },
 
   // Pengurusan Gaji

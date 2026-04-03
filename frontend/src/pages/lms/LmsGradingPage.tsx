@@ -16,6 +16,15 @@ interface Submission {
   assignmentId: string
   studentId: string
   assetId?: string
+  content?: string
+  asset?: {
+    id: string
+    fileName: string
+    originalName?: string
+    fileUrl: string
+    mimeType?: string
+    fileSizeBytes: number
+  }
   aiRubricScores?: string
   aiGeneratedAt?: string
   finalMarks?: number
@@ -91,6 +100,8 @@ const LmsGradingPage: React.FC = () => {
       })
       setGradingSubmission(null)
       qc.invalidateQueries({ queryKey: ['lms', 'submissions', 'lecturer'] })
+      qc.invalidateQueries({ queryKey: ['submissions', 'all'] })
+      qc.invalidateQueries({ queryKey: ['submissions', 'history'] })
     },
     onError: (e: any) => {
       addToast({ type: 'error', message: e.response?.data?.message ?? 'Grading failed' })
@@ -109,6 +120,8 @@ const LmsGradingPage: React.FC = () => {
       })
       setGradingSubmission(null)
       qc.invalidateQueries({ queryKey: ['lms', 'submissions', 'lecturer'] })
+      qc.invalidateQueries({ queryKey: ['submissions', 'all'] })
+      qc.invalidateQueries({ queryKey: ['submissions', 'history'] })
     },
     onError: (e: any) => {
       addToast({ type: 'error', message: e.response?.data?.message ?? 'Failed to accept AI scores' })
@@ -324,6 +337,64 @@ const LmsGradingPage: React.FC = () => {
               <User size={16} />
               <span><strong>Student:</strong> {gradingSubmission.student.user.displayName}</span>
               <span className={styles.studentId}>({gradingSubmission.student.studentId})</span>
+            </div>
+
+            <div className={styles.submissionContentSection}>
+              <h4>{t('lmsGrading.submissionContent', { defaultValue: 'Submission Content' })}</h4>
+              {gradingSubmission.content && (
+                <div className={styles.contentBox}>
+                  <h5>{t('lmsGrading.textContent', { defaultValue: 'Text Content' })}</h5>
+                  <div className={styles.textContent}>
+                    {gradingSubmission.content}
+                  </div>
+                </div>
+              )}
+              {gradingSubmission.asset && (
+                <div className={styles.attachmentBox}>
+                  <h5>{t('lmsGrading.attachedFiles', { defaultValue: 'Attached Files' })}</h5>
+                  {gradingSubmission.asset.mimeType && gradingSubmission.asset.mimeType.startsWith('image/') ? (
+                    <div className={styles.imageAttachment}>
+                      <img 
+                        src={gradingSubmission.asset.fileUrl} 
+                        alt={gradingSubmission.asset.originalName || gradingSubmission.asset.fileName}
+                        className={styles.attachmentImage}
+                        onClick={() => window.open(gradingSubmission.asset!.fileUrl, '_blank')}
+                      />
+                      <p className={styles.attachmentInfo}>
+                        {gradingSubmission.asset.originalName || gradingSubmission.asset.fileName}
+                        <span className={styles.fileSize}>
+                          ({(gradingSubmission.asset.fileSizeBytes / 1024).toFixed(1)} KB)
+                        </span>
+                      </p>
+                    </div>
+                  ) : (
+                    <div className={styles.fileAttachment}>
+                      <FileText size={20} />
+                      <div className={styles.fileDetails}>
+                        <span className={styles.fileName}>
+                          {gradingSubmission.asset.originalName || gradingSubmission.asset.fileName}
+                        </span>
+                        <span className={styles.fileSize}>
+                          {(gradingSubmission.asset.fileSizeBytes / 1024).toFixed(1)} KB
+                        </span>
+                      </div>
+                      <Button 
+                        size="sm" 
+                        variant="ghost"
+                        onClick={() => window.open(gradingSubmission.asset!.fileUrl, '_blank')}
+                      >
+                        {t('lmsGrading.viewFile', { defaultValue: 'View' })}
+                      </Button>
+                    </div>
+                  )}
+                </div>
+              )}
+              {!gradingSubmission.content && !gradingSubmission.asset && (
+                <div className={styles.noContent}>
+                  <AlertCircle size={16} />
+                  {t('lmsGrading.noSubmissionContent', { defaultValue: 'No submission content available' })}
+                </div>
+              )}
             </div>
 
             <div className={styles.rubricSection}>
