@@ -56,12 +56,12 @@ const sessionMaterialStorage = multer.diskStorage({
 
 export const sessionMaterialUpload = multer({
   storage: sessionMaterialStorage,
-  limits: { fileSize: 50 * 1024 * 1024 }, // 50 MB
+  limits: { fileSize: 500 * 1024 * 1024 }, // 500 MB for videos
   fileFilter: (req, file, cb) => {
-    const allowedExt = /\.(pdf|ppt|pptx|doc|docx|xls|xlsx|txt|zip|png|jpg|jpeg)$/i
+    const allowedExt = /\.(pdf|ppt|pptx|doc|docx|xls|xlsx|txt|zip|png|jpg|jpeg|mp4|webm|mov|avi|mkv)$/i
     if (allowedExt.test(path.extname(file.originalname))) {
       return cb(null, true)
     }
-    cb(new Error('Unsupported file type. Allowed: PDF, PPT, DOC, XLS, TXT, ZIP, images.'))
+    cb(new Error('Unsupported file type. Allowed: PDF, PPT, DOC, XLS, TXT, ZIP, images, and videos (MP4, WebM, MOV, AVI, MKV).'))
   },
 })

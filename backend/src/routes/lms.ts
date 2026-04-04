@@ -24,6 +24,178 @@ router.get('/materials/:offeringId', async (req: AuthRequest, res: Response) => 
   res.json({ success: true, data: materials })
 })
 
+// POST /api/v1/lms/materials/:offeringId - Upload course material
+router.post('/materials/:offeringId', sessionMaterialUpload.single('file'), async (req: AuthRequest, res: Response) => {
+  try {
+    const { title, description, materialType, externalUrl, isPublished } = req.body
+    const offeringId = req.params.offeringId
+    const file = req.file
+
+    if (!title) {
+      res.status(400).json({ success: false, message: 'Title is required' })
+      return
+    }
+
+    if (!file && !externalUrl && materialType !== 'link') {
+      res.status(400).json({ success: false, message: 'Either file or externalUrl is required' })
+      return
+    }
+
+    // Check if user is lecturer of this offering or admin
+    const offering = await prisma.courseOffering.findUnique({
+      where: { id: offeringId },
+      include: { lecturer: true },
+    })
+
+    if (!offering) {
+      res.status(404).json({ success: false, message: 'Course offering not found' })
+      return
+    }
+
+    const isAdmin = req.user?.role === 'admin'
+    const isLecturer = offering.lecturer?.userId === req.user?.userId
+
+    if (!isAdmin && !isLecturer) {
+      res.status(403).json({ success: false, message: 'You are not authorized to upload materials for this course' })
+      return
+    }
+
+    // Get max order index
+    const maxOrder = await prisma.courseMaterial.aggregate({
+      where: { offeringId },
+      _max: { orderIndex: true },
+    })
+    const nextOrder = (maxOrder._max.orderIndex ?? -1) + 1
+
+    // Create file asset if file uploaded
+    let assetId: string | null = null
+    if (file) {
+      const asset = await prisma.fileAsset.create({
+        data: {
+          fileName: file.filename,
+          originalName: file.originalname,
+          fileUrl: `/uploads/session-materials/${file.filename}`,
+          mimeType: file.mimetype,
+          fileSizeBytes: file.size,
+          uploadedById: req.user?.userId ?? '',
+        },
+      })
+      assetId = asset.id
+    }
+
+    // Determine material type from file if not provided
+    let finalMaterialType = materialType || 'document'
+    if (file && !materialType) {
+      if (file.mimetype.includes('presentation') || file.originalname.match(/\.pptx?$/i)) {
+        finalMaterialType = 'presentation'
+      } else if (file.mimetype.includes('video')) {
+        finalMaterialType = 'video'
+      } else {
+        finalMaterialType = 'document'
+      }
+    }
+
+    const material = await prisma.courseMaterial.create({
+      data: {
+        offeringId,
+        title,
+        description: description || null,
+        materialType: finalMaterialType,
+        assetId,
+        externalUrl: externalUrl || null,
+        isPublished: isPublished === 'true' || isPublished === true,
+        orderIndex: nextOrder,
+        uploadedById: req.user?.userId ?? '',
+      },
+      include: {
+        asset: true,
+        uploadedBy: { select: { displayName: true } },
+      },
+    })
+
+    res.status(201).json({ success: true, data: material, message: 'Material uploaded successfully' })
+  } catch (error) {
+    console.error('Error uploading material:', error)
+    res.status(500).json({ success: false, message: 'Failed to upload material', error: error instanceof Error ? error.message : 'Unknown error' })
+  }
+})
+
+// DELETE /api/v1/lms/materials/:materialId - Delete course material
+router.delete('/materials/:materialId', async (req: AuthRequest, res: Response) => {
+  try {
+    const material = await prisma.courseMaterial.findUnique({
+      where: { id: req.params.materialId },
+      include: { offering: { include: { lecturer: true } } },
+    })
+
+    if (!material) {
+      res.status(404).json({ success: false, message: 'Material not found' })
+      return
+    }
+
+    const isAdmin = req.user?.role === 'admin'
+    const isLecturer = material.offering.lecturer?.userId === req.user?.userId
+
+    if (!isAdmin && !isLecturer) {
+      res.status(403).json({ success: false, message: 'You are not authorized to delete this material' })
+      return
+    }
+
+    await prisma.courseMaterial.delete({
+      where: { id: req.params.materialId },
+    })
+
+    res.json({ success: true, message: 'Material deleted successfully' })
+  } catch (error) {
+    console.error('Error deleting material:', error)
+    res.status(500).json({ success: false, message: 'Failed to delete material' })
+  }
+})
+
+// PATCH /api/v1/lms/materials/:materialId - Update course material
+router.patch('/materials/:materialId', async (req: AuthRequest, res: Response) => {
+  try {
+    const { title, description, isPublished, orderIndex } = req.body
+
+    const material = await prisma.courseMaterial.findUnique({
+      where: { id: req.params.materialId },
+      include: { offering: { include: { lecturer: true } } },
+    })
+
+    if (!material) {
+      res.status(404).json({ success: false, message: 'Material not found' })
+      return
+    }
+
+    const isAdmin = req.user?.role === 'admin'
+    const isLecturer = material.offering.lecturer?.userId === req.user?.userId
+
+    if (!isAdmin && !isLecturer) {
+      res.status(403).json({ success: false, message: 'You are not authorized to update this material' })
+      return
+    }
+
+    const updated = await prisma.courseMaterial.update({
+      where: { id: req.params.materialId },
+      data: {
+        title: title ?? material.title,
+        description: description ?? material.description,
+        isPublished: isPublished ?? material.isPublished,
+        orderIndex: orderIndex ?? material.orderIndex,
+      },
+      include: {
+        asset: true,
+        uploadedBy: { select: { displayName: true } },
+      },
+    })
+
+    res.json({ success: true, data: updated, message: 'Material updated successfully' })
+  } catch (error) {
+    console.error('Error updating material:', error)
+    res.status(500).json({ success: false, message: 'Failed to update material' })
+  }
+})
+
 // GET /api/v1/lms/submissions/pending/:lecturerId
 router.get('/submissions/pending/:lecturerId', async (req: AuthRequest, res: Response) => {
   const staff = await prisma.staff.findFirst({

@@ -3,7 +3,7 @@ import React, { useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import {
-  ArrowLeft, FileText, Upload, Star, CheckCircle, Clock, Video, Link, BookOpen,
+  ArrowLeft, FileText, Upload, Star, CheckCircle, Clock, Video, Link, BookOpen, Download, Eye, Play,
 } from 'lucide-react'
 import { apiClient } from '@/lib/apiClient'
 import { useAuthStore } from '@/stores/authStore'
@@ -116,6 +116,9 @@ const LmsCourseDetailStudent: React.FC = () => {
   const [lastSubmission, setLastSubmission]       = useState<Submission | null>(null)
   const [viewAI, setViewAI]                       = useState<Submission | null>(null)
   const [viewSubmission, setViewSubmission]       = useState<Submission | null>(null)
+  const [imagePreview, setImagePreview]           = useState<{ url: string; name: string } | null>(null)
+  const [materialPreview, setMaterialPreview]     = useState<CourseMaterial | null>(null)
+  const [pptPreviewMode, setPptPreviewMode]       = useState<'office' | 'download'>('office')
 
   // ── Student profile ──────────────────────────────────────────────────────────
   const { data: studentProfile } = useQuery({
@@ -179,7 +182,7 @@ const LmsCourseDetailStudent: React.FC = () => {
       const { data } = await apiClient.get(`/lms/submissions/history/${offeringId}/${studentProfile!.id}`)
       return data.data ?? []
     },
-    enabled: !!studentProfile?.id && !!offeringId && activeTab === 'progress',
+    enabled: !!studentProfile?.id && !!offeringId,
   })
 
   // ── File validation ───────────────────────────────────────────────────────────
@@ -268,7 +271,6 @@ const LmsCourseDetailStudent: React.FC = () => {
   // ── Tab renderers ────────────────────────────────────────────────────────────
   const renderMaterials = () => (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-      {/* Published materials */}
       <Card title={t('lmsCourseDetail.courseMaterials', { defaultValue: 'Course Materials' })}>
         {materials.length === 0 ? (
           <div className={styles.emptyState}>{t('lmsCourseDetail.noMaterials', { defaultValue: 'No materials available yet.' })}</div>
@@ -277,10 +279,12 @@ const LmsCourseDetailStudent: React.FC = () => {
             {materials.map(m => {
               const isVideo = m.materialType === 'video'
               const isLink  = m.materialType === 'link'
+              const isPPT = m.materialType === 'presentation' || (m.asset?.mimeType?.includes('presentation') || m.asset?.originalName?.match(/\.pptx?$/i))
               const cls     = isVideo ? 'video' : isLink ? 'link' : 'doc'
               const href    = isLink ? m.externalUrl : m.asset?.fileUrl
+              const canPreview = isVideo || isPPT
               return (
-                <div key={m.id} className={styles.materialItem} onClick={() => href && window.open(href, '_blank')}>
+                <div key={m.id} className={styles.materialItem}>
                   <div className={`${styles.materialIcon} ${styles[cls]}`}>
                     {isVideo ? <Video size={20} /> : isLink ? <Link size={20} /> : <FileText size={20} />}
                   </div>
@@ -294,17 +298,30 @@ const LmsCourseDetailStudent: React.FC = () => {
                       </div>
                     )}
                   </div>
-                  {href && (
-                    <a
-                      className={styles.materialAction}
-                      href={href}
-                      target="_blank"
-                      rel="noreferrer"
-                      onClick={e => e.stopPropagation()}
-                    >
-                      {t('lmsCourseDetail.open', { defaultValue: 'Open' })}
-                    </a>
-                  )}
+                  <div className={styles.materialActions}>
+                    {canPreview && href && (
+                      <Button
+                        size="sm"
+                        variant="secondary"
+                        icon={isVideo ? <Play size={14} /> : <Eye size={14} />}
+                        onClick={() => setMaterialPreview(m)}
+                      >
+                        {isVideo ? t('lmsCourseDetail.play', { defaultValue: 'Play' }) : t('lmsCourseDetail.preview', { defaultValue: 'Preview' })}
+                      </Button>
+                    )}
+                    {href && (
+                      <a
+                        className={styles.materialDownloadBtn}
+                        href={href}
+                        target="_blank"
+                        rel="noreferrer"
+                        download
+                      >
+                        <Download size={14} />
+                        {t('lmsCourseDetail.download', { defaultValue: 'Download' })}
+                      </a>
+                    )}
+                  </div>
                 </div>
               )
             })}
@@ -343,13 +360,24 @@ const LmsCourseDetailStudent: React.FC = () => {
     </div>
   )
 
-  const renderAssignments = () => (
+  const renderAssignments = () => {
+    const sortedAssignments = [...assignments].sort((a, b) => {
+      const aSubmitted = submissionHistory.some(s => s.assignmentId === a.id)
+      const bSubmitted = submissionHistory.some(s => s.assignmentId === b.id)
+      if (aSubmitted !== bSubmitted) return aSubmitted ? 1 : -1
+      if (a.dueDate && b.dueDate) return new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime()
+      if (a.dueDate) return -1
+      if (b.dueDate) return 1
+      return 0
+    })
+    
+    return (
     <Card title={t('lmsCourseDetail.assignmentsAssessments', { defaultValue: 'Assignments & Assessments' })}>
-      {assignments.length === 0 ? (
+      {sortedAssignments.length === 0 ? (
         <div className={styles.emptyState}>{t('lmsCourseDetail.noAssignments', { defaultValue: 'No assignments yet.' })}</div>
       ) : (
         <div className={styles.assignmentList}>
-          {assignments.map(a => {
+          {sortedAssignments.map(a => {
             const isDue      = a.dueDate && new Date(a.dueDate) < now
             const submission = submissionHistory.find(s => s.assignmentId === a.id)
             return (
@@ -404,7 +432,8 @@ const LmsCourseDetailStudent: React.FC = () => {
         </div>
       )}
     </Card>
-  )
+    )
+  }
 
   const renderProgress = () => (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
@@ -433,7 +462,7 @@ const LmsCourseDetailStudent: React.FC = () => {
                             src={sub.asset.fileUrl}
                             alt={sub.asset.originalName ?? sub.asset.fileName}
                             className={styles.attachmentImage}
-                            onClick={() => window.open(sub.asset!.fileUrl, '_blank')}
+                            onClick={() => sub.asset && setImagePreview({ url: sub.asset.fileUrl, name: sub.asset.originalName ?? sub.asset.fileName })}
                           />
                         ) : (
                           <>
@@ -760,7 +789,13 @@ const LmsCourseDetailStudent: React.FC = () => {
                 <h4 className={styles.detailLabel}>{t('lmsCourseDetail.attachedFiles', { defaultValue: 'Attachment' })}:</h4>
                 {viewSubmission.asset.mimeType?.startsWith('image/') ? (
                   <>
-                    <img src={viewSubmission.asset.fileUrl} alt={viewSubmission.asset.originalName ?? viewSubmission.asset.fileName} className={styles.previewImage} />
+                    <img 
+                      src={viewSubmission.asset.fileUrl} 
+                      alt={viewSubmission.asset.originalName ?? viewSubmission.asset.fileName} 
+                      className={styles.previewImage}
+                      onClick={() => viewSubmission.asset && setImagePreview({ url: viewSubmission.asset.fileUrl, name: viewSubmission.asset.originalName ?? viewSubmission.asset.fileName })}
+                      style={{ cursor: 'pointer' }}
+                    />
                     <p className={styles.imageInfo}>{viewSubmission.asset.originalName ?? viewSubmission.asset.fileName} ({(viewSubmission.asset.fileSizeBytes / 1024).toFixed(1)} KB)</p>
                   </>
                 ) : (
@@ -780,6 +815,113 @@ const LmsCourseDetailStudent: React.FC = () => {
                   <span className={styles.gradeValue}>{viewSubmission.finalMarks}</span>
                   <span className={styles.gradeMax}>/ {viewSubmission.assignment?.maxMarks}</span>
                 </div>
+              </div>
+            )}
+          </div>
+        </Modal>
+      )}
+
+      {/* Image Preview Modal */}
+      {imagePreview && (
+        <Modal
+          open
+          title={imagePreview.name}
+          onClose={() => setImagePreview(null)}
+        >
+          <div className={styles.imagePreviewModal}>
+            <img src={imagePreview.url} alt={imagePreview.name} className={styles.imagePreviewLarge} />
+            <p className={styles.imagePreviewName}>{imagePreview.name}</p>
+          </div>
+        </Modal>
+      )}
+
+      {/* Material Preview Modal */}
+      {materialPreview && materialPreview.asset && (
+        <Modal
+          open
+          title={materialPreview.title}
+          onClose={() => { setMaterialPreview(null); setPptPreviewMode('office') }}
+          width={900}
+          footer={
+            <div style={{ display: 'flex', gap: 8 }}>
+              <a
+                href={materialPreview.asset?.fileUrl}
+                target="_blank"
+                rel="noreferrer"
+                download
+                style={{ textDecoration: 'none' }}
+              >
+                <Button icon={<Download size={14} />}>
+                  {t('lmsCourseDetail.download', { defaultValue: 'Download' })}
+                </Button>
+              </a>
+              <Button variant="secondary" onClick={() => { setMaterialPreview(null); setPptPreviewMode('office') }}>
+                {t('lmsCourseDetail.close', { defaultValue: 'Close' })}
+              </Button>
+            </div>
+          }
+        >
+          <div className={styles.materialPreviewContent}>
+            {materialPreview.materialType === 'video' ? (
+              <div className={styles.videoContainer}>
+                <video
+                  controls
+                  className={styles.videoPlayer}
+                  src={materialPreview.asset.fileUrl}
+                >
+                  {t('lmsCourseDetail.videoNotSupported', { defaultValue: 'Your browser does not support video playback.' })}
+                </video>
+              </div>
+            ) : (
+              <div className={styles.pptPreviewWrapper}>
+                <div className={styles.pptPreviewTabs}>
+                  <Button 
+                    size="sm" 
+                    variant={pptPreviewMode === 'office' ? 'primary' : 'secondary'}
+                    onClick={() => setPptPreviewMode('office')}
+                  >
+                    {t('lmsCourseDetail.onlinePreview', { defaultValue: 'Online Preview' })}
+                  </Button>
+                  <Button 
+                    size="sm" 
+                    variant={pptPreviewMode === 'download' ? 'primary' : 'secondary'}
+                    onClick={() => setPptPreviewMode('download')}
+                  >
+                    {t('lmsCourseDetail.fileInfo', { defaultValue: 'File Info' })}
+                  </Button>
+                </div>
+                
+                {pptPreviewMode === 'office' ? (
+                  <div className={styles.pptIframeContainer}>
+                    <iframe
+                      src={`https://view.officeapps.live.com/op/embed.aspx?src=${encodeURIComponent(window.location.origin + materialPreview.asset.fileUrl)}`}
+                      className={styles.pptIframe}
+                      frameBorder="0"
+                    >
+                      {t('lmsCourseDetail.iframeNotSupported', { defaultValue: 'Your browser does not support iframes.' })}
+                    </iframe>
+                    <div className={styles.pptPreviewHint}>
+                      {t('lmsCourseDetail.pptPreviewHint', { defaultValue: 'If preview fails, please download the file or check if the file is publicly accessible.' })}
+                    </div>
+                  </div>
+                ) : (
+                  <div className={styles.pptPreviewContainer}>
+                    <div className={styles.pptPreviewInfo}>
+                      <FileText size={48} />
+                      <h3>{materialPreview.asset.originalName ?? materialPreview.asset.fileName}</h3>
+                      <p>{t('lmsCourseDetail.pptPreviewNote', { defaultValue: 'PPT files can be previewed online or downloaded for offline viewing.' })}</p>
+                      <div className={styles.pptFileInfo}>
+                        <span>{(materialPreview.asset.fileSizeBytes / 1024 / 1024).toFixed(2)} MB</span>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+            {materialPreview.description && (
+              <div className={styles.materialPreviewDesc}>
+                <h4>{t('lmsCourseDetail.description', { defaultValue: 'Description' })}</h4>
+                <p>{materialPreview.description}</p>
               </div>
             )}
           </div>

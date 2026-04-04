@@ -4,7 +4,7 @@ import { useParams, useNavigate } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import {
   ArrowLeft, Users, BookOpen, FileText, ClipboardList,
-  Star, Clock, CheckCircle, Video, Link, Calendar,
+  Star, Clock, CheckCircle, Video, Link, Calendar, Upload, Trash2, Eye, Play, Download,
 } from 'lucide-react'
 import { apiClient } from '@/lib/apiClient'
 import { useAuthStore } from '@/stores/authStore'
@@ -48,6 +48,7 @@ interface CourseMaterial {
   externalUrl?: string
   duration?: number
   orderIndex: number
+  isPublished: boolean
   asset?: { id: string; fileName: string; originalName?: string; fileUrl: string; mimeType?: string; fileSizeBytes: number }
 }
 
@@ -113,6 +114,13 @@ const LmsCourseDetailLecturer: React.FC = () => {
   const [gradingMarks, setGradingMarks]         = useState('')
   const [viewSubmission, setViewSubmission]     = useState<SubmissionForGrading | null>(null)
   const [viewAIRubric, setViewAIRubric]         = useState<SubmissionForGrading | null>(null)
+  const [materialModal, setMaterialModal]       = useState(false)
+  const [materialTitle, setMaterialTitle]       = useState('')
+  const [materialDesc, setMaterialDesc]         = useState('')
+  const [materialFile, setMaterialFile]         = useState<File | null>(null)
+  const [materialPublished, setMaterialPublished] = useState(true)
+  const [materialPreview, setMaterialPreview]   = useState<CourseMaterial | null>(null)
+  const [pptPreviewMode, setPptPreviewMode]     = useState<'office' | 'download'>('office')
 
   // ── Offering detail ─────────────────────────────────────────────────────────
   const { data: offering, isLoading } = useQuery<LecturerOffering>({
@@ -186,6 +194,52 @@ const LmsCourseDetailLecturer: React.FC = () => {
     },
     onError: (e: any) => {
       addToast({ type: 'error', message: e.response?.data?.message ?? 'Accept AI failed' })
+    },
+  })
+
+  // ── Material upload mutation ────────────────────────────────────────────────
+  const uploadMaterialMutation = useMutation({
+    mutationFn: async () => {
+      if (!materialTitle.trim()) throw new Error(t('lmsCourseDetailLecturer.titleRequired', { defaultValue: 'Title is required' }))
+      if (!materialFile) throw new Error(t('lmsCourseDetailLecturer.fileRequired', { defaultValue: 'File is required' }))
+      
+      const fd = new FormData()
+      fd.append('title', materialTitle.trim())
+      fd.append('description', materialDesc.trim())
+      fd.append('isPublished', String(materialPublished))
+      fd.append('file', materialFile)
+      
+      const { data } = await apiClient.post(`/lms/materials/${offeringId}`, fd, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      })
+      return data
+    },
+    onSuccess: () => {
+      addToast({ type: 'success', message: t('lmsCourseDetailLecturer.materialUploaded', { defaultValue: 'Material uploaded successfully' }) })
+      qc.invalidateQueries({ queryKey: ['lms', 'offering', offeringId] })
+      setMaterialModal(false)
+      setMaterialTitle('')
+      setMaterialDesc('')
+      setMaterialFile(null)
+      setMaterialPublished(true)
+    },
+    onError: (e: any) => {
+      addToast({ type: 'error', message: e.response?.data?.message ?? e.message ?? 'Upload failed' })
+    },
+  })
+
+  // ── Material delete mutation ────────────────────────────────────────────────
+  const deleteMaterialMutation = useMutation({
+    mutationFn: async (materialId: string) => {
+      const { data } = await apiClient.delete(`/lms/materials/${materialId}`)
+      return data
+    },
+    onSuccess: () => {
+      addToast({ type: 'success', message: t('lmsCourseDetailLecturer.materialDeleted', { defaultValue: 'Material deleted successfully' }) })
+      qc.invalidateQueries({ queryKey: ['lms', 'offering', offeringId] })
+    },
+    onError: (e: any) => {
+      addToast({ type: 'error', message: e.response?.data?.message ?? 'Delete failed' })
     },
   })
 
@@ -389,7 +443,14 @@ const LmsCourseDetailLecturer: React.FC = () => {
   )
 
   const renderMaterials = () => (
-    <Card title={t('lmsCourseDetail.courseMaterials', { defaultValue: 'Course Materials' })}>
+    <Card 
+      title={t('lmsCourseDetail.courseMaterials', { defaultValue: 'Course Materials' })}
+      extra={
+        <Button size="sm" icon={<Upload size={14} />} onClick={() => setMaterialModal(true)}>
+          {t('lmsCourseDetailLecturer.uploadMaterial', { defaultValue: 'Upload Material' })}
+        </Button>
+      }
+    >
       {offering.materials.length === 0 ? (
         <div className={styles.emptyBlock}>{t('lmsCourseDetail.noMaterials', { defaultValue: 'No materials uploaded yet.' })}</div>
       ) : (
@@ -397,15 +458,20 @@ const LmsCourseDetailLecturer: React.FC = () => {
           {offering.materials.map(m => {
             const isVideo = m.materialType === 'video'
             const isLink  = m.materialType === 'link'
-            const iconClass = isVideo ? 'video' : isLink ? 'link' : m.materialType === 'document' || m.materialType === 'presentation' ? 'doc' : 'other'
+            const isPPT = m.materialType === 'presentation' || (m.asset?.mimeType?.includes('presentation') || m.asset?.originalName?.match(/\.pptx?$/i))
+            const iconClass = isVideo ? 'video' : isLink ? 'link' : 'doc'
             const href = isLink ? m.externalUrl : m.asset?.fileUrl
+            const canPreview = isVideo || isPPT
             return (
               <div key={m.id} className={styles.materialItem}>
                 <div className={`${styles.materialIcon} ${styles[iconClass]}`}>
                   {isVideo ? <Video size={20} /> : isLink ? <Link size={20} /> : <FileText size={20} />}
                 </div>
                 <div className={styles.materialInfo}>
-                  <div className={styles.materialTitle}>{m.title}</div>
+                  <div className={styles.materialTitle}>
+                    {m.title}
+                    {!m.isPublished && <Badge color="orange" size="sm" style={{ marginLeft: 8 }}>{t('lmsCourseDetailLecturer.draft', { defaultValue: 'Draft' })}</Badge>}
+                  </div>
                   {m.description && <div className={styles.materialMeta}>{m.description}</div>}
                   {m.asset && (
                     <div className={styles.materialMeta}>
@@ -418,12 +484,34 @@ const LmsCourseDetailLecturer: React.FC = () => {
                     </div>
                   )}
                 </div>
-                <div className={styles.materialAction}>
+                <div className={styles.materialActions}>
+                  {canPreview && href && (
+                    <Button
+                      size="sm"
+                      variant="secondary"
+                      icon={isVideo ? <Play size={14} /> : <Eye size={14} />}
+                      onClick={() => setMaterialPreview(m)}
+                    >
+                      {isVideo ? t('lmsCourseDetail.play', { defaultValue: 'Play' }) : t('lmsCourseDetail.preview', { defaultValue: 'Preview' })}
+                    </Button>
+                  )}
                   {href && (
-                    <a href={href} target="_blank" rel="noreferrer" className={styles.slideAction}>
-                      {t('lmsCourseDetail.open', { defaultValue: 'Open' })}
+                    <a href={href} target="_blank" rel="noreferrer" className={styles.slideAction} download>
+                      <Download size={14} />
+                      {t('lmsCourseDetail.download', { defaultValue: 'Download' })}
                     </a>
                   )}
+                  <Button 
+                    size="sm" 
+                    variant="ghost" 
+                    onClick={() => {
+                      if (window.confirm(t('lmsCourseDetailLecturer.confirmDelete', { defaultValue: 'Are you sure you want to delete this material?' }))) {
+                        deleteMaterialMutation.mutate(m.id)
+                      }
+                    }}
+                  >
+                    <Trash2 size={14} />
+                  </Button>
                 </div>
               </div>
             )
@@ -791,6 +879,164 @@ const LmsCourseDetailLecturer: React.FC = () => {
                 )}
               </div>
             ))}
+          </div>
+        </Modal>
+      )}
+
+      {/* ── Upload Material Modal ─────────────────────────────────────────────── */}
+      {materialModal && (
+        <Modal
+          open
+          title={t('lmsCourseDetailLecturer.uploadMaterial', { defaultValue: 'Upload Material' })}
+          onClose={() => setMaterialModal(false)}
+          okText={t('lmsCourseDetailLecturer.upload', { defaultValue: 'Upload' })}
+          onOk={() => uploadMaterialMutation.mutate()}
+          okLoading={uploadMaterialMutation.isPending}
+        >
+          <div className={styles.uploadForm}>
+            <div className={styles.formGroup}>
+              <label className={styles.formLabel}>{t('lmsCourseDetailLecturer.title', { defaultValue: 'Title' })} *</label>
+              <input
+                type="text"
+                className={styles.formInput}
+                value={materialTitle}
+                onChange={e => setMaterialTitle(e.target.value)}
+                placeholder={t('lmsCourseDetailLecturer.titlePlaceholder', { defaultValue: 'Enter material title' })}
+              />
+            </div>
+            <div className={styles.formGroup}>
+              <label className={styles.formLabel}>{t('lmsCourseDetailLecturer.description', { defaultValue: 'Description' })}</label>
+              <textarea
+                className={styles.formTextarea}
+                value={materialDesc}
+                onChange={e => setMaterialDesc(e.target.value)}
+                placeholder={t('lmsCourseDetailLecturer.descPlaceholder', { defaultValue: 'Optional description' })}
+                rows={3}
+              />
+            </div>
+            <div className={styles.formGroup}>
+              <label className={styles.formLabel}>{t('lmsCourseDetailLecturer.file', { defaultValue: 'File' })} *</label>
+              <input
+                type="file"
+                className={styles.formFileInput}
+                onChange={e => setMaterialFile(e.target.files?.[0] ?? null)}
+                accept=".pdf,.ppt,.pptx,.doc,.docx,.xls,.xlsx,.txt,.zip,.png,.jpg,.jpeg,.mp4,.webm,.mov,.avi,.mkv"
+              />
+              {materialFile && (
+                <div className={styles.filePreview}>
+                  <FileText size={14} />
+                  <span>{materialFile.name}</span>
+                  <span className={styles.fileSize}>
+                    ({materialFile.size > 1024 * 1024 
+                      ? `${(materialFile.size / 1024 / 1024).toFixed(2)} MB` 
+                      : `${(materialFile.size / 1024).toFixed(0)} KB`})
+                  </span>
+                </div>
+              )}
+            </div>
+            <div className={styles.formGroup}>
+              <label className={styles.checkboxLabel}>
+                <input
+                  type="checkbox"
+                  checked={materialPublished}
+                  onChange={e => setMaterialPublished(e.target.checked)}
+                />
+                <span>{t('lmsCourseDetailLecturer.publishImmediately', { defaultValue: 'Publish immediately (visible to students)' })}</span>
+              </label>
+            </div>
+          </div>
+        </Modal>
+      )}
+
+      {/* ── Material Preview Modal ─────────────────────────────────────────────── */}
+      {materialPreview && materialPreview.asset && (
+        <Modal
+          open
+          title={materialPreview.title}
+          onClose={() => { setMaterialPreview(null); setPptPreviewMode('office') }}
+          width={900}
+          footer={
+            <div style={{ display: 'flex', gap: 8 }}>
+              <a
+                href={materialPreview.asset?.fileUrl}
+                target="_blank"
+                rel="noreferrer"
+                download
+                style={{ textDecoration: 'none' }}
+              >
+                <Button icon={<Download size={14} />}>
+                  {t('lmsCourseDetail.download', { defaultValue: 'Download' })}
+                </Button>
+              </a>
+              <Button variant="secondary" onClick={() => { setMaterialPreview(null); setPptPreviewMode('office') }}>
+                {t('lmsCourseDetail.close', { defaultValue: 'Close' })}
+              </Button>
+            </div>
+          }
+        >
+          <div className={styles.materialPreviewContent}>
+            {materialPreview.materialType === 'video' ? (
+              <div className={styles.videoContainer}>
+                <video
+                  controls
+                  className={styles.videoPlayer}
+                  src={materialPreview.asset.fileUrl}
+                >
+                  {t('lmsCourseDetail.videoNotSupported', { defaultValue: 'Your browser does not support video playback.' })}
+                </video>
+              </div>
+            ) : (
+              <div className={styles.pptPreviewWrapper}>
+                <div className={styles.pptPreviewTabs}>
+                  <Button 
+                    size="sm" 
+                    variant={pptPreviewMode === 'office' ? 'primary' : 'secondary'}
+                    onClick={() => setPptPreviewMode('office')}
+                  >
+                    {t('lmsCourseDetail.onlinePreview', { defaultValue: 'Online Preview' })}
+                  </Button>
+                  <Button 
+                    size="sm" 
+                    variant={pptPreviewMode === 'download' ? 'primary' : 'secondary'}
+                    onClick={() => setPptPreviewMode('download')}
+                  >
+                    {t('lmsCourseDetail.fileInfo', { defaultValue: 'File Info' })}
+                  </Button>
+                </div>
+                
+                {pptPreviewMode === 'office' ? (
+                  <div className={styles.pptIframeContainer}>
+                    <iframe
+                      src={`https://view.officeapps.live.com/op/embed.aspx?src=${encodeURIComponent(window.location.origin + materialPreview.asset.fileUrl)}`}
+                      className={styles.pptIframe}
+                      frameBorder="0"
+                    >
+                      {t('lmsCourseDetail.iframeNotSupported', { defaultValue: 'Your browser does not support iframes.' })}
+                    </iframe>
+                    <div className={styles.pptPreviewHint}>
+                      {t('lmsCourseDetail.pptPreviewHint', { defaultValue: 'If preview fails, please download the file or check if the file is publicly accessible.' })}
+                    </div>
+                  </div>
+                ) : (
+                  <div className={styles.pptPreviewContainer}>
+                    <div className={styles.pptPreviewInfo}>
+                      <FileText size={48} />
+                      <h3>{materialPreview.asset.originalName ?? materialPreview.asset.fileName}</h3>
+                      <p>{t('lmsCourseDetail.pptPreviewNote', { defaultValue: 'PPT files can be previewed online or downloaded for offline viewing.' })}</p>
+                      <div className={styles.pptFileInfo}>
+                        <span>{(materialPreview.asset.fileSizeBytes / 1024 / 1024).toFixed(2)} MB</span>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+            {materialPreview.description && (
+              <div className={styles.materialPreviewDesc}>
+                <h4>{t('lmsCourseDetail.description', { defaultValue: 'Description' })}</h4>
+                <p>{materialPreview.description}</p>
+              </div>
+            )}
           </div>
         </Modal>
       )}

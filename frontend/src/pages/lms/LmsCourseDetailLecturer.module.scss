@@ -614,3 +614,211 @@
 }
 
 @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+
+// ─── Upload Material Form ─────────────────────────────────────────────────────
+.uploadForm {
+  display: flex;
+  flex-direction: column;
+  gap: v.$space-4;
+}
+
+.formGroup {
+  display: flex;
+  flex-direction: column;
+  gap: v.$space-2;
+}
+
+.formLabel {
+  font-size: v.$font-size-sm;
+  font-weight: v.$font-weight-medium;
+  color: var(--color-gray-7);
+}
+
+.formInput {
+  padding: v.$space-2 v.$space-3;
+  border: 1px solid var(--color-gray-3);
+  border-radius: v.$border-radius;
+  font-size: v.$font-size-base;
+  transition: border-color 0.2s ease;
+  &:focus { outline: none; border-color: v.$brand-primary; }
+}
+
+.formTextarea {
+  padding: v.$space-2 v.$space-3;
+  border: 1px solid var(--color-gray-3);
+  border-radius: v.$border-radius;
+  font-size: v.$font-size-base;
+  font-family: inherit;
+  resize: vertical;
+  transition: border-color 0.2s ease;
+  &:focus { outline: none; border-color: v.$brand-primary; }
+}
+
+.formFileInput {
+  padding: v.$space-2;
+  border: 1px dashed var(--color-gray-3);
+  border-radius: v.$border-radius;
+  font-size: v.$font-size-sm;
+  cursor: pointer;
+  &:hover { border-color: v.$brand-primary; }
+}
+
+.filePreview {
+  display: flex;
+  align-items: center;
+  gap: v.$space-2;
+  padding: v.$space-2 v.$space-3;
+  background: var(--color-gray-1);
+  border-radius: v.$border-radius;
+  font-size: v.$font-size-sm;
+  color: var(--color-gray-7);
+}
+
+.fileSize {
+  color: var(--color-gray-5);
+  font-size: v.$font-size-xs;
+}
+
+.checkboxLabel {
+  display: flex;
+  align-items: center;
+  gap: v.$space-2;
+  font-size: v.$font-size-sm;
+  color: var(--color-gray-7);
+  cursor: pointer;
+  input[type="checkbox"] {
+    width: 16px;
+    height: 16px;
+    cursor: pointer;
+  }
+}
+
+// Material Actions
+.materialActions {
+  display: flex;
+  align-items: center;
+  gap: v.$space-2;
+  flex-shrink: 0;
+}
+
+// Material Preview Modal
+.materialPreviewContent {
+  display: flex;
+  flex-direction: column;
+  gap: v.$space-4;
+}
+
+.videoContainer {
+  width: 100%;
+  background: #000;
+  border-radius: v.$border-radius;
+  overflow: hidden;
+}
+
+.videoPlayer {
+  width: 100%;
+  max-height: 500px;
+  display: block;
+}
+
+.pptPreviewContainer {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: v.$space-8;
+  background: var(--color-gray-1);
+  border-radius: v.$border-radius;
+  min-height: 300px;
+}
+
+.pptPreviewInfo {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: v.$space-4;
+  text-align: center;
+  color: var(--color-gray-6);
+  
+  svg { color: v.$brand-primary; }
+  
+  h3 {
+    font-size: v.$font-size-lg;
+    font-weight: v.$font-weight-semibold;
+    color: var(--color-gray-8);
+    margin: 0;
+  }
+  
+  p {
+    font-size: v.$font-size-sm;
+    max-width: 400px;
+    margin: 0;
+  }
+}
+
+.pptFileInfo {
+  display: flex;
+  align-items: center;
+  gap: v.$space-2;
+  font-size: v.$font-size-sm;
+  color: var(--color-gray-5);
+  padding: v.$space-2 v.$space-3;
+  background: var(--color-gray-2);
+  border-radius: v.$border-radius;
+}
+
+.materialPreviewDesc {
+  padding: v.$space-3;
+  background: var(--color-gray-1);
+  border-radius: v.$border-radius;
+  
+  h4 {
+    font-size: v.$font-size-sm;
+    font-weight: v.$font-weight-semibold;
+    color: var(--color-gray-7);
+    margin: 0 0 v.$space-2 0;
+  }
+  
+  p {
+    font-size: v.$font-size-sm;
+    color: var(--color-gray-8);
+    margin: 0;
+    line-height: 1.6;
+  }
+}
+
+// PPT Preview Wrapper
+.pptPreviewWrapper {
+  display: flex;
+  flex-direction: column;
+  gap: v.$space-3;
+}
+
+.pptPreviewTabs {
+  display: flex;
+  gap: v.$space-2;
+  padding-bottom: v.$space-2;
+  border-bottom: 1px solid var(--color-gray-2);
+}
+
+.pptIframeContainer {
+  display: flex;
+  flex-direction: column;
+  gap: v.$space-2;
+}
+
+.pptIframe {
+  width: 100%;
+  height: 500px;
+  border: 1px solid var(--color-gray-2);
+  border-radius: v.$border-radius;
+  background: white;
+}
+
+.pptPreviewHint {
+  font-size: v.$font-size-xs;
+  color: var(--color-gray-5);
+  text-align: center;
+  padding: v.$space-2;
+  background: var(--color-gray-1);
+  border-radius: v.$border-radius;
+}
