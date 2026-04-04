@@ -58,7 +58,8 @@
       "Read(//Users/xiex/Documents/OverseaBU/project/UNISSA-POC/frontend/src/locales/**)",
       "Bash(done)",
       "Bash(npm test:*)",
-      "Bash(node -e ':*)"
+      "Bash(node -e ':*)",
+      "Bash(grep -E \"\\\\.\\(tsx?|vue\\)$\")"
     ]
   }
 }

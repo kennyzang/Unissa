@@ -202,6 +202,131 @@ router.patch('/submissions/:id/accept-ai', async (req: AuthRequest, res: Respons
   })
 })
 
+// GET /api/v1/lms/offerings/:offeringId — Offering detail with course/lecturer/assignments/sessions
+router.get('/offerings/:offeringId', async (req: AuthRequest, res: Response) => {
+  const { offeringId } = req.params
+  const requestingUser = req.user
+
+  const offering = await prisma.courseOffering.findUnique({
+    where: { id: offeringId },
+    include: {
+      course: true,
+      lecturer: { include: { user: { select: { displayName: true, email: true } } } },
+      assignments: { orderBy: { dueDate: 'asc' } },
+      materials: {
+        where: { isPublished: true },
+        include: { asset: true },
+        orderBy: { orderIndex: 'asc' },
+      },
+      attendanceSessions: {
+        orderBy: { startedAt: 'desc' },
+        select: { id: true, name: true, startedAt: true, endedAt: true, _count: { select: { records: true } } },
+      },
+      _count: { select: { enrolments: true, attendanceSessions: true } },
+    },
+  })
+
+  if (!offering) {
+    res.status(404).json({ success: false, message: 'Offering not found' })
+    return
+  }
+
+  // Access control: lecturers can only view their own offerings
+  if (requestingUser?.role === 'lecturer') {
+    const staff = await prisma.staff.findFirst({
+      where: { userId: requestingUser.userId },
+    })
+    if (!staff || offering.lecturerId !== staff.id) {
+      res.status(403).json({ success: false, message: 'Access denied' })
+      return
+    }
+  }
+
+  // Access control: students can only view offerings they are enrolled in
+  if (requestingUser?.role === 'student') {
+    const student = await prisma.student.findFirst({ where: { userId: requestingUser.userId } })
+    if (student) {
+      const enrolment = await prisma.enrolment.findFirst({
+        where: { studentId: student.id, offeringId, status: 'registered' },
+      })
+      if (!enrolment) {
+        res.status(403).json({ success: false, message: 'Access denied' })
+        return
+      }
+    }
+  }
+
+  res.json({ success: true, data: offering })
+})
+
+// GET /api/v1/lms/offerings/:offeringId/enrolments — Student roster for a course offering
+router.get('/offerings/:offeringId/enrolments', async (req: AuthRequest, res: Response) => {
+  const { offeringId } = req.params
+  const requestingUser = req.user
+
+  if (requestingUser?.role === 'student') {
+    res.status(403).json({ success: false, message: 'Access denied' })
+    return
+  }
+
+  if (requestingUser?.role === 'lecturer') {
+    const staff = await prisma.staff.findFirst({ where: { userId: requestingUser.userId } })
+    const off = await prisma.courseOffering.findUnique({ where: { id: offeringId }, select: { lecturerId: true } })
+    if (!staff || off?.lecturerId !== staff.id) {
+      res.status(403).json({ success: false, message: 'Access denied' })
+      return
+    }
+  }
+
+  const enrolments = await prisma.enrolment.findMany({
+    where: { offeringId, status: 'registered' },
+    include: {
+      student: {
+        include: { user: { select: { displayName: true, email: true } } },
+      },
+    },
+    orderBy: { registeredAt: 'asc' },
+  })
+
+  res.json({ success: true, data: enrolments })
+})
+
+// GET /api/v1/lms/submissions/offering/:offeringId — All submissions for a course offering (lecturer/admin only)
+router.get('/submissions/offering/:offeringId', async (req: AuthRequest, res: Response) => {
+  const { offeringId } = req.params
+  const requestingUser = req.user
+
+  if (requestingUser?.role === 'student') {
+    res.status(403).json({ success: false, message: 'Access denied' })
+    return
+  }
+
+  if (requestingUser?.role === 'lecturer') {
+    const staff = await prisma.staff.findFirst({ where: { userId: requestingUser.userId } })
+    const off = await prisma.courseOffering.findUnique({ where: { id: offeringId }, select: { lecturerId: true } })
+    if (!staff || off?.lecturerId !== staff.id) {
+      res.status(403).json({ success: false, message: 'Access denied' })
+      return
+    }
+  }
+
+  const assignments = await prisma.assignment.findMany({
+    where: { offeringId },
+    include: {
+      submissions: {
+        include: {
+          student: { include: { user: { select: { displayName: true } } } },
+          asset: true,
+        },
+        orderBy: { submittedAt: 'desc' },
+      },
+    },
+    orderBy: { dueDate: 'asc' },
+  })
+
+  res.json({ success: true, data: assignments })
+})
+
 // GET /api/v1/lms/courses/:studentId
 router.get('/courses/:studentId', async (req: AuthRequest, res: Response) => {
   const student = await prisma.student.findFirst({

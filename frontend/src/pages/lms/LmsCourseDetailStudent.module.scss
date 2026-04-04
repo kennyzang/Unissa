@@ -1,0 +1,482 @@
+@use '@/styles/variables' as v;
+
+// ─── Page Shell ───────────────────────────────────────────────────────────────
+.page {
+  padding: v.$space-6;
+  display: flex;
+  flex-direction: column;
+  gap: v.$space-5;
+  animation: fadeIn 0.2s ease;
+  max-width: 100%;
+  overflow-x: hidden;
+
+  @media (max-width: v.$bp-md) {
+    padding: v.$space-4 v.$space-3;
+    gap: v.$space-4;
+  }
+}
+
+.loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 300px;
+  color: var(--color-gray-5);
+}
+
+// ─── Back button ───────────────────────────────────────────────────────────────
+.backBtn {
+  display: flex;
+  align-items: center;
+  gap: v.$space-2;
+  background: none;
+  border: none;
+  font-size: v.$font-size-sm;
+  color: var(--color-gray-5);
+  cursor: pointer;
+  padding: 0;
+  &:hover { color: v.$brand-primary; }
+}
+
+// ─── Course Hero ───────────────────────────────────────────────────────────────
+.courseHero {
+  background: linear-gradient(135deg, v.$brand-dark, v.$brand-mid);
+  color: white;
+  border-radius: v.$border-radius-xl;
+  padding: v.$space-6;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: v.$space-6;
+
+  @media (max-width: v.$bp-md) {
+    flex-direction: column;
+    align-items: flex-start;
+    padding: v.$space-4;
+    gap: v.$space-4;
+  }
+}
+
+.heroLeft    { display: flex; flex-direction: column; gap: v.$space-2; }
+.courseCode  { font-size: v.$font-size-sm; font-weight: v.$font-weight-semibold; opacity: 0.7; }
+.courseName  { font-size: v.$font-size-2xl; font-weight: v.$font-weight-bold; margin: 0; }
+.courseMeta  { display: flex; gap: v.$space-4; font-size: v.$font-size-xs; opacity: 0.8; flex-wrap: wrap; }
+.heroStats   { display: flex; gap: v.$space-6; flex-shrink: 0; }
+.heroStat    {
+  text-align: center;
+  span  { display: block; font-size: 32px; font-weight: v.$font-weight-bold; line-height: 1; }
+  label { font-size: v.$font-size-xs; opacity: 0.7; display: block; margin-top: 2px; }
+}
+
+// ─── Progress Cards ────────────────────────────────────────────────────────────
+.progressRow {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: v.$space-4;
+
+  @media (max-width: v.$bp-md) {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.progressCard {
+  background: white;
+  border: 1px solid var(--color-gray-2);
+  border-radius: v.$border-radius-lg;
+  padding: v.$space-4;
+  display: flex;
+  flex-direction: column;
+  gap: v.$space-2;
+}
+
+.progressCardLabel {
+  font-size: v.$font-size-xs;
+  color: var(--color-gray-5);
+  font-weight: v.$font-weight-medium;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.progressCardValue {
+  font-size: v.$font-size-xl;
+  font-weight: v.$font-weight-bold;
+  color: var(--color-gray-8);
+}
+
+.progressCardBar {
+  height: 4px;
+  background: var(--color-gray-2);
+  border-radius: 2px;
+  overflow: hidden;
+  margin-top: v.$space-1;
+}
+
+.progressCardFill {
+  height: 100%;
+  border-radius: 2px;
+  transition: width 0.4s ease;
+
+  &.blue   { background: v.$brand-primary; }
+  &.green  { background: v.$color-success; }
+  &.orange { background: v.$color-warning; }
+}
+
+// ─── Tabs ──────────────────────────────────────────────────────────────────────
+.tabs {
+  display: flex;
+  gap: v.$space-1;
+  border-bottom: 1px solid var(--color-gray-2);
+  overflow-x: auto;
+  &::-webkit-scrollbar { display: none; }
+}
+
+.tab {
+  padding: v.$space-3 v.$space-4;
+  background: none;
+  border: none;
+  font-size: v.$font-size-sm;
+  font-weight: v.$font-weight-medium;
+  color: var(--color-gray-5);
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  white-space: nowrap;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: v.$space-2;
+
+  &:hover  { color: v.$brand-primary; }
+  &.active { color: v.$brand-primary; border-bottom-color: v.$brand-primary; }
+}
+
+.tabBadge {
+  background: v.$brand-primary;
+  color: white;
+  font-size: 11px;
+  font-weight: v.$font-weight-bold;
+  padding: 1px 6px;
+  border-radius: 10px;
+  line-height: 1.4;
+}
+
+// ─── Materials Tab ─────────────────────────────────────────────────────────────
+.materialsList { display: flex; flex-direction: column; gap: v.$space-3; }
+
+.materialItem {
+  display: flex;
+  align-items: center;
+  gap: v.$space-4;
+  padding: v.$space-4;
+  border: 1px solid var(--color-gray-2);
+  border-radius: v.$border-radius-lg;
+  transition: all 0.2s ease;
+  cursor: pointer;
+  &:hover { background: var(--color-gray-1); border-color: v.$brand-primary; }
+}
+
+.materialIcon {
+  width: 44px;
+  height: 44px;
+  border-radius: v.$border-radius-md;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  &.video { background: #fff0f6; color: #c41d7f; }
+  &.doc   { background: v.$brand-primary-1; color: v.$brand-primary; }
+  &.link  { background: v.$color-success-bg; color: v.$color-success; }
+  &.other { background: var(--color-gray-1); color: var(--color-gray-5); }
+}
+
+.materialInfo { flex: 1; }
+.materialTitle { font-size: v.$font-size-sm; font-weight: v.$font-weight-semibold; color: var(--color-gray-8); }
+.materialMeta  { font-size: v.$font-size-xs; color: var(--color-gray-5); margin-top: 3px; }
+
+.materialAction {
+  flex-shrink: 0;
+  font-size: v.$font-size-xs;
+  font-weight: v.$font-weight-medium;
+  color: v.$brand-primary;
+  text-decoration: none;
+  padding: v.$space-2 v.$space-3;
+  border: 1px solid v.$brand-primary;
+  border-radius: v.$border-radius;
+  transition: all 0.2s ease;
+  &:hover { background: v.$brand-primary-1; }
+}
+
+// ─── Sessions (in Materials tab) ───────────────────────────────────────────────
+.sessionsList { display: flex; flex-direction: column; gap: v.$space-3; }
+
+.sessionItem {
+  display: flex;
+  align-items: center;
+  gap: v.$space-4;
+  padding: v.$space-4;
+  border: 1px solid var(--color-gray-2);
+  border-radius: v.$border-radius-lg;
+  transition: all 0.2s ease;
+  &:hover { background: var(--color-gray-1); border-color: v.$brand-primary; }
+}
+
+.sessionDate {
+  width: 80px;
+  font-size: v.$font-size-sm;
+  font-weight: v.$font-weight-semibold;
+  color: v.$brand-primary;
+  flex-shrink: 0;
+}
+
+.sessionInfo { flex: 1; }
+.sessionTitle { font-size: v.$font-size-sm; font-weight: v.$font-weight-semibold; color: var(--color-gray-8); margin: 0; }
+.sessionMeta  { font-size: v.$font-size-xs; color: var(--color-gray-5); margin-top: 3px; }
+
+// ─── Assignments Tab ───────────────────────────────────────────────────────────
+.assignmentList { display: flex; flex-direction: column; gap: 0; }
+
+.assignmentItem {
+  display: flex;
+  align-items: center;
+  gap: v.$space-4;
+  padding: v.$space-4;
+  border-bottom: 1px solid var(--color-gray-2);
+  transition: background 0.15s ease;
+  &:last-child { border-bottom: none; }
+  &:hover { background: var(--color-gray-1); }
+}
+
+.assignmentIcon {
+  width: 36px;
+  height: 36px;
+  background: v.$brand-primary-1;
+  border-radius: v.$border-radius-md;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: v.$brand-primary;
+  flex-shrink: 0;
+}
+
+.assignmentInfo { flex: 1; }
+.assignmentTitle { font-size: v.$font-size-sm; font-weight: v.$font-weight-semibold; color: var(--color-gray-8); }
+.assignmentMeta  { display: flex; gap: v.$space-3; font-size: v.$font-size-xs; color: var(--color-gray-5); margin-top: 3px; flex-wrap: wrap; }
+.assignmentActions { display: flex; gap: v.$space-2; align-items: center; }
+
+.overdue  { color: v.$color-danger !important; display: flex; align-items: center; gap: 2px; }
+.dueSoon  { color: v.$color-warning !important; display: flex; align-items: center; gap: 2px; }
+
+.gradeChip {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  font-size: v.$font-size-sm;
+  font-weight: v.$font-weight-bold;
+  color: v.$color-success;
+  background: v.$color-success-bg;
+  padding: 3px v.$space-3;
+  border-radius: v.$border-radius;
+}
+
+.submissionStatus {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: v.$font-size-xs;
+  color: v.$color-success;
+  margin-top: 4px;
+  background: v.$color-success-bg;
+  padding: 2px v.$space-2;
+  border-radius: v.$border-radius;
+}
+
+.emptyState {
+  padding: v.$space-8;
+  text-align: center;
+  color: var(--color-gray-4);
+  font-size: v.$font-size-sm;
+}
+
+// ─── Submit modal internals ────────────────────────────────────────────────────
+.submitInfo     { font-size: v.$font-size-sm; color: var(--color-gray-5); margin: 0 0 v.$space-3; }
+.submitLabel    { display: block; font-size: v.$font-size-sm; font-weight: v.$font-weight-medium; color: var(--color-gray-7); margin-bottom: v.$space-2; }
+.submitTextarea {
+  width: 100%; border: 1px solid var(--color-gray-3); border-radius: v.$border-radius;
+  padding: v.$space-3; font-size: v.$font-size-sm; font-family: v.$font-family;
+  resize: vertical; outline: none; box-sizing: border-box;
+  &:focus { border-color: v.$brand-primary; }
+}
+.aiNote { font-size: v.$font-size-xs; color: var(--color-gray-5); background: var(--color-gray-1); padding: v.$space-3; border-radius: v.$border-radius; margin: v.$space-3 0 0; }
+
+.fileUpload { position: relative; margin: v.$space-3 0; }
+.fileInput  { position: absolute; top: 0; left: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; z-index: 2; }
+.fileButton {
+  display: flex; align-items: center; gap: v.$space-2; background: var(--color-gray-1);
+  border: 2px dashed var(--color-gray-3); border-radius: v.$border-radius-lg;
+  padding: v.$space-4; text-align: center; cursor: pointer; transition: all 0.2s ease;
+  &:hover { border-color: v.$brand-primary; background: v.$brand-primary-1; }
+  span { font-size: v.$font-size-sm; color: var(--color-gray-6); }
+}
+
+.filesList { display: flex; flex-direction: column; gap: v.$space-2; margin: v.$space-3 0; }
+.fileItem  { display: flex; align-items: center; gap: v.$space-3; padding: v.$space-3; background: var(--color-gray-1); border-radius: v.$border-radius-md; font-size: v.$font-size-sm; }
+.fileName  { flex: 1; color: var(--color-gray-8); font-weight: v.$font-weight-medium; }
+.fileSize  { color: var(--color-gray-5); font-size: v.$font-size-xs; flex-shrink: 0; }
+.removeFile {
+  width: 20px; height: 20px; border: none; background: var(--color-gray-3); border-radius: 50%;
+  color: var(--color-gray-6); font-size: 14px; font-weight: bold; cursor: pointer;
+  display: flex; align-items: center; justify-content: center; transition: all 0.2s ease;
+  &:hover { background: v.$color-danger; color: white; }
+}
+.fileErrors { display: flex; flex-direction: column; gap: v.$space-2; margin: v.$space-3 0; }
+.fileError {
+  font-size: v.$font-size-xs; color: v.$color-danger; background: v.$color-danger-bg;
+  padding: v.$space-2 v.$space-3; border-radius: v.$border-radius; border-left: 3px solid v.$color-danger;
+}
+
+// AI loading
+.aiLoadingContainer { display: flex; flex-direction: column; align-items: center; padding: v.$space-6; text-align: center; }
+.aiLoadingSpinner { width: 60px; height: 60px; border: 4px solid var(--color-gray-2); border-top-color: v.$brand-primary; border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: v.$space-4; }
+.aiLoadingTitle { font-size: v.$font-size-lg; font-weight: v.$font-weight-semibold; color: var(--color-gray-8); margin: 0 0 v.$space-2; }
+.aiLoadingMessage { font-size: v.$font-size-sm; color: var(--color-gray-5); margin: 0 0 v.$space-5; }
+.aiLoadingSteps { display: flex; flex-direction: column; gap: v.$space-3; width: 100%; max-width: 300px; }
+.aiLoadingStep {
+  display: flex; align-items: center; gap: v.$space-3; padding: v.$space-3;
+  background: var(--color-gray-1); border-radius: v.$border-radius; font-size: v.$font-size-sm; color: var(--color-gray-7);
+  svg { color: v.$color-success; flex-shrink: 0; }
+}
+.spinner { width: 16px; height: 16px; border: 2px solid var(--color-gray-3); border-top-color: v.$brand-primary; border-radius: 50%; animation: spin 0.8s linear infinite; flex-shrink: 0; }
+
+// ─── Progress Tab ──────────────────────────────────────────────────────────────
+.historyList { display: flex; flex-direction: column; gap: 0; }
+
+.historyItem {
+  display: flex;
+  align-items: flex-start;
+  gap: v.$space-4;
+  padding: v.$space-4;
+  border-bottom: 1px solid var(--color-gray-2);
+  &:last-child { border-bottom: none; }
+  &:hover { background: var(--color-gray-1); }
+}
+
+.historyIcon {
+  width: 36px;
+  height: 36px;
+  background: v.$brand-primary-1;
+  border-radius: v.$border-radius-md;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: v.$brand-primary;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.historyInfo { flex: 1; }
+.historyTitle { font-size: v.$font-size-sm; font-weight: v.$font-weight-semibold; color: var(--color-gray-8); }
+.historyMeta  { display: flex; gap: v.$space-3; font-size: v.$font-size-xs; color: var(--color-gray-5); margin-top: 3px; flex-wrap: wrap; }
+.historyContent { font-size: v.$font-size-xs; color: var(--color-gray-6); margin-top: 4px; line-height: 1.4; }
+.historyStatus { display: flex; gap: v.$space-2; align-items: flex-start; flex-direction: column; }
+
+.historyAttachments {
+  margin-top: v.$space-2; padding: v.$space-2; background: var(--color-gray-1); border-radius: v.$border-radius;
+}
+.attachmentLabel { display: flex; align-items: center; gap: 4px; font-size: v.$font-size-xs; font-weight: v.$font-weight-medium; color: var(--color-gray-7); margin-bottom: 4px; }
+.attachmentItem  { display: flex; align-items: center; gap: v.$space-2; padding: v.$space-2; background: white; border-radius: v.$border-radius-sm; margin-top: 4px; }
+.attachmentName  { font-size: v.$font-size-xs; color: var(--color-gray-8); font-weight: v.$font-weight-medium; }
+.attachmentSize  { font-size: v.$font-size-xs; color: var(--color-gray-5); }
+.attachmentImage { width: 100%; max-width: 200px; height: auto; border-radius: v.$border-radius; cursor: pointer; transition: all 0.2s ease; &:hover { transform: scale(1.05); box-shadow: 0 4px 12px rgba(0,0,0,.15); } }
+
+// Attendance record strip
+.attendanceStrip {
+  display: flex;
+  flex-direction: column;
+  gap: v.$space-2;
+  padding: v.$space-4;
+}
+
+.attendanceBar {
+  display: flex;
+  align-items: center;
+  gap: v.$space-3;
+}
+
+.attendanceBarFill {
+  flex: 1;
+  height: 8px;
+  background: var(--color-gray-2);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.attendanceBarInner {
+  height: 100%;
+  border-radius: 4px;
+  transition: width 0.4s ease;
+  &.high { background: v.$color-success; }
+  &.mid  { background: v.$color-warning; }
+  &.low  { background: v.$color-danger; }
+}
+
+.attendanceLabel { font-size: v.$font-size-xs; color: var(--color-gray-5); }
+.attendancePct   { font-size: v.$font-size-sm; font-weight: v.$font-weight-bold; min-width: 36px; text-align: right; }
+
+.attendanceRecordList { display: flex; flex-direction: column; gap: 0; }
+.attendanceRecordItem {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: v.$space-3 v.$space-4;
+  border-bottom: 1px solid var(--color-gray-2);
+  &:last-child { border-bottom: none; }
+}
+.attendanceRecordDate { font-size: v.$font-size-sm; color: var(--color-gray-7); }
+
+// ─── Modals shared ─────────────────────────────────────────────────────────────
+.submissionDetails { display: flex; flex-direction: column; gap: v.$space-4; }
+.detailSection { display: flex; flex-direction: column; gap: v.$space-2; }
+.detailLabel  { font-size: v.$font-size-sm; font-weight: v.$font-weight-semibold; color: var(--color-gray-7); margin: 0; }
+.detailValue  { font-size: v.$font-size-base; color: var(--color-gray-9); margin: 0; }
+.contentBox {
+  padding: v.$space-3; background: var(--color-gray-1); border-radius: v.$border-radius;
+  border: 1px solid var(--color-gray-2); font-size: v.$font-size-sm; line-height: 1.6;
+  color: var(--color-gray-8); white-space: pre-wrap; word-wrap: break-word;
+  max-height: 300px; overflow-y: auto;
+}
+.fileInfo { display: flex; align-items: center; gap: v.$space-2; padding: v.$space-2; background: var(--color-gray-1); border-radius: v.$border-radius; font-size: v.$font-size-sm; }
+.fileSizeText { color: var(--color-gray-5); font-size: v.$font-size-xs; }
+.previewImage { width: 100%; max-width: 100%; height: auto; border-radius: v.$border-radius; border: 1px solid var(--color-gray-2); }
+.imageInfo { font-size: v.$font-size-xs; color: var(--color-gray-6); margin: 0; }
+.gradeDisplay { display: flex; align-items: center; gap: v.$space-2; padding: v.$space-2; background: v.$brand-primary-light; border-radius: v.$border-radius; color: v.$brand-primary; }
+.gradeValue { font-size: v.$font-size-lg; font-weight: v.$font-weight-bold; }
+.gradeMax   { font-size: v.$font-size-sm; color: var(--color-gray-6); }
+
+// AI Rubric
+.rubricList { display: flex; flex-direction: column; gap: v.$space-4; max-height: 50vh; overflow-y: auto; padding-right: v.$space-2; }
+.rubricItem { padding: v.$space-4; background: white; border: 1px solid var(--color-gray-2); border-radius: v.$border-radius-lg; display: flex; flex-direction: column; gap: v.$space-3; }
+.rubricHeader { display: flex; justify-content: space-between; align-items: center; }
+.rubricCriterion { font-size: v.$font-size-sm; font-weight: v.$font-weight-medium; color: var(--color-gray-8); }
+.rubricScore { font-size: v.$font-size-sm; font-weight: v.$font-weight-bold; color: v.$brand-primary; }
+.rubricBar  { width: 100%; height: 8px; background: var(--color-gray-2); border-radius: 4px; overflow: hidden; }
+.rubricFill { height: 100%; background: linear-gradient(90deg, v.$brand-primary, v.$brand-mid); border-radius: 4px; transition: width 0.5s ease; }
+.rubricFeedback { margin-top: v.$space-2; padding: v.$space-3; background: var(--color-gray-1); border-radius: v.$border-radius-lg; border-left: 3px solid v.$brand-primary; }
+.feedbackTitle { font-size: v.$font-size-sm; font-weight: v.$font-weight-semibold; color: var(--color-gray-8); margin: 0 0 v.$space-2; }
+.rubricComment { font-size: v.$font-size-xs; color: var(--color-gray-6); margin: 0; line-height: 1.4; }
+.feedbackSuggestions { margin-top: v.$space-3; padding-top: v.$space-3; border-top: 1px solid var(--color-gray-2); }
+.suggestionsTitle { font-size: v.$font-size-xs; font-weight: v.$font-weight-semibold; color: var(--color-gray-7); margin: 0 0 v.$space-2; }
+.suggestionsText  { font-size: v.$font-size-xs; color: var(--color-gray-6); margin: 0; line-height: 1.4; }
+
+// Confirmation
+.confirmationModal    { text-align: center; padding: v.$space-6; }
+.successIcon          { color: v.$color-success; margin-bottom: v.$space-4; animation: scaleIn 0.3s ease; }
+.confirmationTitle    { font-size: v.$font-size-xl; font-weight: v.$font-weight-bold; color: var(--color-gray-8); margin: 0 0 v.$space-2; }
+.confirmationMessage  { font-size: v.$font-size-sm; color: var(--color-gray-6); margin: 0 0 v.$space-5; }
+.confirmationActions  { display: flex; gap: v.$space-3; justify-content: center; }
+.aiSummary     { background: v.$brand-primary-1; border-radius: v.$border-radius-lg; padding: v.$space-5; margin-bottom: v.$space-5; }
+.aiSummaryTitle { font-size: v.$font-size-sm; font-weight: v.$font-weight-semibold; color: v.$brand-primary; margin: 0 0 v.$space-3; }
+.aiScoreDisplay { display: flex; align-items: baseline; justify-content: center; gap: 4px; margin-bottom: v.$space-2; }
+.aiScoreValue   { font-size: 48px; font-weight: v.$font-weight-bold; color: v.$brand-primary; line-height: 1; }
+.aiScoreLabel   { font-size: v.$font-size-lg; color: var(--color-gray-5); }
+.aiSummaryNote  { font-size: v.$font-size-xs; color: var(--color-gray-5); margin: 0; }
+
+@keyframes fadeIn  { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+@keyframes scaleIn { from { transform: scale(0); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+@keyframes spin    { to { transform: rotate(360deg); } }

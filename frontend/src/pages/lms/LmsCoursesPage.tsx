@@ -117,7 +117,7 @@ const LecturerCoursesView: React.FC = () => {
       endTime:      o.endTime,
       room:         o.room,
       color,
-      href:         '/lms/attendance',
+      href:         `/lms/courses/${o.id}`,
       badges: [
         { label: `${o.course?.creditHours} CH`,                color: 'blue'  as const },
         { label: `${o._count?.enrolments ?? 0} students`,      color: 'green' as const },
@@ -134,7 +134,7 @@ const LecturerCoursesView: React.FC = () => {
           <div
             key={offering.id}
             className={styles.courseCard}
-            onClick={() => navigate(`/lms/attendance`)}
+            onClick={() => navigate(`/lms/courses/${offering.id}`)}
             style={{ borderLeft: `3px solid ${color.border}` }}
           >
             <div className={styles.cardHeader}>

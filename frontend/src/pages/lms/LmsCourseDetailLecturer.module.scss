@@ -1,0 +1,616 @@
+@use '@/styles/variables' as v;
+
+// ─── Page Shell ───────────────────────────────────────────────────────────────
+.page {
+  padding: v.$space-6;
+  display: flex;
+  flex-direction: column;
+  gap: v.$space-5;
+  animation: fadeIn 0.2s ease;
+  max-width: 100%;
+  overflow-x: hidden;
+
+  @media (max-width: v.$bp-md) {
+    padding: v.$space-4 v.$space-3;
+    gap: v.$space-4;
+  }
+}
+
+.loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 300px;
+  color: var(--color-gray-5);
+}
+
+// ─── Header / Back ─────────────────────────────────────────────────────────────
+.backBtn {
+  display: flex;
+  align-items: center;
+  gap: v.$space-2;
+  background: none;
+  border: none;
+  font-size: v.$font-size-sm;
+  color: var(--color-gray-5);
+  cursor: pointer;
+  padding: 0;
+  &:hover { color: v.$brand-primary; }
+}
+
+// ─── Course Hero ───────────────────────────────────────────────────────────────
+.courseHero {
+  background: linear-gradient(135deg, v.$brand-dark, v.$brand-mid);
+  color: white;
+  border-radius: v.$border-radius-xl;
+  padding: v.$space-6;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: v.$space-6;
+
+  @media (max-width: v.$bp-md) {
+    flex-direction: column;
+    align-items: flex-start;
+    padding: v.$space-4;
+    gap: v.$space-4;
+  }
+}
+
+.heroLeft    { display: flex; flex-direction: column; gap: v.$space-2; }
+.courseCode  { font-size: v.$font-size-sm; font-weight: v.$font-weight-semibold; opacity: 0.7; }
+.courseName  { font-size: v.$font-size-2xl; font-weight: v.$font-weight-bold; margin: 0; }
+.courseMeta  { display: flex; gap: v.$space-4; font-size: v.$font-size-xs; opacity: 0.8; flex-wrap: wrap; }
+.heroStats   { display: flex; gap: v.$space-6; flex-shrink: 0; }
+.heroStat    {
+  text-align: center;
+  span  { display: block; font-size: 32px; font-weight: v.$font-weight-bold; line-height: 1; }
+  label { font-size: v.$font-size-xs; opacity: 0.7; display: block; margin-top: 2px; }
+}
+
+// ─── Stat Cards Row ────────────────────────────────────────────────────────────
+.statsRow {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: v.$space-4;
+
+  @media (max-width: v.$bp-md) {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+.statCard {
+  background: white;
+  border: 1px solid var(--color-gray-2);
+  border-radius: v.$border-radius-lg;
+  padding: v.$space-4;
+  display: flex;
+  align-items: center;
+  gap: v.$space-3;
+}
+
+.statIcon {
+  width: 44px;
+  height: 44px;
+  border-radius: v.$border-radius-md;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+
+  &.blue   { background: v.$brand-primary-1;   color: v.$brand-primary; }
+  &.green  { background: v.$color-success-bg;  color: v.$color-success; }
+  &.orange { background: v.$color-warning-bg;  color: v.$color-warning; }
+  &.purple { background: #f5f0ff;              color: #7c3aed; }
+}
+
+.statBody { flex: 1; min-width: 0; }
+.statValue {
+  font-size: v.$font-size-xl;
+  font-weight: v.$font-weight-bold;
+  color: var(--color-gray-8);
+  line-height: 1.2;
+}
+.statLabel { font-size: v.$font-size-xs; color: var(--color-gray-5); margin-top: 2px; }
+
+// ─── Tabs ──────────────────────────────────────────────────────────────────────
+.tabs {
+  display: flex;
+  gap: v.$space-1;
+  border-bottom: 1px solid var(--color-gray-2);
+  overflow-x: auto;
+
+  &::-webkit-scrollbar { display: none; }
+}
+
+.tab {
+  padding: v.$space-3 v.$space-4;
+  background: none;
+  border: none;
+  font-size: v.$font-size-sm;
+  font-weight: v.$font-weight-medium;
+  color: var(--color-gray-5);
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  white-space: nowrap;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: v.$space-2;
+
+  &:hover { color: v.$brand-primary; }
+  &.active { color: v.$brand-primary; border-bottom-color: v.$brand-primary; }
+}
+
+.tabBadge {
+  background: v.$brand-primary;
+  color: white;
+  font-size: 11px;
+  font-weight: v.$font-weight-bold;
+  padding: 1px 6px;
+  border-radius: 10px;
+  line-height: 1.4;
+}
+
+// ─── Overview Tab ──────────────────────────────────────────────────────────────
+.overviewGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: v.$space-5;
+
+  @media (max-width: v.$bp-md) {
+    grid-template-columns: 1fr;
+  }
+}
+
+.infoRow {
+  display: flex;
+  flex-direction: column;
+  gap: v.$space-3;
+}
+
+.infoItem {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.infoLabel {
+  font-size: v.$font-size-xs;
+  color: var(--color-gray-5);
+  font-weight: v.$font-weight-medium;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.infoValue {
+  font-size: v.$font-size-sm;
+  color: var(--color-gray-8);
+  font-weight: v.$font-weight-medium;
+}
+
+.assignmentSummaryList {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.assignmentSummaryItem {
+  display: flex;
+  align-items: center;
+  gap: v.$space-3;
+  padding: v.$space-3 0;
+  border-bottom: 1px solid var(--color-gray-2);
+  &:last-child { border-bottom: none; }
+}
+
+.assignmentSummaryName {
+  flex: 1;
+  font-size: v.$font-size-sm;
+  color: var(--color-gray-8);
+}
+
+.assignmentSummaryMeta {
+  font-size: v.$font-size-xs;
+  color: var(--color-gray-5);
+}
+
+// ─── Students Tab ──────────────────────────────────────────────────────────────
+.rosterTable {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.rosterTh {
+  text-align: left;
+  padding: v.$space-3 v.$space-4;
+  font-size: v.$font-size-xs;
+  font-weight: v.$font-weight-semibold;
+  color: var(--color-gray-5);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  border-bottom: 1px solid var(--color-gray-2);
+  background: var(--color-gray-1);
+}
+
+.rosterTr {
+  &:hover td { background: var(--color-gray-1); }
+}
+
+.rosterTd {
+  padding: v.$space-3 v.$space-4;
+  font-size: v.$font-size-sm;
+  color: var(--color-gray-7);
+  border-bottom: 1px solid var(--color-gray-2);
+  vertical-align: middle;
+}
+
+.studentAvatar {
+  width: 32px;
+  height: 32px;
+  background: v.$brand-primary-1;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: v.$brand-primary;
+  font-size: v.$font-size-xs;
+  font-weight: v.$font-weight-bold;
+  flex-shrink: 0;
+}
+
+.studentMeta {
+  display: flex;
+  align-items: center;
+  gap: v.$space-3;
+}
+
+.studentName {
+  font-weight: v.$font-weight-medium;
+  color: var(--color-gray-8);
+}
+
+.studentEmail {
+  font-size: v.$font-size-xs;
+  color: var(--color-gray-5);
+}
+
+// ─── Grading Tab ──────────────────────────────────────────────────────────────
+.gradingSection { display: flex; flex-direction: column; gap: v.$space-5; }
+
+.assignmentBlock {
+  background: white;
+  border: 1px solid var(--color-gray-2);
+  border-radius: v.$border-radius-lg;
+  overflow: hidden;
+}
+
+.assignmentBlockHeader {
+  display: flex;
+  align-items: center;
+  gap: v.$space-3;
+  padding: v.$space-4;
+  background: var(--color-gray-1);
+  border-bottom: 1px solid var(--color-gray-2);
+}
+
+.assignmentBlockTitle {
+  flex: 1;
+  font-size: v.$font-size-sm;
+  font-weight: v.$font-weight-semibold;
+  color: var(--color-gray-8);
+}
+
+.assignmentBlockMeta {
+  font-size: v.$font-size-xs;
+  color: var(--color-gray-5);
+}
+
+.submissionList { display: flex; flex-direction: column; }
+
+.submissionRow {
+  display: flex;
+  align-items: center;
+  gap: v.$space-4;
+  padding: v.$space-4;
+  border-bottom: 1px solid var(--color-gray-2);
+  &:last-child { border-bottom: none; }
+  &:hover { background: var(--color-gray-1); }
+}
+
+.submissionStudentInfo { flex: 1; }
+.submissionStudentName {
+  font-size: v.$font-size-sm;
+  font-weight: v.$font-weight-semibold;
+  color: var(--color-gray-8);
+}
+
+.submissionDate {
+  font-size: v.$font-size-xs;
+  color: var(--color-gray-5);
+  margin-top: 2px;
+}
+
+.submissionPreview {
+  font-size: v.$font-size-xs;
+  color: var(--color-gray-6);
+  margin-top: 4px;
+  max-width: 300px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.submissionActions { display: flex; gap: v.$space-2; align-items: center; }
+
+.gradeChip {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  font-size: v.$font-size-sm;
+  font-weight: v.$font-weight-bold;
+  color: v.$color-success;
+  background: v.$color-success-bg;
+  padding: 3px v.$space-3;
+  border-radius: v.$border-radius;
+}
+
+.emptyBlock {
+  padding: v.$space-6;
+  text-align: center;
+  color: var(--color-gray-4);
+  font-size: v.$font-size-sm;
+}
+
+// ─── Grade Modal ───────────────────────────────────────────────────────────────
+.gradeModalContent { display: flex; flex-direction: column; gap: v.$space-4; }
+
+.gradeModalStudent {
+  display: flex;
+  align-items: center;
+  gap: v.$space-3;
+  padding: v.$space-3;
+  background: var(--color-gray-1);
+  border-radius: v.$border-radius-md;
+}
+
+.gradeModalStudentName {
+  font-size: v.$font-size-sm;
+  font-weight: v.$font-weight-semibold;
+  color: var(--color-gray-8);
+}
+
+.gradeModalStudentDate {
+  font-size: v.$font-size-xs;
+  color: var(--color-gray-5);
+}
+
+.gradeInputRow {
+  display: flex;
+  align-items: center;
+  gap: v.$space-3;
+}
+
+.gradeInput {
+  width: 100px;
+  padding: v.$space-2 v.$space-3;
+  border: 1px solid var(--color-gray-3);
+  border-radius: v.$border-radius;
+  font-size: v.$font-size-sm;
+  outline: none;
+  &:focus { border-color: v.$brand-primary; }
+}
+
+.gradeInputMax { font-size: v.$font-size-sm; color: var(--color-gray-5); }
+
+.submissionContentBox {
+  padding: v.$space-3;
+  background: var(--color-gray-1);
+  border: 1px solid var(--color-gray-2);
+  border-radius: v.$border-radius;
+  font-size: v.$font-size-sm;
+  line-height: 1.6;
+  color: var(--color-gray-8);
+  max-height: 150px;
+  overflow-y: auto;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+}
+
+.aiDivider {
+  display: flex;
+  align-items: center;
+  gap: v.$space-3;
+  font-size: v.$font-size-xs;
+  color: var(--color-gray-5);
+  &::before, &::after { content: ''; flex: 1; height: 1px; background: var(--color-gray-2); }
+}
+
+.aiRubricSummary {
+  background: v.$brand-primary-1;
+  border-radius: v.$border-radius-md;
+  padding: v.$space-3;
+}
+
+.aiRubricTitle {
+  font-size: v.$font-size-xs;
+  font-weight: v.$font-weight-semibold;
+  color: v.$brand-primary;
+  margin: 0 0 v.$space-2;
+}
+
+.aiRubricList {
+  display: flex;
+  flex-direction: column;
+  gap: v.$space-2;
+}
+
+.aiRubricRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: v.$font-size-xs;
+  color: var(--color-gray-7);
+}
+
+.aiRubricScore { font-weight: v.$font-weight-bold; color: v.$brand-primary; }
+
+// ─── Materials Tab ─────────────────────────────────────────────────────────────
+.materialsList { display: flex; flex-direction: column; gap: v.$space-3; }
+
+.materialItem {
+  display: flex;
+  align-items: center;
+  gap: v.$space-4;
+  padding: v.$space-4;
+  border: 1px solid var(--color-gray-2);
+  border-radius: v.$border-radius-lg;
+  transition: all 0.2s ease;
+  &:hover { background: var(--color-gray-1); border-color: v.$brand-primary; }
+}
+
+.materialIcon {
+  width: 44px;
+  height: 44px;
+  border-radius: v.$border-radius-md;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  &.video   { background: #fff0f6; color: #c41d7f; }
+  &.doc     { background: v.$brand-primary-1; color: v.$brand-primary; }
+  &.link    { background: v.$color-success-bg; color: v.$color-success; }
+  &.other   { background: var(--color-gray-1); color: var(--color-gray-5); }
+}
+
+.materialInfo { flex: 1; }
+.materialTitle {
+  font-size: v.$font-size-sm;
+  font-weight: v.$font-weight-semibold;
+  color: var(--color-gray-8);
+}
+.materialMeta { font-size: v.$font-size-xs; color: var(--color-gray-5); margin-top: 3px; }
+.materialAction { flex-shrink: 0; }
+
+// ─── Attendance Tab ────────────────────────────────────────────────────────────
+.attendanceHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: v.$space-4;
+}
+
+.sessionsList { display: flex; flex-direction: column; gap: v.$space-3; }
+
+.sessionCard {
+  border: 1px solid var(--color-gray-2);
+  border-radius: v.$border-radius-lg;
+  overflow: hidden;
+  transition: box-shadow 0.2s ease;
+  &:hover { box-shadow: 0 2px 8px rgba(0,0,0,0.07); }
+}
+
+.sessionCardHeader {
+  display: flex;
+  align-items: center;
+  gap: v.$space-4;
+  padding: v.$space-4;
+  background: var(--color-gray-1);
+  border-bottom: 1px solid var(--color-gray-2);
+}
+
+.sessionCardTitle { flex: 1; font-size: v.$font-size-sm; font-weight: v.$font-weight-semibold; color: var(--color-gray-8); }
+.sessionCardDate  { font-size: v.$font-size-xs; color: var(--color-gray-5); }
+
+.sessionCardBody {
+  display: flex;
+  gap: v.$space-6;
+  padding: v.$space-4;
+}
+
+.sessionStat {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  span { font-size: v.$font-size-lg; font-weight: v.$font-weight-bold; color: var(--color-gray-8); }
+  label { font-size: v.$font-size-xs; color: var(--color-gray-5); }
+}
+
+.attendanceReport { display: flex; flex-direction: column; gap: 0; }
+
+.attendanceRow {
+  display: flex;
+  align-items: center;
+  gap: v.$space-4;
+  padding: v.$space-3 v.$space-4;
+  border-bottom: 1px solid var(--color-gray-2);
+  &:last-child { border-bottom: none; }
+}
+
+.attendanceStudentName { flex: 1; font-size: v.$font-size-sm; color: var(--color-gray-8); }
+.attendancePct {
+  font-size: v.$font-size-sm;
+  font-weight: v.$font-weight-semibold;
+  &.high { color: v.$color-success; }
+  &.mid  { color: v.$color-warning; }
+  &.low  { color: v.$color-danger; }
+}
+
+.progressBar {
+  width: 80px;
+  height: 6px;
+  background: var(--color-gray-2);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.progressFill {
+  height: 100%;
+  border-radius: 3px;
+  transition: width 0.4s ease;
+  &.high { background: v.$color-success; }
+  &.mid  { background: v.$color-warning; }
+  &.low  { background: v.$color-danger; }
+}
+
+// ─── Rubric Viewer (shared modal) ──────────────────────────────────────────────
+.rubricList { display: flex; flex-direction: column; gap: v.$space-4; max-height: 50vh; overflow-y: auto; padding-right: v.$space-2; }
+.rubricItem { padding: v.$space-4; background: white; border: 1px solid var(--color-gray-2); border-radius: v.$border-radius-lg; display: flex; flex-direction: column; gap: v.$space-3; }
+.rubricHeader { display: flex; justify-content: space-between; align-items: center; }
+.rubricCriterion { font-size: v.$font-size-sm; font-weight: v.$font-weight-medium; color: var(--color-gray-8); }
+.rubricScore { font-size: v.$font-size-sm; font-weight: v.$font-weight-bold; color: v.$brand-primary; }
+.rubricBar { width: 100%; height: 8px; background: var(--color-gray-2); border-radius: 4px; overflow: hidden; }
+.rubricFill { height: 100%; background: linear-gradient(90deg, v.$brand-primary, v.$brand-mid); border-radius: 4px; transition: width 0.5s ease; }
+.rubricFeedback { margin-top: v.$space-2; padding: v.$space-3; background: var(--color-gray-1); border-radius: v.$border-radius-lg; border-left: 3px solid v.$brand-primary; }
+.feedbackTitle { font-size: v.$font-size-sm; font-weight: v.$font-weight-semibold; color: var(--color-gray-8); margin: 0 0 v.$space-2; }
+.rubricComment { font-size: v.$font-size-xs; color: var(--color-gray-6); margin: 0; line-height: 1.4; }
+
+// ─── Submission Detail Modal ──────────────────────────────────────────────────
+.submissionDetails { display: flex; flex-direction: column; gap: v.$space-4; }
+.detailSection { display: flex; flex-direction: column; gap: v.$space-2; }
+.detailLabel { font-size: v.$font-size-sm; font-weight: v.$font-weight-semibold; color: var(--color-gray-7); margin: 0; }
+.detailValue { font-size: v.$font-size-base; color: var(--color-gray-9); margin: 0; }
+.contentBox {
+  padding: v.$space-3; background: var(--color-gray-1); border-radius: v.$border-radius;
+  border: 1px solid var(--color-gray-2); font-size: v.$font-size-sm; line-height: 1.6;
+  color: var(--color-gray-8); white-space: pre-wrap; word-wrap: break-word;
+  max-height: 200px; overflow-y: auto;
+}
+.fileInfo { display: flex; align-items: center; gap: v.$space-2; padding: v.$space-2; background: var(--color-gray-1); border-radius: v.$border-radius; font-size: v.$font-size-sm; }
+.fileSizeText { color: var(--color-gray-5); font-size: v.$font-size-xs; }
+.previewImage { width: 100%; max-width: 100%; height: auto; border-radius: v.$border-radius; border: 1px solid var(--color-gray-2); }
+.imageInfo { font-size: v.$font-size-xs; color: var(--color-gray-6); margin: 0; }
+
+.slideAction {
+  font-size: v.$font-size-xs;
+  font-weight: v.$font-weight-medium;
+  color: v.$brand-primary;
+  text-decoration: none;
+  padding: v.$space-2 v.$space-3;
+  border: 1px solid v.$brand-primary;
+  border-radius: v.$border-radius;
+  transition: all 0.2s ease;
+  &:hover { background: v.$brand-primary-1; }
+}
+
+@keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
