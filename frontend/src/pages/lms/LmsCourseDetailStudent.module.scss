@@ -650,3 +650,127 @@
   background: var(--color-gray-1);
   border-radius: v.$border-radius;
 }
+
+// ─── Quick Check-in Card ───────────────────────────────────────────────────────
+.checkinCard {
+  background: linear-gradient(135deg, #e8f5e9 0%, #f1f8e9 100%);
+  border: 2px solid #4caf50;
+  border-radius: v.$border-radius-lg;
+  padding: v.$space-4;
+  animation: slideDown 0.3s ease;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.checkinHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: v.$space-3;
+}
+
+.checkinTitle {
+  display: flex;
+  align-items: center;
+  gap: v.$space-2;
+  font-size: v.$font-size-lg;
+  font-weight: v.$font-weight-semibold;
+  color: #2e7d32;
+}
+
+.checkinBody {
+  display: flex;
+  flex-direction: column;
+  gap: v.$space-3;
+}
+
+.checkinInfo {
+  display: flex;
+  flex-direction: column;
+  gap: v.$space-1;
+}
+
+.checkinSessionName {
+  font-size: v.$font-size-base;
+  font-weight: v.$font-weight-medium;
+  color: #1b5e20;
+  margin: 0;
+}
+
+.checkinTime {
+  display: flex;
+  align-items: center;
+  gap: v.$space-1;
+  font-size: v.$font-size-sm;
+  color: #388e3c;
+  margin: 0;
+}
+
+.checkinInput {
+  display: flex;
+  gap: v.$space-2;
+  align-items: center;
+  
+  @media (max-width: v.$bp-sm) {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}
+
+.tokenInput {
+  flex: 1;
+  padding: v.$space-2 v.$space-3;
+  font-size: v.$font-size-lg;
+  font-family: 'Courier New', monospace;
+  font-weight: v.$font-weight-bold;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  text-align: center;
+  border: 2px solid #a5d6a7;
+  border-radius: v.$border-radius;
+  background: white;
+  color: #1b5e20;
+  outline: none;
+  transition: all 0.2s ease;
+  
+  &:focus {
+    border-color: #4caf50;
+    box-shadow: 0 0 0 3px rgba(76, 175, 80, 0.2);
+  }
+  
+  &::placeholder {
+    color: #81c784;
+    font-weight: v.$font-weight-regular;
+    letter-spacing: normal;
+  }
+}
+
+.checkinMsg {
+  display: flex;
+  align-items: center;
+  gap: v.$space-2;
+  padding: v.$space-2 v.$space-3;
+  border-radius: v.$border-radius;
+  font-size: v.$font-size-sm;
+  font-weight: v.$font-weight-medium;
+  animation: fadeIn 0.2s ease;
+}
+
+.checkinMsgOk {
+  background: #c8e6c9;
+  color: #1b5e20;
+}
+
+.checkinMsgErr {
+  background: #ffebee;
+  color: #c62828;
+}

@@ -652,6 +652,15 @@ const en = {
     session: 'Session',
     networkError: 'Network error. Please check your connection and try again.',
     submissionFailed: 'Submission failed',
+    quickCheckin: 'Quick Check-in',
+    sessionActive: 'Session Active',
+    currentSession: 'Current Session',
+    startedAt: 'Started',
+    enterToken: 'Enter token from lecturer',
+    checkIn: 'Check In',
+    checkinSuccess: 'Check-in successful!',
+    checkinFailed: 'Check-in failed. Please try again.',
+    checking: 'Checking in',
   },
 
   // Attendance

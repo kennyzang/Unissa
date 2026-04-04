@@ -4,6 +4,7 @@ import { useParams, useNavigate } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import {
   ArrowLeft, FileText, Upload, Star, CheckCircle, Clock, Video, Link, BookOpen, Download, Eye, Play,
+  QrCode, AlertTriangle,
 } from 'lucide-react'
 import { apiClient } from '@/lib/apiClient'
 import { useAuthStore } from '@/stores/authStore'
@@ -119,6 +120,8 @@ const LmsCourseDetailStudent: React.FC = () => {
   const [imagePreview, setImagePreview]           = useState<{ url: string; name: string } | null>(null)
   const [materialPreview, setMaterialPreview]     = useState<CourseMaterial | null>(null)
   const [pptPreviewMode, setPptPreviewMode]       = useState<'office' | 'download'>('office')
+  const [checkinToken, setCheckinToken]           = useState('')
+  const [checkinMsg, setCheckinMsg]               = useState<{ ok: boolean; text: string } | null>(null)
 
   // ── Student profile ──────────────────────────────────────────────────────────
   const { data: studentProfile } = useQuery({
@@ -161,6 +164,47 @@ const LmsCourseDetailStudent: React.FC = () => {
       return data.data ?? []
     },
     enabled: !!offeringId && !!offering,
+  })
+
+  // ── Active attendance session for this offering ───────────────────────────────
+  const { data: activeSession, refetch: refetchActiveSession } = useQuery<{
+    id: string
+    sessionToken: string
+    qrExpiresAt: string
+    startedAt: string
+    name?: string
+  } | null>({
+    queryKey: ['lms', 'attendance', 'active-session', offeringId],
+    queryFn: async () => {
+      const { data } = await apiClient.get('/lms/attendance/active-sessions')
+      const active = (data.data ?? []).find((s: any) => s.offeringId === offeringId)
+      return active || null
+    },
+    enabled: !!offeringId && !!offering,
+    refetchInterval: 30000,
+  })
+
+  // ── Check-in mutation ─────────────────────────────────────────────────────────
+  const checkinMutation = useMutation({
+    mutationFn: async () => {
+      const { data } = await apiClient.post('/lms/attendance/check-in', {
+        token: checkinToken,
+        studentId: studentProfile?.id,
+      })
+      return data
+    },
+    onSuccess: (res) => {
+      setCheckinMsg({ ok: true, text: res.message ?? t('lmsCourseDetail.checkinSuccess', { defaultValue: 'Check-in successful!' }) })
+      setCheckinToken('')
+      qc.invalidateQueries({ queryKey: ['lms', 'attendance', 'student', studentProfile?.id, offeringId] })
+      qc.invalidateQueries({ queryKey: ['lms', 'sessions', offeringId] })
+      refetchActiveSession()
+      setTimeout(() => setCheckinMsg(null), 4000)
+    },
+    onError: (err: any) => {
+      setCheckinMsg({ ok: false, text: err.response?.data?.message ?? t('lmsCourseDetail.checkinFailed', { defaultValue: 'Check-in failed. Please try again.' }) })
+      setTimeout(() => setCheckinMsg(null), 4000)
+    },
   })
 
   // ── Student attendance records ────────────────────────────────────────────────
@@ -570,6 +614,57 @@ const LmsCourseDetailStudent: React.FC = () => {
           )}
         </div>
       </div>
+
+      {/* Quick Check-in Card */}
+      {activeSession && (
+        <div className={styles.checkinCard}>
+          <div className={styles.checkinHeader}>
+            <div className={styles.checkinTitle}>
+              <QrCode size={20} />
+              <span>{t('lmsCourseDetail.quickCheckin', { defaultValue: 'Quick Check-in' })}</span>
+            </div>
+            <Badge color="green" size="sm">
+              <CheckCircle size={12} />
+              {t('lmsCourseDetail.sessionActive', { defaultValue: 'Session Active' })}
+            </Badge>
+          </div>
+          <div className={styles.checkinBody}>
+            <div className={styles.checkinInfo}>
+              <p className={styles.checkinSessionName}>
+                {activeSession.name ?? t('lmsCourseDetail.currentSession', { defaultValue: 'Current Session' })}
+              </p>
+              <p className={styles.checkinTime}>
+                <Clock size={14} />
+                {t('lmsCourseDetail.startedAt', { defaultValue: 'Started' })}: {new Date(activeSession.startedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+              </p>
+            </div>
+            <div className={styles.checkinInput}>
+              <input
+                type="text"
+                value={checkinToken}
+                onChange={e => setCheckinToken(e.target.value.toUpperCase())}
+                placeholder={t('lmsCourseDetail.enterToken', { defaultValue: 'Enter token from lecturer' })}
+                className={styles.tokenInput}
+                maxLength={6}
+              />
+              <Button
+                onClick={() => checkinMutation.mutate()}
+                disabled={!checkinToken.trim() || checkinMutation.isPending}
+                loading={checkinMutation.isPending}
+              >
+                <CheckCircle size={14} />
+                {t('lmsCourseDetail.checkIn', { defaultValue: 'Check In' })}
+              </Button>
+            </div>
+            {checkinMsg && (
+              <div className={`${styles.checkinMsg} ${checkinMsg.ok ? styles.checkinMsgOk : styles.checkinMsgErr}`}>
+                {checkinMsg.ok ? <CheckCircle size={14} /> : <AlertTriangle size={14} />}
+                {checkinMsg.text}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Progress summary cards */}
       <div className={styles.progressRow}>

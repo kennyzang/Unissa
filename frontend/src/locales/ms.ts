@@ -636,6 +636,15 @@ const ms = {
     session: 'Sesi',
     networkError: 'Ralat rangkaian. Sila periksa sambungan anda dan cuba lagi.',
     submissionFailed: 'Penyerahan gagal',
+    quickCheckin: 'Daftar Masuk Pantas',
+    sessionActive: 'Sesi Aktif',
+    currentSession: 'Sesi Semasa',
+    startedAt: 'Bermula',
+    enterToken: 'Masukkan token dari pensyarah',
+    checkIn: 'Daftar Masuk',
+    checkinSuccess: 'Daftar masuk berjaya!',
+    checkinFailed: 'Daftar masuk gagal. Sila cuba lagi.',
+    checking: 'Sedang mendaftar',
   },
 
   attendance: {

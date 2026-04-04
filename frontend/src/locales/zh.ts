@@ -639,6 +639,15 @@ const zh = {
     session: '会话',
     networkError: '网络错误，请检查您的连接后重试。',
     submissionFailed: '提交失败',
+    quickCheckin: '快速签到',
+    sessionActive: '会话进行中',
+    currentSession: '当前会话',
+    startedAt: '开始时间',
+    enterToken: '输入讲师提供的令牌',
+    checkIn: '签到',
+    checkinSuccess: '签到成功！',
+    checkinFailed: '签到失败，请重试。',
+    checking: '签到中',
   },
 
   attendance: {
