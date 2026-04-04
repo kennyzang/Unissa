@@ -1,12 +1,14 @@
 import { useTranslation } from 'react-i18next'
-import React from 'react'
+import React, { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { Award, BookOpen, TrendingUp, Calendar, FileText, Download } from 'lucide-react'
+import { Award, BookOpen, TrendingUp, Calendar, FileText, Download, Eye, Printer } from 'lucide-react'
 import { apiClient } from '@/lib/apiClient'
 import { useAuthStore } from '@/stores/authStore'
 import Card from '@/components/ui/Card'
 import Badge, { BadgeColor } from '@/components/ui/Badge'
 import Button from '@/components/ui/Button'
+import Modal from '@/components/ui/Modal'
+import { generateTranscriptPDF } from '@/utils/pdfGenerator'
 import styles from './TranscriptPage.module.scss'
 
 interface Student {
@@ -88,9 +90,19 @@ const GRADE_LABELS: Record<string, string> = {
 const TranscriptPage: React.FC = () => {
   const { t } = useTranslation()
   const user = useAuthStore(s => s.user)
+  const [showPreview, setShowPreview] = useState(false)
 
   const handleDownloadPDF = () => {
-    window.print()
+    if (student && transcriptData) {
+      generateTranscriptPDF(student, transcriptData.enrolments, gpaRecords)
+    }
+  }
+
+  const handlePrint = () => {
+    if (student && transcriptData) {
+      generateTranscriptPDF(student, transcriptData.enrolments, gpaRecords)
+    }
+    setShowPreview(false)
   }
 
   const { data: student, isLoading: loadingStudent } = useQuery<Student>({
@@ -172,6 +184,9 @@ const TranscriptPage: React.FC = () => {
           </p>
         </div>
         <div className={styles.headerRight}>
+          <Button variant="ghost" icon={<Eye size={16} />} onClick={() => setShowPreview(true)}>
+            {t('transcript.preview', { defaultValue: 'Preview' })}
+          </Button>
           <Button variant="secondary" icon={<Download size={16} />} onClick={handleDownloadPDF}>
             {t('transcript.download', { defaultValue: 'Download PDF' })}
           </Button>
@@ -336,6 +351,152 @@ const TranscriptPage: React.FC = () => {
           </div>
         </div>
       </Card>
+
+      <div className={styles.printOnly}>
+        <div className={styles.printHeader}>
+          <div className={styles.schoolLogo}>
+            <Award size={40} />
+          </div>
+          <div className={styles.schoolInfo}>
+            <h1>UNIVERSITI ISLAM SULTAN SHARIF ALI</h1>
+            <h2>ACADEMIC TRANSCRIPT</h2>
+          </div>
+        </div>
+      </div>
+
+      {showPreview && (
+        <Modal
+          open
+          title={t('transcript.previewTitle', { defaultValue: 'Print Preview' })}
+          onClose={() => setShowPreview(false)}
+          footer={
+            <div className={styles.modalFooter}>
+              <Button variant="ghost" onClick={() => setShowPreview(false)}>
+                {t('common.close', { defaultValue: 'Close' })}
+              </Button>
+              <Button icon={<Printer size={16} />} onClick={handlePrint}>
+                {t('transcript.print', { defaultValue: 'Print' })}
+              </Button>
+            </div>
+          }
+        >
+          <div className={styles.previewContent}>
+            <div className={styles.previewHeader}>
+              <div className={styles.previewLogo}>
+                <Award size={32} />
+              </div>
+              <div className={styles.previewTitle}>
+                <h2>UNIVERSITI ISLAM SULTAN SHARIF ALI</h2>
+                <h3>ACADEMIC TRANSCRIPT</h3>
+              </div>
+            </div>
+
+            {student && (
+              <div className={styles.previewStudentInfo}>
+                <div className={styles.previewInfoRow}>
+                  <span className={styles.previewLabel}>Student Name:</span>
+                  <span className={styles.previewValue}>{student.user.displayName}</span>
+                </div>
+                <div className={styles.previewInfoRow}>
+                  <span className={styles.previewLabel}>Student ID:</span>
+                  <span className={styles.previewValue}>{student.studentId}</span>
+                </div>
+                <div className={styles.previewInfoRow}>
+                  <span className={styles.previewLabel}>Programme:</span>
+                  <span className={styles.previewValue}>{student.programme?.name}</span>
+                </div>
+                <div className={styles.previewInfoRow}>
+                  <span className={styles.previewLabel}>Intake:</span>
+                  <span className={styles.previewValue}>{student.intake?.semester?.name}</span>
+                </div>
+              </div>
+            )}
+
+            <div className={styles.previewStats}>
+              <div className={styles.previewStatItem}>
+                <span className={styles.previewStatLabel}>Current GPA:</span>
+                <span className={styles.previewStatValue}>
+                  {student?.currentCgpa?.toFixed(2) ?? calculatedGpa.toFixed(2)}
+                </span>
+              </div>
+              <div className={styles.previewStatItem}>
+                <span className={styles.previewStatLabel}>Courses Completed:</span>
+                <span className={styles.previewStatValue}>{completedEnrolments.length}</span>
+              </div>
+              <div className={styles.previewStatItem}>
+                <span className={styles.previewStatLabel}>Credit Hours:</span>
+                <span className={styles.previewStatValue}>{totalCreditHours}</span>
+              </div>
+            </div>
+
+            {gpaRecords.length > 0 && (
+              <div className={styles.previewSection}>
+                <h4>GPA History</h4>
+                <table className={styles.previewTable}>
+                  <thead>
+                    <tr>
+                      <th>Semester</th>
+                      <th>Semester GPA</th>
+                      <th>Cumulative GPA</th>
+                      <th>Credit Hours</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {gpaRecords.map(record => (
+                      <tr key={record.id}>
+                        <td>{record.semester?.name ?? 'N/A'}</td>
+                        <td>{record.semesterGpa.toFixed(2)}</td>
+                        <td>{record.cumulativeGpa.toFixed(2)}</td>
+                        <td>{record.totalChPassed} CH</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+
+            {Object.keys(semesterGroups).length > 0 && (
+              <div className={styles.previewSection}>
+                <h4>Course Record</h4>
+                {Object.entries(semesterGroups).map(([semId, items]) => (
+                  <div key={semId} className={styles.previewSemester}>
+                    <div className={styles.previewSemesterTitle}>
+                      {items[0]?.offering?.semester?.name ?? 'Unknown Semester'}
+                    </div>
+                    <table className={styles.previewTable}>
+                      <thead>
+                        <tr>
+                          <th>Code</th>
+                          <th>Course</th>
+                          <th>CH</th>
+                          <th>Grade</th>
+                          <th>Points</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {items.map(enrolment => (
+                          <tr key={enrolment.id}>
+                            <td>{enrolment.offering?.course?.code}</td>
+                            <td>{enrolment.offering?.course?.name}</td>
+                            <td>{enrolment.offering?.course?.creditHours}</td>
+                            <td>{GRADE_LABELS[enrolment.finalGrade] || enrolment.finalGrade}</td>
+                            <td>{enrolment.gradePoints?.toFixed(2) ?? '-'}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            <div className={styles.previewFooter}>
+              <p>This is an official academic transcript from Universiti Islam Sultan Sharif Ali.</p>
+              <p>Generated on: {new Date().toLocaleDateString()}</p>
+            </div>
+          </div>
+        </Modal>
+      )}
     </div>
   )
 }

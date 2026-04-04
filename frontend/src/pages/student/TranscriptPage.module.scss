@@ -333,12 +333,24 @@
 
 // ── Print Styles ────────────────────────────────────────────────
 @media print {
-  .page {
-    padding: 20px;
-    gap: 20px;
+  @page {
+    size: A4;
+    margin: 15mm;
   }
 
-  .headerRight {
+  body {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  .page {
+    padding: 0;
+    gap: 0;
+    max-width: 100%;
+    background: white;
+  }
+
+  .header {
     display: none;
   }
 
@@ -346,32 +358,391 @@
     display: none;
   }
 
-  .card {
-    box-shadow: none;
-    border: 1px solid #ddd;
-    page-break-inside: avoid;
+  .studentInfo {
+    padding: 0;
+    margin-bottom: 20px;
+    border-bottom: 2px solid #165DFF;
+    padding-bottom: 15px;
   }
 
   .studentAvatar {
     display: none;
   }
 
-  .transcriptTable,
-  .gpaTable {
+  .studentDetails {
+    h2 {
+      font-size: 18px;
+      margin: 0 0 10px 0;
+      color: #1D2129;
+    }
+  }
+
+  .studentMeta {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+    font-size: 12px;
+    color: #4E5969;
+
+    span {
+      margin: 0;
+    }
+  }
+
+  .card {
+    box-shadow: none;
+    border: none;
+    padding: 0;
+    margin: 0;
+    page-break-inside: avoid;
+    background: white;
+
+    &:not(:last-child) {
+      margin-bottom: 20px;
+    }
+  }
+
+  .cardTitle {
+    font-size: 14px;
+    font-weight: 600;
+    color: #1D2129;
+    margin-bottom: 10px;
+    padding-bottom: 5px;
+    border-bottom: 1px solid #E5E6EB;
+  }
+
+  .gpaTable,
+  .transcriptTable {
     border: 1px solid #000;
+    border-collapse: collapse;
+    width: 100%;
+  }
+
+  .gpaHeader,
+  .transcriptHeader {
+    background: #f0f0f0 !important;
+    color: #000 !important;
+    font-weight: 600;
+    border-bottom: 2px solid #000;
+    padding: 8px 10px;
+    font-size: 11px;
+  }
+
+  .gpaRow,
+  .transcriptRow {
+    border-top: 1px solid #ddd;
+    padding: 6px 10px;
+    font-size: 11px;
+
+    &:hover {
+      background: transparent;
+    }
+  }
+
+  .semesterSection {
+    border-top: 1px solid #ddd;
   }
 
   .semesterHeader {
-    background: #f0f0f0;
-    color: #000;
+    background: #f5f5f5 !important;
+    color: #165DFF !important;
+    padding: 6px 10px;
+    font-size: 11px;
+    font-weight: 600;
+    border-bottom: 1px solid #ddd;
   }
 
-  .transcriptRow,
-  .gpaRow {
-    border-top: 1px solid #ddd;
+  .colCode {
+    font-weight: 600;
+    color: #165DFF;
+  }
+
+  .colCourse {
+    color: #1D2129;
+  }
+
+  .colCh,
+  .colGrade,
+  .colPoints {
+    text-align: center;
+    color: #4E5969;
   }
 
   .gradeScale {
     display: none;
   }
+
+  .emptyState {
+    display: none;
+  }
+
+  .transcriptHeader {
+    display: grid;
+    grid-template-columns: 80px 1fr 50px 70px 70px;
+    gap: 0;
+  }
+
+  .transcriptRow {
+    display: grid;
+    grid-template-columns: 80px 1fr 50px 70px 70px;
+    gap: 0;
+  }
+
+  .gpaHeader {
+    display: grid;
+    grid-template-columns: 1fr repeat(3, 100px);
+    gap: 0;
+  }
+
+  .gpaRow {
+    display: grid;
+    grid-template-columns: 1fr repeat(3, 100px);
+    gap: 0;
+  }
+
+  .semesterName {
+    font-weight: 500;
+  }
+
+  .gpaValue {
+    font-weight: 600;
+    color: #165DFF;
+  }
+
+  .badge {
+    border: 1px solid currentColor;
+    padding: 2px 6px;
+    font-size: 10px;
+  }
+}
+
+.printOnly {
+  display: none;
+
+  @media print {
+    display: block;
+  }
+}
+
+.screenOnly {
+  @media print {
+    display: none;
+  }
+}
+
+.transcriptHeader {
+  display: grid;
+  grid-template-columns: 100px 1fr 60px 80px 80px;
+  padding: v.$space-3 v.$space-4;
+  background: v.$brand-primary-1;
+  font-size: v.$font-size-xs;
+  font-weight: v.$font-weight-semibold;
+  color: v.$brand-primary;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.printHeader {
+  display: none;
+  text-align: center;
+  padding: 20px 0;
+  border-bottom: 3px solid #165DFF;
+  margin-bottom: 20px;
+
+  @media print {
+    display: block;
+  }
+}
+
+.schoolLogo {
+  margin-bottom: 10px;
+  color: #165DFF;
+}
+
+.schoolInfo {
+  h1 {
+    font-size: 20px;
+    font-weight: 700;
+    color: #1D2129;
+    margin: 0 0 5px 0;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+
+  h2 {
+    font-size: 16px;
+    font-weight: 600;
+    color: #4E5969;
+    margin: 0;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+}
+
+.previewContent {
+  padding: v.$space-4;
+  background: white;
+  border: 1px solid var(--color-gray-3);
+  border-radius: v.$border-radius;
+  max-height: 70vh;
+  overflow-y: auto;
+}
+
+.previewHeader {
+  display: flex;
+  align-items: center;
+  gap: v.$space-3;
+  padding-bottom: v.$space-4;
+  border-bottom: 2px solid v.$brand-primary;
+  margin-bottom: v.$space-4;
+}
+
+.previewLogo {
+  color: v.$brand-primary;
+}
+
+.previewTitle {
+  h2 {
+    font-size: v.$font-size-lg;
+    font-weight: v.$font-weight-bold;
+    color: var(--color-gray-8);
+    margin: 0 0 4px 0;
+    text-transform: uppercase;
+  }
+
+  h3 {
+    font-size: v.$font-size-base;
+    font-weight: v.$font-weight-semibold;
+    color: var(--color-gray-6);
+    margin: 0;
+    text-transform: uppercase;
+  }
+}
+
+.previewStudentInfo {
+  margin-bottom: v.$space-4;
+  padding: v.$space-3;
+  background: var(--color-gray-1);
+  border-radius: v.$border-radius;
+}
+
+.previewInfoRow {
+  display: flex;
+  padding: v.$space-2 0;
+  font-size: v.$font-size-sm;
+
+  &:not(:last-child) {
+    border-bottom: 1px solid var(--color-gray-3);
+  }
+}
+
+.previewLabel {
+  font-weight: v.$font-weight-semibold;
+  color: var(--color-gray-6);
+  width: 140px;
+  flex-shrink: 0;
+}
+
+.previewValue {
+  color: var(--color-gray-8);
+  font-weight: v.$font-weight-medium;
+}
+
+.previewStats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: v.$space-3;
+  margin-bottom: v.$space-4;
+}
+
+.previewStatItem {
+  display: flex;
+  flex-direction: column;
+  gap: v.$space-1;
+  padding: v.$space-3;
+  background: v.$brand-primary-1;
+  border-radius: v.$border-radius;
+  text-align: center;
+}
+
+.previewStatLabel {
+  font-size: v.$font-size-xs;
+  color: var(--color-gray-6);
+}
+
+.previewStatValue {
+  font-size: v.$font-size-xl;
+  font-weight: v.$font-weight-bold;
+  color: v.$brand-primary;
+}
+
+.previewSection {
+  margin-bottom: v.$space-4;
+
+  h4 {
+    font-size: v.$font-size-base;
+    font-weight: v.$font-weight-semibold;
+    color: var(--color-gray-8);
+    margin: 0 0 v.$space-3 0;
+    padding-bottom: v.$space-2;
+    border-bottom: 1px solid var(--color-gray-3);
+  }
+}
+
+.previewSemester {
+  margin-bottom: v.$space-3;
+}
+
+.previewSemesterTitle {
+  font-size: v.$font-size-sm;
+  font-weight: v.$font-weight-semibold;
+  color: v.$brand-primary;
+  padding: v.$space-2 v.$space-3;
+  background: var(--color-gray-1);
+  border-radius: v.$border-radius;
+  margin-bottom: v.$space-2;
+}
+
+.previewTable {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: v.$font-size-sm;
+
+  th {
+    background: var(--color-gray-2);
+    color: var(--color-gray-7);
+    font-weight: v.$font-weight-semibold;
+    text-align: left;
+    padding: v.$space-2 v.$space-3;
+    border-bottom: 2px solid var(--color-gray-4);
+  }
+
+  td {
+    padding: v.$space-2 v.$space-3;
+    border-bottom: 1px solid var(--color-gray-3);
+    color: var(--color-gray-7);
+  }
+
+  tbody tr:hover {
+    background: var(--color-gray-1);
+  }
+}
+
+.previewFooter {
+  margin-top: v.$space-4;
+  padding-top: v.$space-3;
+  border-top: 1px solid var(--color-gray-3);
+  text-align: center;
+  font-size: v.$font-size-xs;
+  color: var(--color-gray-5);
+
+  p {
+    margin: v.$space-1 0;
+  }
+}
+
+.modalFooter {
+  display: flex;
+  gap: v.$space-3;
+  justify-content: flex-end;
 }
