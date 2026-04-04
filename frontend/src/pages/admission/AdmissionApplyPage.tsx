@@ -220,6 +220,15 @@ const PendingApplicationCard: React.FC<{ app: any }> = ({ app }) => {
   const qc = useQueryClient()
   const navigate = useNavigate()
 
+  const { data: documents = [] } = useQuery<any[]>({
+    queryKey: ['admissions', app.id, 'documents'],
+    queryFn: async () => {
+      const { data } = await apiClient.get(`/admissions/${app.id}/documents`)
+      return data.data
+    },
+    enabled: !!app.id,
+  })
+
   const statusColor: Record<string, string> = {
     submitted: 'blue', under_review: 'orange', waitlisted: 'purple',
     rejected: 'red', accepted: 'green', auto_check_failed: 'red',
@@ -230,6 +239,19 @@ const PendingApplicationCard: React.FC<{ app: any }> = ({ app }) => {
     DIPLOMA: 'Diploma', DEGREE: 'Bachelor Degree', MASTERS: 'Masters Degree',
     o_level: 'O-Level / BGCE', a_level: 'A-Level / STPM',
     diploma: 'Diploma', degree: 'Bachelor Degree', masters: 'Masters Degree',
+  }
+
+  const DOC_TYPE_LABELS: Record<string, string> = {
+    transcript: t('admissionApply.docTypeTranscript', { defaultValue: 'Academic Transcript' }),
+    ic_passport: t('admissionApply.docTypeIcPassport', { defaultValue: 'IC / Passport' }),
+    passport_photo: t('admissionApply.docTypePassportPhoto', { defaultValue: 'Passport Photo' }),
+    supporting: t('admissionApply.docTypeSupporting', { defaultValue: 'Supporting Document' }),
+  }
+
+  const handlePreview = (doc: any) => {
+    if (doc.asset?.fileUrl) {
+      window.open(doc.asset.fileUrl, '_blank')
+    }
   }
 
   const acceptMutation = useMutation({
@@ -438,6 +460,46 @@ const PendingApplicationCard: React.FC<{ app: any }> = ({ app }) => {
             </Descriptions>
           </Col>
         </Row>
+
+        {/* Uploaded Documents */}
+        {documents.length > 0 && (
+          <Col xs={24} style={{ marginTop: 16 }}>
+            <div style={{ fontWeight: 600, fontSize: 13, color: '#165DFF', marginBottom: 8, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+              {t('admissionApply.uploadedDocuments', { defaultValue: 'Uploaded Documents' })}
+            </div>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12 }}>
+              {documents.map((doc: any) => (
+                <div
+                  key={doc.id}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 8,
+                    padding: '8px 12px',
+                    background: '#fafafa',
+                    border: '1px solid #f0f0f0',
+                    borderRadius: 6,
+                    cursor: 'pointer',
+                  }}
+                  onClick={() => handlePreview(doc)}
+                >
+                  {doc.asset?.mimeType?.startsWith('image/') ? (
+                    <FileImageOutlined style={{ color: '#2e7d32', fontSize: 18 }} />
+                  ) : doc.asset?.mimeType === 'application/pdf' ? (
+                    <FilePdfOutlined style={{ color: '#e53935', fontSize: 18 }} />
+                  ) : (
+                    <FileTextOutlined style={{ color: '#1565c0', fontSize: 18 }} />
+                  )}
+                  <div>
+                    <div style={{ fontSize: 13, fontWeight: 500 }}>{doc.asset?.originalName || doc.asset?.fileName}</div>
+                    <div style={{ fontSize: 11, color: '#888' }}>{DOC_TYPE_LABELS[doc.docType] || doc.docType}</div>
+                  </div>
+                  <EyeOutlined style={{ color: '#1890ff', fontSize: 14, marginLeft: 4 }} />
+                </div>
+              ))}
+            </div>
+          </Col>
+        )}
 
         {/* Officer remarks for non-rejection cases */}
         {app.officerRemarks && !isRejected && (

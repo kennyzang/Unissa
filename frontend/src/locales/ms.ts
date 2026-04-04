@@ -279,6 +279,11 @@ const ms = {
     cgpaPlaceholder: 'cth. 3.75',
     intakePlaceholder: 'Pilih program dan pengambilan',
     scholarshipPlaceholder: 'cth. Biasiswa BIBD',
+    uploadedDocuments: 'Dokumen Dimuat Naik',
+    docTypeTranscript: 'Transkrip Akademik',
+    docTypeIcPassport: 'IC / Pasport',
+    docTypePassportPhoto: 'Gambar Pasport',
+    docTypeSupporting: 'Dokumen Sokongan',
   },
 
   admissionReview: {
@@ -335,6 +340,11 @@ const ms = {
     actionFailed: 'Tindakan gagal',
     waitlistTitle: 'Permohonan Senarai Menunggu',
     remarksLabel: 'Catatan Pegawai (pilihan)',
+    uploadedDocuments: 'Dokumen Dimuat Naik',
+    docTypeTranscript: 'Transkrip Akademik',
+    docTypeIcPassport: 'IC / Pasport',
+    docTypePassportPhoto: 'Gambar Pasport',
+    docTypeSupporting: 'Dokumen Sokongan',
   },
 
   studentProfile: {

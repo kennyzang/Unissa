@@ -1,7 +1,7 @@
 import { useTranslation } from 'react-i18next'
 import React, { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { CheckCircle, XCircle, Clock, Search, Eye, Users } from 'lucide-react'
+import { CheckCircle, XCircle, Clock, Search, Eye, Users, FileText, FileImage, File } from 'lucide-react'
 import { Input as AntInput } from 'antd'
 import { apiClient } from '@/lib/apiClient'
 import { useUIStore } from '@/stores/uiStore'
@@ -30,6 +30,22 @@ interface Application {
   officerRemarks?: string
   programme: { name: string; code: string }
   intake: { intakeStart: string; semester: { name: string } }
+}
+
+interface ApplicantDocument {
+  id: string
+  applicantId: string
+  assetId: string
+  docType: string
+  uploadedAt: string
+  asset: {
+    id: string
+    fileName: string
+    originalName: string
+    fileUrl: string
+    mimeType: string
+    fileSizeBytes: number
+  }
 }
 
 interface Stats { total: number; submitted: number; underReview: number; accepted: number; rejected: number; waitlisted: number }
@@ -78,6 +94,34 @@ const AdmissionReviewPage: React.FC = () => {
       return data.data
     },
   })
+
+  const { data: selectedDocuments = [] } = useQuery<ApplicantDocument[]>({
+    queryKey: ['admissions', selected?.id, 'documents'],
+    queryFn: async () => {
+      const { data } = await apiClient.get(`/admissions/${selected?.id}/documents`)
+      return data.data
+    },
+    enabled: !!selected?.id,
+  })
+
+  const DOC_TYPE_LABELS: Record<string, string> = {
+    transcript: t('admissionReview.docTypeTranscript', { defaultValue: 'Academic Transcript' }),
+    ic_passport: t('admissionReview.docTypeIcPassport', { defaultValue: 'IC / Passport' }),
+    passport_photo: t('admissionReview.docTypePassportPhoto', { defaultValue: 'Passport Photo' }),
+    supporting: t('admissionReview.docTypeSupporting', { defaultValue: 'Supporting Document' }),
+  }
+
+  const handlePreviewDocument = (doc: ApplicantDocument) => {
+    if (doc.asset?.fileUrl) {
+      window.open(doc.asset.fileUrl, '_blank')
+    }
+  }
+
+  const formatFileSize = (bytes: number) => {
+    if (bytes < 1024) return bytes + ' B'
+    if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB'
+    return (bytes / (1024 * 1024)).toFixed(1) + ' MB'
+  }
 
   const statusLabel = (status: string) => t(STATUS_KEY[status] as any ?? status, { defaultValue: status })
 
@@ -197,19 +241,59 @@ const AdmissionReviewPage: React.FC = () => {
         }
       >
         {selected && (
-          <div className={styles.detailGrid}>
-            <DetailRow label={t('admissionReview.detailFullName')} value={selected.fullName} />
-            <DetailRow label={t('admissionReview.detailEmail')} value={selected.email} />
-            <DetailRow label={t('admissionReview.detailNationality')} value={selected.nationality} />
-            <DetailRow label={t('admissionReview.detailProgramme')} value={`${selected.programme.name} (${selected.programme.code})`} />
-            <DetailRow label={t('admissionReview.detailIntake')} value={selected.intake.semester.name} />
-            <DetailRow label={t('admissionReview.detailMode')} value={selected.modeOfStudy.replace('_', ' ')} />
-            <DetailRow label={t('admissionReview.detailQual')} value={selected.highestQualification} />
-            <DetailRow label={t('admissionReview.detailCGPA')} value={selected.cgpa ? selected.cgpa.toFixed(2) : t('admissionReview.notProvided')} />
-            <DetailRow label={t('admissionReview.detailScholarship')} value={selected.scholarshipApplied ? t('admissionReview.scholarshipApplied') : t('admissionReview.scholarshipNone')} />
-            <DetailRow label={t('admissionReview.detailStatus')} value={<Badge color={STATUS_COLOR[selected.status] ?? 'gray'}>{statusLabel(selected.status)}</Badge>} />
-            {selected.officerRemarks && <DetailRow label={t('admissionReview.detailRemarks')} value={selected.officerRemarks} />}
-          </div>
+          <>
+            <div className={styles.detailGrid}>
+              <DetailRow label={t('admissionReview.detailFullName')} value={selected.fullName} />
+              <DetailRow label={t('admissionReview.detailEmail')} value={selected.email} />
+              <DetailRow label={t('admissionReview.detailNationality')} value={selected.nationality} />
+              <DetailRow label={t('admissionReview.detailProgramme')} value={`${selected.programme.name} (${selected.programme.code})`} />
+              <DetailRow label={t('admissionReview.detailIntake')} value={selected.intake.semester.name} />
+              <DetailRow label={t('admissionReview.detailMode')} value={selected.modeOfStudy.replace('_', ' ')} />
+              <DetailRow label={t('admissionReview.detailQual')} value={selected.highestQualification} />
+              <DetailRow label={t('admissionReview.detailCGPA')} value={selected.cgpa ? selected.cgpa.toFixed(2) : t('admissionReview.notProvided')} />
+              <DetailRow label={t('admissionReview.detailScholarship')} value={selected.scholarshipApplied ? t('admissionReview.scholarshipApplied') : t('admissionReview.scholarshipNone')} />
+              <DetailRow label={t('admissionReview.detailStatus')} value={<Badge color={STATUS_COLOR[selected.status] ?? 'gray'}>{statusLabel(selected.status)}</Badge>} />
+              {selected.officerRemarks && <DetailRow label={t('admissionReview.detailRemarks')} value={selected.officerRemarks} />}
+            </div>
+
+            {selectedDocuments.length > 0 && (
+              <div className={styles.documentsSection}>
+                <div className={styles.documentsTitle}>
+                  {t('admissionReview.uploadedDocuments', { defaultValue: 'Uploaded Documents' })}
+                </div>
+                <div className={styles.documentsList}>
+                  {selectedDocuments.map((doc) => (
+                    <div
+                      key={doc.id}
+                      className={styles.documentItem}
+                      onClick={() => handlePreviewDocument(doc)}
+                    >
+                      <div className={styles.documentIcon}>
+                        {doc.asset?.mimeType?.startsWith('image/') ? (
+                          <FileImage size={20} />
+                        ) : doc.asset?.mimeType === 'application/pdf' ? (
+                          <FileText size={20} />
+                        ) : (
+                          <File size={20} />
+                        )}
+                      </div>
+                      <div className={styles.documentInfo}>
+                        <div className={styles.documentName}>{doc.asset?.originalName || doc.asset?.fileName}</div>
+                        <div className={styles.documentMeta}>
+                          <span>{DOC_TYPE_LABELS[doc.docType] || doc.docType}</span>
+                          <span>·</span>
+                          <span>{formatFileSize(doc.asset?.fileSizeBytes || 0)}</span>
+                        </div>
+                      </div>
+                      <div className={styles.documentAction}>
+                        <Eye size={16} />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </>
         )}
       </Modal>
 

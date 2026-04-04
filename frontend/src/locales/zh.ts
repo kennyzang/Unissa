@@ -282,6 +282,11 @@ const zh = {
     cgpaPlaceholder: '如：3.75',
     intakePlaceholder: '请选择专业与入学期',
     scholarshipPlaceholder: '如：BIBD奖学金',
+    uploadedDocuments: '已上传文档',
+    docTypeTranscript: '成绩单',
+    docTypeIcPassport: '身份证/护照',
+    docTypePassportPhoto: '证件照',
+    docTypeSupporting: '支持文档',
   },
 
   admissionReview: {
@@ -338,6 +343,11 @@ const zh = {
     actionFailed: '操作失败',
     waitlistTitle: '候补名单申请',
     remarksLabel: '审核员备注（选填）',
+    uploadedDocuments: '已上传文档',
+    docTypeTranscript: '成绩单',
+    docTypeIcPassport: '身份证/护照',
+    docTypePassportPhoto: '证件照',
+    docTypeSupporting: '支持文档',
   },
 
   studentProfile: {

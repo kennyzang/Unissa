@@ -288,6 +288,11 @@ const en = {
     cgpaPlaceholder: 'e.g. 3.75',
     intakePlaceholder: 'Select a programme and intake',
     scholarshipPlaceholder: 'e.g. BIBD Scholarship',
+    uploadedDocuments: 'Uploaded Documents',
+    docTypeTranscript: 'Academic Transcript',
+    docTypeIcPassport: 'IC / Passport',
+    docTypePassportPhoto: 'Passport Photo',
+    docTypeSupporting: 'Supporting Document',
   },
 
   // Admission Review
@@ -345,6 +350,11 @@ const en = {
     actionFailed: 'Action failed',
     waitlistTitle: 'Waitlist Application',
     remarksLabel: 'Officer Remarks (optional)',
+    uploadedDocuments: 'Uploaded Documents',
+    docTypeTranscript: 'Academic Transcript',
+    docTypeIcPassport: 'IC / Passport',
+    docTypePassportPhoto: 'Passport Photo',
+    docTypeSupporting: 'Supporting Document',
   },
 
   // Student Profile
