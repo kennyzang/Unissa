@@ -1,6 +1,7 @@
 import { Router, Response } from 'express'
 import prisma from '../lib/prisma'
 import { authenticate, requireRole, AuthRequest } from '../middleware/auth'
+import { emailService } from '../services/emailService'
 
 const router = Router()
 router.use(authenticate)
@@ -309,16 +310,113 @@ router.post('/:id/register-courses', async (req: AuthRequest, res: Response) => 
 router.delete('/:id/courses/:offeringId', async (req: AuthRequest, res: Response) => {
   const student = await prisma.student.findFirst({
     where: { OR: [{ id: req.params.id }, { studentId: req.params.id }] },
+    include: { programme: true, user: true },
   })
   if (!student) { res.status(404).json({ success: false, message: 'Student not found' }); return }
 
   const enrolment = await prisma.enrolment.findFirst({
     where: { studentId: student.id, offeringId: req.params.offeringId, status: 'registered' },
+    include: { offering: { include: { course: true, semester: true } } },
   })
   if (!enrolment) { res.status(404).json({ success: false, message: 'Enrolment not found' }); return }
 
-  await prisma.enrolment.delete({ where: { id: enrolment.id } })
-  res.json({ success: true, message: 'Course dropped successfully' })
+  const offering = enrolment.offering
+  const creditHours = offering.course.creditHours || 3
+
+  const feePerCh = student.nationality === 'Brunei Darussalam'
+    ? (student.programme as any).feeLocalPerCh || 800
+    : (student.programme as any).feeInternationalPerCh || 1200
+
+  const refundAmount = creditHours * feePerCh
+
+  const invoice = await prisma.feeInvoice.findFirst({
+    where: { studentId: student.id, semesterId: offering.semesterId },
+    orderBy: { generatedAt: 'desc' },
+  })
+
+  const result = await prisma.$transaction(async (tx) => {
+    await tx.enrolment.delete({ where: { id: enrolment.id } })
+
+    if (invoice) {
+      const previousAmount = invoice.totalAmount
+      const previousStatus = invoice.status
+      const newAmount = Math.max(0, invoice.totalAmount - refundAmount)
+      const newOutstanding = Math.max(0, invoice.outstandingBalance - refundAmount)
+      
+      let newStatus = invoice.status
+      if (newOutstanding <= 0) {
+        newStatus = 'paid'
+      } else if (newOutstanding < invoice.totalAmount) {
+        newStatus = 'partial'
+      }
+
+      await tx.feeInvoice.update({
+        where: { id: invoice.id },
+        data: {
+          tuitionFee: Math.max(0, invoice.tuitionFee - refundAmount),
+          totalAmount: newAmount,
+          outstandingBalance: newOutstanding,
+          status: newStatus,
+        },
+      })
+
+      await tx.invoiceAdjustment.create({
+        data: {
+          invoiceId: invoice.id,
+          adjustmentType: 'refund',
+          amount: refundAmount,
+          reason: `Course drop: ${offering.course.code} - ${offering.course.name}`,
+          previousAmount,
+          newAmount,
+          previousStatus,
+          newStatus,
+          operatedBy: req.user?.userId || 'system',
+        },
+      })
+    }
+
+    return { enrolment, invoice, refundAmount }
+  })
+
+  if (result.invoice && result.refundAmount > 0 && student.user?.email) {
+    try {
+      if (emailService.isConfigured()) {
+        await emailService.sendEmail({
+          to: student.user.email,
+          subject: `Course Drop Confirmation - ${offering.course.code}`,
+          body: `
+            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+              <h2 style="color: #165DFF;">Course Drop Confirmation</h2>
+              <p>Dear ${student.user.displayName || 'Student'},</p>
+              <p>You have successfully dropped the following course:</p>
+              <div style="background: #f5f5f5; padding: 15px; margin: 20px 0; border-radius: 8px;">
+                <p style="margin: 0;"><strong>Course:</strong> ${offering.course.code} - ${offering.course.name}</p>
+                <p style="margin: 10px 0 0 0;"><strong>Credit Hours:</strong> ${creditHours}</p>
+                <p style="margin: 10px 0 0 0;"><strong>Refund Amount:</strong> BND ${refundAmount.toLocaleString()}</p>
+              </div>
+              <p>Your invoice has been updated accordingly.</p>
+              <hr style="border: 1px solid #eee; margin: 20px 0;">
+              <p style="color: #666; font-size: 12px;">
+                UNISSA - Universiti Islam Sultan Sharif Ali<br>
+                Finance Department
+              </p>
+            </div>
+          `,
+        })
+      }
+    } catch (err) {
+      console.error('[Students] Failed to send drop confirmation email:', err)
+    }
+  }
+
+  res.json({ 
+    success: true, 
+    message: 'Course dropped successfully',
+    data: {
+      refundAmount,
+      invoiceUpdated: !!result.invoice,
+    },
+  })
 })
 
 export default router

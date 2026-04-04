@@ -4,6 +4,8 @@ import bcrypt from 'bcryptjs'
 import path from 'path'
 import { authenticate, requireRole, AuthRequest } from '../middleware/auth'
 import { upload } from '../lib/upload'
+import { emailService } from '../services/emailService'
+import { generateOfferLetterPDF, generateOfferRef, generateTempPassword, generateUsername } from '../services/offerLetterService'
 
 const router: Router = Router()
 
@@ -188,22 +190,27 @@ router.patch('/applications/:id/decision', authenticate, requireRole('admissions
 
   const app = await prisma.applicant.findUnique({
     where: { id: String(req.params.id) },
-    include: { intake: { include: { semester: true } }, programme: true, student: true },
+    include: { 
+      intake: { include: { semester: true } }, 
+      programme: { include: { department: true } }, 
+      student: true,
+    },
   })
   if (!app) { res.status(404).json({ success: false, message: 'Application not found' }); return }
 
-  // Update applicant status
   const previousStatus = app.status
+  const offerRef = action === 'accepted' ? generateOfferRef() : null
+  
   const updated = await prisma.applicant.update({
     where: { id: String(req.params.id) },
     data: {
       status: action,
       officerRemarks: remarks,
       decisionMadeAt: new Date(),
+      offerRef,
     },
   })
 
-  // Record history
   await prisma.applicantHistory.create({
     data: {
       applicantId: app.id,
@@ -214,7 +221,6 @@ router.patch('/applications/:id/decision', authenticate, requireRole('admissions
     },
   })
 
-  // ── Create in-app notification for the applicant ────────────
   if (app.userId) {
     const applicantName = app.fullName || 'Applicant'
     const applicationRef = app.applicationRef || 'N/A'
@@ -239,11 +245,67 @@ router.patch('/applications/:id/decision', authenticate, requireRole('admissions
     }).catch(err => console.error('[Admissions] Failed to create notification:', err))
   }
 
+  if (action === 'accepted' && app.email && app.programme && app.intake) {
+    try {
+      const pdfBuffer = await generateOfferLetterPDF({
+        applicant: app,
+        programme: app.programme,
+        intake: app.intake,
+        offerRef: offerRef!,
+        offerDate: new Date(),
+        confirmDeadline: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000),
+      })
+
+      let assetId: string | null = null
+      const fileName = `offer-letter-${offerRef}.pdf`
+      const uploadDir = process.env.UPLOAD_DIR || './uploads'
+      const fs = await import('fs')
+      if (!fs.existsSync(uploadDir)) {
+        fs.mkdirSync(uploadDir, { recursive: true })
+      }
+      const filePath = path.join(uploadDir, fileName)
+      fs.writeFileSync(filePath, pdfBuffer)
+
+      const asset = await prisma.fileAsset.create({
+        data: {
+          fileName,
+          originalName: `Offer Letter - ${offerRef}.pdf`,
+          mimeType: 'application/pdf',
+          fileSizeBytes: pdfBuffer.length,
+          fileUrl: `/uploads/${fileName}`,
+          uploadedById: req.user?.userId || 'system',
+        },
+      })
+      assetId = asset.id
+
+      await prisma.applicant.update({
+        where: { id: app.id },
+        data: { offerLetterAssetId: assetId },
+      })
+
+      if (emailService.isConfigured()) {
+        await emailService.sendOfferLetterEmail(
+          app.email,
+          app.fullName,
+          app.programme.name,
+          offerRef!,
+          pdfBuffer
+        )
+        await prisma.applicant.update({
+          where: { id: app.id },
+          data: { offerLetterSentAt: new Date() },
+        })
+      }
+    } catch (err) {
+      console.error('[Admissions] Failed to generate/send offer letter:', err)
+    }
+  }
+
   res.json({
     success: true,
     data: { application: updated },
     message: action === 'accepted'
-      ? 'Application accepted. Student has been notified to accept the offer.'
+      ? 'Application accepted. Offer letter generated and sent to applicant.'
       : `Application ${action} successfully.`,
   })
 })

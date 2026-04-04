@@ -6,6 +6,7 @@ import {
 } from 'antd'
 import {
   Settings, Bot, Shield, Database, TestTube, Save, CheckCircle, XCircle, RefreshCw,
+  Mail,
 } from 'lucide-react'
 import { apiClient } from '@/lib/apiClient'
 import { useUIStore } from '@/stores/uiStore'
@@ -24,6 +25,17 @@ interface AiConfig {
   maxTokens: number
 }
 
+interface EmailConfig {
+  enabled: boolean
+  host: string
+  port: number
+  secure: boolean
+  user: string
+  pass: string
+  fromName: string
+  fromAddress: string
+}
+
 const PROVIDER_MODELS: Record<string, string[]> = {
   openai:    ['gpt-4o', 'gpt-4o-mini', 'gpt-4-turbo', 'gpt-3.5-turbo'],
   anthropic: ['claude-3-5-sonnet-20241022', 'claude-3-5-haiku-20241022', 'claude-3-opus-20240229'],
@@ -39,6 +51,7 @@ const PROVIDER_DEFAULTS: Record<string, string> = {
 const SettingsPage: React.FC = () => {
   const { t } = useTranslation()
   const [testResult, setTestResult] = useState<{ success: boolean; message: string } | null>(null)
+  const [emailTestResult, setEmailTestResult] = useState<{ success: boolean; message: string } | null>(null)
   const addToast = useUIStore(s => s.addToast)
   const qc       = useQueryClient()
 
@@ -53,6 +66,13 @@ const SettingsPage: React.FC = () => {
     baseUrl: '', systemPrompt: '', temperature: 0.7, maxTokens: 2048,
   })
 
+  const [emailForm, setEmailForm] = useState<EmailConfig>({
+    enabled: false, host: 'smtp.gmail.com', port: 587, secure: false,
+    user: '', pass: '', fromName: 'UNISSA', fromAddress: 'noreply@unissa.edu.bn',
+  })
+
+  const [testEmailAddress, setTestEmailAddress] = useState('')
+
   const { isLoading: aiLoading, data: aiData } = useQuery<AiConfig>({
     queryKey: ['admin', 'ai-config'],
     queryFn: async () => {
@@ -61,6 +81,15 @@ const SettingsPage: React.FC = () => {
     },
   })
   useEffect(() => { if (aiData) setAiForm(aiData) }, [aiData])
+
+  const { data: emailData } = useQuery<EmailConfig>({
+    queryKey: ['admin', 'email-config'],
+    queryFn: async () => {
+      const { data } = await apiClient.get('/admin/email-config')
+      return data.data
+    },
+  })
+  useEffect(() => { if (emailData) setEmailForm(emailData) }, [emailData])
 
   const [resetDone, setResetDone] = useState(false)
 
@@ -90,6 +119,25 @@ const SettingsPage: React.FC = () => {
     },
     onError: (e: any) => {
       setTestResult({ success: false, message: e.response?.data?.message ?? t('settings.testFailed') })
+    },
+  })
+
+  const saveEmailMutation = useMutation({
+    mutationFn: (cfg: Partial<EmailConfig>) => apiClient.put('/admin/email-config', cfg),
+    onSuccess: () => {
+      addToast({ type: 'success', message: t('settings.emailSaveSuccess') })
+      qc.invalidateQueries({ queryKey: ['admin', 'email-config'] })
+    },
+    onError: (e: any) => addToast({ type: 'error', message: e.response?.data?.message ?? t('settings.saveFailed') }),
+  })
+
+  const testEmailMutation = useMutation({
+    mutationFn: (to: string) => apiClient.post('/admin/email-test', { to }),
+    onSuccess: (res) => {
+      setEmailTestResult({ success: true, message: res.data.message ?? t('settings.emailTestSuccess') })
+    },
+    onError: (e: any) => {
+      setEmailTestResult({ success: false, message: e.response?.data?.error ?? e.response?.data?.message ?? t('settings.emailTestFailed') })
     },
   })
 
@@ -325,6 +373,145 @@ const SettingsPage: React.FC = () => {
     </div>
   )
 
+  const emailTab = (
+    <div className={styles.tabContent}>
+      <Card title={t('settings.emailConfig')} className={styles.configCard}>
+        <div className={styles.enableRow}>
+          <label className={styles.label}>{t('settings.enableEmail')}</label>
+          <div className={styles.toggleGroup}>
+            <Switch
+              checked={emailForm.enabled}
+              onChange={checked => setEmailForm(f => ({ ...f, enabled: checked }))}
+            />
+            <span className={styles.toggleLabel}>
+              {emailForm.enabled ? t('settings.emailEnabled') : t('settings.emailDisabled')}
+            </span>
+          </div>
+        </div>
+
+        <div className={styles.formGrid}>
+          <div className={styles.formGroup}>
+            <label className={styles.label}>{t('settings.smtpHost')}</label>
+            <AntInput
+              placeholder="smtp.gmail.com"
+              value={emailForm.host}
+              onChange={e => setEmailForm(f => ({ ...f, host: e.target.value }))}
+            />
+          </div>
+
+          <div className={styles.formGroup}>
+            <label className={styles.label}>{t('settings.smtpPort')}</label>
+            <InputNumber
+              min={1} max={65535}
+              style={{ width: '100%' }}
+              value={emailForm.port}
+              onChange={val => setEmailForm(f => ({ ...f, port: val ?? 587 }))}
+            />
+          </div>
+
+          <div className={styles.formGroup}>
+            <label className={styles.label}>{t('settings.smtpUser')}</label>
+            <AntInput
+              placeholder="your-email@gmail.com"
+              value={emailForm.user}
+              onChange={e => setEmailForm(f => ({ ...f, user: e.target.value }))}
+            />
+          </div>
+
+          <div className={styles.formGroup}>
+            <label className={styles.label}>{t('settings.smtpPassword')}</label>
+            <AntInput.Password
+              placeholder="••••••••"
+              value={emailForm.pass}
+              onChange={e => setEmailForm(f => ({ ...f, pass: e.target.value }))}
+            />
+          </div>
+
+          <div className={styles.formGroup}>
+            <label className={styles.label}>{t('settings.fromName')}</label>
+            <AntInput
+              placeholder="UNISSA"
+              value={emailForm.fromName}
+              onChange={e => setEmailForm(f => ({ ...f, fromName: e.target.value }))}
+            />
+          </div>
+
+          <div className={styles.formGroup}>
+            <label className={styles.label}>{t('settings.fromAddress')}</label>
+            <AntInput
+              placeholder="noreply@unissa.edu.bn"
+              value={emailForm.fromAddress}
+              onChange={e => setEmailForm(f => ({ ...f, fromAddress: e.target.value }))}
+            />
+          </div>
+
+          <div className={styles.formGroup}>
+            <label className={styles.label}>{t('settings.useSSL')}</label>
+            <div className={styles.toggleGroup}>
+              <Switch
+                checked={emailForm.secure}
+                onChange={checked => setEmailForm(f => ({ ...f, secure: checked }))}
+              />
+              <span className={styles.toggleLabel}>
+                {emailForm.secure ? t('settings.sslEnabled') : t('settings.sslDisabled')}
+              </span>
+            </div>
+          </div>
+        </div>
+
+        {emailTestResult && (
+          <div className={`${styles.testResult} ${emailTestResult.success ? styles.testOk : styles.testFail}`}>
+            {emailTestResult.success ? <CheckCircle size={16} /> : <XCircle size={16} />}
+            <span>{emailTestResult.message}</span>
+          </div>
+        )}
+
+        <div className={styles.actions}>
+          <AntInput
+            placeholder={t('settings.testEmailAddress')}
+            value={testEmailAddress}
+            onChange={e => setTestEmailAddress(e.target.value)}
+            style={{ width: 250, marginRight: 8 }}
+          />
+          <Button
+            variant="secondary"
+            icon={<TestTube size={14} />}
+            onClick={() => { setEmailTestResult(null); testEmailMutation.mutate(testEmailAddress) }}
+            loading={testEmailMutation.isPending}
+            disabled={!testEmailAddress || !emailForm.enabled}
+          >
+            {t('settings.sendTestEmail')}
+          </Button>
+          <Button
+            icon={<Save size={14} />}
+            onClick={() => saveEmailMutation.mutate(emailForm)}
+            loading={saveEmailMutation.isPending}
+          >
+            {t('settings.saveConfig')}
+          </Button>
+        </div>
+      </Card>
+
+      <Card title={t('settings.emailGuide')} className={styles.guideCard}>
+        <div className={styles.guideList}>
+          {[
+            { icon: '📧', titleKey: 'emailOfferTitle', descKey: 'emailOfferDesc' },
+            { icon: '🔐', titleKey: 'emailAccountTitle', descKey: 'emailAccountDesc' },
+            { icon: '💳', titleKey: 'emailPaymentTitle', descKey: 'emailPaymentDesc' },
+          ].map(g => (
+            <div key={g.titleKey} className={styles.guideItem}>
+              <div className={styles.guideIcon}>{g.icon}</div>
+              <div>
+                <div className={styles.guideTitle}>{t(`settings.${g.titleKey}`)}</div>
+                <div className={styles.guideDesc}>{t(`settings.${g.descKey}`)}</div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </Card>
+    </div>
+  )
+
   const demoTab = (
     <div className={styles.tabContent}>
       <Card title={t('settings.demoInitTitle')} className={styles.configCard}>
@@ -361,6 +548,7 @@ const SettingsPage: React.FC = () => {
 
   const tabItems = [
     { key: 'ai',       label: <span><Bot size={14} style={{ marginRight: 6, verticalAlign: 'middle' }} />{t('settings.aiConfig')}</span>,      children: aiTab },
+    { key: 'email',    label: <span><Mail size={14} style={{ marginRight: 6, verticalAlign: 'middle' }} />{t('settings.emailConfig')}</span>,    children: emailTab },
     { key: 'system',   label: <span><Database size={14} style={{ marginRight: 6, verticalAlign: 'middle' }} />{t('settings.systemConfig')}</span>, children: systemTab },
     { key: 'security', label: <span><Shield size={14} style={{ marginRight: 6, verticalAlign: 'middle' }} />{t('settings.security')}</span>,      children: securityTab },
     { key: 'demo',     label: <span><RefreshCw size={14} style={{ marginRight: 6, verticalAlign: 'middle' }} />{t('settings.demoInitTab')}</span>, children: demoTab },

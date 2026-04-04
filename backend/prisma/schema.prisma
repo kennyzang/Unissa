@@ -207,8 +207,12 @@ model Applicant {
   eligibilityCheckResult String? 
   officerRemarks         String? 
   decisionMadeAt         DateTime?
+  offerRef               String?
   offerLetterAssetId     String?
   offerLetterAsset       FileAsset? @relation("OfferLetter", fields: [offerLetterAssetId], references: [id])
+  offerLetterSentAt      DateTime?
+  accountCreated         Boolean  @default(false)
+  accountCreatedAt       DateTime?
   createdAt              DateTime @default(now())
 
   subjectGrades  ApplicantSubjectGrade[]
@@ -521,7 +525,8 @@ model FeeInvoice {
   lateFeeAccrued       Float    @default(0.00)
   generatedAt          DateTime @default(now())
 
-  payments Payment[]
+  payments     Payment[]
+  adjustments  InvoiceAdjustment[]
 
   @@map("fee_invoices")
 }
@@ -1092,4 +1097,37 @@ model SystemConfig {
   updatedAt   DateTime @updatedAt
 
   @@map("system_configs")
+}
+
+model EmailLog {
+  id           String    @id @default(cuid())
+  to           String
+  subject      String
+  body         String
+  status       String    @default("pending")
+  errorMessage String?
+  messageId    String?
+  sentAt       DateTime?
+  retries      Int       @default(0)
+  createdAt    DateTime  @default(now())
+
+  @@map("email_logs")
+}
+
+model InvoiceAdjustment {
+  id              String   @id @default(cuid())
+  invoiceId       String
+  invoice         FeeInvoice @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  adjustmentType  String
+  amount          Float
+  reason          String
+  previousAmount  Float
+  newAmount       Float
+  previousStatus  String
+  newStatus       String
+  operatedBy      String
+  operatedAt      DateTime @default(now())
+  createdAt       DateTime @default(now())
+
+  @@map("invoice_adjustments")
 }
