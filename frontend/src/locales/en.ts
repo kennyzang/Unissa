@@ -72,6 +72,7 @@ const en = {
     courseSelection: 'Course Selection',
     myGrades: 'My Grades',
     myPayment: 'My Payment',
+    campusCard: 'Campus Card',
     campusServices: 'Campus Services',
     myLearning: 'My Learning',
     myCourses: 'My Courses',

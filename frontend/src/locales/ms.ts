@@ -68,6 +68,7 @@ const ms = {
     courseSelection: 'Pilihan Kursus',
     myGrades: 'Markah Saya',
     myPayment: 'Bayaran Saya',
+    campusCard: 'Kad Kampus',
     campusServices: 'Perkhidmatan Kampus',
     myLearning: 'Pembelajaran Saya',
     myCourses: 'Kursus Saya',

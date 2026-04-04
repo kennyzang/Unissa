@@ -130,8 +130,8 @@ const CampusServicesPage: React.FC = () => {
       detail: services?.campusCardNo ?? t('campusServices.notGenerated'),
       subDetail: services?.campusCardNo ? t('campusServices.cardAssigned') : t('campusServices.completeRegistrationFirst'),
       color: '#FF7D00',
-      actionLabel: null,
-      onAction: null,
+      actionLabel: services?.campusCardNo ? t('campusServices.topUp', { defaultValue: 'Top Up' }) : null,
+      onAction: services?.campusCardNo ? () => navigate('/student/campus-card') : null,
     },
     {
       id: 'email',

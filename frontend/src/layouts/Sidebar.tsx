@@ -43,6 +43,7 @@ const NAV_STRUCTURE: NavGroup[] = [
       { key: 'courses-reg', labelKey: 'nav.courseSelection', path: '/student/courses', icon: '📚', roles: ['student'] },
       { key: 'transcript',  labelKey: 'nav.myGrades',      path: '/student/transcript',icon: '📊', roles: ['student'] },
       { key: 'statement',   labelKey: 'nav.myPayment',     path: '/finance/statement', icon: '💰', roles: ['student'] },
+      { key: 'campus-card', labelKey: 'nav.campusCard',    path: '/student/campus-card', icon: '💳', roles: ['student'] },
       { key: 'campus',      labelKey: 'nav.campusServices', path: '/campus/services',  icon: '🏡', roles: ['student'] },
     ],
   },
