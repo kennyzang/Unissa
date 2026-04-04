@@ -130,6 +130,58 @@ async function main() {
     update: {},
   })
 
+  // ── Bulk Staff Creation (Total: 312 active staff) ──────────────
+  const staffDepts = [deptIFN.id, deptADM.id, deptFIN.id, deptARA.id, deptFND.id]
+  const staffDesignations = ['Lecturer', 'Senior Lecturer', 'Associate Professor', 'Administrative Officer', 'Finance Officer', 'Lab Technician', 'Research Assistant', 'Department Secretary']
+  const firstNames = ['Ahmad', 'Muhammad', 'Haji', 'Abdul', 'Mohd', 'Ismail', 'Hassan', 'Ibrahim', 'Yusof', 'Rahman', 'Ali', 'Omar', 'Khalid', 'Faisal', 'Nasir', 'Zainal', 'Hamid', 'Aziz', 'Karim', 'Latif']
+  const lastNames = ['Bin Haji Ali', 'Bin Mohd Said', 'Bin Abdul Rahman', 'Bin Haji Ibrahim', 'Bin Abdullah', 'Bin Haji Hassan', 'Bin Mohd Yusof', 'Bin Haji Ahmad', 'Bin Abdul Latif', 'Bin Haji Mahmud', 'Binti Haji Ali', 'Binti Mohd Said', 'Binti Abdul Rahman', 'Binti Haji Ibrahim', 'Binti Abdullah', 'Binti Haji Hassan', 'Binti Mohd Yusof', 'Binti Haji Ahmad', 'Binti Abdul Latif', 'Binti Haji Mahmud']
+  
+  for (let i = 8; i <= 312; i++) {
+    const staffId = `STF-${String(i).padStart(3, '0')}`
+    const firstName = firstNames[(i - 8) % firstNames.length]
+    const lastName = lastNames[(i - 8) % lastNames.length]
+    const fullName = `${firstName} ${lastName}`
+    const deptId = staffDepts[(i - 8) % staffDepts.length]
+    const designation = staffDesignations[(i - 8) % staffDesignations.length]
+    const salary = 2800 + ((i - 8) % 15) * 200
+    
+    const existingUser = await prisma.user.findUnique({ where: { username: `staff${i}` } })
+    let userId: string
+    if (existingUser) {
+      userId = existingUser.id
+    } else {
+      const newUser = await prisma.user.create({
+        data: {
+          username: `staff${i}`,
+          passwordHash: hash(PASS),
+          displayName: fullName,
+          role: designation.includes('Lecturer') || designation.includes('Professor') ? 'lecturer' : 'manager',
+          email: `staff${i}@unissa.edu.bn`,
+        },
+      })
+      userId = newUser.id
+    }
+
+    await prisma.staff.upsert({
+      where: { staffId },
+      create: {
+        staffId,
+        userId,
+        departmentId: deptId,
+        fullName,
+        icPassport: `IC-${staffId}`,
+        dateOfBirth: new Date(1980 + ((i - 8) % 15), ((i - 8) % 12), ((i - 8) % 28) + 1),
+        gender: (i - 8) % 3 === 0 ? 'female' : 'male',
+        designation,
+        employmentType: 'permanent',
+        joinDate: new Date(2018 + ((i - 8) % 8), ((i - 8) % 12), 1),
+        payrollBasicSalary: salary,
+        lmsInstructorActive: designation.includes('Lecturer') || designation.includes('Professor'),
+      },
+      update: {},
+    })
+  }
+
   // ── Payroll Records (all staff — last 3 months for Payroll Management demo) ─
   // Brunei statutory: TAP employee 5% + SCP employee 3.5% = 8.5% of basic salary
   const payrollStaff = [
@@ -184,6 +236,38 @@ async function main() {
         id: lr.id, staffId: lr.staffId, leaveType: lr.type,
         startDate: new Date(lr.start), endDate: new Date(lr.end),
         durationDays: lr.days, reason: lr.reason,
+        coveringOfficerId: staffManager.id,
+        status: 'approved', l1ApproverId: uAdmin.id, l1ActedAt: new Date('2026-03-28'),
+      },
+      update: {},
+    })
+    await prisma.staff.update({ where: { id: lr.staffId }, data: { status: 'on_leave' } })
+  }
+  // 2 additional staff on leave today (total 7)
+  const staffOnLeave1 = await prisma.staff.findFirst({ where: { staffId: 'STF-008' } })
+  const staffOnLeave2 = await prisma.staff.findFirst({ where: { staffId: 'STF-009' } })
+  if (staffOnLeave1) {
+    await prisma.staff.update({ where: { id: staffOnLeave1.id }, data: { status: 'on_leave' } })
+    await prisma.leaveRequest.upsert({
+      where: { id: 'lr-006' },
+      create: {
+        id: 'lr-006', staffId: staffOnLeave1.id, leaveType: 'annual',
+        startDate: new Date('2026-04-01'), endDate: new Date('2026-04-03'),
+        durationDays: 3, reason: 'Annual leave',
+        coveringOfficerId: staffManager.id,
+        status: 'approved', l1ApproverId: uAdmin.id, l1ActedAt: new Date('2026-03-28'),
+      },
+      update: {},
+    })
+  }
+  if (staffOnLeave2) {
+    await prisma.staff.update({ where: { id: staffOnLeave2.id }, data: { status: 'on_leave' } })
+    await prisma.leaveRequest.upsert({
+      where: { id: 'lr-007' },
+      create: {
+        id: 'lr-007', staffId: staffOnLeave2.id, leaveType: 'medical',
+        startDate: new Date('2026-04-01'), endDate: new Date('2026-04-01'),
+        durationDays: 1, reason: 'Medical leave',
         coveringOfficerId: staffManager.id,
         status: 'approved', l1ApproverId: uAdmin.id, l1ActedAt: new Date('2026-03-28'),
       },
@@ -691,7 +775,7 @@ async function main() {
     'Hafizuddin Bin Abdullah', 'Maisarah Binti Ismail',
   ]
   for (let d = 1; d <= 12; d++) {
-    const isAccepted = d <= 12
+    const isAccepted = d <= 8
     await prisma.applicant.upsert({
       where: { applicationRef: `APP-2026-T${String(d).padStart(2, '0')}` },
       create: {
@@ -713,6 +797,83 @@ async function main() {
         status: isAccepted ? 'accepted' : 'under_review',
         submittedAt: todayAt,
         decisionMadeAt: isAccepted ? todayAt : null,
+      },
+      update: {},
+    })
+  }
+
+  // ── Bulk Student Creation (Total: 1,204 active students) ──────
+  const studentFirstNames = ['Ahmad', 'Muhammad', 'Haji', 'Abdul', 'Mohd', 'Ismail', 'Hassan', 'Ibrahim', 'Yusof', 'Rahman', 'Ali', 'Omar', 'Khalid', 'Faisal', 'Nasir', 'Zainal', 'Hamid', 'Aziz', 'Karim', 'Latif', 'Siti', 'Nurul', 'Fatimah', 'Aminah', 'Zainab', 'Khadijah', 'Maryam', 'Aishah', 'Hajar', 'Sarah']
+  const studentLastNames = ['Bin Haji Ali', 'Bin Mohd Said', 'Bin Abdul Rahman', 'Bin Haji Ibrahim', 'Bin Abdullah', 'Bin Haji Hassan', 'Bin Mohd Yusof', 'Bin Haji Ahmad', 'Bin Abdul Latif', 'Bin Haji Mahmud', 'Binti Haji Ali', 'Binti Mohd Said', 'Binti Abdul Rahman', 'Binti Haji Ibrahim', 'Binti Abdullah', 'Binti Haji Hassan', 'Binti Mohd Yusof', 'Binti Haji Ahmad', 'Binti Abdul Latif', 'Binti Haji Mahmud']
+  const programmes = [progBSC.id, progBA.id]
+  const intakes = [intakeBSC.id, intakeBA.id]
+  
+  for (let i = 37; i <= 1204; i++) {
+    const studentId = `2026${String(i).padStart(4, '0')}`
+    const firstName = studentFirstNames[(i - 37) % studentFirstNames.length]
+    const lastName = studentLastNames[(i - 37) % studentLastNames.length]
+    const fullName = `${firstName} ${lastName}`
+    const progIdx = (i - 37) % 2
+    
+    const existingUser = await prisma.user.findUnique({ where: { username: `student${i}` } })
+    let userId: string
+    if (existingUser) {
+      userId = existingUser.id
+    } else {
+      const newUser = await prisma.user.create({
+        data: {
+          username: `student${i}`,
+          passwordHash: hash(PASS),
+          displayName: fullName,
+          role: 'student',
+          email: `student${i}@unissa.edu.bn`,
+        },
+      })
+      userId = newUser.id
+    }
+
+    const applicant = await prisma.applicant.upsert({
+      where: { icPassport: `IC-${studentId}` },
+      create: {
+        applicationRef: `APP-2026-${studentId}`,
+        fullName,
+        icPassport: `IC-${studentId}`,
+        dateOfBirth: new Date(2000 + ((i - 37) % 6), ((i - 37) % 12), ((i - 37) % 28) + 1),
+        gender: (i - 37) % 3 === 0 ? 'female' : 'male',
+        nationality: 'Brunei Darussalam',
+        email: `student${i}@unissa.edu.bn`,
+        mobile: `+673-71${String(i).padStart(5, '0')}`,
+        homeAddress: 'Bandar Seri Begawan, Brunei Darussalam',
+        highestQualification: 'a_level',
+        previousInstitution: 'Sekolah Menengah Brunei',
+        yearOfCompletion: 2025,
+        intakeId: intakes[progIdx],
+        programmeId: programmes[progIdx],
+        modeOfStudy: 'full_time',
+        status: 'accepted',
+        submittedAt: new Date('2026-01-15'),
+        decisionMadeAt: new Date('2026-02-01'),
+      },
+      update: {},
+    })
+
+    await prisma.student.upsert({
+      where: { studentId },
+      create: {
+        studentId,
+        userId,
+        applicantId: applicant.id,
+        programmeId: programmes[progIdx],
+        intakeId: intakes[progIdx],
+        modeOfStudy: 'full_time',
+        nationality: 'Brunei Darussalam',
+        studentType: 'standard',
+        currentCgpa: 2.5 + ((i - 37) % 20) * 0.1,
+        campusCardNo: `CC-${studentId}`,
+        libraryAccountActive: true,
+        emailAccountActive: true,
+        status: 'active',
+        enrolledAt: new Date('2026-04-01'),
       },
       update: {},
     })
