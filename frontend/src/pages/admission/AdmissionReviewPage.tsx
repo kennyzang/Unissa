@@ -76,6 +76,7 @@ const AdmissionReviewPage: React.FC = () => {
   const [selected, setSelected] = useState<Application | null>(null)
   const [decisionModal, setDecisionModal] = useState<{ app: Application; action: 'accepted' | 'rejected' | 'waitlisted' } | null>(null)
   const [remarks, setRemarks] = useState('')
+  const [previewImage, setPreviewImage] = useState<{ url: string; name: string } | null>(null)
   const addToast = useUIStore(s => s.addToast)
   const qc = useQueryClient()
 
@@ -113,7 +114,11 @@ const AdmissionReviewPage: React.FC = () => {
 
   const handlePreviewDocument = (doc: ApplicantDocument) => {
     if (doc.asset?.fileUrl) {
-      window.open(doc.asset.fileUrl, '_blank')
+      if (doc.asset?.mimeType?.startsWith('image/')) {
+        setPreviewImage({ url: doc.asset.fileUrl, name: doc.asset.originalName || doc.asset.fileName })
+      } else {
+        window.open(doc.asset.fileUrl, '_blank')
+      }
     }
   }
 
@@ -337,6 +342,71 @@ const AdmissionReviewPage: React.FC = () => {
           </>
         )}
       </Modal>
+
+      {/* Image Preview Modal */}
+      {previewImage && (
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            background: 'rgba(0, 0, 0, 0.75)',
+            zIndex: 9999,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            cursor: 'zoom-out',
+          }}
+          onClick={() => setPreviewImage(null)}
+        >
+          <div style={{ position: 'relative', maxWidth: '90vw', maxHeight: '90vh' }}>
+            <img
+              src={previewImage.url}
+              alt={previewImage.name}
+              style={{
+                maxWidth: '90vw',
+                maxHeight: '85vh',
+                borderRadius: 8,
+                boxShadow: '0 8px 32px rgba(0, 0, 0, 0.5)',
+              }}
+              onClick={e => e.stopPropagation()}
+            />
+            <div
+              style={{
+                position: 'absolute',
+                top: -40,
+                right: 0,
+                color: 'white',
+                fontSize: 14,
+                fontWeight: 500,
+                textShadow: '0 1px 3px rgba(0,0,0,0.5)',
+              }}
+            >
+              {previewImage.name}
+            </div>
+            <button
+              onClick={() => setPreviewImage(null)}
+              style={{
+                position: 'absolute',
+                top: -40,
+                left: 0,
+                background: 'rgba(255, 255, 255, 0.2)',
+                border: 'none',
+                borderRadius: '50%',
+                width: 32,
+                height: 32,
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                color: 'white',
+                fontSize: 18,
+              }}
+            >
+              ×
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
