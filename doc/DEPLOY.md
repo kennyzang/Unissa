@@ -252,6 +252,200 @@ server {
 
 ---
 
+## 部署注意事项与故障排除
+
+> 本节记录线上部署过程中遇到的常见问题及解决方案，持续更新。
+
+### 1. 上传文件（图片/附件）无法显示
+
+**症状**：
+- 用户上传作业附件后，图片无法在前端显示
+- 浏览器控制台显示 `/uploads/xxx` 路径 404 错误
+
+**原因**：
+- Nginx 配置缺少 `/uploads` 静态文件路径
+- Nginx 容器未挂载上传文件存储卷
+
+**解决方案**：
+
+1. **检查 docker-compose.yml 是否挂载了上传目录**：
+
+```yaml
+# nginx 服务需要挂载 uploads_data 卷
+nginx:
+  volumes:
+    - uploads_data:/app/uploads:ro  # 必须添加此挂载
+```
+
+2. **检查 nginx.conf 是否配置了静态文件服务**：
+
+```nginx
+# 在 server 块中添加
+location /uploads/ {
+    alias /app/uploads/;
+    expires 1y;
+    add_header Cache-Control "public, immutable";
+}
+```
+
+3. **重新部署**：
+
+```bash
+docker-compose down
+docker-compose build --no-cache
+docker-compose up -d
+```
+
+4. **验证文件访问**：
+
+```bash
+# 查看上传目录是否有文件
+docker exec unissa-backend ls -la /app/uploads/submissions/
+
+# 直接访问测试
+curl -I https://your-domain.com/uploads/submissions/test.jpg
+```
+
+**预防措施**：
+- 部署前检查 `docker-compose.yml` 中的 volumes 配置
+- 部署后测试文件上传功能，确保图片可正常显示
+
+---
+
+### 2. 数据库迁移后数据丢失
+
+**症状**：
+- 重新部署后，之前的数据消失
+- 用户无法登录，提示用户不存在
+
+**原因**：
+- SQLite 数据库文件未持久化到 Docker 卷
+- 执行了 `docker-compose down -v` 删除了数据卷
+
+**解决方案**：
+
+1. **确保使用 named volumes**：
+
+```yaml
+volumes:
+  db_data:
+    name: unissa_db_data  # 命名卷，不会轻易被删除
+```
+
+2. **定期备份数据库**：
+
+```bash
+# 备份
+docker run --rm \
+  -v unissa_db_data:/data \
+  -v $(pwd):/backup \
+  alpine tar -czf /backup/db-backup-$(date +%Y%m%d).tar.gz /data
+
+# 恢复
+docker run --rm \
+  -v unissa_db_data:/data \
+  -v $(pwd):/backup \
+  alpine tar -xzf /backup/db-backup-20260325.tar.gz -C /
+```
+
+**预防措施**：
+- 禁止使用 `docker-compose down -v`（会删除卷）
+- 部署前先备份数据库
+- 生产环境考虑使用 PostgreSQL/MySQL 替代 SQLite
+
+---
+
+### 3. 前端页面空白或 API 请求失败
+
+**症状**：
+- 页面加载空白
+- 控制台显示 CORS 错误或 API 500 错误
+
+**排查步骤**：
+
+```bash
+# 1. 检查后端服务状态
+docker compose ps
+docker compose logs backend --tail 100
+
+# 2. 检查后端健康状态
+curl http://localhost:4000/api/v1/health
+
+# 3. 检查环境变量配置
+docker exec unissa-backend env | grep -E "JWT_SECRET|CORS_ORIGIN|DATABASE_URL"
+
+# 4. 检查 Nginx 代理配置
+docker exec unissa-nginx cat /etc/nginx/conf.d/default.conf | grep -A5 "/api"
+```
+
+**常见原因**：
+- `JWT_SECRET` 未配置或配置错误
+- `CORS_ORIGIN` 与实际域名不匹配
+- 数据库文件权限问题
+
+---
+
+### 4. Docker 镜像构建失败
+
+**症状**：
+- `docker-compose build` 报错
+- npm install 失败或超时
+
+**解决方案**：
+
+```bash
+# 清理 Docker 缓存重新构建
+docker-compose build --no-cache
+
+# 如果是网络问题，配置 Docker 镜像加速
+# 编辑 /etc/docker/daemon.json
+{
+  "registry-mirrors": [
+    "https://registry.docker-cn.com"
+  ]
+}
+systemctl restart docker
+```
+
+---
+
+### 5. SSL 证书问题
+
+**症状**：
+- 浏览器提示证书无效或过期
+- HTTPS 无法访问
+
+**解决方案**：
+
+```bash
+# 检查证书文件
+ls -la nginx/ssl/
+# 应该有 fullchain.pem 和 privkey.pem
+
+# 检查证书有效期
+openssl x509 -in nginx/ssl/fullchain.pem -noout -dates
+
+# 证书续签后重启 Nginx
+docker compose restart nginx
+```
+
+---
+
+## 故障排除检查清单
+
+部署完成后，按以下清单逐一验证：
+
+| 检查项 | 命令/操作 | 预期结果 |
+|--------|----------|----------|
+| 后端健康检查 | `curl https://域名/api/v1/health` | 返回 `{"status":"ok"}` |
+| 前端页面加载 | 浏览器访问首页 | 页面正常显示，无 JS 错误 |
+| 用户登录 | 使用测试账号登录 | 登录成功，跳转到仪表盘 |
+| 文件上传 | 上传一张图片 | 图片能正常显示 |
+| API 请求 | 查看任意数据列表 | 数据正常加载 |
+| HTTPS | 浏览器地址栏 | 显示锁图标，无证书警告 |
+
+---
+
 ## 文件清单
 
 ```

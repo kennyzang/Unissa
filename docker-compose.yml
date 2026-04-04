@@ -46,6 +46,7 @@ services:
     volumes:
       - ./nginx/ssl:/etc/nginx/ssl:ro          # SSL 证书目录（只读）
       - ./nginx/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+      - uploads_data:/app/uploads:ro           # 上传文件（只读访问）
     networks:
       - unissa-net
     depends_on:
