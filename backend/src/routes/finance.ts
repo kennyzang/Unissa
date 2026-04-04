@@ -32,18 +32,46 @@ async function activateStudentServices(studentId: string, userId: string) {
     await prisma.libraryAccount.create({
       data: {
         studentId,
-        cardNumber: `LIB-${student.studentId}`,
-        status: 'active',
-        borrowedBooks: 0,
-        overdueBooks: 0,
-        fines: 0,
+        accountNo: `LIB-${student.studentId}`,
+        isActive: true,
+        activatedAt: new Date(),
+        booksBorrowed: 0,
+        maxBorrow: 10,
       },
     })
+    
+    const libraryGuide = `
+📚 Library Account Activated Successfully!
+
+Your library account has been activated. Here's how to use the library services:
+
+📖 Borrowing Books:
+• Present your student ID at the library counter
+• Maximum 10 books can be borrowed at a time
+• Loan period: 14 days (renewable once)
+• Renew online via Student Portal > Library
+
+🔍 Online Resources:
+• Access e-books and journals via library.unissa.edu.bn
+• Use your student ID to login
+
+⏰ Library Hours:
+• Monday-Friday: 8:00 AM - 9:00 PM
+• Saturday: 9:00 AM - 5:00 PM
+• Sunday: Closed
+
+📞 Need Help?
+• Library Help Desk: +673-2461-001
+• Email: library@unissa.edu.bn
+
+Happy reading! 🎓
+    `.trim()
+    
     notifications.push(
       createNotification(
         userId,
         'Library Account Activated',
-        'Your library account has been activated. You can now borrow books from the university library.',
+        libraryGuide,
         'success'
       )
     )
@@ -57,11 +85,44 @@ async function activateStudentServices(studentId: string, userId: string) {
         status: 'active',
       },
     })
+    
+    const campusCardGuide = `
+💳 Campus Card Activated Successfully!
+
+Your campus card has been activated. Here's how to use it:
+
+💰 Top-up Your Card:
+• Visit the Finance Office (Building A, Ground Floor)
+• Use the self-service kiosks around campus
+• Top-up online via Student Portal > Campus Card
+
+🏪 Where to Use:
+• Cafeteria and food courts
+• Campus bookshop
+• Printing and photocopying services
+• Parking fees
+
+🔒 Security Tips:
+• Keep your card safe at all times
+• Report lost cards immediately to Finance Office
+• Maximum balance: BND 500
+
+📊 Check Balance:
+• Student Portal > Campus Services > Campus Card
+• Any card reader terminal
+
+📞 Need Help?
+• Finance Office: +673-2461-002
+• Email: finance@unissa.edu.bn
+
+Welcome to cashless campus life! 🎓
+    `.trim()
+    
     notifications.push(
       createNotification(
         userId,
         'Campus Card Activated',
-        'Your campus card has been activated. You can now top up your card and use it for campus services.',
+        campusCardGuide,
         'success'
       )
     )
@@ -185,10 +246,37 @@ router.post('/payments', async (req: AuthRequest, res: Response) => {
   })
 
   if (student) {
+    const paymentGuide = `
+✅ Payment Successful!
+
+Your tuition fee payment has been processed successfully.
+
+💰 Payment Details:
+• Amount: BND ${amount.toFixed(2)}
+• Method: ${methodLabel[method] ?? method}
+• Transaction Ref: ${txRef}
+• Invoice No: ${invoice.invoiceNo}
+• Date: ${new Date().toLocaleDateString()}
+
+📄 Receipt:
+• Download your receipt from Student Portal > Finance > Payment History
+
+🎓 Next Steps:
+• Your enrollment is now confirmed
+• Check your registered courses in Student Portal
+• Library and Campus Card services will be activated automatically
+
+📞 Questions?
+• Finance Office: +673-2461-002
+• Email: finance@unissa.edu.bn
+
+Thank you for your payment! 🎓
+    `.trim()
+    
     await createNotification(
       student.userId,
       'Payment Successful',
-      `Your payment of BND ${amount.toFixed(2)} has been successfully processed. Transaction Reference: ${txRef}`,
+      paymentGuide,
       'success'
     )
 

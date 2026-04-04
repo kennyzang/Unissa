@@ -121,7 +121,34 @@ router.post('/top-up', authenticate, async (req: AuthRequest, res: Response) => 
     data: {
       userId: student.userId,
       subject: 'Campus Card Top Up Successful',
-      body: `Your campus card has been topped up with BND ${amount.toFixed(2)}. New balance: BND ${newBalance.toFixed(2)}`,
+      body: `
+💳 Campus Card Top Up Successful!
+
+Your campus card has been topped up successfully.
+
+💰 Transaction Details:
+• Amount: BND ${amount.toFixed(2)}
+• Payment Method: ${method.replace('_', ' ').replace(/\b\w/g, (l: string) => l.toUpperCase())}
+• New Balance: BND ${newBalance.toFixed(2)}
+• Date: ${new Date().toLocaleDateString()}
+• Time: ${new Date().toLocaleTimeString()}
+
+📊 Balance Check:
+• Student Portal > Campus Services > Campus Card
+• Any card reader terminal on campus
+
+🏪 Where to Use:
+• Cafeteria and food courts
+• Campus bookshop
+• Printing and photocopying services
+• Parking fees
+
+📞 Need Help?
+• Finance Office: +673-2461-002
+• Email: finance@unissa.edu.bn
+
+Thank you for using Campus Card services! 🎓
+      `.trim(),
       type: 'success',
       isRead: false,
     },
