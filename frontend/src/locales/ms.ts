@@ -1050,6 +1050,10 @@ const ms = {
     addNotes: 'Tambah nota semakan…',
     grantSubmitted: 'Geran dihantar: {{ref}}',
     actionFailed: 'Tindakan gagal',
+    fileFormatError: 'Format fail "{{fileName}}" tidak disokong, hanya format PDF, Word, Excel, TXT yang dibenarkan',
+    fileSizeError: 'Fail "{{fileName}}" melebihi had 5MB',
+    totalSizeError: 'Jumlah saiz fail melebihi had 20MB',
+    maxFilesError: 'Maksimum 10 fail boleh dimuat naik',
   },
 
   aiRisk: {
@@ -1267,6 +1271,16 @@ const ms = {
     attachedFiles: 'Fail Dilampirkan',
     viewFile: 'Lihat',
     noSubmissionContent: 'Tiada kandungan penyerahan tersedia',
+    pendingGrading: 'Menunggu',
+    graded: 'Dinilai',
+    all: 'Semua',
+    teacherGraded: 'Dinilai Pensyarah',
+    aiGradedPending: 'Dinilai AI (Menunggu)',
+    pendingGradingBadge: 'Menunggu',
+    grade: 'Gred',
+    acceptAiScore: 'Terima Skor AI',
+    viewGrade: 'Lihat Gred',
+    gradeAction: 'Nilai',
   },
 
   // Pengurusan Gaji
@@ -1328,6 +1342,20 @@ const ms = {
     noRecords: 'Tiada kursus selesai lagi',
     noRecordsDesc: 'Kursus selesai anda akan muncul di sini setelah dinilai.',
     gradeScale: 'Skala Gred',
+    studentId: 'No. Matrik',
+    course: 'Kursus',
+    universityName: 'UNIVERSITI ISLAM SULTAN SHARIF ALI',
+    transcriptTitle: 'TRANSKRIP AKADEMIK',
+    studentName: 'Nama Pelajar',
+    coursesCompletedLabel: 'Kursus Selesai',
+    code: 'Kod',
+    creditHoursShort: 'JK',
+    grade: 'Gred',
+    points: 'Mata',
+    semester: 'Semester',
+    semesterGpa: 'GPA Semester',
+    cumulativeGpa: 'GPA Kumulatif',
+    creditHoursPassed: 'JK Lulus',
   },
 
   campusCard: {

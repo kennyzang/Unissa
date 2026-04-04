@@ -1075,6 +1075,10 @@ const en = {
     addNotes: 'Add review notes…',
     grantSubmitted: 'Grant submitted: {{ref}}',
     actionFailed: 'Action failed',
+    fileFormatError: 'File "{{fileName}}" format not supported, only PDF, Word, Excel, TXT formats are allowed',
+    fileSizeError: 'File "{{fileName}}" exceeds 5MB limit',
+    totalSizeError: 'Total file size exceeds 20MB limit',
+    maxFilesError: 'Maximum 10 files can be uploaded',
   },
 
   // AI Risk
@@ -1295,6 +1299,16 @@ const en = {
     attachedFiles: 'Attached Files',
     viewFile: 'View',
     noSubmissionContent: 'No submission content available',
+    pendingGrading: 'Pending',
+    graded: 'Graded',
+    all: 'All',
+    teacherGraded: 'Teacher Graded',
+    aiGradedPending: 'AI Graded (Pending)',
+    pendingGradingBadge: 'Pending',
+    grade: 'Grade',
+    acceptAiScore: 'Accept AI Score',
+    viewGrade: 'View Grade',
+    gradeAction: 'Grade',
   },
 
   // Student Transcript
@@ -1313,6 +1327,20 @@ const en = {
     noRecords: 'No completed courses yet',
     noRecordsDesc: 'Your completed courses will appear here once graded.',
     gradeScale: 'Grade Scale',
+    studentId: 'Student ID',
+    course: 'Course',
+    universityName: 'UNIVERSITI ISLAM SULTAN SHARIF ALI',
+    transcriptTitle: 'ACADEMIC TRANSCRIPT',
+    studentName: 'Student Name',
+    coursesCompletedLabel: 'Courses Completed',
+    code: 'Code',
+    creditHoursShort: 'CH',
+    grade: 'Grade',
+    points: 'Points',
+    semester: 'Semester',
+    semesterGpa: 'Semester GPA',
+    cumulativeGpa: 'Cumulative GPA',
+    creditHoursPassed: 'CH Passed',
   },
 
   campusCard: {

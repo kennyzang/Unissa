@@ -82,22 +82,22 @@ const ResearchGrantsPage: React.FC = () => {
       const fileExtension = '.' + file.name.split('.').pop()?.toLowerCase()
       
       if (!allowedTypes.includes(file.type) && !allowedExtensions.includes(fileExtension)) {
-        errors.push(`文件 "${file.name}" 格式不支持，仅支持 PDF、Word、Excel、TXT 格式`)
+        errors.push(t('researchGrants.fileFormatError', { fileName: file.name }))
       }
       
       if (file.size > maxSize) {
-        errors.push(`文件 "${file.name}" 超过5MB限制`)
+        errors.push(t('researchGrants.fileSizeError', { fileName: file.name }))
       }
       
       totalSize += file.size
     })
 
     if (totalSize > maxTotalSize) {
-      errors.push('总文件大小超过20MB限制')
+      errors.push(t('researchGrants.totalSizeError'))
     }
 
     if (files.length > 10) {
-      errors.push('最多只能上传10个文件')
+      errors.push(t('researchGrants.maxFilesError'))
     }
 
     return { valid: errors.length === 0, errors }

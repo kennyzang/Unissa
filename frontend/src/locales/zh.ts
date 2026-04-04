@@ -1065,6 +1065,10 @@ const zh = {
     addNotes: '添加审核备注…',
     grantSubmitted: '基金申请已提交：{{ref}}',
     actionFailed: '操作失败',
+    fileFormatError: '文件 "{{fileName}}" 格式不支持，仅支持 PDF、Word、Excel、TXT 格式',
+    fileSizeError: '文件 "{{fileName}}" 超过5MB限制',
+    totalSizeError: '总文件大小超过20MB限制',
+    maxFilesError: '最多只能上传10个文件',
   },
 
   aiRisk: {
@@ -1282,6 +1286,16 @@ const zh = {
     attachedFiles: '附件文件',
     viewFile: '查看',
     noSubmissionContent: '暂无提交内容',
+    pendingGrading: '待评分',
+    graded: '已评分',
+    all: '全部',
+    teacherGraded: '教师已评分',
+    aiGradedPending: 'AI已评分（待确认）',
+    pendingGradingBadge: '待评分',
+    grade: '成绩',
+    acceptAiScore: '接受AI评分',
+    viewGrade: '查看评分',
+    gradeAction: '评分',
   },
 
   // 薪资管理
@@ -1343,6 +1357,20 @@ const zh = {
     noRecords: '暂无已完成课程',
     noRecordsDesc: '已评分的完成课程将在此显示。',
     gradeScale: '成绩等级',
+    studentId: '学号',
+    course: '课程',
+    universityName: '苏丹谢里夫阿里伊斯兰大学',
+    transcriptTitle: '学业成绩单',
+    studentName: '学生姓名',
+    coursesCompletedLabel: '已完成课程',
+    code: '课程代码',
+    creditHoursShort: '学分',
+    grade: '成绩',
+    points: '绩点',
+    semester: '学期',
+    semesterGpa: '学期绩点',
+    cumulativeGpa: '累计绩点',
+    creditHoursPassed: '已通过学分',
   },
 
   campusCard: {

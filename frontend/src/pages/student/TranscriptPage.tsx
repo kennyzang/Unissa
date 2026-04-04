@@ -202,7 +202,7 @@ const TranscriptPage: React.FC = () => {
             <div className={styles.studentDetails}>
               <h2>{student.user.displayName}</h2>
               <div className={styles.studentMeta}>
-                <span><strong>Student ID:</strong> {student.studentId}</span>
+                <span><strong>{t('transcript.studentId')}:</strong> {student.studentId}</span>
                 <span><strong>Programme:</strong> {student.programme?.name}</span>
                 <span><strong>Intake:</strong> {student.intake?.semester?.name}</span>
               </div>
@@ -277,7 +277,7 @@ const TranscriptPage: React.FC = () => {
           <div className={styles.transcriptTable}>
             <div className={styles.transcriptHeader}>
               <span className={styles.colCode}>Code</span>
-              <span className={styles.colCourse}>Course</span>
+              <span className={styles.colCourse}>{t('transcript.course')}</span>
               <span className={styles.colCh}>CH</span>
               <span className={styles.colGrade}>Grade</span>
               <span className={styles.colPoints}>Points</span>
@@ -358,8 +358,8 @@ const TranscriptPage: React.FC = () => {
             <Award size={40} />
           </div>
           <div className={styles.schoolInfo}>
-            <h1>UNIVERSITI ISLAM SULTAN SHARIF ALI</h1>
-            <h2>ACADEMIC TRANSCRIPT</h2>
+            <h1>{t('transcript.universityName')}</h1>
+            <h2>{t('transcript.transcriptTitle')}</h2>
           </div>
         </div>
       </div>
@@ -386,19 +386,19 @@ const TranscriptPage: React.FC = () => {
                 <Award size={32} />
               </div>
               <div className={styles.previewTitle}>
-                <h2>UNIVERSITI ISLAM SULTAN SHARIF ALI</h2>
-                <h3>ACADEMIC TRANSCRIPT</h3>
+                <h2>{t('transcript.universityName')}</h2>
+                <h3>{t('transcript.transcriptTitle')}</h3>
               </div>
             </div>
 
             {student && (
               <div className={styles.previewStudentInfo}>
                 <div className={styles.previewInfoRow}>
-                  <span className={styles.previewLabel}>Student Name:</span>
+                  <span className={styles.previewLabel}>{t('transcript.studentName')}:</span>
                   <span className={styles.previewValue}>{student.user.displayName}</span>
                 </div>
                 <div className={styles.previewInfoRow}>
-                  <span className={styles.previewLabel}>Student ID:</span>
+                  <span className={styles.previewLabel}>{t('transcript.studentId')}:</span>
                   <span className={styles.previewValue}>{student.studentId}</span>
                 </div>
                 <div className={styles.previewInfoRow}>
@@ -420,7 +420,7 @@ const TranscriptPage: React.FC = () => {
                 </span>
               </div>
               <div className={styles.previewStatItem}>
-                <span className={styles.previewStatLabel}>Courses Completed:</span>
+                <span className={styles.previewStatLabel}>{t('transcript.coursesCompletedLabel')}:</span>
                 <span className={styles.previewStatValue}>{completedEnrolments.length}</span>
               </div>
               <div className={styles.previewStatItem}>
@@ -457,7 +457,7 @@ const TranscriptPage: React.FC = () => {
 
             {Object.keys(semesterGroups).length > 0 && (
               <div className={styles.previewSection}>
-                <h4>Course Record</h4>
+                <h4>{t('transcript.courseRecord')}</h4>
                 {Object.entries(semesterGroups).map(([semId, items]) => (
                   <div key={semId} className={styles.previewSemester}>
                     <div className={styles.previewSemesterTitle}>
@@ -466,11 +466,11 @@ const TranscriptPage: React.FC = () => {
                     <table className={styles.previewTable}>
                       <thead>
                         <tr>
-                          <th>Code</th>
-                          <th>Course</th>
-                          <th>CH</th>
-                          <th>Grade</th>
-                          <th>Points</th>
+                          <th>{t('transcript.code')}</th>
+                          <th>{t('transcript.course')}</th>
+                          <th>{t('transcript.creditHoursShort')}</th>
+                          <th>{t('transcript.grade')}</th>
+                          <th>{t('transcript.points')}</th>
                         </tr>
                       </thead>
                       <tbody>

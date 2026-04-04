@@ -213,21 +213,21 @@ const LmsGradingPage: React.FC = () => {
           onClick={() => setStatusFilter('pending')}
         >
           <Clock size={14} />
-          待评分 ({allSubmissions.filter(s => s.finalMarks === undefined || s.finalMarks === null).length})
+          {t('lmsGrading.pendingGrading')} ({allSubmissions.filter(s => s.finalMarks === undefined || s.finalMarks === null).length})
         </button>
         <button
           className={`${styles.filterBtn} ${statusFilter === 'graded' ? styles.active : ''}`}
           onClick={() => setStatusFilter('graded')}
         >
           <CheckCircle size={14} />
-          已评分 ({allSubmissions.filter(s => s.finalMarks !== undefined && s.finalMarks !== null).length})
+          {t('lmsGrading.graded')} ({allSubmissions.filter(s => s.finalMarks !== undefined && s.finalMarks !== null).length})
         </button>
         <button
           className={`${styles.filterBtn} ${statusFilter === 'all' ? styles.active : ''}`}
           onClick={() => setStatusFilter('all')}
         >
           <FileText size={14} />
-          全部 ({allSubmissions.length})
+          {t('lmsGrading.all')} ({allSubmissions.length})
         </button>
       </div>
 
@@ -259,20 +259,20 @@ const LmsGradingPage: React.FC = () => {
                 <div className={styles.submissionMeta}>
                   {submission.finalMarks !== undefined && submission.finalMarks !== null ? (
                     <Badge color="green" size="sm">
-                      <CheckCircle size={11} /> 教师已评分
+                      <CheckCircle size={11} /> {t('lmsGrading.teacherGraded')}
                     </Badge>
                   ) : submission.aiRubricScores ? (
                     <Badge color="blue" size="sm">
-                      <Sparkles size={11} /> AI已评分（待确认）
+                      <Sparkles size={11} /> {t('lmsGrading.aiGradedPending')}
                     </Badge>
                   ) : (
                     <Badge color="orange" size="sm">
-                      <Clock size={11} /> 待评分
+                      <Clock size={11} /> {t('lmsGrading.pendingGradingBadge')}
                     </Badge>
                   )}
                   {submission.finalMarks !== undefined && submission.finalMarks !== null && (
                     <div className={styles.grade}>
-                      成绩: {submission.finalMarks}/100
+                      {t('lmsGrading.grade')}: {submission.finalMarks}/100
                     </div>
                   )}
                 </div>
@@ -311,11 +311,11 @@ const LmsGradingPage: React.FC = () => {
                     onClick={() => acceptAiMutation.mutate(submission.id)}
                     disabled={acceptAiMutation.isPending}
                   >
-                    <Sparkles size={14} /> 接受AI评分
+                    <Sparkles size={14} /> {t('lmsGrading.acceptAiScore')}
                   </Button>
                 )}
                 <Button onClick={() => openGradingModal(submission)}>
-                  <Star size={14} /> {submission.finalMarks !== undefined ? '查看评分' : '评分'}
+                  <Star size={14} /> {submission.finalMarks !== undefined ? t('lmsGrading.viewGrade') : t('lmsGrading.gradeAction')}
                 </Button>
               </div>
             </Card>
