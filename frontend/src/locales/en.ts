@@ -643,6 +643,15 @@ const en = {
     viewSubmission: 'View Submission Details',
     submissionDetails: 'Submission Details',
     grade: 'Grade',
+    emptySubmissionError: 'Please enter content or upload at least one attachment before submitting.',
+    overdue: 'Overdue',
+    open: 'Open',
+    noMaterials: 'No course materials available.',
+    noSessions: 'No course sessions recorded.',
+    noSubmissions: 'No submissions yet.',
+    session: 'Session',
+    networkError: 'Network error. Please check your connection and try again.',
+    submissionFailed: 'Submission failed',
   },
 
   // Attendance
@@ -1345,6 +1354,11 @@ const en = {
     acceptAiScore: 'Accept AI Score',
     viewGrade: 'View Grade',
     gradeAction: 'Grade',
+    networkError: 'Network error. Please check your connection and try again.',
+    gradingFailed: 'Grading failed',
+    acceptAiFailed: 'Failed to accept AI scores',
+    gradeConfirmed: 'Grade confirmed! Student GPA updated to {{gpa}}',
+    aiAccepted: 'AI scores accepted! Student GPA updated to {{gpa}}',
   },
 
   // Student Transcript

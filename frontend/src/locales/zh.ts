@@ -630,6 +630,15 @@ const zh = {
     viewSubmission: '查看提交详情',
     submissionDetails: '提交详情',
     grade: '成绩',
+    emptySubmissionError: '请输入作业内容或上传至少一个附件后再提交。',
+    overdue: '已截止',
+    open: '打开',
+    noMaterials: '暂无课程材料。',
+    noSessions: '暂无课程会话记录。',
+    noSubmissions: '暂无提交记录。',
+    session: '会话',
+    networkError: '网络错误，请检查您的连接后重试。',
+    submissionFailed: '提交失败',
   },
 
   attendance: {
@@ -1332,6 +1341,11 @@ const zh = {
     acceptAiScore: '接受AI评分',
     viewGrade: '查看评分',
     gradeAction: '评分',
+    networkError: '网络错误，请检查您的连接后重试。',
+    gradingFailed: '评分失败',
+    acceptAiFailed: '接受AI评分失败',
+    gradeConfirmed: '评分已确认！学生GPA已更新为 {{gpa}}',
+    aiAccepted: 'AI评分已接受！学生GPA已更新为 {{gpa}}',
   },
 
   // 薪资管理

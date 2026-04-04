@@ -204,10 +204,14 @@ const LmsCourseDetailStudent: React.FC = () => {
     mutationFn: async ({ assignmentId, content, files }: { assignmentId: string; content: string; files: File[] }) => {
       const v = validateFiles(files)
       if (!v.valid) throw new Error(v.errors.join('; '))
+      const trimmedContent = content.trim()
+      if (!trimmedContent && files.length === 0) {
+        throw new Error(t('lmsCourseDetail.emptySubmissionError', { defaultValue: 'Please enter content or upload at least one attachment before submitting.' }))
+      }
       const fd = new FormData()
       fd.append('assignmentId', assignmentId)
       fd.append('studentId', studentProfile?.id!)
-      fd.append('content', content)
+      fd.append('content', trimmedContent)
       files.forEach(f => fd.append('files', f))
       setAiLoading(true)
       const { data } = await apiClient.post('/lms/submissions', fd, { headers: { 'Content-Type': 'multipart/form-data' } })
@@ -227,7 +231,11 @@ const LmsCourseDetailStudent: React.FC = () => {
     },
     onError: (e: any) => {
       setAiLoading(false)
-      addToast({ type: 'error', message: e.response?.data?.message ?? e.message ?? 'Submission failed' })
+      const isNetworkError = !e.response && e.message === 'Network Error'
+      const errorMessage = isNetworkError
+        ? t('lmsCourseDetail.networkError', { defaultValue: 'Network error. Please check your connection and try again.' })
+        : e.response?.data?.message ?? e.message ?? t('lmsCourseDetail.submissionFailed', { defaultValue: 'Submission failed' })
+      addToast({ type: 'error', message: errorMessage })
     },
   })
 

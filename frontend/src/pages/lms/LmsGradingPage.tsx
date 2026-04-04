@@ -106,7 +106,7 @@ const LmsGradingPage: React.FC = () => {
     onSuccess: (data) => {
       addToast({
         type: 'success',
-        message: `Grade confirmed! Student GPA updated to ${data.data.currentGpa.toFixed(2)}`,
+        message: t('lmsGrading.gradeConfirmed', { gpa: data.data.currentGpa.toFixed(2), defaultValue: 'Grade confirmed! Student GPA updated to {{gpa}}' }),
       })
       setGradingSubmission(null)
       qc.invalidateQueries({ queryKey: ['lms', 'submissions', 'lecturer', user?.id] })
@@ -114,7 +114,11 @@ const LmsGradingPage: React.FC = () => {
       qc.invalidateQueries({ queryKey: ['submissions', 'history'] })
     },
     onError: (e: any) => {
-      addToast({ type: 'error', message: e.response?.data?.message ?? 'Grading failed' })
+      const isNetworkError = !e.response && e.message === 'Network Error'
+      const errorMessage = isNetworkError
+        ? t('lmsGrading.networkError', { defaultValue: 'Network error. Please check your connection and try again.' })
+        : e.response?.data?.message ?? t('lmsGrading.gradingFailed', { defaultValue: 'Grading failed' })
+      addToast({ type: 'error', message: errorMessage })
     },
   })
 
@@ -126,7 +130,7 @@ const LmsGradingPage: React.FC = () => {
     onSuccess: (data) => {
       addToast({
         type: 'success',
-        message: `AI scores accepted! Student GPA updated to ${data.data.currentGpa.toFixed(2)}`,
+        message: t('lmsGrading.aiAccepted', { gpa: data.data.currentGpa.toFixed(2), defaultValue: 'AI scores accepted! Student GPA updated to {{gpa}}' }),
       })
       setGradingSubmission(null)
       qc.invalidateQueries({ queryKey: ['lms', 'submissions', 'lecturer', user?.id] })
@@ -134,7 +138,11 @@ const LmsGradingPage: React.FC = () => {
       qc.invalidateQueries({ queryKey: ['submissions', 'history'] })
     },
     onError: (e: any) => {
-      addToast({ type: 'error', message: e.response?.data?.message ?? 'Failed to accept AI scores' })
+      const isNetworkError = !e.response && e.message === 'Network Error'
+      const errorMessage = isNetworkError
+        ? t('lmsGrading.networkError', { defaultValue: 'Network error. Please check your connection and try again.' })
+        : e.response?.data?.message ?? t('lmsGrading.acceptAiFailed', { defaultValue: 'Failed to accept AI scores' })
+      addToast({ type: 'error', message: errorMessage })
     },
   })
 

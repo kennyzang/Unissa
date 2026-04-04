@@ -357,6 +357,35 @@ router.post('/submissions', upload.array('files', 5), async (req: AuthRequest, r
     }
     
     const files = req.files as Express.Multer.File[] || []
+    const trimmedContent = content?.trim() || ''
+
+    // Validate: must have either content or files
+    if (!trimmedContent && files.length === 0) {
+      res.status(400).json({ 
+        success: false, 
+        message: 'Please provide either content or at least one file attachment' 
+      })
+      return
+    }
+
+    // Validate file types (only images allowed)
+    const allowedMimeTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp']
+    for (const file of files) {
+      if (!allowedMimeTypes.includes(file.mimetype)) {
+        res.status(400).json({ 
+          success: false, 
+          message: `Invalid file type: ${file.originalname}. Only image files (JPG, PNG, GIF, WEBP) are allowed.` 
+        })
+        return
+      }
+      if (file.size > 10 * 1024 * 1024) {
+        res.status(400).json({ 
+          success: false, 
+          message: `File too large: ${file.originalname}. Maximum size is 10MB.` 
+        })
+        return
+      }
+    }
 
     // Create file assets for uploaded files
     const fileAssets = []
@@ -376,14 +405,14 @@ router.post('/submissions', upload.array('files', 5), async (req: AuthRequest, r
 
     // Create content file if provided
     let contentAsset = null
-    if (content && content.trim()) {
+    if (trimmedContent) {
       contentAsset = await prisma.fileAsset.create({
         data: {
           fileName: `submission_${Date.now()}.txt`,
           originalName: `submission_content_${assignmentId}_${studentId}.txt`,
           fileUrl: `/uploads/submissions/submission_${Date.now()}.txt`,
           mimeType: 'text/plain',
-          fileSizeBytes: content.length,
+          fileSizeBytes: trimmedContent.length,
           uploadedById: req.user?.userId ?? '',
         },
       })
@@ -392,7 +421,7 @@ router.post('/submissions', upload.array('files', 5), async (req: AuthRequest, r
       const fs = await import('fs')
       const path = await import('path')
       const filePath = path.join(process.cwd(), 'uploads', 'submissions', `submission_${Date.now()}.txt`)
-      fs.writeFileSync(filePath, content)
+      fs.writeFileSync(filePath, trimmedContent)
     }
 
     // Pre-seeded AI rubric scores (demo)
@@ -504,6 +533,30 @@ router.post('/submissions', upload.array('files', 5), async (req: AuthRequest, r
 router.patch('/submissions/:id/grade', async (req: AuthRequest, res: Response) => {
   const { instructorScores, finalMarks } = req.body as {
     instructorScores: any[]; finalMarks: number
+  }
+
+  // Validate finalMarks
+  if (finalMarks === undefined || finalMarks === null || isNaN(finalMarks)) {
+    res.status(400).json({ success: false, message: 'Final marks are required' })
+    return
+  }
+
+  if (finalMarks < 0 || finalMarks > 100) {
+    res.status(400).json({ success: false, message: 'Final marks must be between 0 and 100' })
+    return
+  }
+
+  // Validate instructorScores
+  if (!Array.isArray(instructorScores) || instructorScores.length === 0) {
+    res.status(400).json({ success: false, message: 'Instructor scores are required' })
+    return
+  }
+
+  for (const score of instructorScores) {
+    if (score.instructor_score !== undefined && (score.instructor_score < 0 || score.instructor_score > 10)) {
+      res.status(400).json({ success: false, message: 'Instructor scores must be between 0 and 10 for each criterion' })
+      return
+    }
   }
 
   const submission = await prisma.submission.update({

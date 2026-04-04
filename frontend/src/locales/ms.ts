@@ -627,6 +627,15 @@ const ms = {
     viewSubmission: 'Lihat Butiran Penyerahan',
     submissionDetails: 'Butiran Penyerahan',
     grade: 'Gred',
+    emptySubmissionError: 'Sila masukkan kandungan atau muat naik sekurang-kurangnya satu lampiran sebelum menyerahkan.',
+    overdue: 'Tertunggak',
+    open: 'Buka',
+    noMaterials: 'Tiada bahan kursus tersedia.',
+    noSessions: 'Tiada sesi kursus direkodkan.',
+    noSubmissions: 'Tiada penyerahan lagi.',
+    session: 'Sesi',
+    networkError: 'Ralat rangkaian. Sila periksa sambungan anda dan cuba lagi.',
+    submissionFailed: 'Penyerahan gagal',
   },
 
   attendance: {
@@ -1317,6 +1326,11 @@ const ms = {
     acceptAiScore: 'Terima Skor AI',
     viewGrade: 'Lihat Gred',
     gradeAction: 'Nilai',
+    networkError: 'Ralat rangkaian. Sila periksa sambungan anda dan cuba lagi.',
+    gradingFailed: 'Penilaian gagal',
+    acceptAiFailed: 'Gagal menerima skor AI',
+    gradeConfirmed: 'Gred disahkan! GPA pelajar dikemas kini kepada {{gpa}}',
+    aiAccepted: 'Skor AI diterima! GPA pelajar dikemas kini kepada {{gpa}}',
   },
 
   // Pengurusan Gaji
