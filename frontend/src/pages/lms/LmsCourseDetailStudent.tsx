@@ -989,7 +989,7 @@ const LmsCourseDetailStudent: React.FC = () => {
                 {pptPreviewMode === 'office' ? (
                   <div className={styles.pptIframeContainer}>
                     <iframe
-                      src={`https://view.officeapps.live.com/op/embed.aspx?src=${encodeURIComponent(window.location.origin + materialPreview.asset.fileUrl)}`}
+                      src={`https://docs.google.com/gviewer?url=${encodeURIComponent(window.location.origin + materialPreview.asset.fileUrl)}&embedded=true`}
                       className={styles.pptIframe}
                       frameBorder="0"
                     >

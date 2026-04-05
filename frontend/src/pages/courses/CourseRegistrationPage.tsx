@@ -51,6 +51,7 @@ const CourseRegistrationPage: React.FC = () => {
 
   const [selected, setSelected] = useState<string[]>([])
   const [confirmModal, setConfirmModal] = useState(false)
+  const [detailOffering, setDetailOffering] = useState<Offering | null>(null)
   const [successData, setSuccessData] = useState<any>(() => {
     try {
       const saved = sessionStorage.getItem('courseRegSuccess')
@@ -324,17 +325,20 @@ const CourseRegistrationPage: React.FC = () => {
                   isSelected ? styles.selectedCard : '',
                   isConflicting ? styles.conflictCard : '',
                 ].filter(Boolean).join(' ')}
-                onClick={() => toggle(offering.id)}
+                onClick={() => setDetailOffering(offering)}
               >
                 <div className={styles.cardTop}>
                   <div>
                     <div className={styles.courseCode}>{offering.course?.code}</div>
                     <div className={styles.courseName}>{offering.course?.name}</div>
                   </div>
-                  <div className={[
-                    styles.selectToggle,
-                    isEnrolled ? styles.enrolledToggle : (isSelected ? (isConflicting ? styles.conflict : styles.selected) : ''),
-                  ].filter(Boolean).join(' ')}>
+                  <div
+                    className={[
+                      styles.selectToggle,
+                      isEnrolled ? styles.enrolledToggle : (isSelected ? (isConflicting ? styles.conflict : styles.selected) : ''),
+                    ].filter(Boolean).join(' ')}
+                    onClick={(e) => { e.stopPropagation(); toggle(offering.id) }}
+                  >
                     {isEnrolled ? <CheckCircle size={16} /> : isSelected ? <Minus size={16} /> : <Plus size={16} />}
                   </div>
                 </div>
@@ -367,6 +371,88 @@ const CourseRegistrationPage: React.FC = () => {
           })
         )}
       </div>
+
+      {/* Course Detail Modal */}
+      {detailOffering && (() => {
+        const o = detailOffering
+        const isEnrolled = enrolledOfferingIds.has(o.id)
+        const isSelected = !isEnrolled && selected.includes(o.id)
+        const isConflicting = isSelected && conflictingIds.has(o.id)
+        const seats = o.seatsTaken ?? 0
+        const maxSeats = o.course?.maxSeats ?? 30
+        const seatsLeft = maxSeats - seats
+        const prereqs = o.course?.prerequisites ?? []
+        return (
+          <Modal
+            open={!!detailOffering}
+            title={null}
+            onClose={() => setDetailOffering(null)}
+            footer={null}
+            width={480}
+          >
+            <div style={{ padding: '4px 0' }}>
+              <div style={{ fontSize: 11, fontWeight: 600, color: '#165DFF', letterSpacing: 0.5, marginBottom: 4 }}>{o.course?.code}</div>
+              <div style={{ fontSize: 18, fontWeight: 700, color: '#1d2129', marginBottom: 16, lineHeight: 1.3 }}>{o.course?.name}</div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px 24px', marginBottom: 16 }}>
+                <div>
+                  <div style={{ fontSize: 11, color: '#86909c', marginBottom: 2 }}>{t('courseReg.ch', { defaultValue: 'Credit Hours' })}</div>
+                  <div style={{ fontSize: 14, fontWeight: 600 }}>{o.course?.creditHours} {t('courseReg.ch')}</div>
+                </div>
+                <div>
+                  <div style={{ fontSize: 11, color: '#86909c', marginBottom: 2 }}>Level</div>
+                  <div style={{ fontSize: 14, fontWeight: 600 }}>{o.course?.level}</div>
+                </div>
+                <div>
+                  <div style={{ fontSize: 11, color: '#86909c', marginBottom: 2 }}>{t('courseReg.lecturer', { defaultValue: 'Lecturer' })}</div>
+                  <div style={{ fontSize: 14, fontWeight: 600 }}>{o.lecturer?.user?.displayName ?? 'TBA'}</div>
+                </div>
+                <div>
+                  <div style={{ fontSize: 11, color: '#86909c', marginBottom: 2 }}>{t('courseReg.room', { defaultValue: 'Room' })}</div>
+                  <div style={{ fontSize: 14, fontWeight: 600 }}>{o.room}</div>
+                </div>
+                <div style={{ gridColumn: '1 / -1' }}>
+                  <div style={{ fontSize: 11, color: '#86909c', marginBottom: 2 }}>{t('courseReg.schedule', { defaultValue: 'Schedule' })}</div>
+                  <div style={{ fontSize: 14, fontWeight: 600 }}>{o.dayOfWeek} · {o.startTime}–{o.endTime}</div>
+                </div>
+                {prereqs.length > 0 && (
+                  <div style={{ gridColumn: '1 / -1' }}>
+                    <div style={{ fontSize: 11, color: '#86909c', marginBottom: 2 }}>{t('courseReg.prerequisites', { defaultValue: 'Prerequisites' })}</div>
+                    <div style={{ fontSize: 14 }}>{prereqs.map(p => p.prerequisite.code).join(', ')}</div>
+                  </div>
+                )}
+                <div style={{ gridColumn: '1 / -1' }}>
+                  <div style={{ fontSize: 11, color: '#86909c', marginBottom: 2 }}>{t('courseReg.availability', { defaultValue: 'Availability' })}</div>
+                  <div style={{ fontSize: 14 }}>
+                    <Badge color={getAvailabilityColor(seats, maxSeats)} size="sm">
+                      {seatsLeft > 0 ? `${seatsLeft} ${t('courseReg.seatsLeft')}` : t('courseReg.full')}
+                    </Badge>
+                    <span style={{ fontSize: 12, color: '#86909c', marginLeft: 8 }}>{seats} / {maxSeats} {t('courseReg.seats', { defaultValue: 'seats taken' })}</span>
+                  </div>
+                </div>
+              </div>
+              {!isEnrolled && (
+                <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, marginTop: 8 }}>
+                  <Button variant="ghost" size="sm" onClick={() => setDetailOffering(null)}>{t('common.close', { defaultValue: 'Close' })}</Button>
+                  <Button
+                    size="sm"
+                    variant={isSelected ? 'secondary' : 'primary'}
+                    onClick={() => { toggle(o.id); setDetailOffering(null) }}
+                  >
+                    {isSelected
+                      ? (isConflicting ? `⚠ ${t('courseReg.removeSelection', { defaultValue: 'Remove' })}` : t('courseReg.removeSelection', { defaultValue: 'Remove' }))
+                      : t('courseReg.addToSelection', { defaultValue: 'Add to Selection' })}
+                  </Button>
+                </div>
+              )}
+              {isEnrolled && (
+                <div style={{ marginTop: 8 }}>
+                  <Badge color="green">✓ {t('courseReg.enrolled', { defaultValue: 'Enrolled' })}</Badge>
+                </div>
+              )}
+            </div>
+          </Modal>
+        )
+      })()}
 
       {/* Confirm Modal */}
       <Modal
