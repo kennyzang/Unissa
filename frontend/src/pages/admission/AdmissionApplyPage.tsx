@@ -232,7 +232,7 @@ const PendingApplicationCard: React.FC<{ app: any }> = ({ app }) => {
 
   const statusColor: Record<string, string> = {
     submitted: 'blue', under_review: 'orange', waitlisted: 'purple',
-    rejected: 'red', accepted: 'green', auto_check_failed: 'red',
+    rejected: 'red', offered: 'green', accepted: 'green', auto_check_failed: 'red',
   }
 
   const QUAL_LABELS: Record<string, string> = {
@@ -284,6 +284,7 @@ const PendingApplicationCard: React.FC<{ app: any }> = ({ app }) => {
     },
   })
 
+  const isOffered = app.status === 'offered'
   const isAccepted = app.status === 'accepted'
   const isRejected = app.status === 'rejected'
 
@@ -304,17 +305,19 @@ const PendingApplicationCard: React.FC<{ app: any }> = ({ app }) => {
       <div className={styles.header}>
         <h1 className={styles.pageTitle}>{t('admissionApply.title')}</h1>
         <p className={styles.pageSub}>
-          {isAccepted
+          {isOffered
             ? t('admissionApply.offerReadyNote', { defaultValue: 'Your application has been approved. Please review and accept your offer below.' })
-            : isRejected
-              ? t('admissionApply.rejectedNote', { defaultValue: 'Thank you for your application to UNISSA.' })
-              : t('admissionApply.pendingNote', { defaultValue: 'Your application is being reviewed.' })
+            : isAccepted
+              ? t('admissionApply.enrolledNote', { defaultValue: 'You have accepted your offer. Welcome to UNISSA!' })
+              : isRejected
+                ? t('admissionApply.rejectedNote', { defaultValue: 'Thank you for your application to UNISSA.' })
+                : t('admissionApply.pendingNote', { defaultValue: 'Your application is being reviewed.' })
           }
         </p>
       </div>
 
       {/* Acceptance / Rejection notification banner */}
-      {isAccepted && (
+      {isOffered && (
         <div style={{
           maxWidth: 760, margin: '0 auto 20px',
           background: 'linear-gradient(135deg, #e8f5e9 0%, #f6ffed 100%)',
@@ -368,10 +371,10 @@ const PendingApplicationCard: React.FC<{ app: any }> = ({ app }) => {
         <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 24, paddingBottom: 16, borderBottom: '1px solid #f0f0f0' }}>
           <div style={{
             width: 56, height: 56, borderRadius: '50%',
-            background: isAccepted ? '#e8f5e9' : isRejected ? '#fff1f0' : '#fffbe6',
+            background: isOffered || isAccepted ? '#e8f5e9' : isRejected ? '#fff1f0' : '#fffbe6',
             display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
           }}>
-            {isAccepted
+            {isOffered || isAccepted
               ? <CheckCircleOutlined style={{ fontSize: 28, color: '#00B42A' }} />
               : isRejected
                 ? <CloseCircleOutlined style={{ fontSize: 28, color: '#f5222d' }} />

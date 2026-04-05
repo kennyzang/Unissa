@@ -200,11 +200,12 @@ router.patch('/applications/:id/decision', authenticate, requireRole('admissions
 
   const previousStatus = app.status
   const offerRef = action === 'accepted' ? generateOfferRef() : null
+  const newStatus = action === 'accepted' ? 'offered' : action
   
   const updated = await prisma.applicant.update({
     where: { id: String(req.params.id) },
     data: {
-      status: action,
+      status: newStatus,
       officerRemarks: remarks,
       decisionMadeAt: new Date(),
       offerRef,
@@ -314,13 +315,13 @@ router.patch('/applications/:id/decision', authenticate, requireRole('admissions
 router.post('/accept-offer', authenticate, async (req: AuthRequest, res: Response) => {
   const userId = req.user!.userId
 
-  // Find the accepted application for this user
+  // Find the offered application for this user (offered = school made offer, awaiting student acceptance)
   const app = await prisma.applicant.findFirst({
-    where: { userId, status: 'accepted' },
+    where: { userId, status: 'offered' },
     include: { programme: true, intake: { include: { semester: true } } },
   })
   if (!app) {
-    res.status(400).json({ success: false, message: 'No accepted offer found for your account.' })
+    res.status(400).json({ success: false, message: 'No offer found for your account. Please ensure your application has been offered admission.' })
     return
   }
 
@@ -334,12 +335,22 @@ router.post('/accept-offer', authenticate, async (req: AuthRequest, res: Respons
     return
   }
 
-  // Generate student ID (use transaction to prevent race condition on count)
+  // Generate student ID (use transaction to prevent race condition)
   const student = await prisma.$transaction(async (tx) => {
     const year = new Date().getFullYear()
-    const count = await tx.student.count()
-    const studentId = `${year}${String(count + 1).padStart(3, '0')}`
-    return tx.student.create({
+    const prefix = `${year}`
+    const lastStudent = await tx.student.findFirst({
+      where: { studentId: { startsWith: prefix } },
+      orderBy: { studentId: 'desc' },
+      select: { studentId: true },
+    })
+    let nextNum = 1
+    if (lastStudent?.studentId) {
+      const lastNum = parseInt(lastStudent.studentId.slice(4), 10)
+      if (!isNaN(lastNum)) nextNum = lastNum + 1
+    }
+    const studentId = `${prefix}${String(nextNum).padStart(3, '0')}`
+    const newStudent = await tx.student.create({
       data: {
         studentId,
         userId,
@@ -357,6 +368,11 @@ router.post('/accept-offer', authenticate, async (req: AuthRequest, res: Respons
         intake: { include: { semester: true } },
       },
     })
+    await tx.applicant.update({
+      where: { id: app.id },
+      data: { status: 'accepted' },
+    })
+    return newStudent
   })
 
   // Mark admission notifications as read
