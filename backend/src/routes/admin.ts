@@ -185,4 +185,30 @@ router.get('/email-status', requireRole('admin'), async (_req: AuthRequest, res:
   })
 })
 
+router.post('/demo-reset', requireRole('admin'), async (_req: AuthRequest, res: Response) => {
+  await prisma.attendanceRecord.deleteMany({})
+  await prisma.attendanceSession.deleteMany({})
+  await prisma.submission.deleteMany({})
+  await prisma.fileAsset.deleteMany({})
+  await prisma.payment.deleteMany({})
+  await prisma.invoiceAdjustment.deleteMany({})
+  await prisma.feeInvoice.deleteMany({})
+  await prisma.enrolment.deleteMany({})
+  await prisma.courseOffering.updateMany({ data: { seatsTaken: 0 } })
+  await prisma.studentGpaRecord.deleteMany({})
+  await prisma.studentRiskScore.deleteMany({})
+  await prisma.campusCardTransaction.deleteMany({})
+  await prisma.campusCard.deleteMany({})
+  await prisma.libraryAccount.deleteMany({})
+  await prisma.student.deleteMany({})
+  await prisma.user.deleteMany({ where: { role: 'student' } })
+  await prisma.applicant.deleteMany({})
+  await prisma.chatbotConversation.deleteMany({})
+
+  res.json({
+    success: true,
+    message: 'Demo data reset successfully. Re-seed required to restore demo state.',
+  })
+})
+
 export default router

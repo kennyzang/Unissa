@@ -147,6 +147,7 @@ const ms = {
       admin: 'Admin',
       settingsLabel: 'Tetapan',
     },
+    qrScan: 'Imbas Kod QR',
   },
 
   dashboard: {

@@ -22,9 +22,15 @@ const mockPrisma = {
   payment:             { deleteMany: vi.fn() },
   feeInvoice:          { deleteMany: vi.fn() },
   submission:          { deleteMany: vi.fn() },
+  fileAsset:           { deleteMany: vi.fn() },
+  invoiceAdjustment:   { deleteMany: vi.fn() },
   attendanceRecord:    { deleteMany: vi.fn() },
   attendanceSession:   { deleteMany: vi.fn() },
   student:             { findUnique: vi.fn(), update: vi.fn(), updateMany: vi.fn(), deleteMany: vi.fn() },
+  studentGpaRecord:    { deleteMany: vi.fn() },
+  studentRiskScore:    { deleteMany: vi.fn() },
+  campusCard:          { deleteMany: vi.fn() },
+  campusCardTransaction:{ deleteMany: vi.fn() },
   libraryAccount:      { upsert: vi.fn(), updateMany: vi.fn(), deleteMany: vi.fn() },
   user:                { deleteMany: vi.fn() },
   applicant:           { deleteMany: vi.fn() },
@@ -58,10 +64,16 @@ function setupDemoResetMocks() {
   mockPrisma.attendanceRecord.deleteMany.mockResolvedValue({ count: 12 })
   mockPrisma.attendanceSession.deleteMany.mockResolvedValue({ count: 3 })
   mockPrisma.submission.deleteMany.mockResolvedValue({ count: 1 })
+  mockPrisma.fileAsset.deleteMany.mockResolvedValue({ count: 1 })
   mockPrisma.payment.deleteMany.mockResolvedValue({ count: 0 })
+  mockPrisma.invoiceAdjustment.deleteMany.mockResolvedValue({ count: 0 })
   mockPrisma.feeInvoice.deleteMany.mockResolvedValue({ count: 2 })
   mockPrisma.enrolment.deleteMany.mockResolvedValue({ count: 26 })
   mockPrisma.courseOffering.updateMany.mockResolvedValue({ count: 6 })
+  mockPrisma.studentGpaRecord.deleteMany.mockResolvedValue({ count: 12 })
+  mockPrisma.studentRiskScore.deleteMany.mockResolvedValue({ count: 5 })
+  mockPrisma.campusCardTransaction.deleteMany.mockResolvedValue({ count: 0 })
+  mockPrisma.campusCard.deleteMany.mockResolvedValue({ count: 12 })
   mockPrisma.libraryAccount.deleteMany.mockResolvedValue({ count: 12 })
   mockPrisma.student.deleteMany.mockResolvedValue({ count: 12 })
   mockPrisma.user.deleteMany.mockResolvedValue({ count: 12 })

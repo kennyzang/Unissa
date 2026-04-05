@@ -154,6 +154,7 @@ const en = {
       admin: 'Admin',
       settingsLabel: 'Settings',
     },
+    qrScan: 'Scan QR Code',
   },
 
   // Dashboard

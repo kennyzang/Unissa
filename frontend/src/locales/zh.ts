@@ -150,6 +150,7 @@ const zh = {
       admin: '管理',
       settingsLabel: '系统运维',
     },
+    qrScan: '扫一扫',
   },
 
   dashboard: {

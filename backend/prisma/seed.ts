@@ -488,10 +488,11 @@ async function main() {
       programmeId: progBSC.id,
       modeOfStudy: 'full_time',
       scholarshipApplied: false,
-      status: 'under_review',
+      status: 'offered',
       submittedAt: new Date('2026-03-10'),
+      decisionMadeAt: new Date('2026-03-25'),
     },
-    update: { userId: uNoor.id, status: 'under_review' },
+    update: { userId: uNoor.id, status: 'offered' },
   })
 
   // Subject grades for Noor
@@ -510,35 +511,8 @@ async function main() {
     })
   }
 
-  // ── Student: Noor (accepted) ─────────────────────────────────
-  const studentNoor = await prisma.student.upsert({
-    where: { studentId: '2026001' },
-    create: {
-      studentId: '2026001',
-      userId: uNoor.id,
-      applicantId: applicantNoor.id,
-      programmeId: progBSC.id,
-      intakeId: intakeBSC.id,
-      modeOfStudy: 'full_time',
-      nationality: 'Brunei Darussalam',
-      studentType: 'standard',
-      currentCgpa: 3.10,
-      scholarshipPct: 0,
-      campusCardNo: 'CC-2026001',
-      libraryAccountActive: true,
-      emailAccountActive: true,
-      status: 'active',
-      enrolledAt: new Date('2026-04-01'),
-    },
-    update: {},
-  })
-
-  // Library account for Noor
-  await prisma.libraryAccount.upsert({
-    where: { studentId: studentNoor.id },
-    create: { studentId: studentNoor.id, accountNo: 'LIB-2026001', isActive: true, activatedAt: new Date('2026-04-01') },
-    update: {},
-  })
+  // ── Noor is a pre-enrollment applicant (offered status) — no Student/Enrolment/FeeInvoice records
+  // Demo flow starts from receiving the offer letter
 
   // ── Noor Aisyah (Scene-1 demo): clean state — no applicant, no student ───────
   // noor_apply / Demo@2026 — always reset so demo starts from the very beginning.
@@ -879,16 +853,7 @@ async function main() {
     })
   }
 
-  // ── Enrolments: Noor ─────────────────────────────────────────
-  for (const offering of [offeringIFN101, offeringIFN102, offeringIFN201, offeringARA101]) {
-    await prisma.enrolment.upsert({
-      where: { studentId_offeringId: { studentId: studentNoor.id, offeringId: offering.id } },
-      create: { studentId: studentNoor.id, offeringId: offering.id, semesterId: semSep2026.id, status: 'registered', registeredAt: new Date('2026-04-05') },
-      update: {},
-    })
-  }
-
-  // Enrol risk students in IFN101 + IFN201
+  // ── Enrolments: risk students only (Noor is pre-enrollment, not yet enrolled) ──
   for (const s of riskStudents) {
     for (const o of [offeringIFN101, offeringIFN201]) {
       await prisma.enrolment.upsert({
@@ -899,25 +864,7 @@ async function main() {
     }
   }
 
-  // ── Fee Invoice: Noor ─────────────────────────────────────────
-  await prisma.feeInvoice.upsert({
-    where: { invoiceNo: 'INV-2026-0001' },
-    create: {
-      invoiceNo: 'INV-2026-0001',
-      studentId: studentNoor.id,
-      semesterId: semSep2026.id,
-      tuitionFee: 3200,   // 4 courses × 3CH × BND 800/CH = 3200 (but invoice shows rounded)
-      libraryFee: 50,
-      hostelDeposit: 200,
-      scholarshipDeduction: 0,
-      totalAmount: 3450,
-      amountPaid: 0,
-      outstandingBalance: 3450,
-      dueDate: new Date('2026-04-19'),
-      status: 'unpaid',
-    },
-    update: {},
-  })
+  // ── Fee Invoices: risk students only (Noor is pre-enrollment, no invoice yet) ──
 
   // ── Overdue Fee Invoices (Finance dashboard: 3 overdue) ──────
   for (let oi = 0; oi < 3; oi++) {
@@ -991,35 +938,7 @@ async function main() {
     })
   }
 
-  // Pre-seeded submission for Noor with AI scores
-  const assetSub = await prisma.fileAsset.upsert({
-    where: { id: 'asset-noor-sub1' },
-    create: {
-      id: 'asset-noor-sub1', uploadedById: uNoor.id,
-      fileName: 'noor_00-123456_case_study_1.pdf',
-      originalName: 'Case_Study_1_Noor.pdf',
-      fileUrl: '/uploads/submissions/noor_case_study_1.pdf',
-      mimeType: 'application/pdf', fileSizeBytes: 245760,
-    },
-    update: {},
-  })
-
-  await prisma.submission.upsert({
-    where: { assignmentId_studentId: { assignmentId: assignment1.id, studentId: studentNoor.id } },
-    create: {
-      assignmentId: assignment1.id,
-      studentId: studentNoor.id,
-      assetId: assetSub.id,
-      aiRubricScores: JSON.stringify([
-        { criterion: 'Clarity', ai_score: 20, ai_comment: 'Well-structured argument with clear thesis. Minor grammar issues.' },
-        { criterion: 'References', ai_score: 12, ai_comment: 'Only 3 sources cited. Needs more citations from peer-reviewed sources.' },
-        { criterion: 'Analysis', ai_score: 28, ai_comment: 'Correct Big-O analysis for QuickSort and MergeSort. BubbleSort derivation has minor error.' },
-        { criterion: 'Presentation', ai_score: 18, ai_comment: 'Excellent formatting and organisation. Good use of tables.' },
-      ]),
-      aiGeneratedAt: new Date(),
-    },
-    update: {},
-  })
+  // Submissions: risk students only (Noor is pre-enrollment, no submissions yet)
 
   // ── Attendance ────────────────────────────────────────────────
   const atSess1 = await prisma.attendanceSession.upsert({
@@ -1035,7 +954,7 @@ async function main() {
   })
 
   // Attendance records: riskStudents[0] = 38%, [1] = 55%
-  for (const s of [studentNoor, ...riskStudents]) {
+  for (const s of riskStudents) {
     await prisma.attendanceRecord.upsert({
       where: { sessionId_studentId: { sessionId: atSess1.id, studentId: s.id } },
       create: { sessionId: atSess1.id, studentId: s.id, status: 'present' },
@@ -1284,16 +1203,7 @@ async function main() {
     },
     update: {},
   })
-  // Noor: passing
-  await prisma.studentRiskScore.upsert({
-    where: { studentId_offeringId: { studentId: studentNoor.id, offeringId: offeringIFN101.id } },
-    create: {
-      studentId: studentNoor.id, offeringId: offeringIFN101.id,
-      attendancePct: 92, quizAvg: 78, submissionRate: 90,
-      riskScore: 0.12, predictedOutcome: 'pass', confidence: 91,
-    },
-    update: {},
-  })
+  // Risk scores: risk students only (Noor is pre-enrollment, no risk score yet)
 
   // ── Campus Vehicles ───────────────────────────────────────────
   const vehicles = [
@@ -1360,7 +1270,7 @@ async function main() {
 
   console.log('\n✅ Seed complete! Demo data ready.\n')
   console.log('Demo Accounts:')
-  console.log('  noor        / Demo@2026  → Student Portal (fully enrolled student)')
+  console.log('  noor        / Demo@2026  → Student Portal (pre-enrollment applicant — offered)')
   console.log('  zara        / Demo@2026  → Scene 1 Demo: Noor Aisyah — clean state, apply for admission')
   console.log('  admissions  / Demo@2026  → Admission Dashboard')
   console.log('  drsiti      / Demo@2026  → LMS Instructor')
