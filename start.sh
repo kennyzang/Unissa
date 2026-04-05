@@ -10,6 +10,11 @@ ROOT="$(cd "$(dirname "$0")" && pwd)"
 BACKEND="$ROOT/backend"
 FRONTEND="$ROOT/frontend"
 
+# Load environment variables
+if [ -f "$ROOT/.env" ]; then
+  export $(cat "$ROOT/.env" | grep -v '^#' | xargs)
+fi
+
 echo ""
 echo "╔══════════════════════════════════════════════════════╗"
 echo "║  UNISSA Smart University Platform  –  POC v5.0       ║"
@@ -25,8 +30,8 @@ fi
 # Run DB migration + seed if DB not exists
 if [ ! -f "$BACKEND/prisma/dev.db" ]; then
   echo "🗄️  Initialising database..."
-  node "$ROOT/node_modules/prisma/build/index.js" migrate deploy --schema "$BACKEND/prisma/schema.prisma"
-  cd "$BACKEND" && node "$ROOT/node_modules/tsx/dist/cli.mjs" prisma/seed.ts
+  cd "$BACKEND" && npx prisma migrate deploy --schema prisma/schema.prisma
+  cd "$BACKEND" && npx tsx prisma/seed.ts
   cd "$ROOT"
 fi
 

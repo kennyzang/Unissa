@@ -164,6 +164,11 @@ router.get('/invoices/:invoiceId/pdf', async (req: AuthRequest, res: Response) =
     return
   }
 
+  if (invoice.status !== 'paid') {
+    res.status(403).json({ success: false, message: 'Invoice can only be downloaded after payment is completed.' })
+    return
+  }
+
   try {
     const pdfBuffer = await generateInvoicePDF(invoice as any)
     res.setHeader('Content-Type', 'application/pdf')

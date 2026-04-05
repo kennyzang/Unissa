@@ -94,13 +94,13 @@ const TranscriptPage: React.FC = () => {
 
   const handleDownloadPDF = () => {
     if (student && transcriptData) {
-      generateTranscriptPDF(student, transcriptData.enrolments, gpaRecords)
+      generateTranscriptPDF(student, transcriptData.enrolments, safeGpaRecords)
     }
   }
 
   const handlePrint = () => {
     if (student && transcriptData) {
-      generateTranscriptPDF(student, transcriptData.enrolments, gpaRecords)
+      generateTranscriptPDF(student, transcriptData.enrolments, safeGpaRecords)
     }
     setShowPreview(false)
   }
@@ -121,19 +121,20 @@ const TranscriptPage: React.FC = () => {
     queryKey: ['transcript', student?.studentId],
     queryFn: async () => {
       const { data } = await apiClient.get(`/students/${student!.studentId}/transcript`)
-      return data.data
+      return data.data ?? { student: null, enrolments: [] }
     },
     enabled: !!student?.studentId,
   })
 
-  const { data: gpaRecords = [], isLoading: loadingGpa } = useQuery<GpaRecord[]>({
+  const { data: gpaRecords, isLoading: loadingGpa } = useQuery<GpaRecord[]>({
     queryKey: ['gpa-records', student?.id],
     queryFn: async () => {
       const { data } = await apiClient.get(`/students/${student!.id}/gpa-records`)
-      return data.data
+      return data.data ?? []
     },
     enabled: !!student?.id,
   })
+  const safeGpaRecords: GpaRecord[] = gpaRecords ?? []
 
   const isLoading = loadingStudent || loadingTranscript || loadingGpa
 
@@ -168,6 +169,27 @@ const TranscriptPage: React.FC = () => {
     return (
       <div className={styles.page}>
         <div className={styles.loading}>{t('common.loading')}</div>
+      </div>
+    )
+  }
+
+  if (!student) {
+    return (
+      <div className={styles.page}>
+        <div className={styles.header}>
+          <div className={styles.headerLeft}>
+            <h1 className={styles.pageTitle}>
+              <FileText size={24} /> {t('transcript.title', { defaultValue: 'Academic Transcript' })}
+            </h1>
+          </div>
+        </div>
+        <Card>
+          <div className={styles.emptyState}>
+            <Award size={48} />
+            <h3>{t('transcript.notEnrolledTitle', { defaultValue: 'No Academic Record Yet' })}</h3>
+            <p>{t('transcript.notEnrolledDesc', { defaultValue: 'Your transcript will be available once you have been admitted and have completed course registration.' })}</p>
+          </div>
+        </Card>
       </div>
     )
   }
@@ -245,7 +267,7 @@ const TranscriptPage: React.FC = () => {
         </Card>
       </div>
 
-      {gpaRecords.length > 0 && (
+      {safeGpaRecords.length > 0 && (
         <Card title={t('transcript.gpaHistory', { defaultValue: 'GPA History' })}>
           <div className={styles.gpaTable}>
             <div className={styles.gpaHeader}>
@@ -254,12 +276,12 @@ const TranscriptPage: React.FC = () => {
               <span>Cumulative GPA</span>
               <span>Credit Hours</span>
             </div>
-            {gpaRecords.map(record => (
+            {safeGpaRecords.map(record => (
               <div key={record.id} className={styles.gpaRow}>
                 <span className={styles.semesterName}>{record.semester?.name ?? 'N/A'}</span>
-                <span className={styles.gpaValue}>{record.semesterGpa.toFixed(2)}</span>
-                <span className={styles.gpaValue}>{record.cumulativeGpa.toFixed(2)}</span>
-                <span>{record.totalChPassed} CH</span>
+                <span className={styles.gpaValue}>{(record.semesterGpa ?? 0).toFixed(2)}</span>
+                <span className={styles.gpaValue}>{(record.cumulativeGpa ?? 0).toFixed(2)}</span>
+                <span>{record.totalChPassed ?? 0} CH</span>
               </div>
             ))}
           </div>
@@ -429,7 +451,7 @@ const TranscriptPage: React.FC = () => {
               </div>
             </div>
 
-            {gpaRecords.length > 0 && (
+            {safeGpaRecords.length > 0 && (
               <div className={styles.previewSection}>
                 <h4>GPA History</h4>
                 <table className={styles.previewTable}>
@@ -442,12 +464,12 @@ const TranscriptPage: React.FC = () => {
                     </tr>
                   </thead>
                   <tbody>
-                    {gpaRecords.map(record => (
+                    {safeGpaRecords.map(record => (
                       <tr key={record.id}>
                         <td>{record.semester?.name ?? 'N/A'}</td>
-                        <td>{record.semesterGpa.toFixed(2)}</td>
-                        <td>{record.cumulativeGpa.toFixed(2)}</td>
-                        <td>{record.totalChPassed} CH</td>
+                        <td>{(record.semesterGpa ?? 0).toFixed(2)}</td>
+                        <td>{(record.cumulativeGpa ?? 0).toFixed(2)}</td>
+                        <td>{record.totalChPassed ?? 0} CH</td>
                       </tr>
                     ))}
                   </tbody>

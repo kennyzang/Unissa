@@ -234,8 +234,11 @@ const FeeStatementPage: React.FC = () => {
       link.remove()
       window.URL.revokeObjectURL(url)
       addToast({ type: 'success', message: 'Invoice downloaded successfully' })
-    } catch (error) {
-      addToast({ type: 'error', message: 'Failed to download invoice' })
+    } catch (error: any) {
+      const msg = error.response?.status === 403
+        ? 'Invoice can only be downloaded after payment is completed.'
+        : 'Failed to download invoice'
+      addToast({ type: 'error', message: msg })
     }
   }
 
@@ -361,7 +364,9 @@ const FeeStatementPage: React.FC = () => {
                     size="sm"
                     variant="secondary"
                     icon={<Download size={14} />}
-                    onClick={() => downloadInvoice(inv.id, inv.invoiceNo)}
+                    disabled={inv.status !== 'paid'}
+                    title={inv.status !== 'paid' ? 'Available after payment' : undefined}
+                    onClick={() => inv.status === 'paid' && downloadInvoice(inv.id, inv.invoiceNo)}
                   >
                     Download
                   </Button>
@@ -530,10 +535,10 @@ const FeeStatementPage: React.FC = () => {
           invoice={previewInvoice}
           open={!!previewInvoice}
           onClose={() => setPreviewInvoice(null)}
-          onDownload={() => {
+          onDownload={previewInvoice.status === 'paid' ? () => {
             downloadInvoice(previewInvoice.id, previewInvoice.invoiceNo)
             setPreviewInvoice(null)
-          }}
+          } : undefined}
         />
       )}
     </div>

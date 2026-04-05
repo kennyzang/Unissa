@@ -36,7 +36,7 @@ interface InvoicePreviewModalProps {
   invoice: InvoiceData
   open: boolean
   onClose: () => void
-  onDownload: () => void
+  onDownload?: () => void
 }
 
 const STATUS_CONFIG = {
@@ -83,7 +83,12 @@ const InvoicePreviewModal: React.FC<InvoicePreviewModalProps> = ({
           <Button variant="secondary" onClick={onClose}>
             Close
           </Button>
-          <Button icon={<Download size={16} />} onClick={onDownload}>
+          <Button
+            icon={<Download size={16} />}
+            disabled={!onDownload}
+            title={!onDownload ? 'Available after payment' : undefined}
+            onClick={onDownload}
+          >
             Download PDF
           </Button>
         </div>
