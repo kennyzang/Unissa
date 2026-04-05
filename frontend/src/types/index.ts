@@ -361,7 +361,7 @@ export interface DashboardKPI {
     totalVehicles: number
     activeAlert?: string
   }
-  lms: {
+  lms?: {
     activeLearnersNow: number
     assignmentsDueToday: number
     avgCourseCompletion: number

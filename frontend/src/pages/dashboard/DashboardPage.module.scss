@@ -134,6 +134,38 @@
   }
 }
 
+.kpiCardClickable {
+  cursor: pointer;
+  user-select: none;
+
+  &:hover {
+    box-shadow: v.$shadow-lg;
+    transform: translateY(-2px);
+    border-color: var(--accent, v.$brand-primary);
+  }
+
+  &:active {
+    transform: translateY(0);
+    box-shadow: v.$shadow-sm;
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--accent, v.$brand-primary);
+    outline-offset: 2px;
+  }
+}
+
+.kpiArrow {
+  color: var(--color-gray-4);
+  flex-shrink: 0;
+  transition: transform 0.15s ease, color 0.15s ease;
+
+  .kpiCardClickable:hover & {
+    color: var(--accent, v.$brand-primary);
+    transform: translateX(2px);
+  }
+}
+
 .kpiTop {
   display: flex;
   align-items: center;

@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
+import { useNavigate } from 'react-router-dom'
 import {
   AreaChart, Area, BarChart, Bar, PieChart, Pie, Cell,
   ResponsiveContainer, Tooltip, XAxis, YAxis,
@@ -72,15 +73,24 @@ interface KPICardProps {
   badge?: { label: string; color: 'blue' | 'green' | 'red' | 'orange' | 'purple' | 'cyan' | 'gray' }
   chart?: React.ReactNode
   alert?: string
+  onClick?: () => void
 }
 
-const KPICard: React.FC<KPICardProps> = ({ title, value, sub, icon, accent, badge, chart, alert }) => (
-  <div className={styles.kpiCard} style={{ '--accent': accent } as React.CSSProperties}>
+const KPICard: React.FC<KPICardProps> = ({ title, value, sub, icon, accent, badge, chart, alert, onClick }) => (
+  <div
+    className={`${styles.kpiCard} ${onClick ? styles.kpiCardClickable : ''}`}
+    style={{ '--accent': accent } as React.CSSProperties}
+    onClick={onClick}
+    role={onClick ? 'button' : undefined}
+    tabIndex={onClick ? 0 : undefined}
+    onKeyDown={onClick ? (e) => { if (e.key === 'Enter' || e.key === ' ') onClick() } : undefined}
+  >
     <div className={styles.kpiTop}>
       <div className={styles.kpiIconWrap} style={{ background: `${accent}18` }}>
         <span style={{ color: accent }}>{icon}</span>
       </div>
       {badge && <Badge color={badge.color} size="sm">{badge.label}</Badge>}
+      {onClick && <ChevronRight size={14} className={styles.kpiArrow} />}
     </div>
     <div className={styles.kpiValue}>{value}</div>
     <div className={styles.kpiTitle}>{title}</div>
@@ -108,6 +118,7 @@ const DashboardPage: React.FC = () => {
   const { data: kpi, isLoading, isError, refetch, dataUpdatedAt } = useKPI()
   const { data: insights = [] } = useInsights()
   const { t } = useTranslation()
+  const navigate = useNavigate()
 
   const DAYS = [
     t('lmsCourses.days.monday' as any),
@@ -119,17 +130,25 @@ const DashboardPage: React.FC = () => {
     t('dashboard.today'),
   ]
 
-  // Live learner count oscillates ±3 around baseline for demo
-  const [liveCount, setLiveCount] = useState(89)
+  // Live learner count: seed from real data, then oscillate ±3 for demo effect
+  const [liveCount, setLiveCount] = useState<number>(0)
   useEffect(() => {
+    if (kpi?.lms?.activeLearnersNow != null) {
+      setLiveCount(kpi.lms?.activeLearnersNow ?? 0)
+    }
+  }, [kpi?.lms?.activeLearnersNow])
+  useEffect(() => {
+    if (!liveCount) return
+    const base = liveCount
     const id = setInterval(() => {
       setLiveCount(c => {
         const delta = Math.floor(Math.random() * 7) - 3
-        return Math.max(70, Math.min(120, c + delta))
+        return Math.max(Math.max(0, base - 5), Math.min(base + 5, c + delta))
       })
     }, 5000)
     return () => clearInterval(id)
-  }, [])
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [!!liveCount])
 
   const lastUpdated = dataUpdatedAt
     ? new Date(dataUpdatedAt).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', second: '2-digit' })
@@ -193,7 +212,7 @@ const DashboardPage: React.FC = () => {
 
       {/* ── KPI Grid ────────────────────────────────────── */}
       <div className={styles.kpiGrid}>
-        {/* Enrollment */}
+        {/* Enrollment → admissions */}
         <KPICard
           title={t('dashboard.studentEnrolment')}
           value={kpi.enrollment.totalEnrolled.toLocaleString()}
@@ -201,6 +220,7 @@ const DashboardPage: React.FC = () => {
           icon={<Users size={18} />}
           accent="#165DFF"
           badge={{ label: `${kpi.enrollment.acceptedToday} ${t('dashboard.accepted')}`, color: 'blue' }}
+          onClick={() => navigate('/admissions')}
           chart={
             <ResponsiveContainer width="100%" height={48}>
               <AreaChart data={sparkData} margin={{ top: 2, right: 0, bottom: 0, left: 0 }}>
@@ -221,7 +241,7 @@ const DashboardPage: React.FC = () => {
           }
         />
 
-        {/* Finance */}
+        {/* Finance → finance budget */}
         <KPICard
           title={t('dashboard.budgetUtilisation')}
           value={`${kpi.finance.committedPct}%`}
@@ -229,6 +249,7 @@ const DashboardPage: React.FC = () => {
           icon={<DollarSign size={18} />}
           accent="#00B42A"
           badge={kpi.finance.overdueInvoices > 0 ? { label: `${kpi.finance.overdueInvoices} ${t('dashboard.overdue')}`, color: 'red' } : undefined}
+          onClick={() => navigate('/finance/budget')}
           chart={
             <ResponsiveContainer width="100%" height={48}>
               <PieChart>
@@ -256,7 +277,7 @@ const DashboardPage: React.FC = () => {
           }
         />
 
-        {/* HR */}
+        {/* HR — pending approvals → procurement approvals inbox */}
         <KPICard
           title={t('dashboard.humanResources')}
           value={String(kpi.hr.totalStaff)}
@@ -264,9 +285,10 @@ const DashboardPage: React.FC = () => {
           icon={<Briefcase size={18} />}
           accent="#7D3FCC"
           badge={{ label: `${kpi.hr.pendingApprovals} ${t('dashboard.pendingApprovals')}`, color: 'purple' }}
+          onClick={() => navigate('/procurement/approvals')}
         />
 
-        {/* Research */}
+        {/* Research → research grants */}
         <KPICard
           title={t('dashboard.researchGrants')}
           value={String(kpi.research.activeGrants)}
@@ -274,6 +296,7 @@ const DashboardPage: React.FC = () => {
           icon={<FlaskConical size={18} />}
           accent="#FF7D00"
           badge={{ label: `${kpi.research.utilisation}% ${t('dashboard.utilised')}`, color: 'orange' }}
+          onClick={() => navigate('/research/grants')}
           chart={
             <ResponsiveContainer width="100%" height={48}>
               <BarChart data={researchBar} barSize={10} margin={{ top: 4, right: 0, bottom: 0, left: 0 }}>
@@ -289,7 +312,7 @@ const DashboardPage: React.FC = () => {
           }
         />
 
-        {/* Campus */}
+        {/* Campus → campus bookings */}
         <KPICard
           title={t('dashboard.campusFacilities')}
           value={`${kpi.campus.roomsBookedToday}/${kpi.campus.totalRooms}`}
@@ -298,16 +321,18 @@ const DashboardPage: React.FC = () => {
           accent="#0FC6C2"
           badge={{ label: `${kpi.campus.maintenanceTickets} ${t('dashboard.maintenance')}`, color: kpi.campus.maintenanceTickets > 0 ? 'orange' : 'green' }}
           alert={kpi.campus.activeAlert}
+          onClick={() => navigate('/campus/bookings')}
         />
 
-        {/* LMS */}
+        {/* LMS — assignments due today → LMS courses; new hires → HR onboarding */}
         <KPICard
           title={t('dashboard.lmsActivity')}
           value={String(liveCount)}
-          sub={`${kpi.lms.avgCourseCompletion}% ${t('dashboard.avgCompletion')}`}
+          sub={`${kpi.lms?.avgCourseCompletion ?? 0}% ${t('dashboard.avgCompletion')}`}
           icon={<BookOpen size={18} />}
-          accent={kpi.lms.atRiskFlagged > 0 ? '#F53F3F' : '#00B42A'}
-          badge={{ label: `${kpi.lms.atRiskFlagged} ${t('dashboard.atRisk')}`, color: kpi.lms.atRiskFlagged > 0 ? 'red' : 'green' }}
+          accent={(kpi.lms?.atRiskFlagged ?? 0) > 0 ? '#F53F3F' : '#00B42A'}
+          badge={{ label: `${kpi.lms?.atRiskFlagged ?? 0} ${t('dashboard.atRisk')}`, color: (kpi.lms?.atRiskFlagged ?? 0) > 0 ? 'red' : 'green' }}
+          onClick={() => navigate('/lms/courses')}
         />
       </div>
 
