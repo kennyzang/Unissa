@@ -598,10 +598,10 @@ router.post('/submissions', upload.array('files', 5), async (req: AuthRequest, r
 
     // Pre-seeded AI rubric scores (demo)
     const aiRubricScores = JSON.stringify([
-      { criterion: '内容完整性', ai_score: 8.5, ai_comment: '回答内容较为完整，涵盖了主要知识点，但在某些细节上可以进一步展开。', ai_suggestions: '建议补充具体的例子和实际应用场景，以增强回答的说服力。' },
-      { criterion: '逻辑清晰度', ai_score: 9.0, ai_comment: '逻辑结构清晰，论证过程合理，能够很好地表达思想。', ai_suggestions: '可以尝试使用更简洁的语言表达复杂概念，提高可读性。' },
-      { criterion: '深度与创新性', ai_score: 7.5, ai_comment: '对问题有一定的理解深度，但创新性不足，缺乏独特的见解。', ai_suggestions: '建议从不同角度思考问题，提出一些有创意的解决方案。' },
-      { criterion: '表达准确性', ai_score: 8.0, ai_comment: '表达基本准确，没有明显的错误，但在专业术语的使用上可以更加精确。', ai_suggestions: '建议查阅相关资料，确保专业术语的正确使用。' }
+      { criterion: 'Clarity', ai_score: 20.0, ai_comment: 'The submission is well-structured with clear headings and logical flow. Arguments are presented in an easy-to-follow manner.', ai_suggestions: 'Consider adding a brief summary at the end to reinforce the key points.' },
+      { criterion: 'References', ai_score: 16.0, ai_comment: 'A good range of peer-reviewed sources are cited. Most references are from reputable IEEE and ACM publications.', ai_suggestions: 'Ensure all in-text citations are consistently formatted and every reference is used within the body of the work.' },
+      { criterion: 'Analysis', ai_score: 28.0, ai_comment: 'Big-O derivations are largely correct and the trade-off discussion is solid. The candidate demonstrates a sound understanding of algorithm complexity.', ai_suggestions: 'Strengthen the analysis by including worst-case and average-case comparisons side by side.' },
+      { criterion: 'Code Quality', ai_score: 18.0, ai_comment: 'Code samples are readable and follow consistent naming conventions. Edge cases are handled appropriately.', ai_suggestions: 'Add inline comments for non-trivial logic blocks to improve long-term maintainability.' }
     ])
 
     // Use the first file asset or content asset

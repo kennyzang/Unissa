@@ -9,6 +9,7 @@ import {
 import { QRCode } from 'antd'
 import { apiClient } from '@/lib/apiClient'
 import { useAuthStore } from '@/stores/authStore'
+import { useUIStore } from '@/stores/uiStore'
 import Badge from '@/components/ui/Badge'
 import Modal from '@/components/ui/Modal'
 import styles from './AttendancePage.module.scss'
@@ -99,6 +100,7 @@ const CreateSessionModal: React.FC<{
 }> = ({ offeringId, offeringLabel, onCreated, onClose }) => {
   const { t } = useTranslation()
   const queryClient = useQueryClient()
+  const addToast = useUIStore(s => s.addToast)
   const [name, setName] = useState('')
   const [description, setDescription] = useState('')
   const [files, setFiles] = useState<File[]>([])
@@ -122,12 +124,16 @@ const CreateSessionModal: React.FC<{
       if (files.length > 0) {
         const fd = new FormData()
         files.forEach(f => fd.append('files', f))
-        const matRes = await apiClient.post(
-          `/lms/attendance/sessions/${session.id}/materials`,
-          fd,
-          { headers: { 'Content-Type': 'multipart/form-data' } },
-        )
-        session = matRes.data.data
+        try {
+          const matRes = await apiClient.post(
+            `/lms/attendance/sessions/${session.id}/materials`,
+            fd,
+            { headers: { 'Content-Type': 'multipart/form-data' } },
+          )
+          session = matRes.data.data
+        } catch {
+          addToast({ type: 'warning', message: t('attendance.materialsUploadWarning', { defaultValue: 'Session created, but materials could not be uploaded. You can add them later.' }) })
+        }
       }
 
       queryClient.invalidateQueries({ queryKey: ['attendance', 'sessions'] })

@@ -32,7 +32,8 @@ You help students, staff, and faculty with:
 
 Always be helpful, accurate, and professional. Respond in English by default.
 When you have access to student context data, use it to provide personalised answers.
-If you don't know something specific, direct users to the relevant department.`
+If you don't know something specific, direct users to the relevant department.
+When assessing submitted work against a rubric, always respond in English regardless of the language of the submitted document.`
 
 const PROVIDER_DEFAULTS: Record<string, { baseUrl: string; model: string }> = {
   openai:    { baseUrl: 'https://api.openai.com/v1',           model: 'gpt-4o-mini' },
