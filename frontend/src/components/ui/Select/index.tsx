@@ -4,6 +4,7 @@ import { Select as AntSelect } from 'antd'
 interface SelectOption {
   label: string
   value: string | number
+  disabled?: boolean
 }
 
 interface SelectProps {

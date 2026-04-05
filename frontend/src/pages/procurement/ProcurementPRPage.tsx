@@ -325,7 +325,10 @@ const ProcurementPRPage: React.FC = () => {
                 placeholder={t('procurementPR.glCodePlaceholder')}
                 options={glCodes.map(g => ({
                   value: g.id,
-                  label: `${g.code} – ${g.description} (BND ${g.availableBalance?.toLocaleString()} ${t('procurementPR.available')})`,
+                  label: g.availableBalance <= 0
+                    ? `${g.code} – ${g.description} (Budget Exhausted)`
+                    : `${g.code} – ${g.description} (BND ${g.availableBalance?.toLocaleString()} ${t('procurementPR.available')})`,
+                  disabled: g.availableBalance <= 0,
                 }))}
               />
             )}

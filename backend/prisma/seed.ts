@@ -1097,12 +1097,14 @@ async function main() {
   }
 
   // ── GL Codes ──────────────────────────────────────────────────
-  // Finance budget: BND 45M total | BND 28.3M committed (62.9%) | BND 16.7M remaining
-  const glTnL = await upsertGl({ code: 'OPEX-TNL-2026', desc: 'Teaching & Learning Operations',  deptId: deptIFN.id, budget: 15000000, committed:  9435000, spent:  7200000 })
-  const glADM = await upsertGl({ code: 'OPEX-ADM-2026', desc: 'Administration & Operations',      deptId: deptADM.id, budget:  8000000, committed:  5040000, spent:  3800000 })
-  const glFAC = await upsertGl({ code: 'CAPEX-FAC-2026',desc: 'Facilities & Capital Projects',    deptId: deptFND.id, budget: 12000000, committed:  7548000, spent:  5900000 })
-  const glHR  = await upsertGl({ code: 'OPEX-HR-2026',  desc: 'HR & Staffing Budget',             deptId: deptADM.id, budget:  7000000, committed:  4403000, spent:  3200000 })
-  const glIT  = await upsertGl({ code: 'OPEX-IT-2026',  desc: 'IT & Digital Infrastructure',      deptId: deptIFN.id, budget:  3000000, committed:  1874000, spent:  1400000 })
+  // Finance budget: BND 45M total | BND 18.4M committed (40.9%) | BND 13.15M available
+  // Each GL Code: committed + spent < totalBudget, leaving at least BND 1M available
+  // glIT committed includes BND 900 from the demo completed PR (PR-2026-0035)
+  const glTnL = await upsertGl({ code: 'OPEX-TNL-2026', desc: 'Teaching & Learning Operations',  deptId: deptIFN.id, budget: 15000000, committed: 5800000, spent: 4200000 }) // available: 5,000,000
+  const glADM = await upsertGl({ code: 'OPEX-ADM-2026', desc: 'Administration & Operations',      deptId: deptADM.id, budget:  8000000, committed: 3100000, spent: 2200000 }) // available: 2,700,000
+  const glFAC = await upsertGl({ code: 'CAPEX-FAC-2026',desc: 'Facilities & Capital Projects',    deptId: deptFND.id, budget: 12000000, committed: 5100000, spent: 4000000 }) // available: 2,900,000
+  const glHR  = await upsertGl({ code: 'OPEX-HR-2026',  desc: 'HR & Staffing Budget',             deptId: deptADM.id, budget:  7000000, committed: 3200000, spent: 2350000 }) // available: 1,450,000
+  const glIT  = await upsertGl({ code: 'OPEX-IT-2026',  desc: 'IT & Digital Infrastructure',      deptId: deptIFN.id, budget:  3000000, committed: 1200000, spent:  700000 }) // available: 1,100,000
   void glTnL; void glFAC; void glHR // used for finance dashboard totals
 
   // ── Item Categories ───────────────────────────────────────────
@@ -1264,7 +1266,8 @@ async function main() {
     update: {},
   })
 
-  // One fully approved PR
+  // ── Complete PR lifecycle: submitted → approved (3 levels) → PO generated ──
+  // Demonstrates committed budget update end-to-end (900 already in glIT.committedAmount)
   const prApproved = await prisma.purchaseRequest.upsert({
     where: { prNumber: 'PR-2026-0035' },
     create: {
@@ -1277,8 +1280,34 @@ async function main() {
       glCodeId: glIT.id,
       requiredByDate: new Date(Date.now() + 21 * 86400000),
       recommendedVendorId: vTechMart.id,
-      quoteTrafficLight: 'green', status: 'rector_approved',
+      quoteTrafficLight: 'green', status: 'converted_to_po',
       submittedAt: new Date(Date.now() - 10 * 86400000),
+    },
+    update: { status: 'converted_to_po' },
+  })
+
+  // Approval trail — create only once (no unique key on prId+level, guard with count)
+  const existingApprovals = await prisma.prApproval.count({ where: { prId: prApproved.id } })
+  if (existingApprovals === 0) {
+    await prisma.prApproval.createMany({
+      data: [
+        { prId: prApproved.id, level: 1, approverId: uManager.id, action: 'approved', remarks: 'Approved — required for lab infrastructure upgrade',        actedAt: new Date(Date.now() - 9 * 86400000) },
+        { prId: prApproved.id, level: 2, approverId: uFinance.id, action: 'approved', remarks: 'Budget confirmed — OPEX-IT-2026 has sufficient funds',       actedAt: new Date(Date.now() - 8 * 86400000) },
+        { prId: prApproved.id, level: 3, approverId: uAdmin.id,   action: 'approved', remarks: 'Final approval granted. Proceed with purchase order.',       actedAt: new Date(Date.now() - 7 * 86400000) },
+      ],
+    })
+  }
+
+  // PO record for the completed PR
+  await prisma.purchaseOrder.upsert({
+    where: { poNumber: 'PO-2026-0001' },
+    create: {
+      poNumber: 'PO-2026-0001',
+      prId: prApproved.id,
+      vendorId: vTechMart.id,
+      totalAmount: 900,
+      glCodeId: glIT.id,
+      status: 'issued',
     },
     update: {},
   })
