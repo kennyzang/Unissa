@@ -18,13 +18,26 @@
 .pageTitle { font-size: v.$font-size-2xl; font-weight: v.$font-weight-bold; color: var(--color-gray-8); margin: 0; }
 .pageSub { font-size: v.$font-size-sm; color: var(--color-gray-5); margin: v.$space-1 0 0; }
 
-.courseSelector { display: flex; gap: v.$space-2; flex-wrap: wrap; }
+.courseSelector { display: flex; gap: v.$space-2; flex-wrap: wrap; align-items: center; }
 .courseBtn { background: white; border: 1px solid var(--color-gray-3); border-radius: v.$border-radius; padding: v.$space-2 v.$space-4; font-size: v.$font-size-xs; cursor: pointer; color: var(--color-gray-6); transition: v.$transition-fast; &:hover { border-color: v.$brand-primary; color: v.$brand-primary; } }
 .activeBtn { background: v.$brand-primary !important; color: white !important; border-color: v.$brand-primary !important; }
 
 .kpiRow { display: grid; grid-template-columns: repeat(4, 1fr); gap: v.$space-4; @media (max-width: v.$bp-lg) { grid-template-columns: repeat(2, 1fr); } }
 
 .chartsRow { display: grid; grid-template-columns: 1fr 1fr; gap: v.$space-4; @media (max-width: v.$bp-md) { grid-template-columns: 1fr; } }
+
+.emptyState {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: v.$space-3;
+  padding: v.$space-10 v.$space-4;
+  color: var(--color-gray-5);
+  text-align: center;
+
+  h3 { font-size: v.$font-size-lg; color: var(--color-gray-7); margin: 0; }
+  p  { font-size: v.$font-size-sm; margin: 0; max-width: 380px; }
+}
 .scatterLegend {
   display: flex;
   gap: v.$space-2;

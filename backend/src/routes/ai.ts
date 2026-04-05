@@ -100,6 +100,104 @@ router.get('/risk-dashboard/:offeringId', async (req: AuthRequest, res: Response
   res.json({ success: true, data: scores })
 })
 
+// POST /api/v1/ai/risk-scores/compute/:offeringId
+// Computes (or recomputes) StudentRiskScore for every enrolled student in the offering
+router.post('/risk-scores/compute/:offeringId', async (req: AuthRequest, res: Response) => {
+  const { offeringId } = req.params
+
+  const offering = await prisma.courseOffering.findUnique({
+    where: { id: offeringId },
+    include: {
+      enrolments: {
+        where: { status: 'registered' },
+        select: { studentId: true },
+      },
+      assignments: { select: { id: true } },
+      attendanceSessions: { select: { id: true } },
+    },
+  })
+
+  if (!offering) {
+    res.status(404).json({ success: false, message: 'Offering not found' })
+    return
+  }
+
+  const totalSessions = offering.attendanceSessions.length
+  const totalAssignments = offering.assignments.length
+
+  const results = []
+
+  for (const { studentId } of offering.enrolments) {
+    // Attendance rate
+    const presentCount = await prisma.attendanceRecord.count({
+      where: { studentId, session: { offeringId }, status: 'present' },
+    })
+    const attendancePct = totalSessions > 0 ? (presentCount / totalSessions) * 100 : 100
+
+    // Submission rate
+    const submissionsCount = await prisma.submission.count({
+      where: { studentId, assignment: { offeringId } },
+    })
+    const submissionRate = totalAssignments > 0 ? (submissionsCount / totalAssignments) * 100 : 100
+
+    // Quiz average from graded submissions (normalised to 0-100)
+    const gradedSubmissions = await prisma.submission.findMany({
+      where: { studentId, assignment: { offeringId }, finalMarks: { not: null } },
+      include: { assignment: { select: { maxMarks: true } } },
+    })
+    const quizAvg = gradedSubmissions.length > 0
+      ? gradedSubmissions.reduce((sum, s) => sum + ((s.finalMarks ?? 0) / s.assignment.maxMarks) * 100, 0) / gradedSubmissions.length
+      : 50 // neutral default when nothing graded yet
+
+    // Risk score: 0 = safe, 1 = high risk
+    const riskScore = 1 - (
+      (attendancePct / 100) * 0.4 +
+      (submissionRate / 100) * 0.3 +
+      (quizAvg / 100) * 0.3
+    )
+
+    const predictedOutcome = riskScore > 0.65 ? 'fail' : riskScore > 0.35 ? 'at_risk' : 'pass'
+    const dataPoints = submissionsCount + (totalSessions > 0 ? presentCount : 0)
+    const confidence = Math.min(0.60 + dataPoints * 0.04, 0.97)
+
+    const round1 = (n: number) => Math.round(n * 10) / 10
+    const round3 = (n: number) => Math.round(n * 1000) / 1000
+
+    const record = await prisma.studentRiskScore.upsert({
+      where: { studentId_offeringId: { studentId, offeringId } },
+      create: {
+        studentId, offeringId,
+        attendancePct: round1(attendancePct),
+        quizAvg: round1(quizAvg),
+        submissionRate: round1(submissionRate),
+        riskScore: round3(riskScore),
+        predictedOutcome,
+        confidence: round3(confidence),
+        computedAt: new Date(),
+      },
+      update: {
+        attendancePct: round1(attendancePct),
+        quizAvg: round1(quizAvg),
+        submissionRate: round1(submissionRate),
+        riskScore: round3(riskScore),
+        predictedOutcome,
+        confidence: round3(confidence),
+        computedAt: new Date(),
+      },
+      include: {
+        student: { include: { user: { select: { displayName: true } } } },
+      },
+    })
+
+    results.push(record)
+  }
+
+  // Sort by riskScore descending (highest risk first)
+  results.sort((a, b) => b.riskScore - a.riskScore)
+
+  res.json({ success: true, data: results })
+})
+
 // GET /api/v1/ai/executive-insights
 router.get('/executive-insights', async (_req, res: Response) => {
   const insights = await prisma.executiveInsight.findMany({
