@@ -443,6 +443,8 @@
 }
 
 .colInstrScore {
+  display: flex;
+  align-items: center;
   @media (max-width: v.$bp-md) { display: none; }
 }
 
@@ -459,6 +461,12 @@
     outline: none;
     border-color: v.$brand-primary;
   }
+}
+
+.scoreMax {
+  font-size: v.$font-size-sm;
+  color: var(--color-gray-5);
+  margin-left: 2px;
 }
 
 .finalMarksSection {

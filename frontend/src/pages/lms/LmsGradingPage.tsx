@@ -154,8 +154,8 @@ const LmsGradingPage: React.FC = () => {
         : []
       setRubricScores(scores)
       const totalAiScore = scores.reduce((sum, s) => sum + s.ai_score, 0)
-      const avgScore = scores.length > 0 ? totalAiScore / scores.length : 0
-      setFinalMarks(Math.round(avgScore * 10))
+      const maxPossible = scores.length * 10
+      setFinalMarks(maxPossible > 0 ? Math.round((totalAiScore / maxPossible) * submission.assignment.maxMarks) : 0)
     } catch {
       setRubricScores([])
       setFinalMarks(0)
@@ -173,8 +173,8 @@ const LmsGradingPage: React.FC = () => {
   const acceptAllAiScores = () => {
     setRubricScores(prev => prev.map(s => ({ ...s, instructor_score: s.ai_score })))
     const totalScore = rubricScores.reduce((sum, s) => sum + s.ai_score, 0)
-    const avgScore = rubricScores.length > 0 ? totalScore / rubricScores.length : 0
-    setFinalMarks(Math.round(avgScore * 10))
+    const maxPossible = rubricScores.length * 10
+    setFinalMarks(maxPossible > 0 ? Math.round((totalScore / maxPossible) * (gradingSubmission?.assignment.maxMarks ?? 100)) : 0)
   }
 
   const calculateFinalMarks = () => {
@@ -183,8 +183,8 @@ const LmsGradingPage: React.FC = () => {
       ? rubricScores.map(s => s.instructor_score ?? s.ai_score)
       : rubricScores.map(s => s.ai_score)
     const total = scoresToUse.reduce((sum, s) => sum + s, 0)
-    const avg = scoresToUse.length > 0 ? total / scoresToUse.length : 0
-    return Math.round(avg * 10)
+    const maxPossible = scoresToUse.length * 10
+    return maxPossible > 0 ? Math.round((total / maxPossible) * (gradingSubmission?.assignment.maxMarks ?? 100)) : 0
   }
 
   const submitGrade = () => {
@@ -280,7 +280,7 @@ const LmsGradingPage: React.FC = () => {
                   )}
                   {submission.finalMarks !== undefined && submission.finalMarks !== null && (
                     <div className={styles.grade}>
-                      {t('lmsGrading.grade')}: {submission.finalMarks}/100
+                      {t('lmsGrading.grade')}: {submission.finalMarks}/{submission.assignment.maxMarks}
                     </div>
                   )}
                 </div>
@@ -441,6 +441,7 @@ const LmsGradingPage: React.FC = () => {
                         onChange={e => updateRubricScore(index, 'instructor_score', Number(e.target.value))}
                         className={styles.scoreInput}
                       />
+                      <span className={styles.scoreMax}>/10</span>
                     </span>
                   </div>
                 ))}
@@ -449,11 +450,11 @@ const LmsGradingPage: React.FC = () => {
 
             <div className={styles.finalMarksSection}>
               <div className={styles.finalMarksInput}>
-                <label>Final Score (0–100):</label>
+                <label>Final Score (0–{gradingSubmission.assignment.maxMarks}):</label>
                 <input
                   type="number"
                   min={0}
-                  max={100}
+                  max={gradingSubmission.assignment.maxMarks}
                   value={finalMarks}
                   onChange={e => setFinalMarks(Number(e.target.value))}
                   className={styles.marksInput}
@@ -461,7 +462,7 @@ const LmsGradingPage: React.FC = () => {
               </div>
               <div className={styles.marksPreview}>
                 <AlertCircle size={14} />
-                Calculated from rubric: {calculateFinalMarks()} / 100
+                Calculated from rubric: {calculateFinalMarks()} / {gradingSubmission.assignment.maxMarks}
               </div>
             </div>
 

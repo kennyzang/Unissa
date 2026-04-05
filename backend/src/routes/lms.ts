@@ -323,8 +323,9 @@ router.patch('/submissions/:id/accept-ai', async (req: AuthRequest, res: Respons
   }
 
   const aiScores: any[] = JSON.parse(submission.aiRubricScores)
-  const avgScore = aiScores.reduce((sum: number, s: any) => sum + s.ai_score, 0) / aiScores.length
-  const finalMarks = Math.round(avgScore * 10)
+  const totalScore = aiScores.reduce((sum: number, s: any) => sum + s.ai_score, 0)
+  const maxPossible = aiScores.length * 10
+  const finalMarks = maxPossible > 0 ? Math.round((totalScore / maxPossible) * submission.assignment.maxMarks) : 0
 
   const updated = await prisma.submission.update({
     where: { id: req.params.id },
@@ -662,12 +663,12 @@ router.post('/submissions', upload.array('files', 5), async (req: AuthRequest, r
       fs.writeFileSync(filePath, trimmedContent)
     }
 
-    // Pre-seeded AI rubric scores (demo)
+    // Pre-seeded AI rubric scores (demo) — each criterion scored out of 10
     const aiRubricScores = JSON.stringify([
-      { criterion: 'Clarity', ai_score: 20.0, ai_comment: 'The submission is well-structured with clear headings and logical flow. Arguments are presented in an easy-to-follow manner.', ai_suggestions: 'Consider adding a brief summary at the end to reinforce the key points.' },
-      { criterion: 'References', ai_score: 16.0, ai_comment: 'A good range of peer-reviewed sources are cited. Most references are from reputable IEEE and ACM publications.', ai_suggestions: 'Ensure all in-text citations are consistently formatted and every reference is used within the body of the work.' },
-      { criterion: 'Analysis', ai_score: 28.0, ai_comment: 'Big-O derivations are largely correct and the trade-off discussion is solid. The candidate demonstrates a sound understanding of algorithm complexity.', ai_suggestions: 'Strengthen the analysis by including worst-case and average-case comparisons side by side.' },
-      { criterion: 'Code Quality', ai_score: 18.0, ai_comment: 'Code samples are readable and follow consistent naming conventions. Edge cases are handled appropriately.', ai_suggestions: 'Add inline comments for non-trivial logic blocks to improve long-term maintainability.' }
+      { criterion: 'Clarity', ai_score: 8.0, ai_comment: 'The submission is well-structured with clear headings and logical flow. Arguments are presented in an easy-to-follow manner.', ai_suggestions: 'Consider adding a brief summary at the end to reinforce the key points.' },
+      { criterion: 'References', ai_score: 6.5, ai_comment: 'A good range of peer-reviewed sources are cited. Most references are from reputable IEEE and ACM publications.', ai_suggestions: 'Ensure all in-text citations are consistently formatted and every reference is used within the body of the work.' },
+      { criterion: 'Analysis', ai_score: 7.5, ai_comment: 'Big-O derivations are largely correct and the trade-off discussion is solid. The candidate demonstrates a sound understanding of algorithm complexity.', ai_suggestions: 'Strengthen the analysis by including worst-case and average-case comparisons side by side.' },
+      { criterion: 'Code Quality', ai_score: 7.0, ai_comment: 'Code samples are readable and follow consistent naming conventions. Edge cases are handled appropriately.', ai_suggestions: 'Add inline comments for non-trivial logic blocks to improve long-term maintainability.' }
     ])
 
     // Use the first file asset or content asset
@@ -773,14 +774,9 @@ router.patch('/submissions/:id/grade', async (req: AuthRequest, res: Response) =
     instructorScores: any[]; finalMarks: number
   }
 
-  // Validate finalMarks
+  // Validate finalMarks basic presence
   if (finalMarks === undefined || finalMarks === null || isNaN(finalMarks)) {
     res.status(400).json({ success: false, message: 'Final marks are required' })
-    return
-  }
-
-  if (finalMarks < 0 || finalMarks > 100) {
-    res.status(400).json({ success: false, message: 'Final marks must be between 0 and 100' })
     return
   }
 
@@ -795,6 +791,21 @@ router.patch('/submissions/:id/grade', async (req: AuthRequest, res: Response) =
       res.status(400).json({ success: false, message: 'Instructor scores must be between 0 and 10 for each criterion' })
       return
     }
+  }
+
+  // Fetch submission to validate finalMarks against assignment.maxMarks
+  const existingSubmission = await prisma.submission.findUnique({
+    where: { id: req.params.id },
+    include: { assignment: { select: { maxMarks: true } } },
+  })
+  if (!existingSubmission) {
+    res.status(404).json({ success: false, message: 'Submission not found' })
+    return
+  }
+  const maxMarks = existingSubmission.assignment.maxMarks
+  if (finalMarks < 0 || finalMarks > maxMarks) {
+    res.status(400).json({ success: false, message: `Final marks must be between 0 and ${maxMarks}` })
+    return
   }
 
   const submission = await prisma.submission.update({
