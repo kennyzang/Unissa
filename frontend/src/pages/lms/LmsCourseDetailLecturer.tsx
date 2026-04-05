@@ -4,7 +4,7 @@ import { useParams, useNavigate } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import {
   ArrowLeft, Users, BookOpen, FileText, ClipboardList,
-  Star, Clock, CheckCircle, Video, Link, Calendar, Upload, Trash2, Eye, Play, Download,
+  Star, Clock, CheckCircle, Video, Link, Calendar, Upload, Trash2, Eye, Play, Download, Plus, Minus,
 } from 'lucide-react'
 import { apiClient } from '@/lib/apiClient'
 import { useAuthStore } from '@/stores/authStore'
@@ -38,6 +38,15 @@ interface Assignment {
   dueDate?: string
   assignmentType: string
   weight: number
+  rubricCriteria?: string
+}
+
+type QuestionType = 'single-choice' | 'multiple-choice' | 'open-ended'
+interface Question {
+  type: QuestionType
+  text: string
+  options: string[]   // empty for open-ended
+  marks: number
 }
 
 interface CourseMaterial {
@@ -121,6 +130,25 @@ const LmsCourseDetailLecturer: React.FC = () => {
   const [materialPublished, setMaterialPublished] = useState(true)
   const [materialPreview, setMaterialPreview]   = useState<CourseMaterial | null>(null)
   const [pptPreviewMode, setPptPreviewMode]     = useState<'office' | 'download'>('office')
+
+  // ── Create Assignment modal state ───────────────────────────────────────────
+  const [assignmentModal, setAssignmentModal]   = useState(false)
+  const [asnTitle, setAsnTitle]                 = useState('')
+  const [asnDesc, setAsnDesc]                   = useState('')
+  const [asnDueDate, setAsnDueDate]             = useState('')
+  const [asnMaxMarks, setAsnMaxMarks]           = useState('100')
+  const [asnWeight, setAsnWeight]               = useState('10')
+  const [asnCriteria, setAsnCriteria]           = useState<{ criterion: string; max_marks: number }[]>([
+    { criterion: 'Content', max_marks: 60 },
+    { criterion: 'Presentation', max_marks: 40 },
+  ])
+  const [asnQuestions, setAsnQuestions]         = useState<Question[]>([])
+
+  const resetAssignmentForm = () => {
+    setAsnTitle(''); setAsnDesc(''); setAsnDueDate(''); setAsnMaxMarks('100'); setAsnWeight('10')
+    setAsnCriteria([{ criterion: 'Content', max_marks: 60 }, { criterion: 'Presentation', max_marks: 40 }])
+    setAsnQuestions([])
+  }
 
   // ── Offering detail ─────────────────────────────────────────────────────────
   const { data: offering, isLoading } = useQuery<LecturerOffering>({
@@ -243,6 +271,38 @@ const LmsCourseDetailLecturer: React.FC = () => {
     },
   })
 
+  // ── Create assignment mutation ──────────────────────────────────────────────
+  const createAssignmentMutation = useMutation({
+    mutationFn: async () => {
+      const title = asnTitle.trim()
+      if (!title) throw new Error(t('lmsCourseDetailLecturer.titleRequired', { defaultValue: 'Title is required' }))
+      if (!asnDueDate) throw new Error('Due date is required')
+      const rubricCriteria = {
+        criteria: asnCriteria.filter(c => c.criterion.trim()),
+        questions: asnQuestions,
+      }
+      const { data } = await apiClient.post('/lms/assignments', {
+        offeringId,
+        title,
+        description: asnDesc.trim() || title,
+        dueDate: asnDueDate,
+        maxMarks: parseInt(asnMaxMarks) || 100,
+        weightPct: parseFloat(asnWeight) || 10,
+        rubricCriteria,
+      })
+      return data
+    },
+    onSuccess: () => {
+      addToast({ type: 'success', message: t('lmsCourseDetailLecturer.assignmentCreated', { defaultValue: 'Assignment created successfully' }) })
+      qc.invalidateQueries({ queryKey: ['lms', 'offering', offeringId] })
+      setAssignmentModal(false)
+      resetAssignmentForm()
+    },
+    onError: (e: any) => {
+      addToast({ type: 'error', message: e.response?.data?.message ?? e.message ?? 'Failed to create assignment' })
+    },
+  })
+
   // ── Loading / not-found ─────────────────────────────────────────────────────
   if (isLoading) {
     return <div className={styles.page}><div className={styles.loading}>{t('lmsCourseDetail.loading', { defaultValue: 'Loading…' })}</div></div>
@@ -287,6 +347,11 @@ const LmsCourseDetailLecturer: React.FC = () => {
       </Card>
 
       <Card title={t('lmsCourseDetailLecturer.assignments', { defaultValue: 'Assignments' })}>
+        <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 12 }}>
+          <Button size="sm" icon={<Plus size={14} />} onClick={() => setAssignmentModal(true)}>
+            {t('lmsCourseDetailLecturer.createAssignment', { defaultValue: 'Create Assignment' })}
+          </Button>
+        </div>
         {offering.assignments.length === 0 ? (
           <div className={styles.emptyBlock}>{t('lmsCourseDetailLecturer.noAssignments', { defaultValue: 'No assignments yet.' })}</div>
         ) : (
@@ -600,7 +665,10 @@ const LmsCourseDetailLecturer: React.FC = () => {
   // ── Grade modal helpers ──────────────────────────────────────────────────────
   const parseRubric = (jsonStr?: string) => {
     if (!jsonStr) return []
-    try { return JSON.parse(jsonStr) } catch { return [] }
+    try {
+      const parsed = JSON.parse(jsonStr)
+      return Array.isArray(parsed) ? parsed : (parsed.criteria ?? [])
+    } catch { return [] }
   }
 
   // ── Render ──────────────────────────────────────────────────────────────────
@@ -1037,6 +1105,129 @@ const LmsCourseDetailLecturer: React.FC = () => {
                 <p>{materialPreview.description}</p>
               </div>
             )}
+          </div>
+        </Modal>
+      )}
+
+      {/* ── Create Assignment Modal ──────────────────────────────────────────── */}
+      {assignmentModal && (
+        <Modal
+          open
+          title={t('lmsCourseDetailLecturer.createAssignment', { defaultValue: 'Create Assignment' })}
+          onClose={() => { setAssignmentModal(false); resetAssignmentForm() }}
+          okText={t('lmsCourseDetailLecturer.create', { defaultValue: 'Create' })}
+          onOk={() => createAssignmentMutation.mutate()}
+          okLoading={createAssignmentMutation.isPending}
+          width={640}
+        >
+          <div className={styles.uploadForm}>
+            {/* Title */}
+            <div className={styles.formGroup}>
+              <label className={styles.formLabel}>{t('lmsCourseDetailLecturer.title', { defaultValue: 'Title' })} *</label>
+              <input type="text" className={styles.formInput} value={asnTitle} onChange={e => setAsnTitle(e.target.value)}
+                placeholder={t('lmsCourseDetailLecturer.asnTitlePlaceholder', { defaultValue: 'e.g. Lab Report 1 – Linked List' })} />
+            </div>
+            {/* Description */}
+            <div className={styles.formGroup}>
+              <label className={styles.formLabel}>{t('lmsCourseDetailLecturer.description', { defaultValue: 'Description' })}</label>
+              <textarea className={styles.formTextarea} rows={3} value={asnDesc} onChange={e => setAsnDesc(e.target.value)}
+                placeholder={t('lmsCourseDetailLecturer.asnDescPlaceholder', { defaultValue: 'Instructions visible to students' })} />
+            </div>
+            {/* Due date / marks / weight row */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12 }}>
+              <div className={styles.formGroup}>
+                <label className={styles.formLabel}>{t('lmsCourseDetailLecturer.dueDate', { defaultValue: 'Due Date' })} *</label>
+                <input type="datetime-local" className={styles.formInput} value={asnDueDate} onChange={e => setAsnDueDate(e.target.value)} />
+              </div>
+              <div className={styles.formGroup}>
+                <label className={styles.formLabel}>{t('lmsCourseDetailLecturer.maxMarks', { defaultValue: 'Max Marks' })}</label>
+                <input type="number" className={styles.formInput} min={1} value={asnMaxMarks} onChange={e => setAsnMaxMarks(e.target.value)} />
+              </div>
+              <div className={styles.formGroup}>
+                <label className={styles.formLabel}>{t('lmsCourseDetailLecturer.weightPct', { defaultValue: 'Weight (%)' })}</label>
+                <input type="number" className={styles.formInput} min={0} max={100} step={0.5} value={asnWeight} onChange={e => setAsnWeight(e.target.value)} />
+              </div>
+            </div>
+
+            {/* Rubric Criteria */}
+            <div className={styles.formGroup}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+                <label className={styles.formLabel} style={{ margin: 0 }}>{t('lmsCourseDetailLecturer.rubricCriteria', { defaultValue: 'Rubric Criteria' })}</label>
+                <Button size="sm" variant="ghost" icon={<Plus size={12} />}
+                  onClick={() => setAsnCriteria(prev => [...prev, { criterion: '', max_marks: 10 }])}>
+                  {t('lmsCourseDetailLecturer.addCriterion', { defaultValue: 'Add' })}
+                </Button>
+              </div>
+              {asnCriteria.map((c, i) => (
+                <div key={i} style={{ display: 'flex', gap: 8, marginBottom: 6 }}>
+                  <input type="text" className={styles.formInput} style={{ flex: 3 }} placeholder={t('lmsCourseDetailLecturer.criterionName', { defaultValue: 'Criterion name' })}
+                    value={c.criterion} onChange={e => setAsnCriteria(prev => prev.map((x, xi) => xi === i ? { ...x, criterion: e.target.value } : x))} />
+                  <input type="number" className={styles.formInput} style={{ flex: 1 }} min={1} placeholder="Marks"
+                    value={c.max_marks} onChange={e => setAsnCriteria(prev => prev.map((x, xi) => xi === i ? { ...x, max_marks: parseInt(e.target.value) || 0 } : x))} />
+                  <Button size="sm" variant="ghost" icon={<Minus size={12} />}
+                    onClick={() => setAsnCriteria(prev => prev.filter((_, xi) => xi !== i))} />
+                </div>
+              ))}
+            </div>
+
+            {/* Questions */}
+            <div className={styles.formGroup}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+                <label className={styles.formLabel} style={{ margin: 0 }}>{t('lmsCourseDetailLecturer.questions', { defaultValue: 'Questions' })}</label>
+                <div style={{ display: 'flex', gap: 6 }}>
+                  {(['single-choice', 'multiple-choice', 'open-ended'] as QuestionType[]).map(type => (
+                    <Button key={type} size="sm" variant="ghost" icon={<Plus size={12} />}
+                      onClick={() => setAsnQuestions(prev => [...prev, {
+                        type, text: '', marks: 5,
+                        options: type !== 'open-ended' ? ['', ''] : [],
+                      }])}>
+                      {type === 'single-choice' ? 'Single' : type === 'multiple-choice' ? 'Multi' : 'Open'}
+                    </Button>
+                  ))}
+                </div>
+              </div>
+              {asnQuestions.map((q, qi) => (
+                <div key={qi} style={{ background: 'var(--color-gray-1)', borderRadius: 6, padding: 12, marginBottom: 8 }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
+                    <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--color-gray-6)', textTransform: 'uppercase' }}>
+                      Q{qi + 1} · {q.type}
+                    </span>
+                    <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+                      <input type="number" min={1} value={q.marks} style={{ width: 52, fontSize: 12, padding: '2px 6px', border: '1px solid var(--color-gray-3)', borderRadius: 4 }}
+                        onChange={e => setAsnQuestions(prev => prev.map((x, xi) => xi === qi ? { ...x, marks: parseInt(e.target.value) || 1 } : x))} />
+                      <span style={{ fontSize: 11, color: 'var(--color-gray-5)' }}>pts</span>
+                      <Button size="sm" variant="ghost" icon={<Minus size={12} />}
+                        onClick={() => setAsnQuestions(prev => prev.filter((_, xi) => xi !== qi))} />
+                    </div>
+                  </div>
+                  <input type="text" className={styles.formInput} style={{ marginBottom: 6 }}
+                    placeholder={t('lmsCourseDetailLecturer.questionText', { defaultValue: 'Question text' })}
+                    value={q.text} onChange={e => setAsnQuestions(prev => prev.map((x, xi) => xi === qi ? { ...x, text: e.target.value } : x))} />
+                  {q.type !== 'open-ended' && (
+                    <div>
+                      {q.options.map((opt, oi) => (
+                        <div key={oi} style={{ display: 'flex', gap: 6, marginBottom: 4 }}>
+                          <span style={{ fontSize: 12, color: 'var(--color-gray-5)', padding: '6px 2px', minWidth: 16 }}>{String.fromCharCode(65 + oi)}.</span>
+                          <input type="text" className={styles.formInput} style={{ flex: 1 }}
+                            placeholder={t('lmsCourseDetailLecturer.optionText', { defaultValue: `Option ${String.fromCharCode(65 + oi)}` })}
+                            value={opt} onChange={e => setAsnQuestions(prev => prev.map((x, xi) => xi === qi ? {
+                              ...x, options: x.options.map((o, oi2) => oi2 === oi ? e.target.value : o)
+                            } : x))} />
+                          {q.options.length > 2 && (
+                            <Button size="sm" variant="ghost" icon={<Minus size={11} />}
+                              onClick={() => setAsnQuestions(prev => prev.map((x, xi) => xi === qi ? { ...x, options: x.options.filter((_, oi2) => oi2 !== oi) } : x))} />
+                          )}
+                        </div>
+                      ))}
+                      <Button size="sm" variant="ghost" icon={<Plus size={11} />}
+                        onClick={() => setAsnQuestions(prev => prev.map((x, xi) => xi === qi ? { ...x, options: [...x.options, ''] } : x))}>
+                        {t('lmsCourseDetailLecturer.addOption', { defaultValue: 'Add option' })}
+                      </Button>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
           </div>
         </Modal>
       )}

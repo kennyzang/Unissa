@@ -915,25 +915,159 @@ async function main() {
   // ── 14 Assignments Due Today (LMS dashboard) ─────────────────
   const dueToday = new Date(); dueToday.setHours(23, 59, 59, 0)
   const todayAssignments = [
-    { id: 'asn-t-01', offeringId: offeringIFN101.id, title: 'Weekly Quiz 1 – Variables & Loops',          maxMarks: 20,  weight: 5  },
-    { id: 'asn-t-02', offeringId: offeringIFN101.id, title: 'Lab Exercise: Flowchart Design',              maxMarks: 30,  weight: 5  },
-    { id: 'asn-t-03', offeringId: offeringIFN101.id, title: 'Reflection Journal Week 4',                   maxMarks: 10,  weight: 2  },
-    { id: 'asn-t-04', offeringId: offeringIFN102.id, title: 'Lab Report 1 – Linked List Implementation',  maxMarks: 50,  weight: 10 },
-    { id: 'asn-t-05', offeringId: offeringIFN102.id, title: 'Quiz 2 – Tree Traversal Algorithms',         maxMarks: 25,  weight: 5  },
-    { id: 'asn-t-06', offeringId: offeringIFN102.id, title: 'Problem Set 3 – Sorting Comparisons',        maxMarks: 40,  weight: 8  },
-    { id: 'asn-t-07', offeringId: offeringIFN201.id, title: 'ER Diagram Assignment – Library System',     maxMarks: 100, weight: 15 },
-    { id: 'asn-t-08', offeringId: offeringIFN201.id, title: 'SQL Query Lab – Normalisation Exercise',     maxMarks: 50,  weight: 10 },
-    { id: 'asn-t-09', offeringId: offeringIFN201.id, title: 'Weekly Quiz – Relational Algebra',           maxMarks: 20,  weight: 5  },
-    { id: 'asn-t-10', offeringId: offeringARA101.id, title: 'Vocabulary Exercise Week 4',                 maxMarks: 30,  weight: 5  },
-    { id: 'asn-t-11', offeringId: offeringARA101.id, title: 'Listening Comprehension Task 2',             maxMarks: 20,  weight: 4  },
-    { id: 'asn-t-12', offeringId: offeringClashDemo.id, title: 'Arabic Writing Assessment – Unit 3',      maxMarks: 50,  weight: 10 },
-    { id: 'asn-t-13', offeringId: offeringClashDemo.id, title: 'Grammar Quiz – Verb Conjugations',        maxMarks: 20,  weight: 4  },
-    { id: 'asn-t-14', offeringId: offeringFND101.id, title: 'Foundation Maths – Calculus Problem Set',   maxMarks: 60,  weight: 10 },
+    {
+      id: 'asn-t-01', offeringId: offeringIFN101.id, title: 'Weekly Quiz 1 – Variables & Loops',
+      description: 'Answer 10 multiple-choice questions on variable declaration, data types, and loop constructs (for, while, do-while). Show your working for any calculation-based questions.',
+      maxMarks: 20, weight: 5,
+      rubric: [
+        { criterion: 'Correctness', max_marks: 14, ai_suggestion: 'Check each answer against the expected output' },
+        { criterion: 'Clarity of Working', max_marks: 6, ai_suggestion: 'Award marks for clearly shown steps' },
+      ],
+    },
+    {
+      id: 'asn-t-02', offeringId: offeringIFN101.id, title: 'Lab Exercise: Flowchart Design',
+      description: 'Design a flowchart for a student grade calculator. The program reads three exam scores, computes the average, and outputs a letter grade (A–F). Include decision diamonds for each grade boundary.',
+      maxMarks: 30, weight: 5,
+      rubric: [
+        { criterion: 'Correctness of Logic', max_marks: 15, ai_suggestion: 'Verify all grade boundary conditions are covered' },
+        { criterion: 'Flowchart Notation', max_marks: 10, ai_suggestion: 'Standard symbols for start/end, process, decision' },
+        { criterion: 'Readability', max_marks: 5, ai_suggestion: 'Clear labelling and arrow direction' },
+      ],
+    },
+    {
+      id: 'asn-t-03', offeringId: offeringIFN101.id, title: 'Reflection Journal Week 4',
+      description: 'Write a 200–300 word reflective entry on what you found most challenging this week (loops and conditions) and how you overcame it. Reference at least one specific programming exercise.',
+      maxMarks: 10, weight: 2,
+      rubric: [
+        { criterion: 'Depth of Reflection', max_marks: 5, ai_suggestion: 'Look for genuine insight beyond surface-level observations' },
+        { criterion: 'Use of Examples', max_marks: 3, ai_suggestion: 'Specific code or exercise referenced' },
+        { criterion: 'Writing Quality', max_marks: 2, ai_suggestion: 'Clear sentences, within word count' },
+      ],
+    },
+    {
+      id: 'asn-t-04', offeringId: offeringIFN102.id, title: 'Lab Report 1 – Linked List Implementation',
+      description: 'Implement a singly linked list in Python with operations: insert_head, insert_tail, delete_node, search, and display. Include a report (500 words) analysing time complexity of each operation with Big-O justification.',
+      maxMarks: 50, weight: 10,
+      rubric: [
+        { criterion: 'Implementation Correctness', max_marks: 20, ai_suggestion: 'All five operations work on edge cases (empty list, single node)' },
+        { criterion: 'Big-O Analysis', max_marks: 15, ai_suggestion: 'Each operation analysed separately with justification' },
+        { criterion: 'Code Quality', max_marks: 10, ai_suggestion: 'Readable naming, comments on non-trivial logic' },
+        { criterion: 'Report Writing', max_marks: 5, ai_suggestion: 'Clear structure: introduction, analysis, conclusion' },
+      ],
+    },
+    {
+      id: 'asn-t-05', offeringId: offeringIFN102.id, title: 'Quiz 2 – Tree Traversal Algorithms',
+      description: 'Given a binary search tree diagram, write out the node visit order for: (a) in-order, (b) pre-order, and (c) post-order traversal. Then answer 4 short-answer questions on BST insertion and deletion.',
+      maxMarks: 25, weight: 5,
+      rubric: [
+        { criterion: 'Traversal Sequences', max_marks: 15, ai_suggestion: '5 marks per traversal type; partial credit for mostly correct sequences' },
+        { criterion: 'Short Answers', max_marks: 10, ai_suggestion: '2.5 marks each; accept equivalent correct answers' },
+      ],
+    },
+    {
+      id: 'asn-t-06', offeringId: offeringIFN102.id, title: 'Problem Set 3 – Sorting Comparisons',
+      description: 'Implement Bubble Sort, Merge Sort, and Quick Sort. Run each on arrays of 100, 1,000, and 10,000 random integers. Record execution times, plot a graph, and write a 400-word discussion on your observations vs. theoretical complexity.',
+      maxMarks: 40, weight: 8,
+      rubric: [
+        { criterion: 'Algorithm Implementations', max_marks: 15, ai_suggestion: 'Each algorithm runs correctly on all three input sizes' },
+        { criterion: 'Timing Methodology', max_marks: 10, ai_suggestion: 'Reproducible timing approach, multiple runs averaged' },
+        { criterion: 'Graph Quality', max_marks: 8, ai_suggestion: 'Axes labelled, legend included, data points visible' },
+        { criterion: 'Discussion', max_marks: 7, ai_suggestion: 'Links empirical results to Big-O theory correctly' },
+      ],
+    },
+    {
+      id: 'asn-t-07', offeringId: offeringIFN201.id, title: 'ER Diagram Assignment – Library System',
+      description: 'Model a university library system with entities: Member, Book, Author, Loan, and Fine. Identify all attributes, primary keys, and relationships (1:1, 1:N, M:N). Normalise to 3NF and justify each step.',
+      maxMarks: 100, weight: 15,
+      rubric: [
+        { criterion: 'Entity & Attribute Completeness', max_marks: 25, ai_suggestion: 'All required entities and their key attributes present' },
+        { criterion: 'Relationship Cardinality', max_marks: 25, ai_suggestion: 'Correct multiplicity for all relationships' },
+        { criterion: 'Normalisation to 3NF', max_marks: 35, ai_suggestion: 'Demonstrate 1NF → 2NF → 3NF steps with examples' },
+        { criterion: 'Diagram Presentation', max_marks: 15, ai_suggestion: 'Standard ER notation, readable layout' },
+      ],
+    },
+    {
+      id: 'asn-t-08', offeringId: offeringIFN201.id, title: 'SQL Query Lab – Normalisation Exercise',
+      description: 'Given an unnormalised student_enrolment table, write SQL to: (1) identify repeating groups, (2) create a normalised schema, (3) write SELECT queries including at least two JOINs, a GROUP BY, and a HAVING clause.',
+      maxMarks: 50, weight: 10,
+      rubric: [
+        { criterion: 'Normalisation Steps', max_marks: 20, ai_suggestion: 'Correct 1NF/2NF/3NF decomposition with SQL CREATE statements' },
+        { criterion: 'Query Correctness', max_marks: 20, ai_suggestion: 'All required clauses present; queries return expected results' },
+        { criterion: 'SQL Style', max_marks: 10, ai_suggestion: 'Consistent capitalisation, aliases used appropriately' },
+      ],
+    },
+    {
+      id: 'asn-t-09', offeringId: offeringIFN201.id, title: 'Weekly Quiz – Relational Algebra',
+      description: 'Translate 6 relational algebra expressions into SQL and vice versa. Expressions involve σ (selection), π (projection), ⋈ (join), and ∪ (union). Show intermediate steps for multi-step expressions.',
+      maxMarks: 20, weight: 5,
+      rubric: [
+        { criterion: 'RA to SQL Translation', max_marks: 12, ai_suggestion: '2 marks each; deduct 1 for wrong clause, 2 for wrong output' },
+        { criterion: 'SQL to RA Translation', max_marks: 8, ai_suggestion: 'Correct operator sequence required' },
+      ],
+    },
+    {
+      id: 'asn-t-10', offeringId: offeringARA101.id, title: 'Vocabulary Exercise Week 4',
+      description: 'Complete 15 fill-in-the-blank sentences using vocabulary from Unit 4 (family, home, and daily routines). Then write 5 original sentences using any 5 new words from this week\'s word list.',
+      maxMarks: 30, weight: 5,
+      rubric: [
+        { criterion: 'Fill-in-the-Blank Accuracy', max_marks: 15, ai_suggestion: '1 mark each; accept contextually correct variants' },
+        { criterion: 'Original Sentences', max_marks: 10, ai_suggestion: 'Each sentence is grammatically correct and uses the target word naturally' },
+        { criterion: 'Script & Spelling', max_marks: 5, ai_suggestion: 'Check Arabic script accuracy for handwritten submissions' },
+      ],
+    },
+    {
+      id: 'asn-t-11', offeringId: offeringARA101.id, title: 'Listening Comprehension Task 2',
+      description: 'Listen to the provided audio recording (a 3-minute dialogue about shopping at a market). Answer 8 comprehension questions in Arabic — 4 short-answer and 4 true/false with correction.',
+      maxMarks: 20, weight: 4,
+      rubric: [
+        { criterion: 'Short-Answer Responses', max_marks: 12, ai_suggestion: '3 marks each; deduct 1 for incomplete or partially incorrect answers' },
+        { criterion: 'True/False with Correction', max_marks: 8, ai_suggestion: '2 marks each: 1 for correct T/F, 1 for correct written correction' },
+      ],
+    },
+    {
+      id: 'asn-t-12', offeringId: offeringClashDemo.id, title: 'Arabic Writing Assessment – Unit 3',
+      description: 'Write a 150-word paragraph in Arabic describing your daily university schedule. Use at least 6 time expressions (e.g. بعد الظهر, في الصباح) and 4 verbs in the present tense. Attach a hand-drawn or digital timetable.',
+      maxMarks: 50, weight: 10,
+      rubric: [
+        { criterion: 'Content & Task Completion', max_marks: 20, ai_suggestion: 'All required elements present; word count within range' },
+        { criterion: 'Grammar & Verb Usage', max_marks: 15, ai_suggestion: 'Present-tense conjugation checked for subject–verb agreement' },
+        { criterion: 'Vocabulary Range', max_marks: 10, ai_suggestion: 'Time expressions varied; not all from the same category' },
+        { criterion: 'Script Accuracy', max_marks: 5, ai_suggestion: 'Correct letter forms and connectivity in Arabic script' },
+      ],
+    },
+    {
+      id: 'asn-t-13', offeringId: offeringClashDemo.id, title: 'Grammar Quiz – Verb Conjugations',
+      description: 'Conjugate 12 Arabic verbs across all singular and plural pronouns (past, present, future tenses). Then identify the root letters (جذر) for each verb and classify its pattern (وزن).',
+      maxMarks: 20, weight: 4,
+      rubric: [
+        { criterion: 'Conjugation Accuracy', max_marks: 12, ai_suggestion: '0.5 marks per correct form; 24 forms total across 12 verbs' },
+        { criterion: 'Root & Pattern Identification', max_marks: 8, ai_suggestion: '1 mark each: 0.5 for root, 0.5 for pattern' },
+      ],
+    },
+    {
+      id: 'asn-t-14', offeringId: offeringFND101.id, title: 'Foundation Maths – Calculus Problem Set',
+      description: 'Solve 6 differentiation problems (product rule, chain rule, implicit) and 4 integration problems (substitution, by parts). Show all working. Final answer must be simplified to lowest terms.',
+      maxMarks: 60, weight: 10,
+      rubric: [
+        { criterion: 'Differentiation (Q1–Q6)', max_marks: 36, ai_suggestion: '6 marks each: 4 for method, 2 for correct simplified answer' },
+        { criterion: 'Integration (Q7–Q10)', max_marks: 20, ai_suggestion: '5 marks each: 3 for method, 2 for correct simplified answer' },
+        { criterion: 'Working Shown', max_marks: 4, ai_suggestion: 'Deduct 2 if method steps are skipped even where answer is correct' },
+      ],
+    },
   ]
   for (const a of todayAssignments) {
     await prisma.assignment.upsert({
       where: { id: a.id },
-      create: { id: a.id, offeringId: a.offeringId, title: a.title, description: a.title, dueDate: dueToday, maxMarks: a.maxMarks, weightPct: a.weight },
+      create: {
+        id: a.id,
+        offeringId: a.offeringId,
+        title: a.title,
+        description: a.description,
+        dueDate: dueToday,
+        maxMarks: a.maxMarks,
+        weightPct: a.weight,
+        rubricCriteria: JSON.stringify(a.rubric),
+      },
       update: {},
     })
   }

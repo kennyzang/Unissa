@@ -232,13 +232,18 @@ const LmsCourseDetailStudent: React.FC = () => {
   // ── File validation ───────────────────────────────────────────────────────────
   const validateFiles = (files: File[]) => {
     const errors: string[] = []
-    const allowed = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp']
-    const allowedExt = ['.jpg', '.jpeg', '.png', '.gif', '.webp']
+    const allowed = [
+      'image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp',
+      'application/pdf', 'application/msword',
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      'text/plain',
+    ]
+    const allowedExt = ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.pdf', '.doc', '.docx', '.txt']
     const maxSize = 10 * 1024 * 1024
     files.forEach(f => {
       const ext = `.${f.name.split('.').pop()?.toLowerCase()}`
       if (!allowed.includes(f.type) && !allowedExt.includes(ext))
-        errors.push(t('lmsCourseDetail.imageFormatError', { fileName: f.name }))
+        errors.push(t('lmsCourseDetail.fileFormatError', { fileName: f.name, defaultValue: `Unsupported file type: {{fileName}}. Allowed: JPG, PNG, PDF, DOC, DOCX, TXT.` }))
       if (f.size > maxSize)
         errors.push(t('lmsCourseDetail.fileSizeError', { fileName: f.name }))
     })
@@ -752,7 +757,7 @@ const LmsCourseDetailStudent: React.FC = () => {
               <label className={styles.submitLabel}>{t('lmsCourseDetail.uploadImages', { defaultValue: 'Upload images (optional)' })}</label>
               <div className={styles.fileUpload}>
                 <input
-                  type="file" multiple accept="image/jpeg,image/jpg,image/png,image/gif,image/webp"
+                  type="file" multiple accept="image/jpeg,image/jpg,image/png,image/gif,image/webp,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/plain"
                   className={styles.fileInput}
                   onChange={e => {
                     if (e.target.files) {

@@ -463,6 +463,40 @@ router.get('/offerings/:offeringId/enrolments', async (req: AuthRequest, res: Re
   res.json({ success: true, data: enrolments })
 })
 
+// POST /api/v1/lms/assignments — Create a new assignment (lecturer/admin)
+router.post('/assignments', async (req: AuthRequest, res: Response) => {
+  try {
+    const { offeringId, title, description, dueDate, maxMarks, weightPct, rubricCriteria } = req.body as {
+      offeringId: string
+      title: string
+      description?: string
+      dueDate: string
+      maxMarks?: number
+      weightPct?: number
+      rubricCriteria?: any
+    }
+    if (!offeringId || !title || !dueDate) {
+      res.status(400).json({ success: false, message: 'offeringId, title, and dueDate are required' })
+      return
+    }
+    const assignment = await prisma.assignment.create({
+      data: {
+        offeringId,
+        title: title.trim(),
+        description: (description ?? title).trim(),
+        dueDate: new Date(dueDate),
+        maxMarks: maxMarks ?? 100,
+        weightPct: weightPct ?? 10,
+        rubricCriteria: rubricCriteria ? JSON.stringify(rubricCriteria) : null,
+      },
+    })
+    res.status(201).json({ success: true, data: assignment })
+  } catch (error) {
+    console.error('Error creating assignment:', error)
+    res.status(500).json({ success: false, message: 'Failed to create assignment' })
+  }
+})
+
 // GET /api/v1/lms/submissions/offering/:offeringId — All submissions for a course offering (lecturer/admin only)
 router.get('/submissions/offering/:offeringId', async (req: AuthRequest, res: Response) => {
   const { offeringId } = req.params
@@ -540,13 +574,18 @@ router.post('/submissions', upload.array('files', 5), async (req: AuthRequest, r
       return
     }
 
-    // Validate file types (only images allowed)
-    const allowedMimeTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp']
+    // Validate file types
+    const allowedMimeTypes = [
+      'image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp',
+      'application/pdf', 'application/msword',
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      'text/plain',
+    ]
     for (const file of files) {
       if (!allowedMimeTypes.includes(file.mimetype)) {
-        res.status(400).json({ 
-          success: false, 
-          message: `Invalid file type: ${file.originalname}. Only image files (JPG, PNG, GIF, WEBP) are allowed.` 
+        res.status(400).json({
+          success: false,
+          message: `Invalid file type: ${file.originalname}. Allowed: JPG, PNG, PDF, DOC, DOCX, TXT.`
         })
         return
       }
