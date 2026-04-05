@@ -4,7 +4,7 @@ import { useParams, useNavigate } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import {
   ArrowLeft, FileText, Upload, Star, CheckCircle, Clock, Video, Link, BookOpen, Download, Eye, Play,
-  QrCode, AlertTriangle,
+  QrCode, AlertTriangle, UserCheck,
 } from 'lucide-react'
 import { apiClient } from '@/lib/apiClient'
 import { useAuthStore } from '@/stores/authStore'
@@ -96,7 +96,7 @@ interface AttendanceRecord {
   session: { id: string; offeringId: string; startedAt: string; name?: string }
 }
 
-type Tab = 'materials' | 'assignments' | 'progress'
+type Tab = 'materials' | 'assignments' | 'progress' | 'attendance'
 
 // ─── Component ────────────────────────────────────────────────────────────────
 const LmsCourseDetailStudent: React.FC = () => {
@@ -216,7 +216,7 @@ const LmsCourseDetailStudent: React.FC = () => {
       const sessionIds = new Set(sessions.map(s => s.id))
       return (data.data?.records ?? []).filter((r: any) => sessionIds.has(r.sessionId))
     },
-    enabled: !!studentProfile?.id && !!offeringId && sessions.length > 0 && activeTab === 'progress',
+    enabled: !!studentProfile?.id && !!offeringId && sessions.length > 0 && (activeTab === 'progress' || activeTab === 'attendance'),
   })
 
   // ── Submission history ────────────────────────────────────────────────────────
@@ -583,6 +583,95 @@ const LmsCourseDetailStudent: React.FC = () => {
     </div>
   )
 
+  const renderAttendance = () => (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+      {/* Check-in form — always visible so student can paste a token any time */}
+      <Card title={t('lmsCourseDetail.checkInTitle', { defaultValue: 'Check In to Session' })}>
+        {activeSession ? (
+          <div style={{ marginBottom: 12, padding: '10px 14px', background: '#f0faf4', border: '1px solid #b7eb8f', borderRadius: 8, display: 'flex', alignItems: 'center', gap: 8 }}>
+            <CheckCircle size={16} color="#52c41a" />
+            <span style={{ fontSize: 13, fontWeight: 600, color: '#389e0d' }}>
+              {activeSession.name ?? t('lmsCourseDetail.activeSession', { defaultValue: 'Active Session' })}
+            </span>
+            <span style={{ fontSize: 12, color: '#86909c', marginLeft: 4 }}>
+              · {t('lmsCourseDetail.startedAt', { defaultValue: 'Started' })} {new Date(activeSession.startedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+            </span>
+          </div>
+        ) : (
+          <p style={{ fontSize: 13, color: '#86909c', marginBottom: 12 }}>
+            {t('lmsCourseDetail.noActiveSession', { defaultValue: 'No active session right now. Enter your token to check in manually.' })}
+          </p>
+        )}
+        <div style={{ display: 'flex', gap: 8 }}>
+          <input
+            type="text"
+            value={checkinToken}
+            onChange={e => setCheckinToken(e.target.value.toUpperCase())}
+            onKeyDown={e => e.key === 'Enter' && checkinToken.trim() && checkinMutation.mutate()}
+            placeholder={t('lmsCourseDetail.enterToken', { defaultValue: 'Enter token from lecturer' })}
+            className={styles.tokenInput}
+            style={{ flex: 1 }}
+            maxLength={64}
+          />
+          <Button
+            onClick={() => checkinMutation.mutate()}
+            disabled={!checkinToken.trim() || checkinMutation.isPending}
+            loading={checkinMutation.isPending}
+            icon={<UserCheck size={14} />}
+          >
+            {t('lmsCourseDetail.checkIn', { defaultValue: 'Check In' })}
+          </Button>
+        </div>
+        {checkinMsg && (
+          <div className={`${styles.checkinMsg} ${checkinMsg.ok ? styles.checkinMsgOk : styles.checkinMsgErr}`} style={{ marginTop: 10 }}>
+            {checkinMsg.ok ? <CheckCircle size={14} /> : <AlertTriangle size={14} />}
+            {checkinMsg.text}
+          </div>
+        )}
+      </Card>
+
+      {/* Attendance history */}
+      <Card title={t('lmsCourseDetail.attendanceHistory', { defaultValue: 'Attendance History' })}>
+        {sessions.length === 0 ? (
+          <div className={styles.emptyState}>
+            {t('lmsCourseDetailStudent.noAttendance', { defaultValue: 'No sessions recorded yet.' })}
+          </div>
+        ) : (
+          <>
+            <div className={styles.attendanceBar} style={{ marginBottom: 16 }}>
+              <span className={styles.attendanceLabel}>{t('lmsCourseDetailStudent.attendanceRate', { defaultValue: 'Attendance rate' })}</span>
+              <div className={styles.attendanceBarFill}>
+                <div className={`${styles.attendanceBarInner} ${styles[attendanceLevel]}`} style={{ width: `${attendancePct}%` }} />
+              </div>
+              <span className={`${styles.attendancePct} ${attendancePct >= 80 ? styles.high : attendancePct >= 60 ? styles.mid : styles.low}`}>
+                {attendancePct}%
+              </span>
+              <span className={styles.attendanceLabel}>{presentCount}/{sessions.length}</span>
+            </div>
+            <div className={styles.attendanceRecordList}>
+              {sessions.map((s, idx) => {
+                const attended = attendanceRecords.some(r => r.sessionId === s.id && r.status === 'present')
+                return (
+                  <div key={s.id} className={styles.attendanceRecordItem}>
+                    <UserCheck size={14} color={attended ? '#52c41a' : '#bbb'} />
+                    <span className={styles.attendanceRecordDate}>
+                      {s.name ?? `Session ${idx + 1}`} · {new Date(s.startedAt).toLocaleDateString()}
+                    </span>
+                    <Badge color={attended ? 'green' : 'red'} size="sm">
+                      {attended
+                        ? t('lmsCourseDetail.attended', { defaultValue: 'Present' })
+                        : t('lmsCourseDetailStudent.absent', { defaultValue: 'Absent' })}
+                    </Badge>
+                  </div>
+                )
+              })}
+            </div>
+          </>
+        )}
+      </Card>
+    </div>
+  )
+
   // ── Render ──────────────────────────────────────────────────────────────────
   return (
     <div className={styles.page}>
@@ -699,9 +788,10 @@ const LmsCourseDetailStudent: React.FC = () => {
       {/* Tabs */}
       <div className={styles.tabs}>
         {([
-          { key: 'materials',   icon: <BookOpen size={14} />,   label: t('lmsCourseDetail.courseMaterials', { defaultValue: 'Materials' }) },
-          { key: 'assignments', icon: <FileText size={14} />,   label: t('lmsCourseDetail.assignments', { defaultValue: 'Assignments' }), badge: assignments.filter(a => !submissionHistory.some(s => s.assignmentId === a.id) && (!a.dueDate || new Date(a.dueDate) > now)).length || undefined },
-          { key: 'progress',    icon: <Star size={14} />,       label: t('lmsCourseDetailStudent.tabProgress', { defaultValue: 'My Progress' }) },
+          { key: 'materials',   icon: <BookOpen size={14} />,    label: t('lmsCourseDetail.courseMaterials', { defaultValue: 'Materials' }) },
+          { key: 'assignments', icon: <FileText size={14} />,    label: t('lmsCourseDetail.assignments', { defaultValue: 'Assignments' }), badge: assignments.filter(a => !submissionHistory.some(s => s.assignmentId === a.id) && (!a.dueDate || new Date(a.dueDate) > now)).length || undefined },
+          { key: 'attendance',  icon: <UserCheck size={14} />,   label: t('lmsCourseDetailStudent.tabAttendance', { defaultValue: 'Attendance' }), badge: activeSession ? 1 : undefined },
+          { key: 'progress',    icon: <Star size={14} />,        label: t('lmsCourseDetailStudent.tabProgress', { defaultValue: 'My Progress' }) },
         ] as { key: Tab; icon: React.ReactNode; label: string; badge?: number }[]).map(tab => (
           <button
             key={tab.key}
@@ -720,6 +810,7 @@ const LmsCourseDetailStudent: React.FC = () => {
       {/* Tab content */}
       {activeTab === 'materials'   && renderMaterials()}
       {activeTab === 'assignments' && renderAssignments()}
+      {activeTab === 'attendance'  && renderAttendance()}
       {activeTab === 'progress'    && renderProgress()}
 
       {/* ── Submit Modal ──────────────────────────────────────────────────── */}

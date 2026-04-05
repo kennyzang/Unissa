@@ -7,8 +7,31 @@ import { upload, sessionMaterialUpload } from '../lib/upload'
 const router = Router()
 router.use(authenticate)
 
+// ── Payment gate helper ────────────────────────────────────────────────────────
+// Returns true (blocked) when the student's most recent invoice is not 'paid'.
+// Non-students and students without any invoice are always allowed through.
+async function isPaymentBlocked(userId: string | undefined): Promise<boolean> {
+  if (!userId) return false
+  const student = await prisma.student.findFirst({
+    where: { userId },
+    select: { id: true },
+  })
+  if (!student) return false
+  const invoice = await prisma.feeInvoice.findFirst({
+    where: { studentId: student.id },
+    orderBy: { generatedAt: 'desc' },
+    select: { status: true },
+  })
+  if (!invoice) return false
+  return invoice.status !== 'paid'
+}
+const PAYMENT_BLOCKED_MSG = 'Please complete tuition payment before accessing course content.'
+
 // GET /api/v1/lms/materials/:offeringId
 router.get('/materials/:offeringId', async (req: AuthRequest, res: Response) => {
+  if (req.user?.role === 'student' && await isPaymentBlocked(req.user.userId)) {
+    res.status(403).json({ success: false, message: PAYMENT_BLOCKED_MSG }); return
+  }
   const materials = await prisma.courseMaterial.findMany({
     where: {
       offeringId: req.params.offeringId,
@@ -558,10 +581,14 @@ router.get('/courses/:studentId', async (req: AuthRequest, res: Response) => {
 // POST /api/v1/lms/submissions
 router.post('/submissions', upload.array('files', 5), async (req: AuthRequest, res: Response) => {
   try {
+    if (req.user?.role === 'student' && await isPaymentBlocked(req.user.userId)) {
+      res.status(403).json({ success: false, message: PAYMENT_BLOCKED_MSG }); return
+    }
+
     const { assignmentId, studentId, content } = req.body as {
       assignmentId: string; studentId: string; content?: string
     }
-    
+
     const files = req.files as Express.Multer.File[] || []
     const trimmedContent = content?.trim() || ''
 
@@ -961,6 +988,10 @@ router.post(
 
 // POST /api/v1/attendance/check-in  — Student submits token (JWT or sessionId)
 router.post('/attendance/check-in', async (req: AuthRequest, res: Response) => {
+  if (req.user?.role === 'student' && await isPaymentBlocked(req.user.userId)) {
+    res.status(403).json({ success: false, message: PAYMENT_BLOCKED_MSG }); return
+  }
+
   const { token, studentId } = req.body as { token: string; studentId: string }
 
   let session: any = null
