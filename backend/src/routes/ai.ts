@@ -15,9 +15,11 @@ router.post('/chat', async (req: AuthRequest, res: Response) => {
     res.status(400).json({ success: false, message: 'Message is required' }); return
   }
 
-  // RAG: pull student context if role is student
+  // RAG: pull role-based context before every AI call
   let contextData: any = {}
-  if (req.user!.role === 'student') {
+  const role = req.user!.role
+
+  if (role === 'student') {
     const student = await prisma.student.findFirst({
       where: { userId },
       include: {
@@ -25,12 +27,123 @@ router.post('/chat', async (req: AuthRequest, res: Response) => {
         user: { select: { displayName: true } },
         enrolments: {
           where: { status: 'registered' },
-          include: { offering: { include: { course: true } } },
+          include: { offering: { include: { course: true, semester: true } } },
         },
-        feeInvoices: { orderBy: { generatedAt: 'desc' }, take: 1 },
+        feeInvoices: { orderBy: { generatedAt: 'desc' }, take: 3 },
+        submissions: {
+          include: { assignment: { select: { title: true, dueDate: true, maxMarks: true } } },
+          orderBy: { submittedAt: 'desc' },
+        },
+        attendanceRecords: {
+          include: { session: { include: { offering: { include: { course: { select: { code: true, name: true } } } } } } },
+          orderBy: { scannedAt: 'desc' },
+          take: 50,
+        },
+        gpaRecords: {
+          include: { semester: { select: { name: true, academicYear: { select: { year: true } } } } },
+          orderBy: { computedAt: 'desc' },
+        },
       },
     })
     if (student) contextData = { student }
+
+  } else if (role === 'lecturer') {
+    const staff = await prisma.staff.findFirst({
+      where: { userId },
+      include: {
+        department: { select: { name: true, code: true } },
+        courseOfferings: {
+          include: {
+            course: { select: { code: true, name: true } },
+            semester: { select: { name: true, academicYear: { select: { year: true } } } },
+            enrolments: {
+              where: { status: 'registered' },
+              include: { student: { select: { id: true, studentId: true, currentCgpa: true, user: { select: { displayName: true } } } } },
+            },
+            assignments: {
+              include: { submissions: { select: { studentId: true, finalMarks: true, submittedAt: true } } },
+              orderBy: { dueDate: 'asc' },
+            },
+            attendanceSessions: {
+              orderBy: { startedAt: 'desc' },
+              take: 5,
+              include: { records: { select: { studentId: true, status: true } } },
+            },
+          },
+        },
+      },
+    })
+    if (staff) contextData = { lecturer: staff }
+
+  } else if (role === 'admin' || role === 'manager') {
+    const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)
+    const [activeStudents, activeStaff, pendingPRs, pendingLeaves, pendingGrants, recentApplicants, glCodes] = await Promise.all([
+      prisma.student.count({ where: { status: 'active' } }),
+      prisma.staff.count({ where: { status: 'active' } }),
+      prisma.purchaseRequest.count({ where: { status: 'submitted' } }),
+      prisma.leaveRequest.count({ where: { status: 'pending' } }),
+      prisma.researchGrant.count({ where: { status: 'proposal_submitted' } }),
+      prisma.applicant.count({ where: { submittedAt: { gte: thirtyDaysAgo }, status: { not: 'draft' } } }),
+      prisma.glCode.findMany({
+        where: { isActive: true },
+        select: { code: true, description: true, totalBudget: true, committedAmount: true, spentAmount: true },
+        orderBy: { code: 'asc' },
+      }),
+    ])
+    contextData = { admin: { activeStudents, activeStaff, pendingPRs, pendingLeaves, pendingGrants, recentApplicants, glCodes } }
+
+  } else if (role === 'finance') {
+    const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
+    const [outstandingAgg, recentPaymentsAgg, glCodes] = await Promise.all([
+      prisma.feeInvoice.aggregate({
+        where: { status: { in: ['unpaid', 'overdue', 'partial'] } },
+        _count: { id: true },
+        _sum: { outstandingBalance: true },
+      }),
+      prisma.payment.aggregate({
+        where: { paidAt: { gte: sevenDaysAgo }, status: 'completed' },
+        _count: { id: true },
+        _sum: { amount: true },
+      }),
+      prisma.glCode.findMany({
+        where: { isActive: true },
+        select: { code: true, description: true, totalBudget: true, committedAmount: true, spentAmount: true },
+        orderBy: { code: 'asc' },
+      }),
+    ])
+    contextData = {
+      finance: {
+        outstandingInvoiceCount: outstandingAgg._count.id,
+        outstandingTotal: outstandingAgg._sum.outstandingBalance ?? 0,
+        recentPaymentCount: recentPaymentsAgg._count.id,
+        recentPaymentTotal: recentPaymentsAgg._sum.amount ?? 0,
+        glCodes,
+      },
+    }
+
+  } else if (role === 'hr') {
+    const [allStaff, pendingLeaves, pendingOnboarding] = await Promise.all([
+      prisma.staff.findMany({
+        where: { status: 'active' },
+        select: {
+          staffId: true, fullName: true, designation: true, employmentType: true, joinDate: true,
+          department: { select: { name: true } },
+          user: { select: { displayName: true } },
+        },
+        orderBy: { fullName: 'asc' },
+      }),
+      prisma.leaveRequest.findMany({
+        where: { status: 'pending' },
+        include: { staff: { select: { fullName: true, designation: true, department: { select: { name: true } } } } },
+        orderBy: { submittedAt: 'desc' },
+      }),
+      prisma.onboardingRequest.findMany({
+        where: { status: 'pending_approval' },
+        include: { staff: { select: { fullName: true, designation: true, department: { select: { name: true } } } } },
+        orderBy: { createdAt: 'desc' },
+      }),
+    ])
+    contextData = { hr: { allStaff, pendingLeaves, pendingOnboarding } }
   }
 
   // Load previous conversation history for context

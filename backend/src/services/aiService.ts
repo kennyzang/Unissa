@@ -158,19 +158,143 @@ export async function chat(
 
   // Build context string from RAG data
   let contextStr = ''
+
   if (contextData.student) {
     const s = contextData.student
-    contextStr = `
-Student Context:
-- Name: ${s.user?.displayName ?? 'Unknown'}
-- Student ID: ${s.studentId}
-- Programme: ${s.programme?.name ?? 'Unknown'}
-- Current CGPA: ${s.currentCgpa}
-- Student Type: ${s.studentType}
-- Enrolled Courses: ${(s.enrolments ?? []).map((e: any) => e.offering?.course?.name).filter(Boolean).join(', ') || 'None'}
-- Latest Invoice: ${s.feeInvoices?.[0] ? `${s.feeInvoices[0].invoiceNo} (BND ${s.feeInvoices[0].totalAmount?.toFixed(2)}, Status: ${s.feeInvoices[0].status})` : 'None'}
-- Campus Card: ${s.campusCardNo ?? 'Not issued'}
-`
+    const enrolmentLines = (s.enrolments ?? []).map((e: any) =>
+      `  • ${e.offering?.course?.code} – ${e.offering?.course?.name} (${e.offering?.semester?.name ?? ''})`
+    ).join('\n') || '  None'
+
+    const submissionLines = (s.submissions ?? []).map((sub: any) =>
+      `  • ${sub.assignment?.title}: ${sub.finalMarks != null ? `${sub.finalMarks}/${sub.assignment?.maxMarks}` : 'submitted, not yet graded'} (submitted ${new Date(sub.submittedAt).toLocaleDateString('en-GB')})`
+    ).join('\n') || '  None'
+
+    const gpaLines = (s.gpaRecords ?? []).map((g: any) =>
+      `  • ${g.semester?.name} ${g.semester?.academicYear?.year ?? ''}: Semester GPA ${g.semesterGpa.toFixed(2)}, Cumulative GPA ${g.cumulativeGpa.toFixed(2)}`
+    ).join('\n') || '  No records yet'
+
+    const invoiceLines = (s.feeInvoices ?? []).map((inv: any) =>
+      `  • ${inv.invoiceNo}: BND ${inv.totalAmount?.toFixed(2)} (${inv.status}, outstanding: BND ${inv.outstandingBalance?.toFixed(2)}, due ${new Date(inv.dueDate).toLocaleDateString('en-GB')})`
+    ).join('\n') || '  None'
+
+    contextStr = `=== STUDENT CONTEXT ===
+Name: ${s.user?.displayName ?? 'Unknown'} | Student ID: ${s.studentId}
+Programme: ${s.programme?.name ?? 'Unknown'} | CGPA: ${s.currentCgpa} | Status: ${s.status}
+
+Enrolled Courses:
+${enrolmentLines}
+
+Submissions & Grades:
+${submissionLines}
+
+GPA History:
+${gpaLines}
+
+Fee Invoices:
+${invoiceLines}
+======================`
+
+  } else if (contextData.lecturer) {
+    const lec = contextData.lecturer
+    const offeringBlocks = (lec.courseOfferings ?? []).map((o: any) => {
+      const enrolledStudents = (o.enrolments ?? []).map((e: any) =>
+        `    - ${e.student?.user?.displayName ?? 'Unknown'} (ID: ${e.student?.studentId}, CGPA: ${e.student?.currentCgpa?.toFixed(2) ?? 'N/A'})`
+      ).join('\n') || '    None'
+
+      const assignmentLines = (o.assignments ?? []).map((a: any) => {
+        const submittedIds = new Set((a.submissions ?? []).map((s: any) => s.studentId))
+        const enrolledCount = (o.enrolments ?? []).length
+        const notSubmitted = (o.enrolments ?? [])
+          .filter((e: any) => !submittedIds.has(e.student?.id))
+          .map((e: any) => e.student?.user?.displayName ?? 'Unknown')
+        return `    • "${a.title}" due ${new Date(a.dueDate).toLocaleDateString('en-GB')}: ${submittedIds.size}/${enrolledCount} submitted. Not submitted: ${notSubmitted.join(', ') || 'all submitted'}`
+      }).join('\n') || '    None'
+
+      const recentSessions = (o.attendanceSessions ?? []).map((ses: any) => {
+        const presentCount = (ses.records ?? []).filter((r: any) => r.status === 'present').length
+        const totalRecords = (ses.records ?? []).length
+        return `    • Session ${new Date(ses.startedAt).toLocaleDateString('en-GB')}: ${presentCount}/${totalRecords} present`
+      }).join('\n') || '    No sessions yet'
+
+      return `  [${o.course?.code} – ${o.course?.name}] (${o.semester?.name ?? ''} ${o.semester?.academicYear?.year ?? ''}) – ${(o.enrolments ?? []).length} enrolled students
+  Students:
+${enrolledStudents}
+  Assignments:
+${assignmentLines}
+  Recent Attendance (last 5 sessions):
+${recentSessions}`
+    }).join('\n\n') || '  No courses assigned'
+
+    contextStr = `=== LECTURER CONTEXT ===
+Name: ${lec.fullName} | Staff ID: ${lec.staffId}
+Department: ${lec.department?.name ?? 'Unknown'} (${lec.department?.code ?? ''})
+
+Course Offerings:
+${offeringBlocks}
+========================`
+
+  } else if (contextData.admin) {
+    const a = contextData.admin
+    const glLines = (a.glCodes ?? []).map((g: any) => {
+      const utilPct = g.totalBudget > 0 ? ((g.spentAmount / g.totalBudget) * 100).toFixed(1) : '0.0'
+      return `  • ${g.code} – ${g.description}: Budget BND ${g.totalBudget.toFixed(0)}, Committed BND ${g.committedAmount.toFixed(0)}, Spent BND ${g.spentAmount.toFixed(0)} (${utilPct}% utilised)`
+    }).join('\n') || '  None'
+
+    contextStr = `=== ADMIN/MANAGER CONTEXT ===
+Active Students: ${a.activeStudents}
+Active Staff: ${a.activeStaff}
+
+Pending Approvals:
+  • Purchase Requests awaiting approval: ${a.pendingPRs}
+  • Leave Requests pending: ${a.pendingLeaves}
+  • Research Grant proposals under review: ${a.pendingGrants}
+
+Recent Applications (last 30 days): ${a.recentApplicants} submitted
+
+GL Budget Utilisation:
+${glLines}
+==============================`
+
+  } else if (contextData.finance) {
+    const f = contextData.finance
+    const glLines = (f.glCodes ?? []).map((g: any) => {
+      const available = g.totalBudget - g.committedAmount - g.spentAmount
+      const utilPct = g.totalBudget > 0 ? ((g.spentAmount / g.totalBudget) * 100).toFixed(1) : '0.0'
+      return `  • ${g.code} – ${g.description}: Budget BND ${g.totalBudget.toFixed(0)}, Committed BND ${g.committedAmount.toFixed(0)}, Spent BND ${g.spentAmount.toFixed(0)}, Available BND ${available.toFixed(0)} (${utilPct}% spent)`
+    }).join('\n') || '  None'
+
+    contextStr = `=== FINANCE CONTEXT ===
+Outstanding Invoices: ${f.outstandingInvoiceCount} invoices totalling BND ${f.outstandingTotal.toFixed(2)}
+Recent Payments (last 7 days): ${f.recentPaymentCount} payments totalling BND ${f.recentPaymentTotal.toFixed(2)}
+
+GL Code Budget vs Committed vs Spent:
+${glLines}
+=======================`
+
+  } else if (contextData.hr) {
+    const h = contextData.hr
+    const staffLines = (h.allStaff ?? []).map((s: any) =>
+      `  • ${s.fullName} (${s.staffId}) – ${s.designation}, ${s.department?.name ?? 'Unknown'}, ${s.employmentType}`
+    ).join('\n') || '  None'
+
+    const leaveLines = (h.pendingLeaves ?? []).map((l: any) =>
+      `  • ${l.staff?.fullName} (${l.leaveType}): ${new Date(l.startDate).toLocaleDateString('en-GB')} – ${new Date(l.endDate).toLocaleDateString('en-GB')} (${l.durationDays} days)`
+    ).join('\n') || '  None'
+
+    const onboardingLines = (h.pendingOnboarding ?? []).map((o: any) =>
+      `  • ${o.staff?.fullName} – ${o.staff?.designation}, ${o.staff?.department?.name ?? 'Unknown'}`
+    ).join('\n') || '  None'
+
+    contextStr = `=== HR CONTEXT ===
+Active Staff (${(h.allStaff ?? []).length} total):
+${staffLines}
+
+Pending Leave Requests (${(h.pendingLeaves ?? []).length}):
+${leaveLines}
+
+Pending Onboarding Requests (${(h.pendingOnboarding ?? []).length}):
+${onboardingLines}
+==================`
   }
 
   // Build messages array
