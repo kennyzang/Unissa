@@ -63,6 +63,40 @@ router.post('/grants', requireRole('lecturer', 'admin'), upload.array('files', 1
   const { title, abstract, durationMonths, totalBudget, departmentId } = req.body
   const files = req.files as Express.Multer.File[] || []
 
+  // Field-specific validation
+  const fieldErrors: { field: string; message: string }[] = []
+  if (!title || String(title).trim().length === 0)
+    fieldErrors.push({ field: 'title', message: 'Research title is required' })
+  else if (String(title).length > 255)
+    fieldErrors.push({ field: 'title', message: 'Title must be 255 characters or fewer' })
+
+  const abstractStr = String(abstract ?? '')
+  if (!abstract || abstractStr.trim().length === 0)
+    fieldErrors.push({ field: 'abstract', message: 'Abstract is required' })
+  else if (abstractStr.length < 50)
+    fieldErrors.push({ field: 'abstract', message: `Minimum 50 characters required (currently ${abstractStr.length}).` })
+  else if (abstractStr.length > 5000)
+    fieldErrors.push({ field: 'abstract', message: 'Abstract must be 5,000 characters or fewer' })
+
+  const months = Number(durationMonths)
+  if (!durationMonths || isNaN(months))
+    fieldErrors.push({ field: 'durationMonths', message: 'Duration is required' })
+  else if (months < 1)
+    fieldErrors.push({ field: 'durationMonths', message: 'Duration must be at least 1 month' })
+  else if (months > 60)
+    fieldErrors.push({ field: 'durationMonths', message: 'Duration cannot exceed 60 months' })
+
+  const budget = Number(totalBudget)
+  if (!totalBudget || isNaN(budget))
+    fieldErrors.push({ field: 'totalBudget', message: 'Budget is required' })
+  else if (budget < 100 || budget > 1000000)
+    fieldErrors.push({ field: 'totalBudget', message: 'Must be between BND 100 and BND 1,000,000.' })
+
+  if (fieldErrors.length > 0) {
+    res.status(400).json({ success: false, message: fieldErrors[0].message, errors: fieldErrors })
+    return
+  }
+
   const staff = await prisma.staff.findUnique({ where: { userId } })
   if (!staff) { res.status(404).json({ success: false, message: 'Staff record not found' }); return }
 

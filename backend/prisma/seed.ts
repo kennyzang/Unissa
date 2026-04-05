@@ -1539,12 +1539,17 @@ async function upsertVendor(v: { name: string; cat: string; email: string }) {
 }
 
 async function upsertGrant(g: { ref: string; title: string; piId: string; deptId: string; budget: number; utilised: number; status: string }) {
+  const isProposal = g.status === 'proposal_submitted'
+  const abstract = isProposal
+    ? `This research investigates ${g.title.toLowerCase()} with the objective of advancing knowledge and practical applications within the UNISSA academic community. The methodology combines empirical data collection, quantitative analysis, and collaborative engagement with industry partners. Expected outcomes include peer-reviewed publications, a pilot implementation framework, and capacity-building workshops for faculty and students. The research addresses a gap identified in current literature and aligns with UNISSA's strategic research agenda for 2026–2028.`
+    : `Research project: ${g.title}. This grant aims to advance knowledge and innovation in the relevant field at UNISSA.`
   return prisma.researchGrant.upsert({
     where: { referenceNo: g.ref },
     create: {
       referenceNo: g.ref, title: g.title, principalInvestigatorId: g.piId,
-      departmentId: g.deptId, abstract: `Research project: ${g.title}. This grant aims to advance knowledge and innovation in the relevant field at UNISSA.`,
-      durationMonths: 24, totalBudget: g.budget, amountUtilised: g.utilised, status: g.status,
+      departmentId: g.deptId, abstract,
+      durationMonths: isProposal ? 18 : 24, totalBudget: g.budget, amountUtilised: g.utilised, status: g.status,
+      submittedAt: isProposal ? new Date('2026-03-15T09:00:00Z') : undefined,
     },
     update: { totalBudget: g.budget, amountUtilised: g.utilised, status: g.status },
   })

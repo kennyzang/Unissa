@@ -110,7 +110,8 @@ const ResearchGrantsPage: React.FC = () => {
   const isFinance  = user?.role === 'finance'  || user?.role === 'admin'
   const isLecturer = user?.role === 'lecturer'
 
-  const { register, handleSubmit, reset, formState: { errors } } = useForm<GrantForm>()
+  const { register, handleSubmit, reset, watch, formState: { errors } } = useForm<GrantForm>()
+  const abstractValue = watch('abstract', '')
 
   const { data: grants = [], isLoading } = useQuery<Grant[]>({
     queryKey: ['research', 'grants'],
@@ -402,16 +403,15 @@ const ResearchGrantsPage: React.FC = () => {
               className={styles.textarea}
               rows={5}
               placeholder={t('researchGrants.abstractPlaceholder')}
-              {...register('abstract', { 
+              {...register('abstract', {
                 required: t('researchGrants.abstractRequired'),
-                minLength: {
-                  value: 50,
-                  message: t('researchGrants.abstractMinLength')
+                validate: (value) => {
+                  if (!value || value.length < 50)
+                    return t('researchGrants.abstractMinLength', { count: value?.length ?? 0 })
+                  if (value.length > 5000)
+                    return t('researchGrants.abstractMaxLength')
+                  return true
                 },
-                maxLength: {
-                  value: 5000,
-                  message: t('researchGrants.abstractMaxLength')
-                }
               })}
             />
             {errors.abstract && <span className={styles.error}>{errors.abstract.message}</span>}
