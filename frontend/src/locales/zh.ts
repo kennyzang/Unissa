@@ -727,6 +727,8 @@ const zh = {
     warning: '预警',
     critical: '严重',
     selectToView: '请在上方选择课程以查看出勤报告。',
+    attendanceData: '出勤数据',
+    summary: '汇总',
     // 二维码扫码（POC）
     scanQRCode: '扫码签到',
     scanInstruction: '扫描讲师显示的二维码来记录您的出勤。',

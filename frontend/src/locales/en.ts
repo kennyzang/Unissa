@@ -741,6 +741,8 @@ const en = {
     warning: 'Warning',
     critical: 'Critical',
     selectToView: 'Select a course above to view its attendance report.',
+    attendanceData: 'Attendance Data',
+    summary: 'Summary',
     // QR Code Scan (POC)
     scanQRCode: 'Scan QR Code',
     scanInstruction: 'Scan the QR code displayed by your lecturer to mark your attendance.',

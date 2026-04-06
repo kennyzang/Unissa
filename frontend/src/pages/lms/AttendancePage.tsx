@@ -767,7 +767,14 @@ const AdminView: React.FC = () => {
     },
   })
 
-  const { data: report } = useQuery<{ summary: AttendanceSummaryRow[]; sessions: AttendanceSession[] }>({
+  // Auto-select the first offering when the list loads
+  useEffect(() => {
+    if (offerings.length > 0 && selectedOffering === null) {
+      setSelectedOffering(offerings[0].id)
+    }
+  }, [offerings, selectedOffering])
+
+  const { data: report, isFetching: loadingReport } = useQuery<{ summary: AttendanceSummaryRow[]; sessions: AttendanceSession[] }>({
     queryKey: ['attendance', 'report', selectedOffering],
     queryFn: async () => {
       const { data } = await apiClient.get(`/lms/attendance/records/offering/${selectedOffering}`)
@@ -778,29 +785,44 @@ const AdminView: React.FC = () => {
 
   if (loadingOfferings) return <div className={styles.loading}>{t('attendance.loading')}</div>
 
+  const avgPct = report && report.summary.length > 0
+    ? Math.round(report.summary.reduce((s, r) => s + r.attendancePct, 0) / report.summary.length)
+    : 0
+  const totalPresent = report ? report.summary.reduce((s, r) => s + r.present, 0) : 0
+  const totalSessions = report ? report.sessions.length : 0
+
   return (
     <div className={styles.adminView}>
-      <div className={styles.adminOfferingSelect}>
-        <label className={styles.selectLabel}>{t('attendance.selectCourse')}</label>
-        <select
-          className={styles.courseSelect}
-          value={selectedOffering ?? ''}
-          onChange={e => setSelectedOffering(e.target.value || null)}
-        >
-          <option value="">{t('attendance.chooseCourse')}</option>
-          {offerings.map(o => (
-            <option key={o.id} value={o.id}>
-              {o.course.code} – {o.course.name}
-            </option>
-          ))}
-        </select>
+      <div className={styles.adminFilterArea}>
+        <div className={styles.adminOfferingSelect}>
+          <label className={styles.selectLabel}>{t('attendance.selectCourse')}</label>
+          <select
+            className={styles.courseSelect}
+            value={selectedOffering ?? ''}
+            onChange={e => setSelectedOffering(e.target.value || null)}
+          >
+            {offerings.map(o => (
+              <option key={o.id} value={o.id}>
+                {o.course.code} – {o.course.name}
+              </option>
+            ))}
+          </select>
+        </div>
       </div>
 
-      {selectedOffering && report && (
+      <div className={styles.reportDivider}>
+        <span>{t('attendance.attendanceData')}</span>
+      </div>
+
+      {loadingReport && (
+        <div className={styles.loading}><RefreshCw size={16} /> {t('attendance.loading')}</div>
+      )}
+
+      {!loadingReport && report && (
         <div className={styles.reportSection}>
           <div className={styles.reportStats}>
             <div className={styles.reportStat}>
-              <span>{report.sessions.length}</span>
+              <span>{totalSessions}</span>
               <label>{t('attendance.totalSessions')}</label>
             </div>
             <div className={styles.reportStat}>
@@ -808,11 +830,7 @@ const AdminView: React.FC = () => {
               <label>{t('attendance.studentsTracked')}</label>
             </div>
             <div className={styles.reportStat}>
-              <span>
-                {report.summary.length > 0
-                  ? Math.round(report.summary.reduce((s, r) => s + r.attendancePct, 0) / report.summary.length)
-                  : 0}%
-              </span>
+              <span>{avgPct}%</span>
               <label>{t('attendance.avgAttendance')}</label>
             </div>
           </div>
@@ -829,8 +847,8 @@ const AdminView: React.FC = () => {
                 </tr>
               </thead>
               <tbody>
-                {report.summary.map(row => (
-                  <tr key={row.studentId}>
+                {report.summary.map((row, idx) => (
+                  <tr key={row.studentId} className={idx % 2 === 1 ? styles.rowEven : undefined}>
                     <td>{row.name}</td>
                     <td className={styles.centerCol}>{row.present}</td>
                     <td className={styles.centerCol}>{row.total}</td>
@@ -860,19 +878,38 @@ const AdminView: React.FC = () => {
                   </tr>
                 ))}
               </tbody>
+              <tfoot>
+                <tr className={styles.summaryFooter}>
+                  <td><strong>{t('attendance.summary')}</strong></td>
+                  <td className={styles.centerCol}><strong>{totalPresent}</strong></td>
+                  <td className={styles.centerCol}>—</td>
+                  <td className={styles.centerCol}>
+                    <div className={styles.tableBarWrap}>
+                      <div className={styles.tableBar}>
+                        <div
+                          className={styles.tableBarFill}
+                          style={{
+                            width: `${avgPct}%`,
+                            background: avgPct >= 80 ? 'var(--color-success)' : avgPct >= 60 ? '#f59e0b' : 'var(--color-danger)',
+                          }}
+                        />
+                      </div>
+                      <strong>{avgPct}%</strong>
+                    </div>
+                  </td>
+                  <td className={styles.centerCol}>
+                    <Badge color={pctColor(avgPct)} size="sm">
+                      {avgPct >= 80
+                        ? t('attendance.good')
+                        : avgPct >= 60
+                        ? t('attendance.warning')
+                        : t('attendance.critical')}
+                    </Badge>
+                  </td>
+                </tr>
+              </tfoot>
             </table>
           </div>
-        </div>
-      )}
-
-      {selectedOffering && !report && (
-        <div className={styles.loading}><RefreshCw size={16} /> {t('attendance.loading')}</div>
-      )}
-
-      {!selectedOffering && (
-        <div className={styles.emptyState}>
-          <BookOpen size={36} />
-          <p>{t('attendance.selectToView')}</p>
         </div>
       )}
     </div>
