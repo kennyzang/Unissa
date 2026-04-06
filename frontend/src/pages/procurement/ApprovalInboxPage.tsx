@@ -1,13 +1,15 @@
 import { useTranslation } from 'react-i18next'
 import React, { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { CheckCircle, XCircle, AlertTriangle, Inbox, PenLine } from 'lucide-react'
+import { CheckCircle, XCircle, AlertTriangle, Inbox, PenLine, History } from 'lucide-react'
 import { apiClient } from '@/lib/apiClient'
 import { useUIStore } from '@/stores/uiStore'
 import Card from '@/components/ui/Card'
 import Badge from '@/components/ui/Badge'
 import Button from '@/components/ui/Button'
 import Modal from '@/components/ui/Modal'
+import Table from '@/components/ui/Table'
+import type { ColumnDef } from '@/components/ui/Table'
 import styles from './ApprovalInboxPage.module.scss'
 
 interface PRItem {
@@ -28,12 +30,30 @@ interface PRItem {
   anomalies?: { id: string; anomalyType: string; severity: string; description: string }[]
 }
 
+interface HistoryItem {
+  id: string
+  prNumber: string
+  itemDescription: string
+  totalAmount: number
+  status: string
+  submittedAt?: string
+  requestor?: { user: { displayName: string } }
+  department?: { name: string }
+  latestApproval: {
+    action: string
+    actedAt: string
+    remarks?: string
+    approver: { displayName: string }
+  } | null
+}
+
 const TRAFFIC_COLORS: Record<string, string> = { red: '#F53F3F', amber: '#FF7D00', green: '#00B42A' }
 
 const ApprovalInboxPage: React.FC = () => {
   const { t } = useTranslation()
   const addToast = useUIStore(s => s.addToast)
   const qc = useQueryClient()
+  const [activeTab, setActiveTab] = useState<'pending' | 'history'>('pending')
   const [approveModal, setApproveModal] = useState<{ pr: PRItem; action: 'approve' | 'reject' } | null>(null)
   const [remarks, setRemarks] = useState('')
 
@@ -44,6 +64,29 @@ const ApprovalInboxPage: React.FC = () => {
       return data.data
     },
   })
+
+  const { data: history = [], isLoading: historyLoading } = useQuery<HistoryItem[]>({
+    queryKey: ['procurement', 'approval-history'],
+    queryFn: async () => {
+      const { data } = await apiClient.get('/procurement/approval-history')
+      return data.data
+    },
+    enabled: activeTab === 'history',
+  })
+
+  const historyColumns: ColumnDef<HistoryItem>[] = [
+    { key: 'prNumber', title: t('approvalInbox.colPR'), render: v => <strong>{v.prNumber}</strong> },
+    { key: 'itemDescription', title: t('approvalInbox.colItem'), render: v => v.itemDescription },
+    { key: 'requestor', title: t('approvalInbox.requestor'), render: v => v.requestor?.user?.displayName ?? '—' },
+    { key: 'totalAmount', title: t('approvalInbox.colAmount'), render: v => `BND ${v.totalAmount.toLocaleString()}` },
+    { key: 'decision', title: t('approvalInbox.colDecision'), render: v => v.latestApproval ? (
+      <Badge color={v.latestApproval.action === 'approved' ? 'green' : 'red'}>
+        {v.latestApproval.action === 'approved' ? t('approvalInbox.colApproved') : t('approvalInbox.colRejected')}
+      </Badge>
+    ) : <Badge color="gray">—</Badge> },
+    { key: 'decidedBy', title: t('approvalInbox.colDecidedBy'), render: v => v.latestApproval?.approver?.displayName ?? '—' },
+    { key: 'decidedAt', title: t('approvalInbox.colDecidedAt'), render: v => v.latestApproval ? new Date(v.latestApproval.actedAt).toLocaleDateString('en-GB') : '—' },
+  ]
 
   const actionMutation = useMutation({
     mutationFn: ({ id, action, remarks }: { id: string; action: 'approve' | 'reject'; remarks: string }) => {
@@ -82,9 +125,40 @@ const ApprovalInboxPage: React.FC = () => {
         </div>
       </div>
 
-      {isLoading && <div className={styles.loading}>{t('approvalInbox.loading')}</div>}
+      <div className={styles.tabs}>
+        <button
+          className={`${styles.tab} ${activeTab === 'pending' ? styles.active : ''}`}
+          onClick={() => setActiveTab('pending')}
+        >
+          <Inbox size={14} />
+          {t('approvalInbox.tabPending')}
+          {items.length > 0 && <span className={styles.tabBadge}>{items.length}</span>}
+        </button>
+        <button
+          className={`${styles.tab} ${activeTab === 'history' ? styles.active : ''}`}
+          onClick={() => setActiveTab('history')}
+        >
+          <History size={14} />
+          {t('approvalInbox.tabHistory')}
+        </button>
+      </div>
 
-      {!isLoading && items.length === 0 && (
+      {activeTab === 'history' && (
+        <Card noPadding>
+          <Table<HistoryItem>
+            columns={historyColumns}
+            dataSource={history}
+            rowKey="id"
+            loading={historyLoading}
+            size="sm"
+            emptyText={t('approvalInbox.noHistory')}
+          />
+        </Card>
+      )}
+
+      {activeTab === 'pending' && isLoading && <div className={styles.loading}>{t('approvalInbox.loading')}</div>}
+
+      {activeTab === 'pending' && !isLoading && items.length === 0 && (
         <div className={styles.emptyInbox}>
           <CheckCircle size={40} />
           <h3>{t('approvalInbox.clear')}</h3>
@@ -92,7 +166,7 @@ const ApprovalInboxPage: React.FC = () => {
         </div>
       )}
 
-      <div className={styles.prList}>
+      {activeTab === 'pending' && <div className={styles.prList}>
         {items.map(pr => {
           const hasAnomaly = (pr.anomalies?.length ?? 0) > 0
 
@@ -167,7 +241,7 @@ const ApprovalInboxPage: React.FC = () => {
             </Card>
           )
         })}
-      </div>
+      </div>}
 
       {/* Approve/Reject Modal */}
       {approveModal && (

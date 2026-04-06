@@ -1,6 +1,6 @@
 import React, { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { UserPlus, CheckCircle, Clock, Users, Copy, Check } from 'lucide-react'
+import { UserPlus, CheckCircle, Clock, Users, Copy, Check, History } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { Form, Input, Select, DatePicker } from 'antd'
 import type { Dayjs } from 'dayjs'
@@ -71,6 +71,7 @@ const HrOnboardingPage: React.FC = () => {
   const { addToast } = useUIStore()
   const [form] = Form.useForm()
 
+  const [activeTab,       setActiveTab]       = useState<'pending' | 'completed'>('pending')
   const [showNewModal,    setShowNewModal]    = useState(false)
   const [showNewHireModal,setShowNewHireModal]= useState(false)
   const [selectedStaffId, setSelectedStaffId] = useState('')
@@ -111,8 +112,10 @@ const HrOnboardingPage: React.FC = () => {
   const onboardedStaffIds = new Set(requests.map(r => r.staff.staffId))
   const availableStaff = staffList.filter(s => !onboardedStaffIds.has(s.staffId))
 
-  const pending   = requests.filter(r => r.status === 'pending_approval').length
-  const completed = requests.filter(r => r.status === 'completed').length
+  const pendingRequests   = requests.filter(r => r.status === 'pending_approval')
+  const completedRequests = requests.filter(r => r.status === 'completed')
+  const pending   = pendingRequests.length
+  const completed = completedRequests.length
 
   // Create onboarding request (existing staff)
   const createMutation = useMutation({
@@ -189,6 +192,54 @@ const HrOnboardingPage: React.FC = () => {
     setCopiedField(field)
     setTimeout(() => setCopiedField(null), 2000)
   }
+
+  const completedColumns: ColumnDef<OnboardingRequest>[] = [
+    {
+      key: 'staff',
+      title: t('onboarding.staff'),
+      render: r => (
+        <div>
+          <div className={styles.staffName}>{r.staff.fullName}</div>
+          <div className={styles.staffSub}>{r.staff.designation} · {r.staff.department.name}</div>
+        </div>
+      ),
+    },
+    {
+      key: 'status',
+      title: t('onboarding.colDecision'),
+      render: () => (
+        <Badge color="green"><CheckCircle size={12} style={{ marginRight: 4 }} />{t('onboarding.completed')}</Badge>
+      ),
+    },
+    {
+      key: 'steps',
+      title: t('onboarding.automationSteps'),
+      render: r => (
+        <div className={styles.steps}>
+          {STEP_LABELS.map(step => {
+            const done = r[step.key as keyof OnboardingRequest] as boolean
+            return (
+              <div key={step.key} className={`${styles.step} ${done ? styles.stepDone : ''}`}>
+                <span className={styles.stepIcon}>{done ? '✅' : '⬜'}</span>
+                <span className={styles.stepLabel}>{step.icon} {step.label}</span>
+              </div>
+            )
+          })}
+        </div>
+      ),
+    },
+    {
+      key: 'completedAt',
+      title: t('onboarding.colCompletedAt'),
+      render: r => (
+        <div className={styles.staffSub}>
+          {r.completedAt
+            ? new Date(r.completedAt).toLocaleDateString('en-GB')
+            : '—'}
+        </div>
+      ),
+    },
+  ]
 
   const columns: ColumnDef<OnboardingRequest>[] = [
     {
@@ -292,17 +343,51 @@ const HrOnboardingPage: React.FC = () => {
         <StatCard title={t('onboarding.completed')}     value={completed}        sub={t('onboarding.fullyProvisioned')} icon={<CheckCircle size={16} />} color="green" />
       </div>
 
+      {/* Tabs */}
+      <div className={styles.tabs}>
+        <button
+          className={`${styles.tab} ${activeTab === 'pending' ? styles.active : ''}`}
+          onClick={() => setActiveTab('pending')}
+        >
+          <Clock size={14} />
+          {t('onboarding.tabPending')}
+          {pending > 0 && <span className={styles.tabBadge}>{pending}</span>}
+        </button>
+        <button
+          className={`${styles.tab} ${activeTab === 'completed' ? styles.active : ''}`}
+          onClick={() => setActiveTab('completed')}
+        >
+          <History size={14} />
+          {t('onboarding.tabCompleted')}
+        </button>
+      </div>
+
       {/* Table */}
-      <Card title={t('onboarding.requests')} noPadding>
-        <Table<OnboardingRequest>
-          columns={columns}
-          dataSource={requests}
-          rowKey="id"
-          loading={isLoading}
-          size="sm"
-          emptyText={t('onboarding.noRequests')}
-        />
-      </Card>
+      {activeTab === 'pending' && (
+        <Card title={t('onboarding.requests')} noPadding>
+          <Table<OnboardingRequest>
+            columns={columns}
+            dataSource={pendingRequests}
+            rowKey="id"
+            loading={isLoading}
+            size="sm"
+            emptyText={t('onboarding.noRequests')}
+          />
+        </Card>
+      )}
+
+      {activeTab === 'completed' && (
+        <Card title={t('onboarding.tabCompleted')} noPadding>
+          <Table<OnboardingRequest>
+            columns={completedColumns}
+            dataSource={completedRequests}
+            rowKey="id"
+            loading={isLoading}
+            size="sm"
+            emptyText={t('onboarding.noCompleted')}
+          />
+        </Card>
+      )}
 
       {/* How it works */}
       <Card title={t('onboarding.howItWorks')}>

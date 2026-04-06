@@ -918,6 +918,17 @@ const en = {
     addNotes: 'Add any notes…',
     approveSuccess: 'PR approved successfully',
     rejectSuccess: 'PR rejected successfully',
+    tabPending: 'Pending Approval',
+    tabHistory: 'Approval History',
+    colPR: 'PR No.',
+    colItem: 'Item',
+    colAmount: 'Amount',
+    colDecision: 'Decision',
+    colApproved: 'Approved',
+    colRejected: 'Rejected',
+    colDecidedBy: 'Decided By',
+    colDecidedAt: 'Decided At',
+    noHistory: 'No approval history found.',
   },
 
   // Procurement Anomalies
@@ -1063,6 +1074,12 @@ const en = {
     actionFailed: 'Action failed',
     pending_hr: 'Awaiting HR Approval',
     pending_manager: 'Awaiting Manager Approval',
+    tabPending: 'Pending',
+    tabHistory: 'History',
+    colDecision: 'Decision',
+    colDecidedBy: 'Decided By',
+    colDecidedAt: 'Decided At',
+    noHistory: 'No decided leave requests found.',
   },
 
   // Research Grants
@@ -1141,6 +1158,11 @@ const en = {
     fileSizeError: 'File "{{fileName}}" exceeds 5MB limit',
     totalSizeError: 'Total file size exceeds 20MB limit',
     maxFilesError: 'Maximum 10 files can be uploaded',
+    tabActive: 'Active Proposals',
+    tabDecided: 'Decided',
+    colDecision: 'Decision',
+    colDeptDecision: 'Dept Head Decision',
+    colFinanceDecision: 'Finance Decision',
   },
 
   // AI Risk
@@ -1547,6 +1569,11 @@ const en = {
     credTempPassword: 'Temp. Password',
     credentialsDone: 'Done — Credentials Noted',
     credentialsWarning: 'Share this password securely. The hire must change it on first login.',
+    tabPending: 'Pending Onboarding',
+    tabCompleted: 'Completed',
+    colDecision: 'Status',
+    colCompletedAt: 'Completed On',
+    noCompleted: 'No completed onboarding records found.',
   },
 
   // Staff Portal

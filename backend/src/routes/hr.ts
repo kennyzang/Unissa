@@ -104,7 +104,24 @@ router.get('/leave', async (req: AuthRequest, res: Response) => {
     },
     orderBy: { submittedAt: 'desc' },
   })
-  res.json({ success: true, data: leaves })
+
+  // Resolve approver display names (l1/l2 approverIds are User IDs)
+  const approverIds = [...new Set([
+    ...leaves.filter(l => l.l1ApproverId).map(l => l.l1ApproverId!),
+    ...leaves.filter(l => l.l2ApproverId).map(l => l.l2ApproverId!),
+  ])]
+  const approvers = approverIds.length > 0
+    ? await prisma.user.findMany({ where: { id: { in: approverIds } }, select: { id: true, displayName: true } })
+    : []
+  const approverMap = Object.fromEntries(approvers.map(a => [a.id, a.displayName]))
+
+  const data = leaves.map(l => ({
+    ...l,
+    l1ApproverName: l.l1ApproverId ? (approverMap[l.l1ApproverId] ?? null) : null,
+    l2ApproverName: l.l2ApproverId ? (approverMap[l.l2ApproverId] ?? null) : null,
+  }))
+
+  res.json({ success: true, data })
 })
 
 // POST /api/v1/hr/leave  (submit leave request)

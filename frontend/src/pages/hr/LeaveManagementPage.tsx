@@ -1,7 +1,7 @@
 import { useTranslation } from 'react-i18next'
 import React, { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { Calendar, Plus, CheckCircle, XCircle, Clock } from 'lucide-react'
+import { Calendar, Plus, CheckCircle, XCircle, Clock, History } from 'lucide-react'
 import { Modal, Form, Select, DatePicker, Input } from 'antd'
 import dayjs, { type Dayjs } from 'dayjs'
 import { apiClient } from '@/lib/apiClient'
@@ -26,6 +26,10 @@ interface LeaveRequest {
   submittedAt: string
   rejectRemarks?: string
   coveringOfficerId?: string
+  l1ActedAt?: string
+  l2ActedAt?: string
+  l1ApproverName?: string | null
+  l2ApproverName?: string | null
   staff: {
     staffId: string
     fullName: string
@@ -54,6 +58,7 @@ const LEAVE_TYPE_KEYS = ['annual', 'medical', 'unpaid', 'maternity', 'paternity'
 
 const LeaveManagementPage: React.FC = () => {
   const { t } = useTranslation()
+  const [activeTab,   setActiveTab]   = useState<'pending' | 'history'>('pending')
   const [applyModal,  setApplyModal]  = useState(false)
   const [reviewModal, setReviewModal] = useState<{ leave: LeaveRequest; action: 'approved' | 'rejected' } | null>(null)
   const [remarks,     setRemarks]     = useState('')
@@ -116,9 +121,46 @@ const LeaveManagementPage: React.FC = () => {
     applyForm.validateFields().then(values => applyMutation.mutate(values))
   }
 
-  const pending  = leaves.filter(l => ['pending', 'pending_hr', 'pending_manager'].includes(l.status)).length
+  const PENDING_STATUSES = ['pending', 'pending_hr', 'pending_manager']
+  const pendingLeaves = leaves.filter(l => PENDING_STATUSES.includes(l.status))
+  const historyLeaves = leaves.filter(l => !PENDING_STATUSES.includes(l.status))
+
+  const pending  = pendingLeaves.length
   const approved = leaves.filter(l => l.status === 'approved').length
   const rejected = leaves.filter(l => l.status === 'rejected').length
+
+  const historyColumns: ColumnDef<LeaveRequest>[] = [
+    ...(isManager ? [{
+      key: 'staff' as keyof LeaveRequest,
+      title: t('leaveManagement.staffCol'),
+      render: (v: LeaveRequest) => (
+        <div>
+          <div className={styles.name}>{v.staff.fullName}</div>
+          <div className={styles.sub}>{v.staff.department.name}</div>
+        </div>
+      ),
+    }] : []),
+    { key: 'leaveType', title: t('leaveManagement.leaveTypeCol'), render: v => leaveTypeLabel(v.leaveType) },
+    { key: 'startDate', title: t('leaveManagement.period'), render: v => (
+      <div>
+        <div>{new Date(v.startDate).toLocaleDateString('en-GB')} – {new Date(v.endDate).toLocaleDateString('en-GB')}</div>
+        <div className={styles.sub}>{v.durationDays} {t('leaveManagement.daysUnit')}</div>
+      </div>
+    )},
+    { key: 'status', title: t('leaveManagement.colDecision'), render: v => (
+      <Badge color={STATUS_COLOR[v.status] ?? 'gray'}>
+        {t(`leaveManagement.${v.status}` as any, { defaultValue: v.status })}
+      </Badge>
+    )},
+    { key: 'l1ApproverName', title: t('leaveManagement.colDecidedBy'), render: v => {
+      const name = v.l2ApproverName ?? v.l1ApproverName
+      return name ? <span>{name}</span> : <span className={styles.sub}>—</span>
+    }},
+    { key: 'l1ActedAt', title: t('leaveManagement.colDecidedAt'), render: v => {
+      const ts = v.l2ActedAt ?? v.l1ActedAt
+      return ts ? new Date(ts).toLocaleDateString('en-GB') : '—'
+    }},
+  ]
 
   const columns: ColumnDef<LeaveRequest>[] = [
     ...(isManager ? [{
@@ -184,17 +226,51 @@ const LeaveManagementPage: React.FC = () => {
         <StatCard title={t('leaveManagement.total')}    value={leaves.length} sub={t('leaveManagement.allRequests')}      icon={<Calendar size={16} />}    color="blue" />
       </div>
 
+      {/* Tabs */}
+      <div className={styles.tabs}>
+        <button
+          className={`${styles.tab} ${activeTab === 'pending' ? styles.active : ''}`}
+          onClick={() => setActiveTab('pending')}
+        >
+          <Clock size={14} />
+          {t('leaveManagement.tabPending')}
+          {pending > 0 && <span className={styles.tabBadge}>{pending}</span>}
+        </button>
+        <button
+          className={`${styles.tab} ${activeTab === 'history' ? styles.active : ''}`}
+          onClick={() => setActiveTab('history')}
+        >
+          <History size={14} />
+          {t('leaveManagement.tabHistory')}
+        </button>
+      </div>
+
       {/* Table */}
-      <Card title={isManager ? t('leaveManagement.allLeaveRequests') : t('leaveManagement.myLeaveRequests')} noPadding>
-        <Table<LeaveRequest>
-          columns={columns}
-          dataSource={leaves}
-          rowKey="id"
-          loading={isLoading}
-          size="sm"
-          emptyText={t('leaveManagement.noRequests')}
-        />
-      </Card>
+      {activeTab === 'pending' && (
+        <Card title={isManager ? t('leaveManagement.allLeaveRequests') : t('leaveManagement.myLeaveRequests')} noPadding>
+          <Table<LeaveRequest>
+            columns={columns}
+            dataSource={pendingLeaves}
+            rowKey="id"
+            loading={isLoading}
+            size="sm"
+            emptyText={t('leaveManagement.noRequests')}
+          />
+        </Card>
+      )}
+
+      {activeTab === 'history' && (
+        <Card title={t('leaveManagement.tabHistory')} noPadding>
+          <Table<LeaveRequest>
+            columns={historyColumns}
+            dataSource={historyLeaves}
+            rowKey="id"
+            loading={isLoading}
+            size="sm"
+            emptyText={t('leaveManagement.noHistory')}
+          />
+        </Card>
+      )}
 
       {/* Apply for Leave Modal */}
       <Modal

@@ -912,6 +912,17 @@ const zh = {
     addNotes: '添加备注…',
     approveSuccess: '采购申请已批准',
     rejectSuccess: '采购申请已拒绝',
+    tabPending: '待审批',
+    tabHistory: '审批记录',
+    colPR: '申请编号',
+    colItem: '物品',
+    colAmount: '金额',
+    colDecision: '审批结果',
+    colApproved: '已批准',
+    colRejected: '已拒绝',
+    colDecidedBy: '审批人',
+    colDecidedAt: '审批时间',
+    noHistory: '暂无审批记录。',
   },
 
   procurementAnomalies: {
@@ -1054,6 +1065,12 @@ const zh = {
     actionFailed: '操作失败',
     pending_hr: '等待HR审批',
     pending_manager: '等待经理审批',
+    tabPending: '待审批',
+    tabHistory: '审批记录',
+    colDecision: '审批结果',
+    colDecidedBy: '审批人',
+    colDecidedAt: '审批时间',
+    noHistory: '暂无已处理的请假申请。',
   },
 
   researchGrants: {
@@ -1131,6 +1148,11 @@ const zh = {
     fileSizeError: '文件 "{{fileName}}" 超过5MB限制',
     totalSizeError: '总文件大小超过20MB限制',
     maxFilesError: '最多只能上传10个文件',
+    tabActive: '进行中提案',
+    tabDecided: '已决定',
+    colDecision: '审批结果',
+    colDeptDecision: '部门主管决定',
+    colFinanceDecision: '财务决定',
   },
 
   aiRisk: {
@@ -1542,6 +1564,11 @@ const zh = {
     credTempPassword: '临时密码',
     credentialsDone: '完成——凭据已记录',
     credentialsWarning: '请安全传达此密码。员工首次登录后须修改密码。',
+    tabPending: '待入职处理',
+    tabCompleted: '已完成',
+    colDecision: '状态',
+    colCompletedAt: '完成日期',
+    noCompleted: '暂无已完成的入职记录。',
   },
 }
 

@@ -2,7 +2,7 @@ import { useTranslation } from 'react-i18next'
 import React, { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useForm } from 'react-hook-form'
-import { FlaskConical, Plus, CheckCircle, XCircle, Clock, DollarSign, Search, Upload, FileText } from 'lucide-react'
+import { FlaskConical, Plus, CheckCircle, XCircle, Clock, DollarSign, Search, Upload, FileText, History } from 'lucide-react'
 import { Input as AntInput } from 'antd'
 import { apiClient } from '@/lib/apiClient'
 import { useUIStore } from '@/stores/uiStore'
@@ -28,8 +28,10 @@ interface Grant {
   submittedAt: string
   l1ActedAt?: string
   l1Remarks?: string
+  l1ApproverName?: string | null
   l3ActedAt?: string
   l3Remarks?: string
+  l3ApproverName?: string | null
   pi: { fullName: string; designation: string; user: { displayName: string } }
   department: { name: string; code: string }
 }
@@ -61,6 +63,7 @@ const STATUS_KEY: Record<string, string> = {
 
 const ResearchGrantsPage: React.FC = () => {
   const { t } = useTranslation()
+  const [activeTab,   setActiveTab]   = useState<'active' | 'decided'>('active')
   const [search,      setSearch]      = useState('')
   const [submitModal, setSubmitModal] = useState(false)
   const [detailModal, setDetailModal] = useState<Grant | null>(null)
@@ -186,11 +189,48 @@ const ResearchGrantsPage: React.FC = () => {
 
   const statusLabel = (status: string) => t(STATUS_KEY[status] as any ?? status, { defaultValue: status })
 
-  const filtered = grants.filter(g =>
+  const ACTIVE_STATUSES = ['proposal_submitted', 'dept_approved', 'under_review']
+  const DECIDED_STATUSES = ['approved', 'rejected', 'completed']
+
+  const activeGrants = grants.filter(g => ACTIVE_STATUSES.includes(g.status))
+  const decidedGrants = grants.filter(g => DECIDED_STATUSES.includes(g.status))
+
+  const filtered = (activeTab === 'decided' ? decidedGrants : activeGrants).filter(g =>
     g.title.toLowerCase().includes(search.toLowerCase()) ||
     g.referenceNo.toLowerCase().includes(search.toLowerCase()) ||
     g.pi.fullName.toLowerCase().includes(search.toLowerCase())
   )
+
+  const decidedColumns: ColumnDef<Grant>[] = [
+    { key: 'referenceNo', title: t('researchGrants.reference'), render: v => <span className={styles.ref}>{v.referenceNo}</span> },
+    { key: 'title', title: t('researchGrants.title2'), render: v => (
+      <div>
+        <div className={styles.grantTitle}>{v.title}</div>
+        <div className={styles.sub}>{v.pi.fullName} · {v.department.code}</div>
+      </div>
+    )},
+    { key: 'totalBudget', title: t('researchGrants.budget'), render: v => `BND ${v.totalBudget.toLocaleString()}` },
+    { key: 'status', title: t('researchGrants.colDecision'), render: v => (
+      <Badge color={STATUS_COLOR[v.status] ?? 'gray'}>{statusLabel(v.status)}</Badge>
+    )},
+    { key: 'l1Reviewer', title: t('researchGrants.colDeptDecision'), render: v => v.l1ActedAt ? (
+      <div>
+        <div>{v.l1ApproverName ?? '—'}</div>
+        <div className={styles.sub}>{new Date(v.l1ActedAt).toLocaleDateString('en-GB')}</div>
+        {v.l1Remarks && <div className={styles.sub}>{v.l1Remarks}</div>}
+      </div>
+    ) : <span className={styles.sub}>—</span> },
+    { key: 'l3Reviewer', title: t('researchGrants.colFinanceDecision'), render: v => v.l3ActedAt ? (
+      <div>
+        <div>{v.l3ApproverName ?? '—'}</div>
+        <div className={styles.sub}>{new Date(v.l3ActedAt).toLocaleDateString('en-GB')}</div>
+        {v.l3Remarks && <div className={styles.sub}>{v.l3Remarks}</div>}
+      </div>
+    ) : <span className={styles.sub}>—</span> },
+    { key: 'actions', title: '', render: v => (
+      <Button size="sm" variant="ghost" onClick={() => setDetailModal(v)}>{t('researchGrants.detailsBtn')}</Button>
+    )},
+  ]
 
   const columns: ColumnDef<Grant>[] = [
     { key: 'referenceNo',    title: t('researchGrants.reference'), render: v => <span className={styles.ref}>{v.referenceNo}</span> },
@@ -275,9 +315,28 @@ const ResearchGrantsPage: React.FC = () => {
         <div className={styles.wfStep}><span className={`${styles.wfNum} ${styles.wfNumGreen}`}>✓</span><span>{t('researchGrants.funded')}</span></div>
       </div>
 
+      {/* Tab Bar */}
+      <div className={styles.tabs}>
+        <button
+          className={`${styles.tab} ${activeTab === 'active' ? styles.active : ''}`}
+          onClick={() => setActiveTab('active')}
+        >
+          <Clock size={14} />
+          {t('researchGrants.tabActive')}
+          {activeGrants.length > 0 && <span className={styles.tabBadge}>{activeGrants.length}</span>}
+        </button>
+        <button
+          className={`${styles.tab} ${activeTab === 'decided' ? styles.active : ''}`}
+          onClick={() => setActiveTab('decided')}
+        >
+          <History size={14} />
+          {t('researchGrants.tabDecided')}
+        </button>
+      </div>
+
       {/* Table (desktop) / Cards (mobile) */}
       <Card
-        title={t('researchGrants.grantProposals')}
+        title={activeTab === 'decided' ? t('researchGrants.tabDecided') : t('researchGrants.grantProposals')}
         noPadding
       >
         <div className={styles.searchBar}>
@@ -293,7 +352,7 @@ const ResearchGrantsPage: React.FC = () => {
         {/* Desktop table */}
         <div className={styles.tableWrap}>
           <Table<Grant>
-            columns={columns}
+            columns={activeTab === 'decided' ? decidedColumns : columns}
             dataSource={filtered}
             rowKey="id"
             loading={isLoading}

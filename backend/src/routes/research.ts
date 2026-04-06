@@ -26,7 +26,27 @@ router.get('/grants', async (req: AuthRequest, res: Response) => {
     },
     orderBy: { submittedAt: 'desc' },
   })
-  res.json({ success: true, data: grants })
+
+  // Resolve approver names (l1DeptHeadId / l3FinanceApprovedById are Staff IDs)
+  const staffIds = [...new Set([
+    ...grants.filter(g => g.l1DeptHeadId).map(g => g.l1DeptHeadId!),
+    ...grants.filter(g => g.l3FinanceApprovedById).map(g => g.l3FinanceApprovedById!),
+  ])]
+  const staffApprovers = staffIds.length > 0
+    ? await prisma.staff.findMany({
+        where: { id: { in: staffIds } },
+        select: { id: true, user: { select: { displayName: true } } },
+      })
+    : []
+  const staffApproverMap = Object.fromEntries(staffApprovers.map(s => [s.id, s.user.displayName]))
+
+  const data = grants.map(g => ({
+    ...g,
+    l1ApproverName: g.l1DeptHeadId ? (staffApproverMap[g.l1DeptHeadId] ?? null) : null,
+    l3ApproverName: g.l3FinanceApprovedById ? (staffApproverMap[g.l3FinanceApprovedById] ?? null) : null,
+  }))
+
+  res.json({ success: true, data })
 })
 
 // GET /api/v1/research/grants/:id

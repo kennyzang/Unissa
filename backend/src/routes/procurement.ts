@@ -209,6 +209,43 @@ router.get('/approval-inbox', requireRole('manager', 'finance', 'admin'), async 
   res.json({ success: true, data: items })
 })
 
+// GET /api/v1/procurement/approval-history
+router.get('/approval-history', requireRole('manager', 'finance', 'admin'), async (req: AuthRequest, res: Response) => {
+  const role = req.user!.role
+  // Statuses that have moved past the pending stage for this role
+  const decidedStatuses = role === 'manager'
+    ? ['dept_approved', 'finance_approved', 'converted_to_po', 'rejected']
+    : role === 'finance'
+    ? ['finance_approved', 'converted_to_po', 'rejected']
+    : ['dept_approved', 'finance_approved', 'converted_to_po', 'rejected']
+
+  const items = await prisma.purchaseRequest.findMany({
+    where: {
+      status: { in: decidedStatuses },
+      approvals: { some: {} },
+    },
+    include: {
+      requestor: { include: { user: { select: { displayName: true } } } },
+      department: { select: { name: true } },
+      glCode: { select: { code: true } },
+      approvals: {
+        include: { approver: { select: { displayName: true } } },
+        orderBy: { actedAt: 'desc' },
+      },
+    },
+    orderBy: { submittedAt: 'desc' },
+    take: 100,
+  })
+
+  // Attach latest approval record as top-level fields for convenience
+  const data = items.map(({ approvals, ...pr }) => ({
+    ...pr,
+    latestApproval: approvals[0] ?? null,
+  }))
+
+  res.json({ success: true, data })
+})
+
 // GET /api/v1/procurement/anomalies
 router.get('/anomalies', requireRole('finance', 'admin'), async (_req, res: Response) => {
   const anomalies = await prisma.procurementAnomaly.findMany({
