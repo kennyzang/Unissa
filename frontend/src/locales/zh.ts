@@ -982,6 +982,11 @@ const zh = {
     statusOnLeave: '请假中',
     statusTerminated: '已离职',
     statusInactive: '非活跃',
+    allDepts: '所有部门',
+    allTypes: '所有类型',
+    allStatuses: '所有状态',
+    clearFilters: '清除筛选',
+    staffTotal: '名员工',
   },
 
   leaveManagement: {

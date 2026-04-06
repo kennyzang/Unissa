@@ -73,24 +73,49 @@
   margin-top: 2px;
 }
 
-.searchWrap {
+.filterBar {
   display: flex;
   align-items: center;
+  flex-wrap: wrap;
   gap: $space-2;
-  color: $color-gray-5;
+  padding: $space-3 $space-4;
+  border-bottom: $border;
+  background: $color-gray-1;
 }
 
 .searchInput {
-  border: $border;
-  border-radius: $border-radius-md;
-  padding: $space-2 $space-3;
-  font-size: $font-size-sm;
-  width: 240px;
-  outline: none;
-
-  &:focus { border-color: $brand-primary; }
+  width: 220px;
+  flex-shrink: 0;
 
   @media (max-width: $bp-md) { width: 100%; }
+}
+
+.filterSelect {
+  width: 160px;
+  flex-shrink: 0;
+
+  @media (max-width: $bp-md) { width: calc(50% - #{$space-1}); }
+}
+
+// Tighten default Ant Design table inside our noPadding Card
+.antTable {
+  :global(.ant-table-thead > tr > th) {
+    background: $color-gray-1;
+    font-size: $font-size-xs;
+    font-weight: $font-weight-semibold;
+    color: $color-gray-6;
+    padding: 8px 12px;
+    white-space: nowrap;
+  }
+
+  :global(.ant-table-tbody > tr > td) {
+    padding: 8px 12px;
+    font-size: $font-size-sm;
+  }
+
+  :global(.ant-pagination) {
+    margin: $space-3 $space-4;
+  }
 }
 
 .staffId {

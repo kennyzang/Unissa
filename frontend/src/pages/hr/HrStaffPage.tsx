@@ -1,13 +1,12 @@
 import { useTranslation } from 'react-i18next'
-import React, { useState } from 'react'
+import React, { useMemo, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { Users, Search, UserCheck, Calendar, Briefcase } from 'lucide-react'
-import { Input as AntInput } from 'antd'
+import { Input as AntInput, Select, Table as AntTable } from 'antd'
+import type { TableColumnsType } from 'antd'
 import { apiClient } from '@/lib/apiClient'
 import Card from '@/components/ui/Card'
 import Badge from '@/components/ui/Badge'
-import Table from '@/components/ui/Table'
-import type { ColumnDef } from '@/components/ui/Table'
 import Modal from '@/components/ui/Modal'
 import Button from '@/components/ui/Button'
 import StatCard from '@/components/ui/StatCard'
@@ -61,10 +60,26 @@ const EMPLOYMENT_KEY: Record<string, string> = {
   part_time: 'hrStaff.partTime',
 }
 
+// Maps display filter value → raw DB value
+const EMP_TYPE_VALUES: Record<string, string> = {
+  full_time: 'permanent',
+  part_time: 'part_time',
+  contract:  'contract',
+}
+
+const STATUS_VALUES: Record<string, string> = {
+  active:   'active',
+  inactive: 'inactive',
+  on_leave: 'on_leave',
+}
+
 const HrStaffPage: React.FC = () => {
   const { t } = useTranslation()
-  const [search,   setSearch]   = useState('')
-  const [selected, setSelected] = useState<Staff | null>(null)
+  const [search,      setSearch]      = useState('')
+  const [filterDept,  setFilterDept]  = useState<string | null>(null)
+  const [filterEmp,   setFilterEmp]   = useState<string | null>(null)
+  const [filterStatus,setFilterStatus]= useState<string | null>(null)
+  const [selected,    setSelected]    = useState<Staff | null>(null)
 
   const { data: staffList = [], isLoading } = useQuery<Staff[]>({
     queryKey: ['hr', 'staff'],
@@ -82,47 +97,112 @@ const HrStaffPage: React.FC = () => {
     },
   })
 
-  const filtered = staffList.filter(s =>
-    s.fullName.toLowerCase().includes(search.toLowerCase()) ||
-    s.staffId.toLowerCase().includes(search.toLowerCase()) ||
-    s.designation.toLowerCase().includes(search.toLowerCase()) ||
-    s.department.name.toLowerCase().includes(search.toLowerCase())
-  )
+  const deptOptions = useMemo(() => {
+    const names = Array.from(new Set(staffList.map(s => s.department.name))).sort()
+    return names.map(n => ({ label: n, value: n }))
+  }, [staffList])
+
+  const filtered = useMemo(() => {
+    const q = search.toLowerCase()
+    return staffList.filter(s => {
+      if (q && !(
+        s.fullName.toLowerCase().includes(q) ||
+        s.staffId.toLowerCase().includes(q) ||
+        s.designation.toLowerCase().includes(q) ||
+        s.department.name.toLowerCase().includes(q)
+      )) return false
+      if (filterDept   && s.department.name !== filterDept)           return false
+      if (filterEmp    && s.employmentType  !== EMP_TYPE_VALUES[filterEmp])    return false
+      if (filterStatus && s.status          !== STATUS_VALUES[filterStatus])   return false
+      return true
+    })
+  }, [staffList, search, filterDept, filterEmp, filterStatus])
+
+  const clearFilters = () => {
+    setSearch('')
+    setFilterDept(null)
+    setFilterEmp(null)
+    setFilterStatus(null)
+  }
+
+  const hasFilters = search || filterDept || filterEmp || filterStatus
 
   const employmentLabel = (type: string) => t(EMPLOYMENT_KEY[type] as any ?? type, { defaultValue: type.replace('_', ' ') })
   const statusLabel     = (status: string) => t(STATUS_KEY[status] as any ?? status, { defaultValue: status })
 
-  const columns: ColumnDef<Staff>[] = [
-    { key: 'staffId',            title: t('hrStaff.staffId'),      render: v => <span className={styles.staffId}>{v.staffId}</span> },
-    { key: 'fullName',           title: t('hrStaff.name'),         render: v => (
-      <div>
-        <div className={styles.name}>{v.fullName}</div>
-        <div className={styles.email}>{v.user.email}</div>
-      </div>
-    )},
-    { key: 'designation',        title: t('hrStaff.designation'),  render: v => (
-      <div>
-        <div>{v.designation}</div>
-        <div className={styles.email}>{v.department.name}</div>
-      </div>
-    )},
-    { key: 'employmentType',     title: t('hrStaff.type'),         render: v => (
-      <Badge color={EMPLOYMENT_COLOR[v.employmentType] ?? 'gray'}>
-        {employmentLabel(v.employmentType)}
-      </Badge>
-    )},
-    { key: 'status',             title: t('common.status'),        render: v => (
-      <Badge color={STATUS_COLOR[v.status] ?? 'gray'}>{statusLabel(v.status)}</Badge>
-    )},
-    { key: 'leaveBalanceAnnual', title: t('hrStaff.leaveBalance'), render: v => (
-      <div className={styles.leaveBalance}>
-        <span title={t('hrStaff.annualLeave')}>A: {v.leaveBalanceAnnual}{t('hrStaff.days')}</span>
-        <span title={t('hrStaff.medicalLeave')}>M: {v.leaveBalanceMedical}{t('hrStaff.days')}</span>
-      </div>
-    )},
-    { key: 'actions',            title: '', render: v => (
-      <Button size="sm" variant="ghost" onClick={() => setSelected(v)}>{t('hrStaff.viewBtn')}</Button>
-    )},
+  const columns: TableColumnsType<Staff> = [
+    {
+      title:     t('hrStaff.staffId'),
+      key:       'staffId',
+      dataIndex: 'staffId',
+      width:     110,
+      sorter:    (a, b) => a.staffId.localeCompare(b.staffId),
+      render:    (val: string) => <span className={styles.staffId}>{val}</span>,
+    },
+    {
+      title:  t('hrStaff.name'),
+      key:    'fullName',
+      sorter: (a, b) => a.fullName.localeCompare(b.fullName),
+      render: (_: any, v: Staff) => (
+        <div>
+          <div className={styles.name}>{v.fullName}</div>
+          <div className={styles.email}>{v.user.email}</div>
+        </div>
+      ),
+    },
+    {
+      title:  t('hrStaff.designation'),
+      key:    'designation',
+      sorter: (a, b) => a.designation.localeCompare(b.designation),
+      render: (_: any, v: Staff) => (
+        <div>
+          <div>{v.designation}</div>
+          <div className={styles.email}>{v.department.name}</div>
+        </div>
+      ),
+    },
+    {
+      title:  t('hrStaff.department'),
+      key:    'department',
+      sorter: (a, b) => a.department.name.localeCompare(b.department.name),
+      render: (_: any, v: Staff) => v.department.name,
+    },
+    {
+      title:  t('hrStaff.type'),
+      key:    'employmentType',
+      sorter: (a, b) => a.employmentType.localeCompare(b.employmentType),
+      render: (_: any, v: Staff) => (
+        <Badge color={EMPLOYMENT_COLOR[v.employmentType] ?? 'gray'}>
+          {employmentLabel(v.employmentType)}
+        </Badge>
+      ),
+    },
+    {
+      title:  t('common.status'),
+      key:    'status',
+      sorter: (a, b) => a.status.localeCompare(b.status),
+      render: (_: any, v: Staff) => (
+        <Badge color={STATUS_COLOR[v.status] ?? 'gray'}>{statusLabel(v.status)}</Badge>
+      ),
+    },
+    {
+      title:  t('hrStaff.leaveBalance'),
+      key:    'leaveBalance',
+      render: (_: any, v: Staff) => (
+        <div className={styles.leaveBalance}>
+          <span title={t('hrStaff.annualLeave')}>A: {v.leaveBalanceAnnual}{t('hrStaff.days')}</span>
+          <span title={t('hrStaff.medicalLeave')}>M: {v.leaveBalanceMedical}{t('hrStaff.days')}</span>
+        </div>
+      ),
+    },
+    {
+      title:  '',
+      key:    'actions',
+      width:  70,
+      render: (_: any, v: Staff) => (
+        <Button size="sm" variant="ghost" onClick={() => setSelected(v)}>{t('hrStaff.viewBtn')}</Button>
+      ),
+    },
   ]
 
   return (
@@ -155,9 +235,9 @@ const HrStaffPage: React.FC = () => {
       )}
 
       {/* Table */}
-      <Card
-        title={t('hrStaff.staffDirectory')}
-        extra={
+      <Card title={t('hrStaff.staffDirectory')} noPadding>
+        {/* Filter bar */}
+        <div className={styles.filterBar}>
           <AntInput
             className={styles.searchInput}
             placeholder={t('hrStaff.searchPlaceholder')}
@@ -166,16 +246,57 @@ const HrStaffPage: React.FC = () => {
             prefix={<Search size={14} />}
             allowClear
           />
-        }
-        noPadding
-      >
-        <Table<Staff>
+          <Select
+            className={styles.filterSelect}
+            placeholder={t('hrStaff.allDepts')}
+            value={filterDept}
+            onChange={v => setFilterDept(v)}
+            options={deptOptions}
+            allowClear
+            onClear={() => setFilterDept(null)}
+          />
+          <Select
+            className={styles.filterSelect}
+            placeholder={t('hrStaff.allTypes')}
+            value={filterEmp}
+            onChange={v => setFilterEmp(v)}
+            allowClear
+            onClear={() => setFilterEmp(null)}
+            options={[
+              { label: t('hrStaff.permanent'), value: 'full_time' },
+              { label: t('hrStaff.partTime'),  value: 'part_time' },
+              { label: t('hrStaff.contract'),  value: 'contract'  },
+            ]}
+          />
+          <Select
+            className={styles.filterSelect}
+            placeholder={t('hrStaff.allStatuses')}
+            value={filterStatus}
+            onChange={v => setFilterStatus(v)}
+            allowClear
+            onClear={() => setFilterStatus(null)}
+            options={[
+              { label: t('hrStaff.statusActive'),   value: 'active'   },
+              { label: t('hrStaff.statusInactive'),  value: 'inactive' },
+              { label: t('hrStaff.statusOnLeave'),   value: 'on_leave' },
+            ]}
+          />
+          {hasFilters && (
+            <Button variant="ghost" size="sm" onClick={clearFilters}>
+              {t('hrStaff.clearFilters')}
+            </Button>
+          )}
+        </div>
+
+        <AntTable<Staff>
           columns={columns}
           dataSource={filtered}
           rowKey="id"
           loading={isLoading}
-          size="sm"
-          emptyText={t('hrStaff.noStaff')}
+          size="small"
+          pagination={{ pageSize: 20, showSizeChanger: false, showTotal: (total) => `${total} ${t('hrStaff.staffTotal')}` }}
+          locale={{ emptyText: t('hrStaff.noStaff') }}
+          className={styles.antTable}
         />
       </Card>
 

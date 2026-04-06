@@ -971,6 +971,11 @@ const ms = {
     statusOnLeave: 'Sedang Bercuti',
     statusTerminated: 'Ditamatkan',
     statusInactive: 'Tidak Aktif',
+    allDepts: 'Semua Jabatan',
+    allTypes: 'Semua Jenis',
+    allStatuses: 'Semua Status',
+    clearFilters: 'Kosongkan Penapis',
+    staffTotal: 'kakitangan',
   },
 
   leaveManagement: {

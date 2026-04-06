@@ -990,6 +990,11 @@ const en = {
     statusOnLeave: 'On Leave',
     statusTerminated: 'Terminated',
     statusInactive: 'Inactive',
+    allDepts: 'All Departments',
+    allTypes: 'All Types',
+    allStatuses: 'All Statuses',
+    clearFilters: 'Clear Filters',
+    staffTotal: 'staff',
   },
 
   // Leave Management
