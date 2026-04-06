@@ -298,29 +298,70 @@ router.delete('/enrolments/:enrolmentId', requireRole('admin', 'manager'), async
 // ─────────────────────────────────────────────────────────────────────────────
 
 router.post('/demo-reset', requireRole('admin'), async (_req: AuthRequest, res: Response) => {
-  await prisma.attendanceRecord.deleteMany({})
-  await prisma.attendanceSession.deleteMany({})
-  await prisma.submission.deleteMany({})
-  await prisma.fileAsset.deleteMany({})
-  await prisma.payment.deleteMany({})
-  await prisma.invoiceAdjustment.deleteMany({})
-  await prisma.feeInvoice.deleteMany({})
-  await prisma.enrolment.deleteMany({})
-  await prisma.courseOffering.updateMany({ data: { seatsTaken: 0 } })
-  await prisma.studentGpaRecord.deleteMany({})
-  await prisma.studentRiskScore.deleteMany({})
-  await prisma.campusCardTransaction.deleteMany({})
-  await prisma.campusCard.deleteMany({})
-  await prisma.libraryAccount.deleteMany({})
-  await prisma.student.deleteMany({})
-  await prisma.user.deleteMany({ where: { role: 'student' } })
-  await prisma.applicant.deleteMany({})
-  await prisma.chatbotConversation.deleteMany({})
+  try {
+    // Step 1: attendance (records before sessions — FK order)
+    const { count: attendanceRecords } = await prisma.attendanceRecord.deleteMany({})
+    const { count: attendanceSessions } = await prisma.attendanceSession.deleteMany({})
 
-  res.json({
-    success: true,
-    message: 'Demo data reset successfully. Re-seed required to restore demo state.',
-  })
+    // Step 2: submissions and their file assets
+    const { count: submissions } = await prisma.submission.deleteMany({})
+    await prisma.fileAsset.deleteMany({})
+
+    // Step 3: payments, invoice adjustments, invoices (FK order)
+    const { count: payments } = await prisma.payment.deleteMany({})
+    await prisma.invoiceAdjustment.deleteMany({})
+    const { count: invoices } = await prisma.feeInvoice.deleteMany({})
+
+    // Step 4: enrolments, then reset seat counts
+    const { count: enrolments } = await prisma.enrolment.deleteMany({})
+    await prisma.courseOffering.updateMany({ data: { seatsTaken: 0 } })
+
+    // Step 5: analytics records
+    await prisma.studentGpaRecord.deleteMany({})
+    await prisma.studentRiskScore.deleteMany({})
+
+    // Step 6: campus cards
+    const { count: campusCardTransactions } = await prisma.campusCardTransaction.deleteMany({})
+    await prisma.campusCard.deleteMany({})
+
+    // Step 7: library accounts, then students (FK: student → user)
+    await prisma.libraryAccount.deleteMany({})
+    const { count: students } = await prisma.student.deleteMany({})
+
+    // Step 8: users with role = student (after student records removed)
+    const { count: users } = await prisma.user.deleteMany({ where: { role: 'student' } })
+
+    // Step 9: applicants (after student FK removed)
+    const { count: applicants } = await prisma.applicant.deleteMany({})
+
+    // Step 10: chatbot history
+    const { count: chatbotConversations } = await prisma.chatbotConversation.deleteMany({})
+
+    res.json({
+      success: true,
+      message: 'Demo reset complete',
+      deleted: {
+        students,
+        users,
+        applicants,
+        enrolments,
+        submissions,
+        payments,
+        invoices,
+        attendanceRecords,
+        attendanceSessions,
+        campusCardTransactions,
+        chatbotConversations,
+      },
+    })
+  } catch (error: any) {
+    console.error('Demo reset failed:', error)
+    res.status(500).json({
+      success: false,
+      message: 'Demo reset failed',
+      error: error.message,
+    })
+  }
 })
 
 export default router

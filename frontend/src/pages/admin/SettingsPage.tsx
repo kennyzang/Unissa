@@ -2,7 +2,7 @@ import { useTranslation } from 'react-i18next'
 import React, { useState, useEffect } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import {
-  Tabs, Switch, Slider, InputNumber, Select as AntSelect, Input as AntInput,
+  Tabs, Switch, Slider, InputNumber, Select as AntSelect, Input as AntInput, Modal,
 } from 'antd'
 import {
   Settings, Bot, Shield, Database, TestTube, Save, CheckCircle, XCircle, RefreshCw,
@@ -85,11 +85,14 @@ const SettingsPage: React.FC = () => {
   useEffect(() => { if (emailData) setEmailForm(emailData) }, [emailData])
 
   const [resetDone, setResetDone] = useState(false)
+  const [resetCounts, setResetCounts] = useState<Record<string, number> | null>(null)
+  const [confirmOpen, setConfirmOpen] = useState(false)
 
   const demoResetMutation = useMutation({
     mutationFn: () => apiClient.post('/admin/demo-reset'),
-    onSuccess: () => {
+    onSuccess: (res) => {
       setResetDone(true)
+      setResetCounts(res.data.deleted ?? null)
       addToast({ type: 'success', message: t('settings.demoResetToast') })
       qc.invalidateQueries({ queryKey: ['admin', 'courses'] })
     },
@@ -436,6 +439,23 @@ const SettingsPage: React.FC = () => {
 
   const demoTab = (
     <div className={styles.tabContent}>
+      <Modal
+        title={t('settings.demoResetConfirmTitle', { defaultValue: 'Confirm Demo Reset' })}
+        open={confirmOpen}
+        onOk={() => {
+          setConfirmOpen(false)
+          setResetDone(false)
+          setResetCounts(null)
+          demoResetMutation.mutate()
+        }}
+        onCancel={() => setConfirmOpen(false)}
+        okText={t('settings.demoResetConfirmOk', { defaultValue: 'Yes, Reset Now' })}
+        cancelText={t('common.cancel', { defaultValue: 'Cancel' })}
+        okButtonProps={{ danger: true }}
+      >
+        <p>{t('settings.demoResetConfirmBody', { defaultValue: 'This will permanently delete all student accounts, enrolments, submissions, payments, and transactional data. This cannot be undone. Are you sure?' })}</p>
+      </Modal>
+
       <Card title={t('settings.demoInitTitle')} className={styles.configCard}>
         <div className={styles.demoResetDesc}>
           <p>{t('settings.demoInitDesc')}</p>
@@ -448,7 +468,22 @@ const SettingsPage: React.FC = () => {
         {resetDone && (
           <div className={`${styles.testResult} ${styles.testOk}`}>
             <CheckCircle size={16} />
-            <span>{t('settings.demoResetSuccess')}</span>
+            <span>
+              {t('settings.demoResetSuccess')}
+              {resetCounts && (
+                <span style={{ marginLeft: 8, fontWeight: 400, fontSize: 12 }}>
+                  {[
+                    resetCounts.students   > 0 && `${resetCounts.students} students`,
+                    resetCounts.applicants > 0 && `${resetCounts.applicants} applicants`,
+                    resetCounts.enrolments > 0 && `${resetCounts.enrolments} enrolments`,
+                    resetCounts.submissions > 0 && `${resetCounts.submissions} submissions`,
+                    resetCounts.payments   > 0 && `${resetCounts.payments} payments`,
+                    resetCounts.invoices   > 0 && `${resetCounts.invoices} invoices`,
+                    resetCounts.attendanceRecords > 0 && `${resetCounts.attendanceRecords} attendance records`,
+                  ].filter(Boolean).join(' · ')}
+                </span>
+              )}
+            </span>
           </div>
         )}
         <div className={styles.actions}>
@@ -456,10 +491,7 @@ const SettingsPage: React.FC = () => {
             variant="danger"
             icon={<RefreshCw size={14} />}
             loading={demoResetMutation.isPending}
-            onClick={() => {
-              setResetDone(false)
-              demoResetMutation.mutate()
-            }}
+            onClick={() => setConfirmOpen(true)}
           >
             {t('settings.demoResetBtn')}
           </Button>
