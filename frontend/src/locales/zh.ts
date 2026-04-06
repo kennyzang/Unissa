@@ -111,6 +111,8 @@ const zh = {
     permissionManagement: '权限管理',
     logAudit: '日志审计',
     smartPlatform: '智慧平台',
+    staffPortal: '我的员工门户',
+    hrOnboarding: '员工入职',
   },
 
   navbar: {

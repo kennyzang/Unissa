@@ -109,6 +109,10 @@ const ms = {
     permissionManagement: 'Pengurusan Izin',
     logAudit: 'Audit Log',
     smartPlatform: 'Platform Pintar',
+    commandCenter: 'Pusat Kawalan',
+    procurement: 'Perolehan',
+    staffPortal: 'Portal Staf Saya',
+    hrOnboarding: 'Orientasi Staf',
   },
 
   navbar: {

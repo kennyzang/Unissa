@@ -115,6 +115,8 @@ const en = {
     permissionManagement: 'Permission Management',
     logAudit: 'Log Audit',
     smartPlatform: 'Smart Platform',
+    commandCenter: 'Command Center',
+    procurement: 'Procurement',
   },
 
   // Navbar
