@@ -395,6 +395,22 @@ async function main() {
     update: {},
   })
 
+  // ── Demo Facility Bookings (pending — manager can approve) ────
+  const tomorrow = new Date(); tomorrow.setDate(tomorrow.getDate() + 1); tomorrow.setHours(0, 0, 0, 0)
+  const dayAfter  = new Date(); dayAfter.setDate(dayAfter.getDate() + 2);  dayAfter.setHours(0, 0, 0, 0)
+
+  const demoPendingBookings = [
+    { id: 'fb-demo-001', facilityId: roomMR1.id,  bookedById: uManager.id, bookingDate: tomorrow, startTime: '09:00', endTime: '11:00', purpose: 'Quarterly Department Review Meeting',      status: 'pending' },
+    { id: 'fb-demo-002', facilityId: roomLH_A.id, bookedById: uDrSiti.id,  bookingDate: tomorrow, startTime: '14:00', endTime: '17:00', purpose: 'Guest Lecture: AI in Healthcare',          status: 'pending' },
+    { id: 'fb-demo-003', facilityId: roomLab3.id, bookedById: uAhmad.id,   bookingDate: dayAfter,  startTime: '10:00', endTime: '12:00', purpose: 'Research Group Workshop – NLP Experiments', status: 'pending' },
+  ]
+  for (const b of demoPendingBookings) {
+    const exists = await prisma.facilityBooking.findUnique({ where: { id: b.id } })
+    if (!exists) {
+      await prisma.facilityBooking.create({ data: b })
+    }
+  }
+
   // ── Course Offerings ──────────────────────────────────────────
   const offeringIFN101 = await upsertOffering({
     courseId: cIFN101.id, semesterId: semSep2026.id, lecturerId: staffSiti.id,

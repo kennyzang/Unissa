@@ -136,6 +136,13 @@ const NAV_STRUCTURE: NavGroup[] = [
     ],
   },
   {
+    key: 'g-manager-campus', labelKey: 'nav.campusFacilities', icon: '🏛️',
+    roles: ['manager'],
+    children: [
+      { key: 'campus-facilities', labelKey: 'nav.campusFacilities', path: '/campus/facilities', icon: '🏛️', roles: ['manager'] },
+    ],
+  },
+  {
     key: 'g-admin', labelKey: 'nav.globalControlCenter', icon: '🌐',
     path: '/dashboard', roles: ['admin'],
   },
@@ -179,6 +186,13 @@ const NAV_STRUCTURE: NavGroup[] = [
     roles: ['admin'],
     children: [
       { key: 'research', labelKey: 'nav.researchFundControl', path: '/research/grants', icon: '💰', roles: ['admin'] },
+    ],
+  },
+  {
+    key: 'g-admin-campus', labelKey: 'nav.campusFacilities', icon: '🏛️',
+    roles: ['admin'],
+    children: [
+      { key: 'campus-facilities', labelKey: 'nav.campusFacilities', path: '/campus/facilities', icon: '🏛️', roles: ['admin'] },
     ],
   },
   {

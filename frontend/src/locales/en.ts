@@ -75,6 +75,7 @@ const en = {
     myPayment: 'My Payment',
     campusCard: 'Campus Card',
     campusServices: 'Campus Services',
+    campusFacilities: 'Campus Facilities',
     myLearning: 'My Learning',
     myCourses: 'My Courses',
     myAttendance: 'My Attendance',

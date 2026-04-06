@@ -68,6 +68,8 @@ const StaffPortalPage          = lazy(() => import('@/pages/hr/StaffPortalPage')
 const ResearchGrantsPage       = lazy(() => import('@/pages/research/ResearchGrantsPage'))
 const RiskDashboardPage        = lazy(() => import('@/pages/ai/RiskDashboardPage'))
 const CampusServicesPage       = lazy(() => import('@/pages/campus/CampusServicesPage'))
+const CampusFacilitiesPage     = lazy(() => import('@/pages/campus/CampusFacilitiesPage'))
+const AdmissionsPage           = lazy(() => import('@/pages/admissions/AdmissionsPage'))
 const SettingsPage             = lazy(() => import('@/pages/admin/SettingsPage'))
 const CourseManagementPage     = lazy(() => import('@/pages/admin/CourseManagementPage'))
 
@@ -130,7 +132,11 @@ export const router = createBrowserRouter([
       { path: 'ai/risk', element: r(['lecturer','admin'], <RiskDashboardPage />) },
 
       // Campus
-      { path: 'campus/services', element: r(['student'], <CampusServicesPage />) },
+      { path: 'campus/services',   element: r(['student'], <CampusServicesPage />) },
+      { path: 'campus/facilities', element: r(['manager','admin'], <CampusFacilitiesPage />) },
+
+      // Admissions pipeline
+      { path: 'admissions', element: r(['admissions','manager','admin'], <AdmissionsPage />) },
 
       // Admin
       { path: 'admin/settings', element: r(['admin'], <SettingsPage />) },

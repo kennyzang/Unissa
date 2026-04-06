@@ -35,6 +35,7 @@ import notificationsRoutes from './routes/notifications'
 import adminRoutes from './routes/admin'
 import productsRoutes from './routes/products'
 import campusCardRoutes from './routes/campusCard'
+import campusRoutes from './routes/campus'
 import { errorHandler, notFound } from './middleware/errorHandler'
 
 const app = express()
@@ -89,6 +90,7 @@ app.use('/api/v1/notifications', notificationsRoutes)
 app.use('/api/v1/admin',         adminRoutes)
 app.use('/api/v1/products',      productsRoutes)
 app.use('/api/v1/campus-card',   campusCardRoutes)
+app.use('/api/v1/campus',        campusRoutes)
 
 // API docs
 app.get('/api-docs', (_req, res) => {

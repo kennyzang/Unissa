@@ -1,0 +1,214 @@
+@use '@/styles/variables' as v;
+
+.page {
+  padding: v.$space-6;
+  display: flex;
+  flex-direction: column;
+  gap: v.$space-5;
+  max-width: v.$content-max-width;
+}
+
+.loading {
+  padding: v.$space-8;
+  text-align: center;
+  color: var(--color-gray-5);
+}
+
+.header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: v.$space-4;
+}
+
+.title {
+  font-size: v.$font-size-2xl;
+  font-weight: v.$font-weight-bold;
+  color: var(--color-gray-8);
+  margin: 0;
+}
+
+.sub {
+  font-size: v.$font-size-sm;
+  color: var(--color-gray-5);
+  margin: v.$space-1 0 0;
+}
+
+.reviewBtn {
+  display: flex;
+  align-items: center;
+  gap: v.$space-1;
+  padding: v.$space-2 v.$space-4;
+  background: v.$brand-primary;
+  color: white;
+  border: none;
+  border-radius: v.$border-radius;
+  font-size: v.$font-size-sm;
+  font-weight: v.$font-weight-medium;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: v.$transition-fast;
+  &:hover { background: v.$brand-primary-5; }
+}
+
+// ── Funnel ────────────────────────────────────────────────────
+.funnelCard {
+  overflow: visible;
+}
+
+.funnel {
+  display: flex;
+  align-items: center;
+  gap: v.$space-2;
+  padding: v.$space-4 0;
+  overflow-x: auto;
+}
+
+.funnelStep {
+  flex: 1;
+  min-width: 140px;
+  display: flex;
+  flex-direction: column;
+  gap: v.$space-2;
+}
+
+.funnelBar {
+  height: 8px;
+  background: var(--color-gray-2);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.funnelFill {
+  height: 100%;
+  border-radius: 4px;
+  transition: width 0.6s ease;
+}
+
+.funnelMeta {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.funnelLabel {
+  font-size: v.$font-size-sm;
+  font-weight: v.$font-weight-semibold;
+  color: var(--color-gray-7);
+}
+
+.funnelCount {
+  font-size: v.$font-size-2xl;
+  font-weight: v.$font-weight-bold;
+  line-height: 1.1;
+}
+
+.funnelConv {
+  font-size: v.$font-size-xs;
+  color: var(--color-gray-5);
+}
+
+.funnelArrow {
+  flex-shrink: 0;
+  padding-bottom: v.$space-6;
+}
+
+// ── KPI Row ───────────────────────────────────────────────────
+.kpiRow {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: v.$space-4;
+
+  @media (max-width: v.$bp-md) { grid-template-columns: repeat(2, 1fr); }
+}
+
+.kpiCard {
+  background: white;
+  border: 1px solid var(--color-gray-3);
+  border-top: 3px solid var(--accent, v.$brand-primary);
+  border-radius: v.$border-radius-lg;
+  padding: v.$space-4;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: v.$space-2;
+  box-shadow: v.$shadow-sm;
+}
+
+.kpiIcon {
+  width: 32px;
+  height: 32px;
+  border-radius: v.$border-radius-md;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.kpiVal {
+  font-size: v.$font-size-2xl;
+  font-weight: v.$font-weight-bold;
+  line-height: 1;
+}
+
+.kpiLabel {
+  font-size: v.$font-size-sm;
+  color: var(--color-gray-5);
+}
+
+// ── Table ─────────────────────────────────────────────────────
+.tableCard { overflow: auto; }
+
+.empty {
+  padding: v.$space-6;
+  text-align: center;
+  color: var(--color-gray-5);
+  font-size: v.$font-size-sm;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: v.$font-size-sm;
+
+  th {
+    text-align: left;
+    padding: v.$space-2 v.$space-3;
+    color: var(--color-gray-5);
+    font-weight: v.$font-weight-medium;
+    font-size: v.$font-size-xs;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    border-bottom: 1px solid var(--color-gray-3);
+    white-space: nowrap;
+  }
+
+  td {
+    padding: v.$space-3;
+    border-bottom: 1px solid var(--color-gray-2);
+    color: var(--color-gray-7);
+    vertical-align: middle;
+  }
+}
+
+.row {
+  cursor: pointer;
+  transition: background 0.1s;
+  &:hover { background: var(--color-gray-1); }
+  &:last-child td { border-bottom: none; }
+}
+
+.code {
+  display: inline-block;
+  background: v.$brand-primary-1;
+  color: v.$brand-primary;
+  font-size: v.$font-size-xs;
+  font-weight: v.$font-weight-semibold;
+  padding: 1px 6px;
+  border-radius: v.$border-radius;
+  margin-right: v.$space-1;
+}
+
+.date {
+  color: var(--color-gray-5);
+  white-space: nowrap;
+}

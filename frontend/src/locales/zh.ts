@@ -73,6 +73,7 @@ const zh = {
     myPayment: '我的缴费',
     campusCard: '校园卡',
     campusServices: '校园服务',
+    campusFacilities: '校园设施',
     myLearning: '我的学习',
     myCourses: '我的课程',
     myAttendance: '我的考勤',

@@ -71,6 +71,7 @@ const ms = {
     myPayment: 'Bayaran Saya',
     campusCard: 'Kad Kampus',
     campusServices: 'Perkhidmatan Kampus',
+    campusFacilities: 'Kemudahan Kampus',
     myLearning: 'Pembelajaran Saya',
     myCourses: 'Kursus Saya',
     myAttendance: 'Kehadiran Saya',

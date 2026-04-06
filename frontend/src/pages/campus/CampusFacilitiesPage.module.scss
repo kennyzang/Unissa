@@ -1,0 +1,325 @@
+@use '@/styles/variables' as v;
+
+.page {
+  padding: v.$space-6;
+  display: flex;
+  flex-direction: column;
+  gap: v.$space-5;
+  max-width: v.$content-max-width;
+  animation: fadeIn 0.2s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+// ── Header ────────────────────────────────────────────────────
+.header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: v.$space-4;
+  flex-wrap: wrap;
+}
+
+.title {
+  font-size: v.$font-size-2xl;
+  font-weight: v.$font-weight-bold;
+  color: var(--color-gray-8);
+  margin: 0;
+}
+
+.sub {
+  font-size: v.$font-size-sm;
+  color: var(--color-gray-5);
+  margin: v.$space-1 0 0;
+}
+
+.headerBtns {
+  display: flex;
+  gap: v.$space-2;
+  flex-shrink: 0;
+}
+
+// ── Overview Cards ────────────────────────────────────────────
+.overviewGrid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: v.$space-4;
+
+  @media (max-width: v.$bp-md) { grid-template-columns: repeat(2, 1fr); }
+}
+
+.overviewCard {
+  background: white;
+  border: 1px solid var(--color-gray-3);
+  border-top: 3px solid var(--accent, v.$brand-primary);
+  border-radius: v.$border-radius-lg;
+  padding: v.$space-4;
+  display: flex;
+  flex-direction: column;
+  gap: v.$space-2;
+  box-shadow: v.$shadow-sm;
+}
+
+.overviewIcon {
+  width: 36px;
+  height: 36px;
+  border-radius: v.$border-radius-md;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.overviewVal {
+  font-size: v.$font-size-2xl;
+  font-weight: v.$font-weight-bold;
+  line-height: 1;
+}
+
+.overviewLabel {
+  font-size: v.$font-size-sm;
+  color: var(--color-gray-5);
+}
+
+// ── Card + Tabs ───────────────────────────────────────────────
+.mainCard {
+  overflow: hidden;
+}
+
+.tabs {
+  display: flex;
+  border-bottom: 1px solid var(--color-gray-3);
+  padding: 0 v.$space-2;
+  gap: 2px;
+}
+
+.tab {
+  display: flex;
+  align-items: center;
+  gap: v.$space-2;
+  padding: v.$space-3 v.$space-4;
+  font-size: v.$font-size-sm;
+  font-weight: v.$font-weight-medium;
+  color: var(--color-gray-6);
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  cursor: pointer;
+  transition: color 0.15s, border-color 0.15s;
+  white-space: nowrap;
+
+  &:hover { color: v.$brand-primary; }
+}
+
+.tabActive {
+  color: v.$brand-primary;
+  border-bottom-color: v.$brand-primary;
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  background: v.$color-danger;
+  color: white;
+  font-size: 10px;
+  font-weight: v.$font-weight-bold;
+  border-radius: 9px;
+}
+
+// ── Tables ────────────────────────────────────────────────────
+.tableWrap {
+  overflow-x: auto;
+}
+
+.loading,
+.empty {
+  padding: v.$space-8;
+  text-align: center;
+  color: var(--color-gray-5);
+  font-size: v.$font-size-sm;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: v.$font-size-sm;
+
+  th {
+    text-align: left;
+    padding: v.$space-3 v.$space-4;
+    color: var(--color-gray-5);
+    font-size: v.$font-size-xs;
+    font-weight: v.$font-weight-medium;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    white-space: nowrap;
+    background: var(--color-gray-1);
+    border-bottom: 1px solid var(--color-gray-3);
+  }
+
+  td {
+    padding: v.$space-3 v.$space-4;
+    border-bottom: 1px solid var(--color-gray-2);
+    color: var(--color-gray-7);
+    vertical-align: middle;
+  }
+}
+
+.row {
+  transition: background 0.1s;
+  &:hover { background: var(--color-gray-1); }
+  &:last-child td { border-bottom: none; }
+}
+
+.subText {
+  font-size: v.$font-size-xs;
+  color: var(--color-gray-5);
+  margin-top: 2px;
+}
+
+.featuresCell {
+  max-width: 200px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--color-gray-5);
+  font-size: v.$font-size-xs;
+}
+
+.purposeCell {
+  max-width: 200px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+// ── Action buttons ────────────────────────────────────────────
+.actionBtns {
+  display: flex;
+  gap: v.$space-2;
+}
+
+.approveBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  background: v.$color-success-bg;
+  color: v.$color-success;
+  border: 1px solid v.$color-success;
+  border-radius: v.$border-radius;
+  font-size: v.$font-size-xs;
+  cursor: pointer;
+  transition: v.$transition-fast;
+  white-space: nowrap;
+
+  &:hover { background: v.$color-success; color: white; }
+}
+
+.rejectBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  background: v.$color-danger-bg;
+  color: v.$color-danger;
+  border: 1px solid v.$color-danger;
+  border-radius: v.$border-radius;
+  font-size: v.$font-size-xs;
+  cursor: pointer;
+  transition: v.$transition-fast;
+  white-space: nowrap;
+
+  &:hover { background: v.$color-danger; color: white; }
+}
+
+.progressBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  background: v.$color-warning-bg;
+  color: v.$color-warning;
+  border: 1px solid v.$color-warning;
+  border-radius: v.$border-radius;
+  font-size: v.$font-size-xs;
+  cursor: pointer;
+  transition: v.$transition-fast;
+  white-space: nowrap;
+
+  &:hover { background: v.$color-warning; color: white; }
+}
+
+// ── Modal Form ────────────────────────────────────────────────
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: v.$space-4;
+}
+
+.label {
+  display: block;
+  font-size: v.$font-size-sm;
+  font-weight: v.$font-weight-medium;
+  color: var(--color-gray-7);
+  margin-bottom: v.$space-1;
+}
+
+.select {
+  width: 100%;
+  padding: 7px v.$space-3;
+  border: 1px solid var(--color-gray-3);
+  border-radius: v.$border-radius;
+  font-size: v.$font-size-sm;
+  background: white;
+  color: var(--color-gray-8);
+  transition: border-color 0.15s;
+
+  &:focus {
+    outline: none;
+    border-color: v.$brand-primary;
+    box-shadow: 0 0 0 2px #{v.$brand-primary}20;
+  }
+}
+
+.textarea {
+  width: 100%;
+  padding: v.$space-2 v.$space-3;
+  border: 1px solid var(--color-gray-3);
+  border-radius: v.$border-radius;
+  font-size: v.$font-size-sm;
+  font-family: inherit;
+  resize: vertical;
+  transition: border-color 0.15s;
+
+  &:focus {
+    outline: none;
+    border-color: v.$brand-primary;
+    box-shadow: 0 0 0 2px #{v.$brand-primary}20;
+  }
+}
+
+.timeRow {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: v.$space-3;
+}
+
+.error {
+  color: v.$color-danger;
+  font-size: v.$font-size-sm;
+  margin: 0;
+}
+
+.formFooter {
+  display: flex;
+  justify-content: flex-end;
+  gap: v.$space-2;
+  margin-top: v.$space-2;
+}

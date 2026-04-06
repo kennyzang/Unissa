@@ -58,6 +58,31 @@ router.get('/my-application', authenticate, async (req: AuthRequest, res: Respon
   res.json({ success: true, data: app })
 })
 
+// GET /api/v1/admissions/funnel  — enrollment funnel counts + recent applicants
+router.get('/funnel', authenticate, requireRole('admissions', 'admin', 'manager'), async (_req: AuthRequest, res: Response) => {
+  const [applied, offered, accepted, enrolled, recent] = await Promise.all([
+    prisma.applicant.count(),
+    prisma.applicant.count({ where: { status: 'offered' } }),
+    prisma.applicant.count({ where: { status: 'accepted' } }),
+    prisma.student.count(),
+    prisma.applicant.findMany({
+      take: 10,
+      orderBy: { createdAt: 'desc' },
+      include: {
+        programme: { select: { name: true, code: true } },
+        intake:    { select: { name: true } },
+      },
+    }),
+  ])
+  res.json({
+    success: true,
+    data: {
+      funnel: { applied, offered, accepted, enrolled },
+      recent,
+    },
+  })
+})
+
 // POST /api/v1/admissions/apply
 router.post('/apply', authenticate, async (req: AuthRequest, res: Response) => {
   const {

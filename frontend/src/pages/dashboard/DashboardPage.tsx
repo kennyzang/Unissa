@@ -241,7 +241,7 @@ const DashboardPage: React.FC = () => {
           }
         />
 
-        {/* Finance → finance budget */}
+        {/* Finance → finance dashboard */}
         <KPICard
           title={t('dashboard.budgetUtilisation')}
           value={`${kpi.finance.committedPct}%`}
@@ -249,7 +249,7 @@ const DashboardPage: React.FC = () => {
           icon={<DollarSign size={18} />}
           accent="#00B42A"
           badge={kpi.finance.overdueInvoices > 0 ? { label: `${kpi.finance.overdueInvoices} ${t('dashboard.overdue')}`, color: 'red' } : undefined}
-          onClick={() => navigate('/finance/budget')}
+          onClick={() => navigate('/finance/dashboard')}
           chart={
             <ResponsiveContainer width="100%" height={48}>
               <PieChart>
@@ -277,7 +277,7 @@ const DashboardPage: React.FC = () => {
           }
         />
 
-        {/* HR — pending approvals → procurement approvals inbox */}
+        {/* HR → staff list */}
         <KPICard
           title={t('dashboard.humanResources')}
           value={String(kpi.hr.totalStaff)}
@@ -285,7 +285,7 @@ const DashboardPage: React.FC = () => {
           icon={<Briefcase size={18} />}
           accent="#7D3FCC"
           badge={{ label: `${kpi.hr.pendingApprovals} ${t('dashboard.pendingApprovals')}`, color: 'purple' }}
-          onClick={() => navigate('/procurement/approvals')}
+          onClick={() => navigate('/hr/staff')}
         />
 
         {/* Research → research grants */}
@@ -321,7 +321,7 @@ const DashboardPage: React.FC = () => {
           accent="#0FC6C2"
           badge={{ label: `${kpi.campus.maintenanceTickets} ${t('dashboard.maintenance')}`, color: kpi.campus.maintenanceTickets > 0 ? 'orange' : 'green' }}
           alert={kpi.campus.activeAlert}
-          onClick={() => navigate('/campus/bookings')}
+          onClick={() => navigate('/campus/facilities')}
         />
 
         {/* LMS — assignments due today → LMS courses; new hires → HR onboarding */}
