@@ -808,6 +808,8 @@ model Staff {
   appointmentLetter        FileAsset? @relation("AppointmentLetter", fields: [appointmentLetterAssetId], references: [id])
   lmsInstructorActive      Boolean  @default(false)
   status                   String   @default("active")
+  tempPassword             String?
+  credentialsIssuedAt      DateTime?
   createdAt                DateTime @default(now())
 
   leaveRequests      LeaveRequest[]

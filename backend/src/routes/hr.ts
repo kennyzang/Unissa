@@ -2,6 +2,7 @@ import { Router, Response } from 'express'
 import bcrypt from 'bcryptjs'
 import prisma from '../lib/prisma'
 import { authenticate, requireRole, AuthRequest } from '../middleware/auth'
+import { emailService } from '../services/emailService'
 
 const router = Router()
 router.use(authenticate)
@@ -12,7 +13,7 @@ router.use(authenticate)
 router.get('/staff', requireRole('manager', 'admin', 'hradmin'), async (_req: AuthRequest, res: Response) => {
   const staff = await prisma.staff.findMany({
     include: {
-      user: { select: { displayName: true, email: true, isActive: true } },
+      user: { select: { displayName: true, email: true, isActive: true, username: true } },
       department: { select: { name: true, code: true } },
     },
     orderBy: { createdAt: 'asc' },
@@ -296,7 +297,7 @@ router.post('/new-hire', requireRole('manager', 'admin', 'hradmin'), async (req:
   const TEMP_PASSWORD = 'NewHire@2026'
   const passwordHash  = await bcrypt.hash(TEMP_PASSWORD, 12)
 
-  // Create User, then Staff, then OnboardingRequest in sequence (FK deps)
+  // User starts inactive — activated when onboarding is approved
   const user = await prisma.user.create({
     data: {
       username,
@@ -304,24 +305,26 @@ router.post('/new-hire', requireRole('manager', 'admin', 'hradmin'), async (req:
       displayName: fullName,
       role:        'lecturer',
       email:       personalEmail,
+      isActive:    false,
     },
   })
 
   const staff = await prisma.staff.create({
     data: {
-      staffId:           newStaffId,
-      userId:            user.id,
+      staffId:            newStaffId,
+      userId:             user.id,
       fullName,
       icPassport,
-      dateOfBirth:       new Date(dateOfBirth),
-      gender:            gender ?? 'male',
+      dateOfBirth:        new Date(dateOfBirth),
+      gender:             gender ?? 'male',
       departmentId,
       designation,
       employmentType,
-      joinDate:          new Date(startDate),
+      joinDate:           new Date(startDate),
       payrollBasicSalary: Number(salary),
-      status:            'pending_onboarding',
+      status:             'pending_onboarding',
       lmsInstructorActive: false,
+      tempPassword:       TEMP_PASSWORD,       // stored in plaintext for HR display
     },
     include: {
       user:       { select: { displayName: true, email: true } },
@@ -381,7 +384,11 @@ router.post('/onboarding', requireRole('manager', 'admin', 'hradmin'), async (re
 router.patch('/onboarding/:id/approve', requireRole('manager', 'admin'), async (req: AuthRequest, res: Response) => {
   const request = await prisma.onboardingRequest.findUnique({
     where: { id: req.params.id },
-    include: { staff: true },
+    include: {
+      staff: {
+        include: { user: true },
+      },
+    },
   })
   if (!request) { res.status(404).json({ success: false, message: 'Onboarding request not found' }); return }
   if (request.status !== 'pending_approval') {
@@ -390,49 +397,86 @@ router.patch('/onboarding/:id/approve', requireRole('manager', 'admin'), async (
 
   const now          = new Date()
   const payrollMonth = new Date(now.getFullYear(), now.getMonth(), 1)
+  const { staff }    = request
+  const { user }     = staff
 
-  // Steps 2 & 3 run in parallel: LMS provisioning + payroll record creation
+  // ── Step 1: activate login credentials ───────────────────────
+  // If the staff was registered via new-hire flow, tempPassword is already set.
+  // For staff added by other means, generate a fresh temporary password.
+  let plaintextPassword = staff.tempPassword
+  if (!plaintextPassword) {
+    plaintextPassword = `Staff@${Math.random().toString(36).slice(2, 8).toUpperCase()}!`
+    const hash = await bcrypt.hash(plaintextPassword, 12)
+    await prisma.user.update({
+      where: { id: user.id },
+      data:  { passwordHash: hash },
+    })
+  }
+
+  // Activate the user account so they can log in
+  await prisma.user.update({
+    where: { id: user.id },
+    data:  { isActive: true },
+  })
+
+  // ── Steps 2 & 3 run in parallel: LMS + payroll ───────────────
   await Promise.all([
     prisma.staff.update({
-      where: { id: request.staffId },
-      data:  { lmsInstructorActive: true },
+      where: { id: staff.id },
+      data: {
+        lmsInstructorActive: true,
+        status:              'active',
+        credentialsIssuedAt: now,
+        // Retain tempPassword for display in Staff profile
+      },
     }),
     prisma.payrollRecord.upsert({
-      where:  { staffId_payrollMonth: { staffId: request.staffId, payrollMonth } },
+      where:  { staffId_payrollMonth: { staffId: staff.id, payrollMonth } },
       create: {
-        staffId:      request.staffId,
+        staffId:      staff.id,
         payrollMonth,
-        basicSalary:  request.staff.payrollBasicSalary,
+        basicSalary:  staff.payrollBasicSalary,
         allowances:   0,
         deductions:   0,
-        netSalary:    request.staff.payrollBasicSalary,
+        netSalary:    staff.payrollBasicSalary,
         status:       'draft',
       },
       update: {},
     }),
   ])
 
-  // Mark all 4 steps complete and close the request
+  // ── Step 4: mark request complete ────────────────────────────
   const updated = await prisma.onboardingRequest.update({
     where: { id: request.id },
     data: {
       status:                      'completed',
       hrDirectorApprovedAt:        now,
-      loginCreated:                true,   // Step 1: credentials email
-      lmsProvisioned:              true,   // Step 2: LMS instructor account
-      payrollCreated:              true,   // Step 3: payroll record
-      appointmentLetterGenerated:  true,   // Step 4: appointment letter PDF
+      loginCreated:                true,
+      lmsProvisioned:              true,
+      payrollCreated:              true,
+      appointmentLetterGenerated:  true,
       completedAt:                 now,
     },
     include: {
       staff: {
         include: {
-          user:       { select: { displayName: true, email: true } },
+          user:       { select: { displayName: true, email: true, username: true } },
           department: { select: { name: true } },
         },
       },
     },
   })
+
+  // ── Fire-and-forget: welcome email ────────────────────────────
+  if (emailService.isConfigured()) {
+    emailService.sendStaffWelcomeEmail(
+      user.email,
+      staff.fullName,
+      user.username,
+      plaintextPassword,
+      staff.staffId
+    ).catch(err => console.error('Welcome email failed:', err))
+  }
 
   res.json({ success: true, data: updated, message: 'Onboarding approved — 4 systems provisioned simultaneously.' })
 })

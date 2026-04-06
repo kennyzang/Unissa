@@ -995,6 +995,13 @@ const en = {
     allStatuses: 'All Statuses',
     clearFilters: 'Clear Filters',
     staffTotal: 'staff',
+    credentialsTitle: 'Login Credentials',
+    credUsername: 'Username',
+    credTempPassword: 'Temporary Password',
+    credIssuedAt: 'Credentials Issued',
+    credentialsNote: 'Employee should change password on first login.',
+    showPassword: 'Show password',
+    hidePassword: 'Hide password',
   },
 
   // Leave Management

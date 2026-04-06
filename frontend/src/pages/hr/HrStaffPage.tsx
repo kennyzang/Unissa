@@ -1,7 +1,7 @@
 import { useTranslation } from 'react-i18next'
 import React, { useMemo, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { Users, Search, UserCheck, Calendar, Briefcase } from 'lucide-react'
+import { Users, Search, UserCheck, Calendar, Briefcase, Eye, EyeOff } from 'lucide-react'
 import { Input as AntInput, Select, Table as AntTable } from 'antd'
 import type { TableColumnsType } from 'antd'
 import { apiClient } from '@/lib/apiClient'
@@ -23,8 +23,10 @@ interface Staff {
   leaveBalanceAnnual: number
   leaveBalanceMedical: number
   payrollBasicSalary: number
+  tempPassword: string | null
+  credentialsIssuedAt: string | null
   department: { name: string; code: string }
-  user: { displayName: string; email: string; isActive: boolean }
+  user: { displayName: string; email: string; isActive: boolean; username: string }
 }
 
 interface Stats {
@@ -80,6 +82,7 @@ const HrStaffPage: React.FC = () => {
   const [filterEmp,   setFilterEmp]   = useState<string | null>(null)
   const [filterStatus,setFilterStatus]= useState<string | null>(null)
   const [selected,    setSelected]    = useState<Staff | null>(null)
+  const [showPassword,setShowPassword]= useState(false)
 
   const { data: staffList = [], isLoading } = useQuery<Staff[]>({
     queryKey: ['hr', 'staff'],
@@ -306,7 +309,7 @@ const HrStaffPage: React.FC = () => {
           open
           title={`${t('hrStaff.staffProfile')} ${selected.staffId}`}
           onClose={() => setSelected(null)}
-          footer={<Button variant="ghost" onClick={() => setSelected(null)}>{t('common.close')}</Button>}
+          footer={<Button variant="ghost" onClick={() => { setSelected(null); setShowPassword(false) }}>{t('common.close')}</Button>}
         >
           <div className={styles.detailGrid}>
             <DetailRow label={t('hrStaff.fullName')}       value={selected.fullName} />
@@ -321,6 +324,39 @@ const HrStaffPage: React.FC = () => {
             <DetailRow label={t('hrStaff.medicalLeave')}   value={`${selected.leaveBalanceMedical} ${t('hrStaff.daysRemaining')}`} />
             <DetailRow label={t('hrStaff.basicSalary')}    value={`BND ${selected.payrollBasicSalary.toLocaleString('en-GB', { minimumFractionDigits: 2 })}`} />
           </div>
+
+          {/* Credentials section — shown when a temp password exists */}
+          {selected.tempPassword && (
+            <div className={styles.credentialsSection}>
+              <div className={styles.credentialsSectionTitle}>{t('hrStaff.credentialsTitle')}</div>
+              <div className={styles.credentialItem}>
+                <span className={styles.credentialKey}>{t('hrStaff.credUsername')}</span>
+                <span className={styles.credentialVal}>{selected.user.username}</span>
+              </div>
+              <div className={styles.credentialItem}>
+                <span className={styles.credentialKey}>{t('hrStaff.credTempPassword')}</span>
+                <span className={styles.credentialVal}>
+                  {showPassword ? selected.tempPassword : '••••••••••••'}
+                </span>
+                <button
+                  className={styles.credentialToggle}
+                  onClick={() => setShowPassword(p => !p)}
+                  aria-label={showPassword ? t('hrStaff.hidePassword') : t('hrStaff.showPassword')}
+                >
+                  {showPassword ? <EyeOff size={14} /> : <Eye size={14} />}
+                </button>
+              </div>
+              {selected.credentialsIssuedAt && (
+                <div className={styles.credentialItem}>
+                  <span className={styles.credentialKey}>{t('hrStaff.credIssuedAt')}</span>
+                  <span className={styles.credentialVal}>
+                    {new Date(selected.credentialsIssuedAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
+                  </span>
+                </div>
+              )}
+              <p className={styles.credentialsNote}>{t('hrStaff.credentialsNote')}</p>
+            </div>
+          )}
         </Modal>
       )}
     </div>

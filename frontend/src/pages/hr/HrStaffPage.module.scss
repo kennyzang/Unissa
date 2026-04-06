@@ -146,6 +146,71 @@
   color: $color-gray-6;
 }
 
+// ── Credentials section in modal ─────────────────────────────
+.credentialsSection {
+  margin-top: $space-4;
+  border: 1.5px solid #91caff;
+  border-radius: $border-radius-lg;
+  background: #f0f7ff;
+  padding: $space-3 $space-4;
+}
+
+.credentialsSectionTitle {
+  font-size: $font-size-xs;
+  font-weight: $font-weight-semibold;
+  color: $brand-primary;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: $space-2;
+}
+
+.credentialItem {
+  display: flex;
+  align-items: center;
+  gap: $space-2;
+  padding: $space-1 0;
+  border-bottom: 1px solid #d6e8ff;
+
+  &:last-of-type { border-bottom: none; }
+}
+
+.credentialKey {
+  font-size: $font-size-xs;
+  color: $color-gray-5;
+  min-width: 120px;
+  flex-shrink: 0;
+}
+
+.credentialVal {
+  font-size: $font-size-sm;
+  font-family: monospace;
+  color: $color-gray-8;
+  flex: 1;
+  letter-spacing: 0.3px;
+}
+
+.credentialToggle {
+  background: none;
+  border: $border;
+  border-radius: $border-radius-sm;
+  padding: 3px 6px;
+  cursor: pointer;
+  color: $color-gray-5;
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+
+  &:hover { background: $color-gray-1; color: $brand-primary; }
+}
+
+.credentialsNote {
+  font-size: $font-size-xs;
+  color: $color-warning;
+  margin: $space-2 0 0;
+
+  &::before { content: '⚠️  '; }
+}
+
 // ── Detail Modal ──────────────────────────────────────────────
 .detailGrid {
   display: flex;

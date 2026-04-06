@@ -283,6 +283,46 @@ class EmailService {
     })
   }
 
+  async sendStaffWelcomeEmail(
+    to: string,
+    staffName: string,
+    username: string,
+    password: string,
+    staffId: string
+  ): Promise<EmailResult> {
+    return this.sendEmail({
+      to,
+      subject: 'Welcome to UNISSA — Your Staff Account Credentials',
+      body: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+          <h2 style="color: #165DFF;">Welcome to UNISSA, ${staffName}!</h2>
+          <p>Your onboarding has been approved. Below are your login credentials:</p>
+          <div style="background: #f5f5f5; padding: 20px; margin: 20px 0; border-radius: 8px;">
+            <p style="margin: 0;"><strong>Staff ID:</strong> ${staffId}</p>
+            <p style="margin: 10px 0;"><strong>Username:</strong> ${username}</p>
+            <p style="margin: 0;"><strong>Temporary Password:</strong>
+              <code style="background: #fff; padding: 2px 8px; border-radius: 4px;">${password}</code>
+            </p>
+          </div>
+          <div style="background: #fff3cd; padding: 15px; margin: 20px 0; border-radius: 8px; border-left: 4px solid #ffc107;">
+            <p style="margin: 0; color: #856404;"><strong>Important:</strong> Please change your password after your first login.</p>
+          </div>
+          <p>You can access the staff portal at:
+            <a href="https://unissa.edu.bn">https://unissa.edu.bn</a>
+          </p>
+          <p>If you have any questions, please contact HR at
+            <a href="mailto:hr@unissa.edu.bn">hr@unissa.edu.bn</a>.
+          </p>
+          <hr style="border: 1px solid #eee; margin: 20px 0;">
+          <p style="color: #666; font-size: 12px;">
+            UNISSA — Universiti Islam Sultan Sharif Ali<br>
+            Bandar Seri Begawan, Brunei Darussalam
+          </p>
+        </div>
+      `,
+    })
+  }
+
   isConfigured(): boolean {
     return this.initialized && this.transporter !== null
   }

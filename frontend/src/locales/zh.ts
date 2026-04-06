@@ -987,6 +987,13 @@ const zh = {
     allStatuses: '所有状态',
     clearFilters: '清除筛选',
     staffTotal: '名员工',
+    credentialsTitle: '登录凭据',
+    credUsername: '用户名',
+    credTempPassword: '临时密码',
+    credIssuedAt: '凭据签发时间',
+    credentialsNote: '员工应在首次登录后立即修改密码。',
+    showPassword: '显示密码',
+    hidePassword: '隐藏密码',
   },
 
   leaveManagement: {

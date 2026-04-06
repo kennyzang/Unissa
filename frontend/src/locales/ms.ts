@@ -976,6 +976,13 @@ const ms = {
     allStatuses: 'Semua Status',
     clearFilters: 'Kosongkan Penapis',
     staffTotal: 'kakitangan',
+    credentialsTitle: 'Kelayakan Log Masuk',
+    credUsername: 'Nama Pengguna',
+    credTempPassword: 'Kata Laluan Sementara',
+    credIssuedAt: 'Tarikh Dikeluarkan',
+    credentialsNote: 'Pekerja perlu menukar kata laluan semasa log masuk pertama.',
+    showPassword: 'Tunjuk kata laluan',
+    hidePassword: 'Sembunyikan kata laluan',
   },
 
   leaveManagement: {
