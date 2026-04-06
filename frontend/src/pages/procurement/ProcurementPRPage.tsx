@@ -4,7 +4,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useForm, Controller } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { Plus, AlertTriangle, Eye, FileText, CheckCircle } from 'lucide-react'
+import { Plus, AlertTriangle, Eye, FileText, CheckCircle, ExternalLink } from 'lucide-react'
 import { apiClient } from '@/lib/apiClient'
 import { useUIStore } from '@/stores/uiStore'
 import { useAuthStore } from '@/stores/authStore'
@@ -35,6 +35,7 @@ interface PR {
   quotes?: { id: string; vendorName: string; quotedPrice: number; quoteNumber: number }[]
   anomalies?: { id: string; anomalyType: string; severity: string; description: string }[]
   approvals?: { level: number; action: string; approver: { displayName: string }; actedAt: string; remarks?: string }[]
+  po?: { id: string; poNumber: string; status: string } | null
 }
 
 interface GlCode { id: string; code: string; description: string; availableBalance: number }
@@ -69,6 +70,7 @@ const ProcurementPRPage: React.FC = () => {
   const qc = useQueryClient()
   const [createModal, setCreateModal] = useState(false)
   const [viewPR, setViewPR] = useState<PR | null>(null)
+  const [viewPO, setViewPO] = useState<{ id: string; poNumber: string; status: string } | null>(null)
 
   const prSchema = z.object({
     productId: z.string().min(1, t('procurementPR.validation.productRequired')),
@@ -179,7 +181,14 @@ const ProcurementPRPage: React.FC = () => {
     )},
     { key: 'submittedAt', title: t('procurementPR.submitted'), render: v => v.submittedAt ? new Date(v.submittedAt).toLocaleDateString('en-GB') : '—' },
     { key: 'actions',     title: '', render: v => (
-      <Button size="sm" variant="ghost" icon={<Eye size={14} />} onClick={() => setViewPR(v)}>{t('procurementPR.view')}</Button>
+      <div style={{ display: 'flex', gap: 6, justifyContent: 'flex-end' }}>
+        <Button size="sm" variant="ghost" icon={<Eye size={14} />} onClick={() => setViewPR(v)}>{t('procurementPR.view')}</Button>
+        {v.status === 'converted_to_po' && v.po && (
+          <Button size="sm" variant="ghost" icon={<ExternalLink size={14} />} onClick={() => setViewPO(v.po!)}>
+            {t('procurementPR.viewPO', { defaultValue: 'View PO' })}
+          </Button>
+        )}
+      </div>
     )},
   ]
 
@@ -424,6 +433,28 @@ const ProcurementPRPage: React.FC = () => {
                 ))}
               </div>
             )}
+          </div>
+        </Modal>
+      )}
+
+      {/* View PO Modal */}
+      {viewPO && (
+        <Modal
+          open
+          title={`Purchase Order: ${viewPO.poNumber}`}
+          onClose={() => setViewPO(null)}
+          footer={<Button onClick={() => setViewPO(null)}>{t('common.close')}</Button>}
+        >
+          <div className={styles.prDetail}>
+            <div className={styles.prDetailGrid}>
+              <DetailRow label={t('procurementPR.poNumber', { defaultValue: 'PO Number' })} value={<strong>{viewPO.poNumber}</strong>} />
+              <DetailRow label={t('procurementPR.poStatus', { defaultValue: 'Status' })} value={
+                <Badge color="green">{viewPO.status}</Badge>
+              } />
+            </div>
+            <p style={{ marginTop: 12, fontSize: 13, color: '#86909C' }}>
+              {t('procurementPR.poNote', { defaultValue: 'The Purchase Order has been issued to the vendor. Track payments in the Finance module.' })}
+            </p>
           </div>
         </Modal>
       )}

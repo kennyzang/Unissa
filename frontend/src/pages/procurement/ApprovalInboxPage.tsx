@@ -1,9 +1,10 @@
 import { useTranslation } from 'react-i18next'
 import React, { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { CheckCircle, XCircle, AlertTriangle, Inbox, PenLine, History } from 'lucide-react'
+import { CheckCircle, XCircle, AlertTriangle, Inbox, PenLine, History, FileCheck } from 'lucide-react'
 import { apiClient } from '@/lib/apiClient'
 import { useUIStore } from '@/stores/uiStore'
+import { useAuthStore } from '@/stores/authStore'
 import Card from '@/components/ui/Card'
 import Badge from '@/components/ui/Badge'
 import Button from '@/components/ui/Button'
@@ -52,10 +53,12 @@ const TRAFFIC_COLORS: Record<string, string> = { red: '#F53F3F', amber: '#FF7D00
 const ApprovalInboxPage: React.FC = () => {
   const { t } = useTranslation()
   const addToast = useUIStore(s => s.addToast)
+  const { user } = useAuthStore()
   const qc = useQueryClient()
   const [activeTab, setActiveTab] = useState<'pending' | 'history'>('pending')
   const [approveModal, setApproveModal] = useState<{ pr: PRItem; action: 'approve' | 'reject' } | null>(null)
   const [remarks, setRemarks] = useState('')
+  const [generatedPO, setGeneratedPO] = useState<{ prId: string; poNumber: string } | null>(null)
 
   const { data: items = [], isLoading } = useQuery<PRItem[]>({
     queryKey: ['procurement', 'inbox'],
@@ -101,6 +104,19 @@ const ApprovalInboxPage: React.FC = () => {
     },
     onError: (e: any) => {
       addToast({ type: 'error', message: e.response?.data?.message ?? t('leaveManagement.actionFailed') })
+    },
+  })
+
+  const generatePoMutation = useMutation({
+    mutationFn: (prId: string) => apiClient.patch(`/procurement/pr/${prId}/generate-po`),
+    onSuccess: (res, prId) => {
+      const { poNumber } = res.data.data
+      addToast({ type: 'success', message: res.data.message })
+      setGeneratedPO({ prId, poNumber })
+      qc.invalidateQueries({ queryKey: ['procurement'] })
+    },
+    onError: (e: any) => {
+      addToast({ type: 'error', message: e.response?.data?.message ?? 'Failed to generate PO' })
     },
   })
 
@@ -221,6 +237,13 @@ const ApprovalInboxPage: React.FC = () => {
                 </div>
               ))}
 
+              {generatedPO?.prId === pr.id && (
+                <div className={styles.poGeneratedBanner}>
+                  <FileCheck size={14} />
+                  <span>PO generated: <strong>{generatedPO.poNumber}</strong></span>
+                </div>
+              )}
+
               <div className={styles.prActions}>
                 <Button
                   variant="danger"
@@ -230,13 +253,24 @@ const ApprovalInboxPage: React.FC = () => {
                 >
                   {t('approvalInbox.rejectBtn')}
                 </Button>
-                <Button
-                  size="sm"
-                  icon={<CheckCircle size={14} />}
-                  onClick={() => { setApproveModal({ pr, action: 'approve' }); setRemarks('') }}
-                >
-                  {t('approvalInbox.approveBtn')}
-                </Button>
+                {user?.role === 'admin' ? (
+                  <Button
+                    size="sm"
+                    icon={<FileCheck size={14} />}
+                    loading={generatePoMutation.isPending && generatePoMutation.variables === pr.id}
+                    onClick={() => generatePoMutation.mutate(pr.id)}
+                  >
+                    {t('approvalInbox.generatePO', { defaultValue: 'Generate PO' })}
+                  </Button>
+                ) : (
+                  <Button
+                    size="sm"
+                    icon={<CheckCircle size={14} />}
+                    onClick={() => { setApproveModal({ pr, action: 'approve' }); setRemarks('') }}
+                  >
+                    {t('approvalInbox.approveBtn')}
+                  </Button>
+                )}
               </div>
             </Card>
           )
