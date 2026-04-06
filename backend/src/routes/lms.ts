@@ -1174,6 +1174,107 @@ router.get('/attendance/records/student/:studentId', async (req: AuthRequest, re
   })
 })
 
+// GET /api/v1/lms/lecturer/dashboard — Full lecturer dashboard snapshot
+// Returns: staff record, all offerings (course, semester, enrolled count),
+//          student rosters per offering, assignment submission progress,
+//          and recent attendance session summaries.
+router.get('/lecturer/dashboard', async (req: AuthRequest, res: Response) => {
+  const userId = req.user!.userId
+
+  const staff = await prisma.staff.findFirst({
+    where: { userId },
+    include: {
+      user:       { select: { displayName: true, email: true } },
+      department: { select: { name: true, code: true } },
+    },
+  })
+  if (!staff) {
+    res.status(404).json({ success: false, message: 'Staff record not found' })
+    return
+  }
+
+  const offerings = await prisma.courseOffering.findMany({
+    where: { lecturerId: staff.id },
+    include: {
+      course:   { select: { code: true, name: true, creditHours: true } },
+      semester: { select: { id: true, name: true, isActive: true } },
+      enrolments: {
+        where: { status: 'registered' },
+        include: {
+          student: {
+            select: {
+              studentId:    true,
+              currentCgpa:  true,
+              user: { select: { displayName: true } },
+            },
+          },
+        },
+      },
+      assignments: {
+        orderBy: { dueDate: 'asc' },
+        include: { _count: { select: { submissions: true } } },
+      },
+      attendanceSessions: {
+        orderBy: { startedAt: 'desc' },
+        take: 5,
+        include: {
+          _count:  { select: { records: true } },
+          records: { where: { status: 'present' }, select: { id: true } },
+        },
+      },
+    },
+    orderBy: { createdAt: 'asc' },
+  })
+
+  const data = {
+    staff: {
+      id:          staff.id,
+      staffId:     staff.staffId,
+      fullName:    staff.fullName,
+      designation: staff.designation,
+      department:  staff.department?.name ?? null,
+      email:       staff.user?.email ?? null,
+    },
+    offerings: offerings.map(o => {
+      const enrolledCount = o.enrolments.length
+      return {
+        id:         o.id,
+        dayOfWeek:  o.dayOfWeek,
+        startTime:  o.startTime,
+        endTime:    o.endTime,
+        room:       o.room,
+        course:     o.course,
+        semester:   o.semester,
+        enrolledCount,
+        students: o.enrolments.map(e => ({
+          name:      e.student.user.displayName,
+          studentId: e.student.studentId,
+          cgpa:      e.student.currentCgpa,
+        })),
+        assignments: o.assignments.map(a => ({
+          id:              a.id,
+          title:           a.title,
+          dueDate:         a.dueDate,
+          maxMarks:        a.maxMarks,
+          weightPct:       a.weightPct,
+          submissionCount: a._count.submissions,
+          enrolledCount,
+        })),
+        recentAttendanceSessions: o.attendanceSessions.map(s => ({
+          id:           s.id,
+          name:         s.name,
+          startedAt:    s.startedAt,
+          endedAt:      s.endedAt,
+          presentCount: s.records.length,
+          totalEnrolled: enrolledCount,
+        })),
+      }
+    }),
+  }
+
+  res.json({ success: true, data })
+})
+
 // GET /api/v1/attendance/offerings/lecturer/:lecturerId — Offerings taught by lecturer
 router.get('/attendance/offerings/lecturer/:lecturerId', async (req: AuthRequest, res: Response) => {
   const param = req.params.lecturerId

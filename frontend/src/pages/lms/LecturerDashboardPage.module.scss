@@ -1,0 +1,347 @@
+@use '@/styles/variables' as v;
+
+// ─── CSS custom props for status colours ──────────────────────────────────────
+:root {
+  --color-success: #22c55e;
+  --color-warning: #f59e0b;
+  --color-danger:  #ef4444;
+  --color-brand:   #{v.$brand-primary};
+}
+
+// ─── Page Shell ───────────────────────────────────────────────────────────────
+.page {
+  padding: v.$space-6;
+  display: flex;
+  flex-direction: column;
+  gap: v.$space-5;
+  animation: fadeIn 0.2s ease;
+
+  @media (max-width: v.$bp-md) {
+    padding: v.$space-4 v.$space-3;
+    gap: v.$space-4;
+  }
+}
+
+.loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 300px;
+  color: var(--color-gray-5, #6b7280);
+}
+
+// ─── Staff Hero ───────────────────────────────────────────────────────────────
+.hero {
+  background: linear-gradient(135deg, v.$brand-dark, v.$brand-mid);
+  color: white;
+  border-radius: v.$border-radius-xl;
+  padding: v.$space-6;
+  display: flex;
+  align-items: center;
+  gap: v.$space-5;
+
+  @media (max-width: v.$bp-md) {
+    flex-direction: column;
+    align-items: flex-start;
+    padding: v.$space-4;
+    gap: v.$space-4;
+  }
+}
+
+.heroAvatar {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.15);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.heroInfo {
+  flex: 1;
+}
+
+.heroName {
+  margin: 0;
+  font-size: v.$font-size-xl;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.heroMeta {
+  margin-top: v.$space-1;
+  font-size: v.$font-size-sm;
+  opacity: 0.85;
+  display: flex;
+  flex-wrap: wrap;
+  gap: v.$space-2;
+}
+
+.heroStats {
+  display: flex;
+  gap: v.$space-5;
+
+  @media (max-width: v.$bp-md) {
+    gap: v.$space-4;
+  }
+}
+
+.heroStat {
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+
+  span {
+    font-size: v.$font-size-2xl;
+    font-weight: 700;
+    line-height: 1;
+  }
+
+  label {
+    font-size: v.$font-size-xs;
+    opacity: 0.75;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+}
+
+// ─── Semester Tags ────────────────────────────────────────────────────────────
+.semesterRow {
+  display: flex;
+  gap: v.$space-2;
+  flex-wrap: wrap;
+}
+
+// ─── Offering Card ────────────────────────────────────────────────────────────
+.offeringCard {
+  background: var(--color-surface, #fff);
+  border: 1px solid var(--color-border, #e5e7eb);
+  border-radius: v.$border-radius-lg;
+  overflow: hidden;
+  transition: box-shadow 0.15s;
+
+  &:hover { box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+}
+
+.offeringHeader {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: v.$space-4;
+  padding: v.$space-4 v.$space-5;
+  background: none;
+  border: none;
+  cursor: pointer;
+  text-align: left;
+
+  &:hover { background: var(--color-surface-hover, #f9fafb); }
+
+  @media (max-width: v.$bp-md) {
+    flex-direction: column;
+    align-items: flex-start;
+    padding: v.$space-3 v.$space-4;
+  }
+}
+
+.offeringLeft { display: flex; flex-direction: column; gap: v.$space-1; flex: 1; }
+
+.courseCode {
+  font-size: v.$font-size-xs;
+  font-weight: 700;
+  color: v.$brand-primary;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.courseName {
+  font-size: v.$font-size-base;
+  font-weight: 600;
+  color: var(--color-text, #111827);
+}
+
+.offeringMeta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: v.$space-2;
+  align-items: center;
+  margin-top: v.$space-1;
+}
+
+.metaChip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: v.$font-size-xs;
+  color: var(--color-gray-5, #6b7280);
+}
+
+.offeringStats {
+  display: flex;
+  align-items: center;
+  gap: v.$space-4;
+  flex-shrink: 0;
+
+  @media (max-width: v.$bp-md) { gap: v.$space-3; }
+}
+
+.statPill {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  color: var(--color-gray-5, #6b7280);
+
+  span  { font-size: v.$font-size-lg; font-weight: 700; color: var(--color-text, #111827); line-height: 1; }
+  label { font-size: v.$font-size-xs; }
+}
+
+.chevron { color: var(--color-gray-4, #9ca3af); flex-shrink: 0; }
+
+// ─── Expanded Detail ──────────────────────────────────────────────────────────
+.offeringDetail {
+  border-top: 1px solid var(--color-border, #e5e7eb);
+  padding: v.$space-4 v.$space-5;
+  display: flex;
+  flex-direction: column;
+  gap: v.$space-4;
+}
+
+// ─── Tab Bar ──────────────────────────────────────────────────────────────────
+.tabBar {
+  display: flex;
+  gap: 0;
+  border-bottom: 2px solid var(--color-border, #e5e7eb);
+}
+
+.tab {
+  display: inline-flex;
+  align-items: center;
+  gap: v.$space-1;
+  padding: v.$space-2 v.$space-4;
+  font-size: v.$font-size-sm;
+  font-weight: 500;
+  color: var(--color-gray-5, #6b7280);
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -2px;
+  cursor: pointer;
+  transition: color 0.15s, border-color 0.15s;
+
+  &:hover { color: v.$brand-primary; }
+}
+
+.tabActive {
+  color: v.$brand-primary;
+  border-bottom-color: v.$brand-primary;
+}
+
+// ─── Tables ───────────────────────────────────────────────────────────────────
+.tableWrap {
+  overflow-x: auto;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: v.$font-size-sm;
+
+  th {
+    text-align: left;
+    padding: v.$space-2 v.$space-3;
+    font-weight: 600;
+    font-size: v.$font-size-xs;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--color-gray-5, #6b7280);
+    border-bottom: 1px solid var(--color-border, #e5e7eb);
+    white-space: nowrap;
+  }
+
+  td {
+    padding: v.$space-2 v.$space-3;
+    border-bottom: 1px solid var(--color-border-light, #f3f4f6);
+    vertical-align: middle;
+  }
+
+  tr:last-child td { border-bottom: none; }
+  tr:hover td      { background: var(--color-surface-hover, #f9fafb); }
+}
+
+.tdNum   { color: var(--color-gray-4, #9ca3af); width: 36px; text-align: center; }
+.tdMono  { font-family: monospace; font-size: v.$font-size-xs; color: var(--color-gray-5, #6b7280); }
+.tdCenter { text-align: center; }
+
+.studentName {
+  display: flex;
+  align-items: center;
+  gap: v.$space-2;
+  font-weight: 500;
+  color: var(--color-text, #111827);
+}
+
+// ─── Assignments ──────────────────────────────────────────────────────────────
+.assignTitle {
+  display: flex;
+  align-items: center;
+  gap: v.$space-1;
+  font-weight: 500;
+  color: var(--color-text, #111827);
+}
+
+.assignMeta {
+  font-size: v.$font-size-xs;
+  color: var(--color-gray-4, #9ca3af);
+  margin-top: 2px;
+}
+
+.overdue { color: var(--color-danger, #ef4444); }
+
+// ─── Progress Bar ──────────────────────────────────────────────────────────────
+.progressWrap {
+  position: relative;
+  height: 8px;
+  background: var(--color-border, #e5e7eb);
+  border-radius: 4px;
+  overflow: hidden;
+  min-width: 80px;
+  display: flex;
+  align-items: center;
+}
+
+.progressBar {
+  height: 100%;
+  border-radius: 4px;
+  transition: width 0.4s ease;
+}
+
+.progressLabel {
+  position: absolute;
+  right: 0;
+  top: -18px;
+  font-size: v.$font-size-xs;
+  color: var(--color-gray-5, #6b7280);
+  white-space: nowrap;
+}
+
+// ─── Empty State ──────────────────────────────────────────────────────────────
+.empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: v.$space-3;
+  padding: v.$space-8;
+  color: var(--color-gray-4, #9ca3af);
+  font-size: v.$font-size-sm;
+  text-align: center;
+}
+
+// ─── Keyframes ───────────────────────────────────────────────────────────────
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}

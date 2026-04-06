@@ -76,6 +76,7 @@ const zh = {
     myCourses: '我的课程',
     myAttendance: '我的考勤',
     teachingManagement: '教学管理',
+    lecturerDashboard: '讲师仪表板',
     courseManagement: '课程管理',
     gradeManagement: '成绩管理',
     attendanceMgmt: '考勤管理',

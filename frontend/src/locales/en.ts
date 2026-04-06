@@ -78,6 +78,7 @@ const en = {
     myCourses: 'My Courses',
     myAttendance: 'My Attendance',
     teachingManagement: 'Teaching Management',
+    lecturerDashboard: 'Lecturer Dashboard',
     courseManagement: 'Course Management',
     gradeManagement: 'Grade Management',
     attendanceMgmt: 'Attendance Management',

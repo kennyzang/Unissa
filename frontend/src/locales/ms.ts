@@ -74,6 +74,7 @@ const ms = {
     myCourses: 'Kursus Saya',
     myAttendance: 'Kehadiran Saya',
     teachingManagement: 'Pengurusan Pengajaran',
+    lecturerDashboard: 'Papan Pemuka Pensyarah',
     courseManagement: 'Pengurusan Kursus',
     gradeManagement: 'Pengurusan Markah',
     attendanceMgmt: 'Pengurusan Kehadiran',

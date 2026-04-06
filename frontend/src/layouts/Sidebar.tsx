@@ -59,8 +59,9 @@ const NAV_STRUCTURE: NavGroup[] = [
     key: 'g-teaching', labelKey: 'nav.teachingManagement', icon: '🎓',
     roles: ['lecturer'],
     children: [
-      { key: 'staff-portal',  labelKey: 'nav.staffPortal',      path: '/staff/portal',   icon: '🏠', roles: ['lecturer'] },
-      { key: 'lms',           labelKey: 'nav.courseManagement', path: '/lms/courses',    icon: '📖', roles: ['lecturer'] },
+      { key: 'staff-portal',       labelKey: 'nav.staffPortal',        path: '/staff/portal',    icon: '🏠', roles: ['lecturer'] },
+      { key: 'lecturer-dashboard', labelKey: 'nav.lecturerDashboard',  path: '/lms/lecturer',    icon: '📋', roles: ['lecturer'] },
+      { key: 'lms',                labelKey: 'nav.courseManagement',   path: '/lms/courses',     icon: '📖', roles: ['lecturer'] },
       { key: 'grading',       labelKey: 'nav.gradeManagement',  path: '/lms/grading',    icon: '📊', roles: ['lecturer'] },
       { key: 'attendance',    labelKey: 'nav.attendanceMgmt',   path: '/lms/attendance', icon: '🕒', roles: ['lecturer'] },
       { key: 'hr-leave',      labelKey: 'nav.leaveApproval',    path: '/hr/leave',       icon: '✅', roles: ['lecturer'] },

@@ -52,6 +52,7 @@ const PayrollManagementPage    = lazy(() => import('@/pages/finance/PayrollManag
 const LmsCoursesPage           = lazy(() => import('@/pages/lms/LmsCoursesPage'))
 const LmsCourseDetailPage      = lazy(() => import('@/pages/lms/LmsCourseDetailPage'))
 const LmsGradingPage           = lazy(() => import('@/pages/lms/LmsGradingPage'))
+const LecturerDashboardPage    = lazy(() => import('@/pages/lms/LecturerDashboardPage'))
 const AttendancePage           = lazy(() => import('@/pages/lms/AttendancePage'))
 const QRCodeScanPage           = lazy(() => import('@/pages/lms/QRCodeScanPage'))
 const CameraScanPage           = lazy(() => import('@/pages/lms/CameraScanPage'))
@@ -103,6 +104,7 @@ export const router = createBrowserRouter([
       // LMS
       { path: 'lms/courses',              element: r(['student','lecturer','admin'], <LmsCoursesPage />) },
       { path: 'lms/courses/:offeringId',  element: r(['student','lecturer','admin'], <LmsCourseDetailPage />) },
+      { path: 'lms/lecturer',             element: r(['lecturer','admin'], <LecturerDashboardPage />) },
       { path: 'lms/grading',              element: r(['lecturer'], <LmsGradingPage />) },
       { path: 'lms/attendance',           element: r(['student','lecturer','admin','hradmin'], <AttendancePage />) },
       { path: 'lms/attendance/scan',      element: r(['student'], <CameraScanPage />) },
