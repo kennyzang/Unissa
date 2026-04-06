@@ -17,11 +17,27 @@ interface Department {
   code: string
 }
 
+interface Programme {
+  id: string
+  name: string
+  code: string
+}
+
+interface Assignment {
+  id: string
+  title: string
+  dueDate: string
+  maxMarks: number
+  weightPct: number
+}
+
 interface Course {
   id: string
   code: string
   name: string
   departmentId: string
+  department: Department | null
+  programmes: Programme[]
   creditHours: number
   level: number
   isOpenToInternational: boolean
@@ -30,6 +46,8 @@ interface Course {
   proposedByStaffId?: string
   createdAt: string
   totalEnrolled: number
+  activeOfferings: number
+  primaryLecturer: string | null
   _count: { offerings: number }
 }
 
@@ -66,9 +84,11 @@ interface Offering {
   endTime: string
   room: string
   seatsTaken: number
-  semester: { name: string }
+  enrolledCount?: number
+  semester: { name: string; isActive?: boolean }
   lecturer: { user: { displayName: string } }
   enrolments: Enrolment[]
+  assignments: Assignment[]
 }
 
 const EMPTY_FORM: CourseForm = {
@@ -84,6 +104,8 @@ const CourseManagementPage: React.FC = () => {
   const qc = useQueryClient()
 
   const [search, setSearch]               = useState('')
+  const [deptFilter, setDeptFilter]       = useState<string>('')
+  const [progFilter, setProgFilter]       = useState<string>('')
   const [modalOpen, setModalOpen]         = useState(false)
   const [editingId, setEditingId]         = useState<string | null>(null)
   const [form, setForm]                   = useState<CourseForm>(EMPTY_FORM)
@@ -111,6 +133,14 @@ const CourseManagementPage: React.FC = () => {
     queryFn: async () => {
       const { data } = await apiClient.get('/hr/staff')
       return (data.data as any[]).filter((s: any) => s.user?.role === 'lecturer' || s.lmsInstructorActive)
+    },
+  })
+
+  const { data: programmes = [] } = useQuery<Programme[]>({
+    queryKey: ['admin', 'programmes'],
+    queryFn: async () => {
+      const { data } = await apiClient.get('/admin/programmes')
+      return data.data
     },
   })
 
@@ -208,12 +238,13 @@ const CourseManagementPage: React.FC = () => {
     }
   }
 
-  const filtered = courses.filter(c =>
-    c.code.toLowerCase().includes(search.toLowerCase()) ||
-    c.name.toLowerCase().includes(search.toLowerCase())
-  )
-
-  const deptMap = Object.fromEntries(departments.map(d => [d.id, d.name]))
+  const filtered = courses.filter(c => {
+    const q = search.toLowerCase()
+    const matchesSearch = !q || c.code.toLowerCase().includes(q) || c.name.toLowerCase().includes(q)
+    const matchesDept = !deptFilter || c.departmentId === deptFilter
+    const matchesProg = !progFilter || c.programmes.some(p => p.id === progFilter)
+    return matchesSearch && matchesDept && matchesProg
+  })
 
   const confirmRemoveStudent = (record: Enrolment) => {
     const courseId = viewingCourse?.id   // capture now, before any async gap
@@ -273,35 +304,6 @@ const CourseManagementPage: React.FC = () => {
     },
   ]
 
-  const enrolmentTabs = offerings.map(o => ({
-    key: o.id,
-    label: (
-      <span>
-        {o.semester.name} · {o.dayOfWeek} {o.startTime}–{o.endTime}
-        <Badge color={o.enrolments.length >= (viewingCourse?.maxSeats ?? 0) ? 'orange' : 'blue'} style={{ marginLeft: 6 }}>
-          {o.enrolments.length}/{viewingCourse?.maxSeats ?? '?'}
-        </Badge>
-      </span>
-    ),
-    children: (
-      <div>
-        <div className={styles.offeringMeta}>
-          <span>{t('courseManagement.room')}: <strong>{o.room}</strong></span>
-          <span>{t('courseManagement.lecturer')}: <strong>{o.lecturer.user.displayName}</strong></span>
-          <span>{t('courseManagement.seatsTaken')}: <strong>{o.seatsTaken}</strong></span>
-        </div>
-        <Table<Enrolment>
-          dataSource={o.enrolments}
-          columns={enrolmentColumns()}
-          rowKey="id"
-          size="small"
-          pagination={false}
-          locale={{ emptyText: t('courseManagement.noStudents') }}
-        />
-      </div>
-    ),
-  }))
-
   const columns: ColumnsType<Course> = [
     {
       title: t('courseManagement.colCode'),
@@ -319,31 +321,37 @@ const CourseManagementPage: React.FC = () => {
     },
     {
       title: t('courseManagement.colDepartment'),
-      dataIndex: 'departmentId',
       key: 'department',
-      render: id => deptMap[id] ?? id,
+      render: (_: unknown, r: Course) => r.department?.name ?? r.departmentId,
+      sorter: (a, b) => (a.department?.name ?? '').localeCompare(b.department?.name ?? ''),
+    },
+    {
+      title: t('courseManagement.colProgramme'),
+      key: 'programme',
+      render: (_: unknown, r: Course) =>
+        r.programmes.length > 0
+          ? r.programmes.map(p => p.code).join(', ')
+          : <span style={{ color: '#bbb' }}>—</span>,
     },
     {
       title: t('courseManagement.colCredits'),
       dataIndex: 'creditHours',
       key: 'creditHours',
-      width: 90,
+      width: 80,
       align: 'center',
       sorter: (a, b) => a.creditHours - b.creditHours,
     },
     {
-      title: t('courseManagement.colLevel'),
-      dataIndex: 'level',
-      key: 'level',
-      width: 80,
+      title: t('courseManagement.colActiveOfferings'),
+      key: 'activeOfferings',
+      width: 100,
       align: 'center',
-    },
-    {
-      title: t('courseManagement.colSeats'),
-      dataIndex: 'maxSeats',
-      key: 'maxSeats',
-      width: 80,
-      align: 'center',
+      sorter: (a, b) => a.activeOfferings - b.activeOfferings,
+      render: (_: unknown, r: Course) => (
+        <Badge color={r.activeOfferings > 0 ? 'blue' : 'gray'}>
+          {r.activeOfferings}
+        </Badge>
+      ),
     },
     {
       title: t('courseManagement.colEnrolled'),
@@ -358,25 +366,12 @@ const CourseManagementPage: React.FC = () => {
       ),
     },
     {
-      title: t('courseManagement.colOfferings'),
-      key: 'offerings',
-      width: 90,
-      align: 'center',
-      render: (_: unknown, r: Course) => (
-        <Badge color={r._count.offerings > 0 ? 'blue' : 'gray'}>
-          {r._count.offerings}
-        </Badge>
-      ),
-    },
-    {
-      title: t('courseManagement.colIntl'),
-      dataIndex: 'isOpenToInternational',
-      key: 'intl',
-      width: 90,
-      align: 'center',
-      render: (v: boolean) => (
-        <Badge color={v ? 'green' : 'gray'}>{v ? t('common.yes') : t('common.no')}</Badge>
-      ),
+      title: t('courseManagement.colAssignedLecturer'),
+      key: 'lecturer',
+      render: (_: unknown, r: Course) =>
+        r.primaryLecturer
+          ? r.primaryLecturer
+          : <span style={{ color: '#bbb' }}>—</span>,
     },
     {
       title: t('courseManagement.colStatus'),
@@ -418,7 +413,7 @@ const CourseManagementPage: React.FC = () => {
             variant="ghost" size="sm"
             icon={<Users size={13} />}
             onClick={() => setViewingCourse(record)}
-            title={t('courseManagement.viewStudents')}
+            title={t('courseManagement.viewDetails')}
           />
           <Button variant="ghost" size="sm" icon={<Pencil size={13} />} onClick={() => openEdit(record)} />
           <Popconfirm
@@ -463,6 +458,22 @@ const CourseManagementPage: React.FC = () => {
           onChange={e => setSearch(e.target.value)}
           allowClear
         />
+        <AntSelect
+          style={{ minWidth: 180 }}
+          value={deptFilter || undefined}
+          onChange={val => setDeptFilter(val ?? '')}
+          placeholder={t('courseManagement.filterAllDepts')}
+          allowClear
+          options={departments.map(d => ({ value: d.id, label: d.name }))}
+        />
+        <AntSelect
+          style={{ minWidth: 180 }}
+          value={progFilter || undefined}
+          onChange={val => setProgFilter(val ?? '')}
+          placeholder={t('courseManagement.filterAllProgrammes')}
+          allowClear
+          options={programmes.map(p => ({ value: p.id, label: `${p.code} – ${p.name}` }))}
+        />
         <Button icon={<Plus size={14} />} onClick={openCreate}>
           {t('courseManagement.addCourse')}
         </Button>
@@ -475,6 +486,7 @@ const CourseManagementPage: React.FC = () => {
         loading={isLoading}
         size="middle"
         pagination={{ pageSize: 20, showSizeChanger: false }}
+        onRow={record => ({ onClick: () => setViewingCourse(record), style: { cursor: 'pointer' } })}
       />
 
       {/* Add / Edit modal */}
@@ -580,25 +592,126 @@ const CourseManagementPage: React.FC = () => {
         {formError && <p className={styles.errorMsg}>{formError}</p>}
       </Modal>
 
-      {/* View enrolled students modal */}
+      {/* Course detail modal */}
       <Modal
         open={!!viewingCourse}
         title={
           viewingCourse
-            ? `${viewingCourse.code} — ${t('courseManagement.studentsModalTitle')}`
+            ? `${viewingCourse.code} — ${viewingCourse.name}`
             : ''
         }
         onCancel={() => setViewingCourse(null)}
         footer={null}
         destroyOnClose
-        width={780}
+        width={900}
       >
-        {enrolmentsLoading ? (
-          <p style={{ textAlign: 'center', padding: '24px 0', color: '#888' }}>{t('common.loading')}</p>
-        ) : offerings.length === 0 ? (
-          <p style={{ textAlign: 'center', padding: '24px 0', color: '#888' }}>{t('courseManagement.noOfferings')}</p>
-        ) : (
-          <Tabs items={enrolmentTabs} size="small" />
+        {viewingCourse && (
+          <div className={styles.detailModal}>
+            {/* Course metadata */}
+            <div className={styles.detailMeta}>
+              <div className={styles.detailMetaGrid}>
+                <div className={styles.detailMetaItem}>
+                  <label>{t('courseManagement.colDepartment')}</label>
+                  <span>{viewingCourse.department?.name ?? viewingCourse.departmentId}</span>
+                </div>
+                <div className={styles.detailMetaItem}>
+                  <label>{t('courseManagement.colProgramme')}</label>
+                  <span>{viewingCourse.programmes.map(p => p.name).join(', ') || '—'}</span>
+                </div>
+                <div className={styles.detailMetaItem}>
+                  <label>{t('courseManagement.colCredits')}</label>
+                  <span>{viewingCourse.creditHours}</span>
+                </div>
+                <div className={styles.detailMetaItem}>
+                  <label>{t('courseManagement.colLevel')}</label>
+                  <span>Level {viewingCourse.level}</span>
+                </div>
+                <div className={styles.detailMetaItem}>
+                  <label>{t('courseManagement.colEnrolled')}</label>
+                  <span>{viewingCourse.totalEnrolled}</span>
+                </div>
+                <div className={styles.detailMetaItem}>
+                  <label>{t('courseManagement.colActiveOfferings')}</label>
+                  <span>{viewingCourse.activeOfferings}</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Offerings + enrolments + assignments */}
+            {enrolmentsLoading ? (
+              <p style={{ textAlign: 'center', padding: '24px 0', color: '#888' }}>{t('common.loading')}</p>
+            ) : offerings.length === 0 ? (
+              <p style={{ textAlign: 'center', padding: '24px 0', color: '#888' }}>{t('courseManagement.noOfferings')}</p>
+            ) : (
+              <Tabs
+                size="small"
+                items={offerings.map(o => ({
+                  key: o.id,
+                  label: (
+                    <span>
+                      {o.semester.name} · {o.dayOfWeek} {o.startTime}–{o.endTime}
+                      {o.semester.isActive && (
+                        <Badge color="green" style={{ marginLeft: 6 }}>{t('courseManagement.active')}</Badge>
+                      )}
+                      <Badge color={o.enrolments.length >= (viewingCourse?.maxSeats ?? 0) ? 'orange' : 'blue'} style={{ marginLeft: 4 }}>
+                        {o.enrolments.length}/{viewingCourse?.maxSeats ?? '?'}
+                      </Badge>
+                    </span>
+                  ),
+                  children: (
+                    <div>
+                      <div className={styles.offeringMeta}>
+                        <span>{t('courseManagement.room')}: <strong>{o.room}</strong></span>
+                        <span>{t('courseManagement.lecturer')}: <strong>{o.lecturer.user.displayName}</strong></span>
+                        <span>{t('courseManagement.seatsTaken')}: <strong>{o.seatsTaken}</strong></span>
+                      </div>
+
+                      <p className={styles.detailSectionLabel}>{t('courseManagement.colStudentName')} ({o.enrolments.length})</p>
+                      <Table<Enrolment>
+                        dataSource={o.enrolments}
+                        columns={enrolmentColumns()}
+                        rowKey="id"
+                        size="small"
+                        pagination={false}
+                        locale={{ emptyText: t('courseManagement.noStudents') }}
+                      />
+
+                      {o.assignments.length > 0 && (
+                        <>
+                          <p className={styles.detailSectionLabel} style={{ marginTop: 16 }}>
+                            {t('courseManagement.assignments')} ({o.assignments.length})
+                          </p>
+                          <Table<Assignment>
+                            dataSource={o.assignments}
+                            rowKey="id"
+                            size="small"
+                            pagination={false}
+                            columns={[
+                              { title: t('courseManagement.colAssignmentTitle'), dataIndex: 'title', key: 'title' },
+                              {
+                                title: t('courseManagement.colDueDate'),
+                                dataIndex: 'dueDate',
+                                key: 'dueDate',
+                                width: 140,
+                                render: (v: string) => new Date(v).toLocaleDateString(),
+                              },
+                              {
+                                title: t('courseManagement.colMarks'),
+                                key: 'marks',
+                                width: 130,
+                                align: 'center' as const,
+                                render: (_: unknown, a: Assignment) => `${a.maxMarks} pts · ${a.weightPct}%`,
+                              },
+                            ]}
+                          />
+                        </>
+                      )}
+                    </div>
+                  ),
+                }))}
+              />
+            )}
+          </div>
         )}
       </Modal>
     </div>

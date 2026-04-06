@@ -197,22 +197,60 @@ router.get('/departments', requireRole('admin', 'manager'), async (_req: AuthReq
   res.json({ success: true, data: departments })
 })
 
+// GET /admin/programmes — list all programmes (for filter dropdowns)
+router.get('/programmes', requireRole('admin', 'manager'), async (_req: AuthRequest, res: Response) => {
+  const programmes = await prisma.programme.findMany({
+    select: { id: true, name: true, code: true },
+    orderBy: { name: 'asc' },
+  })
+  res.json({ success: true, data: programmes })
+})
+
 // ── Courses ───────────────────────────────────────────────────────────────────
 
-// GET /admin/courses — list courses with totalEnrolled (sum across all offerings)
+// GET /admin/courses — all courses with dept name, programmes, offerings summary
 router.get('/courses', requireRole('admin', 'manager'), async (_req: AuthRequest, res: Response) => {
-  const courses = await prisma.course.findMany({
-    include: {
-      _count:    { select: { offerings: true } },
-      offerings: { select: { _count: { select: { enrolments: true } } } },
-    },
-    orderBy: { code: 'asc' },
-  })
+  const [courses, departments] = await Promise.all([
+    prisma.course.findMany({
+      include: {
+        _count: { select: { offerings: true } },
+        programmeCourses: {
+          include: { programme: { select: { id: true, name: true, code: true } } },
+        },
+        offerings: {
+          include: {
+            semester: { select: { id: true, name: true, isActive: true } },
+            lecturer: { include: { user: { select: { displayName: true } } } },
+            _count: { select: { enrolments: true } },
+          },
+          orderBy: { createdAt: 'desc' },
+        },
+      },
+      orderBy: { code: 'asc' },
+    }),
+    prisma.department.findMany({ select: { id: true, name: true, code: true } }),
+  ])
 
-  const data = courses.map(({ offerings, ...rest }) => ({
-    ...rest,
-    totalEnrolled: offerings.reduce((s, o) => s + o._count.enrolments, 0),
-  }))
+  const deptById = Object.fromEntries(departments.map(d => [d.id, d]))
+
+  const data = courses.map(({ offerings, programmeCourses, ...rest }) => {
+    const totalEnrolled = offerings.reduce((s, o) => s + o._count.enrolments, 0)
+    const activeOfferings = offerings.filter(o => o.semester.isActive).length
+    // Primary lecturer: first active-semester offering, else first offering overall
+    const primaryOffering = offerings.find(o => o.semester.isActive) ?? offerings[0]
+    return {
+      ...rest,
+      department: deptById[rest.departmentId] ?? null,
+      programmes: programmeCourses.map(pc => pc.programme),
+      totalEnrolled,
+      activeOfferings,
+      primaryLecturer: primaryOffering?.lecturer?.user?.displayName ?? null,
+      offerings: offerings.map(({ _count, ...o }) => ({
+        ...o,
+        enrolledCount: _count.enrolments,
+      })),
+    }
+  })
 
   res.json({ success: true, data })
 })
@@ -278,17 +316,21 @@ router.delete('/courses/:id', requireRole('admin'), async (req: AuthRequest, res
   res.json({ success: true, message: 'Course deleted' })
 })
 
-// GET /admin/courses/:id/enrolments — all offerings with student rosters
+// GET /admin/courses/:id/enrolments — all offerings with student rosters + assignments
 router.get('/courses/:id/enrolments', requireRole('admin', 'manager'), async (req: AuthRequest, res: Response) => {
   const offerings = await prisma.courseOffering.findMany({
     where: { courseId: req.params.id },
     include: {
-      semester: { select: { name: true } },
+      semester: { select: { name: true, isActive: true } },
       lecturer: { include: { user: { select: { displayName: true } } } },
       enrolments: {
         where:   { status: 'registered' },
         include: { student: { include: { user: { select: { displayName: true } } } } },
         orderBy: { registeredAt: 'asc' },
+      },
+      assignments: {
+        select: { id: true, title: true, dueDate: true, maxMarks: true, weightPct: true },
+        orderBy: { dueDate: 'asc' },
       },
     },
     orderBy: { createdAt: 'desc' },

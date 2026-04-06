@@ -1382,6 +1382,17 @@ const en = {
     fieldLecturer: 'Assign Lecturer (optional)',
     selectLecturer: 'Select lecturer',
     lecturerNote: 'Assigning a lecturer here is for reference. Lecturers are formally linked when creating a course offering.',
+    colProgramme: 'Programme',
+    colActiveOfferings: 'Active Offerings',
+    colAssignedLecturer: 'Assigned Lecturer',
+    filterAllDepts: 'All Departments',
+    filterAllProgrammes: 'All Programmes',
+    viewDetails: 'View details',
+    active: 'Active',
+    assignments: 'Assignments',
+    colAssignmentTitle: 'Title',
+    colDueDate: 'Due Date',
+    colMarks: 'Marks / Weight',
   },
 
   // LMS Grading (Lecturer)

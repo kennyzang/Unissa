@@ -112,3 +112,54 @@
     color: $color-gray-8;
   }
 }
+
+.detailModal {
+  display: flex;
+  flex-direction: column;
+  gap: $space-4;
+}
+
+.detailMeta {
+  background: var(--color-bg-subtle, #fafafa);
+  border: 1px solid var(--color-border, #e8e8e8);
+  border-radius: 8px;
+  padding: $space-4;
+}
+
+.detailMetaGrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: $space-3 $space-5;
+
+  @media (max-width: $bp-md) {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+.detailMetaItem {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+
+  label {
+    font-size: $font-size-xs;
+    font-weight: 600;
+    color: $color-gray-5;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+
+  span {
+    font-size: $font-size-sm;
+    color: $color-gray-8;
+  }
+}
+
+.detailSectionLabel {
+  font-size: $font-size-xs;
+  font-weight: 600;
+  color: $color-gray-5;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin: 0 0 $space-2;
+}
