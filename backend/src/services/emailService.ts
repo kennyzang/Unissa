@@ -1,15 +1,7 @@
-import nodemailer, { Transporter } from 'nodemailer'
+import { Resend } from 'resend'
 import { prisma } from '@/lib/prisma'
 
-interface EmailConfig {
-  host: string
-  port: number
-  secure: boolean
-  user: string
-  pass: string
-  fromName: string
-  fromAddress: string
-}
+const FROM_ADDRESS = 'UNISSA <noreply@unissa.edu.bn>'
 
 interface EmailOptions {
   to: string | string[]
@@ -30,64 +22,21 @@ interface EmailResult {
 }
 
 class EmailService {
-  private transporter: Transporter | null = null
-  private config: EmailConfig | null = null
+  private resend: Resend | null = null
   private initialized: boolean = false
 
   async initialize(): Promise<void> {
     try {
-      const configs = await prisma.systemConfig.findMany({
-        where: {
-          key: {
-            in: [
-              'email_host',
-              'email_port',
-              'email_secure',
-              'email_user',
-              'email_pass',
-              'email_from_name',
-              'email_from_address',
-              'email_enabled',
-            ],
-          },
-        },
+      const config = await prisma.systemConfig.findUnique({
+        where: { key: 'resend_api_key' },
       })
 
-      const getConfig = (key: string, defaultValue: string): string => {
-        const config = configs.find((c) => c.key === key)
-        return config?.value ?? defaultValue
-      }
-
-      const enabled = getConfig('email_enabled', 'false') === 'true'
-      if (!enabled) {
-        this.initialized = false
-        return
-      }
-
-      this.config = {
-        host: getConfig('email_host', 'smtp.gmail.com'),
-        port: parseInt(getConfig('email_port', '587'), 10),
-        secure: getConfig('email_secure', 'false') === 'true',
-        user: getConfig('email_user', ''),
-        pass: getConfig('email_pass', ''),
-        fromName: getConfig('email_from_name', 'UNISSA'),
-        fromAddress: getConfig('email_from_address', 'noreply@unissa.edu.bn'),
-      }
-
-      if (this.config.user && this.config.pass) {
-        this.transporter = nodemailer.createTransport({
-          host: this.config.host,
-          port: this.config.port,
-          secure: this.config.secure,
-          auth: {
-            user: this.config.user,
-            pass: this.config.pass,
-          },
-          tls: {
-            rejectUnauthorized: false,
-          },
-        })
+      const apiKey = config?.value?.trim()
+      if (apiKey) {
+        this.resend = new Resend(apiKey)
         this.initialized = true
+      } else {
+        this.initialized = false
       }
     } catch (error) {
       console.error('Failed to initialize email service:', error)
@@ -96,28 +45,37 @@ class EmailService {
   }
 
   async sendEmail(options: EmailOptions, retryCount: number = 0): Promise<EmailResult> {
-    if (!this.initialized || !this.transporter || !this.config) {
+    if (!this.initialized || !this.resend) {
       const logId = await this.logEmail(options, 'failed', 'Email service not configured')
       return { success: false, error: 'Email service not configured', logId }
     }
 
-    const toList = Array.isArray(options.to) ? options.to.join(',') : options.to
+    const toList = Array.isArray(options.to) ? options.to : [options.to]
 
     try {
-      const result = await this.transporter.sendMail({
-        from: `"${this.config.fromName}" <${this.config.fromAddress}>`,
+      const payload: Parameters<Resend['emails']['send']>[0] = {
+        from: FROM_ADDRESS,
         to: toList,
         subject: options.subject,
         html: options.body,
-        attachments: options.attachments?.map((a) => ({
-          filename: a.filename,
-          content: a.content,
-          contentType: a.contentType,
-        })),
-      })
+      }
 
-      const logId = await this.logEmail(options, 'sent', undefined, result.messageId)
-      return { success: true, messageId: result.messageId, logId }
+      if (options.attachments?.length) {
+        payload.attachments = options.attachments.map((a) => ({
+          filename: a.filename,
+          content: Buffer.isBuffer(a.content) ? a.content : Buffer.from(a.content as string),
+          contentType: a.contentType,
+        }))
+      }
+
+      const { data, error } = await this.resend.emails.send(payload)
+
+      if (error) {
+        throw new Error(error.message)
+      }
+
+      const logId = await this.logEmail(options, 'sent', undefined, data?.id)
+      return { success: true, messageId: data?.id, logId }
     } catch (error: any) {
       const errorMessage = error.message || 'Unknown error'
 
@@ -324,11 +282,7 @@ class EmailService {
   }
 
   isConfigured(): boolean {
-    return this.initialized && this.transporter !== null
-  }
-
-  getConfig(): EmailConfig | null {
-    return this.config
+    return this.initialized && this.resend !== null
   }
 }
 

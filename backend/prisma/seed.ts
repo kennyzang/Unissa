@@ -51,6 +51,8 @@ async function main() {
     { key: 'campus_vehicle_in_use',         value: '6',                               description: 'Vehicles currently in use' },
     { key: 'student_default_status',        value: 'active',                          description: 'Default status for new enrolled students' },
     { key: 'applicant_default_status',      value: 'draft',                           description: 'Default status for new applicants' },
+    // Email Configuration (Resend)
+    { key: 'resend_api_key', value: 're_R3wt6Yxx_CMvSqwFdFKE3qVkxXUEfn4co', description: 'Resend API key for transactional emails' },
   ]
   for (const c of configs) {
     await prisma.systemConfig.upsert({ where: { key: c.key }, create: c, update: {} })

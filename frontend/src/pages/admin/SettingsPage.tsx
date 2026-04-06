@@ -26,14 +26,8 @@ interface AiConfig {
 }
 
 interface EmailConfig {
-  enabled: boolean
-  host: string
-  port: number
-  secure: boolean
-  user: string
-  pass: string
-  fromName: string
-  fromAddress: string
+  apiKey: string
+  configured: boolean
 }
 
 const PROVIDER_MODELS: Record<string, string[]> = {
@@ -67,8 +61,7 @@ const SettingsPage: React.FC = () => {
   })
 
   const [emailForm, setEmailForm] = useState<EmailConfig>({
-    enabled: false, host: 'smtp.gmail.com', port: 587, secure: false,
-    user: '', pass: '', fromName: 'UNISSA', fromAddress: 'noreply@unissa.edu.bn',
+    apiKey: '', configured: false,
   })
 
   const [testEmailAddress, setTestEmailAddress] = useState('')
@@ -376,86 +369,15 @@ const SettingsPage: React.FC = () => {
   const emailTab = (
     <div className={styles.tabContent}>
       <Card title={t('settings.emailConfig')} className={styles.configCard}>
-        <div className={styles.enableRow}>
-          <label className={styles.label}>{t('settings.enableEmail')}</label>
-          <div className={styles.toggleGroup}>
-            <Switch
-              checked={emailForm.enabled}
-              onChange={checked => setEmailForm(f => ({ ...f, enabled: checked }))}
-            />
-            <span className={styles.toggleLabel}>
-              {emailForm.enabled ? t('settings.emailEnabled') : t('settings.emailDisabled')}
-            </span>
-          </div>
-        </div>
-
         <div className={styles.formGrid}>
-          <div className={styles.formGroup}>
-            <label className={styles.label}>{t('settings.smtpHost')}</label>
-            <AntInput
-              placeholder="smtp.gmail.com"
-              value={emailForm.host}
-              onChange={e => setEmailForm(f => ({ ...f, host: e.target.value }))}
-            />
-          </div>
-
-          <div className={styles.formGroup}>
-            <label className={styles.label}>{t('settings.smtpPort')}</label>
-            <InputNumber
-              min={1} max={65535}
-              style={{ width: '100%' }}
-              value={emailForm.port}
-              onChange={val => setEmailForm(f => ({ ...f, port: val ?? 587 }))}
-            />
-          </div>
-
-          <div className={styles.formGroup}>
-            <label className={styles.label}>{t('settings.smtpUser')}</label>
-            <AntInput
-              placeholder="your-email@gmail.com"
-              value={emailForm.user}
-              onChange={e => setEmailForm(f => ({ ...f, user: e.target.value }))}
-            />
-          </div>
-
-          <div className={styles.formGroup}>
-            <label className={styles.label}>{t('settings.smtpPassword')}</label>
+          <div className={`${styles.formGroup} ${styles.fullWidth}`}>
+            <label className={styles.label}>{t('settings.resendApiKey')}</label>
             <AntInput.Password
-              placeholder="••••••••"
-              value={emailForm.pass}
-              onChange={e => setEmailForm(f => ({ ...f, pass: e.target.value }))}
+              placeholder="re_..."
+              value={emailForm.apiKey}
+              onChange={e => setEmailForm(f => ({ ...f, apiKey: e.target.value }))}
             />
-          </div>
-
-          <div className={styles.formGroup}>
-            <label className={styles.label}>{t('settings.fromName')}</label>
-            <AntInput
-              placeholder="UNISSA"
-              value={emailForm.fromName}
-              onChange={e => setEmailForm(f => ({ ...f, fromName: e.target.value }))}
-            />
-          </div>
-
-          <div className={styles.formGroup}>
-            <label className={styles.label}>{t('settings.fromAddress')}</label>
-            <AntInput
-              placeholder="noreply@unissa.edu.bn"
-              value={emailForm.fromAddress}
-              onChange={e => setEmailForm(f => ({ ...f, fromAddress: e.target.value }))}
-            />
-          </div>
-
-          <div className={styles.formGroup}>
-            <label className={styles.label}>{t('settings.useSSL')}</label>
-            <div className={styles.toggleGroup}>
-              <Switch
-                checked={emailForm.secure}
-                onChange={checked => setEmailForm(f => ({ ...f, secure: checked }))}
-              />
-              <span className={styles.toggleLabel}>
-                {emailForm.secure ? t('settings.sslEnabled') : t('settings.sslDisabled')}
-              </span>
-            </div>
+            <span className={styles.fieldHint}>{t('settings.resendApiKeyHint')}</span>
           </div>
         </div>
 
@@ -478,7 +400,7 @@ const SettingsPage: React.FC = () => {
             icon={<TestTube size={14} />}
             onClick={() => { setEmailTestResult(null); testEmailMutation.mutate(testEmailAddress) }}
             loading={testEmailMutation.isPending}
-            disabled={!testEmailAddress || !emailForm.enabled}
+            disabled={!testEmailAddress}
           >
             {t('settings.sendTestEmail')}
           </Button>

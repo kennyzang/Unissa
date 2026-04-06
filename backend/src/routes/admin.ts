@@ -6,95 +6,28 @@ import { emailService, initEmailService } from '../services/emailService'
 const router = Router()
 router.use(authenticate)
 
-const EMAIL_CONFIG_KEYS = [
-  'email_enabled',
-  'email_host',
-  'email_port',
-  'email_secure',
-  'email_user',
-  'email_pass',
-  'email_from_name',
-  'email_from_address',
-]
-
 router.get('/email-config', requireRole('admin'), async (_req: AuthRequest, res: Response) => {
-  const configs = await prisma.systemConfig.findMany({
-    where: { key: { in: EMAIL_CONFIG_KEYS } },
+  const config = await prisma.systemConfig.findUnique({
+    where: { key: 'resend_api_key' },
   })
-
-  const configMap: Record<string, string> = {}
-  for (const config of configs) {
-    configMap[config.key] = config.value
-  }
 
   res.json({
     success: true,
     data: {
-      enabled: configMap['email_enabled'] === 'true',
-      host: configMap['email_host'] || '',
-      port: parseInt(configMap['email_port'] || '587', 10),
-      secure: configMap['email_secure'] === 'true',
-      user: configMap['email_user'] || '',
-      pass: configMap['email_pass'] ? '******' : '',
-      fromName: configMap['email_from_name'] || 'UNISSA',
-      fromAddress: configMap['email_from_address'] || 'noreply@unissa.edu.bn',
+      apiKey: config?.value ? '******' : '',
+      configured: !!config?.value,
     },
   })
 })
 
 router.put('/email-config', requireRole('admin'), async (req: AuthRequest, res: Response) => {
-  const {
-    enabled,
-    host,
-    port,
-    secure,
-    user,
-    pass,
-    fromName,
-    fromAddress,
-  } = req.body as {
-    enabled?: boolean
-    host?: string
-    port?: number
-    secure?: boolean
-    user?: string
-    pass?: string
-    fromName?: string
-    fromAddress?: string
-  }
+  const { apiKey } = req.body as { apiKey?: string }
 
-  const updates: Array<{ key: string; value: string }> = []
-
-  if (enabled !== undefined) {
-    updates.push({ key: 'email_enabled', value: enabled ? 'true' : 'false' })
-  }
-  if (host !== undefined) {
-    updates.push({ key: 'email_host', value: host })
-  }
-  if (port !== undefined) {
-    updates.push({ key: 'email_port', value: String(port) })
-  }
-  if (secure !== undefined) {
-    updates.push({ key: 'email_secure', value: secure ? 'true' : 'false' })
-  }
-  if (user !== undefined) {
-    updates.push({ key: 'email_user', value: user })
-  }
-  if (pass !== undefined && pass !== '******') {
-    updates.push({ key: 'email_pass', value: pass })
-  }
-  if (fromName !== undefined) {
-    updates.push({ key: 'email_from_name', value: fromName })
-  }
-  if (fromAddress !== undefined) {
-    updates.push({ key: 'email_from_address', value: fromAddress })
-  }
-
-  for (const update of updates) {
+  if (apiKey !== undefined && apiKey !== '******') {
     await prisma.systemConfig.upsert({
-      where: { key: update.key },
-      create: { key: update.key, value: update.value },
-      update: { value: update.value },
+      where: { key: 'resend_api_key' },
+      create: { key: 'resend_api_key', value: apiKey },
+      update: { value: apiKey },
     })
   }
 
@@ -174,13 +107,6 @@ router.get('/email-status', requireRole('admin'), async (_req: AuthRequest, res:
     success: true,
     data: {
       configured: emailService.isConfigured(),
-      config: emailService.getConfig() ? {
-        host: emailService.getConfig()!.host,
-        port: emailService.getConfig()!.port,
-        secure: emailService.getConfig()!.secure,
-        fromName: emailService.getConfig()!.fromName,
-        fromAddress: emailService.getConfig()!.fromAddress,
-      } : null,
     },
   })
 })
