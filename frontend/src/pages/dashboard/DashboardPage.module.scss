@@ -415,6 +415,13 @@
   border-radius: 10px;
 }
 
+.insightsEmpty {
+  color: var(--color-gray-5);
+  font-size: v.$font-size-sm;
+  padding: v.$space-6 0;
+  text-align: center;
+}
+
 .insightsGrid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);

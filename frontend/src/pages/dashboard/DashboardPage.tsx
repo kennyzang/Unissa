@@ -433,16 +433,19 @@ const DashboardPage: React.FC = () => {
       </div>
 
       {/* ── NLG Insights ────────────────────────────────── */}
-      {insights.length > 0 && (
-        <section className={styles.insightsSection}>
-          <div className={styles.sectionHeader}>
-            <TrendingUp size={16} />
-            <h2 className={styles.sectionTitle}>{t('dashboard.aiInsights')}</h2>
-            <span className={styles.sectionCount}>{insights.length}</span>
-          </div>
+      <section className={styles.insightsSection}>
+        <div className={styles.sectionHeader}>
+          <TrendingUp size={16} />
+          <h2 className={styles.sectionTitle}>{t('dashboard.aiInsights')}</h2>
+          {insights.length > 0 && <span className={styles.sectionCount}>{insights.length}</span>}
+        </div>
+        {insights.length === 0 ? (
+          <p className={styles.insightsEmpty}>{t('dashboard.noInsights')}</p>
+        ) : (
           <div className={styles.insightsGrid}>
             {insights.map(item => {
               const cfg = SEVERITY_MAP[item.severity] ?? SEVERITY_MAP.info
+              const detailPath = INSIGHT_CATEGORY_PATH[item.category]
               return (
                 <div key={item.id} className={styles.insightCard} style={{ '--bg': cfg.bg } as React.CSSProperties}>
                   <div className={styles.insightTop}>
@@ -453,40 +456,17 @@ const DashboardPage: React.FC = () => {
                   </div>
                   <h3 className={styles.insightHeadline}>{item.headline}</h3>
                   <p className={styles.insightBody}>{item.body}</p>
-                  <button className={styles.insightAction}>
-                    {t('dashboard.viewDetails')} <ChevronRight size={12} />
-                  </button>
+                  {detailPath && (
+                    <button className={styles.insightAction} onClick={() => navigate(detailPath)}>
+                      {t('dashboard.viewDetails')} <ChevronRight size={12} />
+                    </button>
+                  )}
                 </div>
               )
             })}
           </div>
-        </section>
-      )}
-
-      {/* Fallback insights when API is empty (demo guard) */}
-      {insights.length === 0 && (
-        <section className={styles.insightsSection}>
-          <div className={styles.sectionHeader}>
-            <TrendingUp size={16} />
-            <h2 className={styles.sectionTitle}>{t('dashboard.aiInsights')}</h2>
-          </div>
-          <div className={styles.insightsGrid}>
-            {DEMO_INSIGHTS.map(item => {
-              const cfg = SEVERITY_MAP[item.severity]
-              return (
-                <div key={item.id} className={styles.insightCard} style={{ '--bg': cfg.bg } as React.CSSProperties}>
-                  <div className={styles.insightTop}>
-                    <Badge color={cfg.color} size="sm">{item.category}</Badge>
-                    <span className={styles.insightTime}>{t('dashboard.today')}</span>
-                  </div>
-                  <h3 className={styles.insightHeadline}>{item.headline}</h3>
-                  <p className={styles.insightBody}>{item.body}</p>
-                </div>
-              )
-            })}
-          </div>
-        </section>
-      )}
+        )}
+      </section>
     </div>
   )
 }
@@ -509,36 +489,12 @@ const ActivityRow: React.FC<{ icon: string; text: string; time: string; highligh
   </div>
 )
 
-// ── Demo fallback data ────────────────────────────────────────
-const DEMO_INSIGHTS = [
-  {
-    id: '1',
-    category: 'Enrolment',
-    headline: 'Enrolment pace 3.2% ahead of target',
-    body: 'New applications this week are tracking above the 5-year average. International enquiries up 12% vs last intake.',
-    severity: 'positive',
-  },
-  {
-    id: '2',
-    category: 'Finance',
-    headline: 'Budget committed at 72.4% — within normal range',
-    body: 'GL code 5001-IT shows highest spend velocity. Review Q4 procurement before year-end freeze.',
-    severity: 'info',
-  },
-  {
-    id: '3',
-    category: 'Procurement',
-    headline: '2 anomalous PRs flagged for review',
-    body: 'PR-2026-0038 and PR-0041 show statistical price outliers (Z-score > 2.5). Director approval recommended.',
-    severity: 'warning',
-  },
-  {
-    id: '4',
-    category: 'Campus',
-    headline: 'Lab 3 HVAC failure — maintenance dispatched',
-    body: 'Work order #WO-001 raised. Classes in Lab 3 should be rescheduled. Estimated resolution: 4 hours.',
-    severity: 'critical',
-  },
-]
+// ── Insight category → detail page path ──────────────────────
+const INSIGHT_CATEGORY_PATH: Record<string, string> = {
+  finance:     '/finance/dashboard',
+  procurement: '/procurement/requests',
+  academic:    '/admission/review',
+  hr:          '/hr/staff',
+}
 
 export default DashboardPage

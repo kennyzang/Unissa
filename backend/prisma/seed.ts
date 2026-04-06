@@ -1407,14 +1407,59 @@ async function main() {
   }
 
   // ── Executive Insights ────────────────────────────────────────
-  const expiresNext = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
+  const expires30d = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
   await prisma.notification.deleteMany({})
   await prisma.executiveInsight.deleteMany({})
   for (const ins of [
-    { insightType: 'enrollment', title: 'Enrolment Ahead of Target', body: "Enrolment is 4% ahead of last year's Sep intake (1,204 vs 1,158). Early applications suggest strong demand for BSC-IFN.", severity: 'info', expiresAt: expiresNext },
-    { insightType: 'finance', title: 'Budget Utilisation On Track', body: 'Finance budget utilisation at 62.9% (BND 28.3M / BND 45M) — on track for year-end. 3 overdue invoices require follow-up.', severity: 'info', expiresAt: expiresNext },
-    { insightType: 'research', title: 'Research Pipeline Active', body: 'Research grant pipeline: 5 proposals pending review (total value BND 380K). RG-2026-001 utilisation at 38%.', severity: 'info', expiresAt: expiresNext },
-    { insightType: 'lms', title: 'At-Risk Student Count Rising', body: 'At-risk student count increased this week (2 students flagged in IFN101 with attendance below 60%). Early intervention recommended.', severity: 'warning', expiresAt: expiresNext },
+    {
+      insightType: 'procurement',
+      title: '3 Purchase Requests Pending Approval',
+      body: 'PR-2026-0042 (ergonomic chairs, BND 1,200), PR-2026-0041 (office stationery, BND 950), and PR-2026-0038 (executive chairs, BND 1,999) are awaiting approval — total value BND 4,149. Oldest request is 5 days old.',
+      severity: 'warning',
+      expiresAt: expires30d,
+    },
+    {
+      insightType: 'procurement',
+      title: '2 Open Procurement Anomalies Require Review',
+      body: 'PR-2026-0038 flagged for price outlier: vendor quoted BND 500/unit vs. market average BND 365/unit (+34%, z-score 2.4). PR-2026-0041 flagged for split-billing: same vendor (Stationery Hub) used 8 times this month, totalling BND 7,600.',
+      severity: 'critical',
+      expiresAt: expires30d,
+    },
+    {
+      insightType: 'finance',
+      title: '3 Overdue Fee Invoices Total BND 7,350',
+      body: 'Invoices INV-2026-OD01, INV-2026-OD02, and INV-2026-OD03 are past due (BND 2,450 each). The oldest is more than 35 days overdue. Student accounts require immediate follow-up by the Finance team.',
+      severity: 'warning',
+      expiresAt: expires30d,
+    },
+    {
+      insightType: 'finance',
+      title: 'Operating Budget 70.8% Committed — Year-End Review Needed',
+      body: 'Total budget BND 45M across 5 GL codes: BND 18.4M committed and BND 13.45M spent, leaving BND 13.15M available. OPEX-FAC-2026 (Facilities) is the tightest at 75.8% of budget committed or spent.',
+      severity: 'info',
+      expiresAt: expires30d,
+    },
+    {
+      insightType: 'academic',
+      title: '2 Students At Risk of Academic Failure in IFN101',
+      body: 'AI risk analysis flagged Student 001 (attendance 38%, quiz avg 41%, risk score 0.85 — predicted: fail) and Student 002 (attendance 55%, quiz avg 58%, risk score 0.72) in IFN101. Early intervention recommended.',
+      severity: 'warning',
+      expiresAt: expires30d,
+    },
+    {
+      insightType: 'hr',
+      title: '4 Leave Requests Awaiting HR Approval',
+      body: '4 staff leave requests are pending approval. 7 out of 312 active staff are currently on approved leave (2.2%). 2 new hires joined this month — onboarding completion should be verified.',
+      severity: 'info',
+      expiresAt: expires30d,
+    },
+    {
+      insightType: 'academic',
+      title: 'Research Pipeline: 12 Active Grants, 5 Proposals Pending',
+      body: '12 active research grants totalling BND 2.10M at 38% utilisation (BND 798K disbursed). 5 proposals are pending review, including Cybersecurity for Smart Campus (RG-2026-003) and Carbon Footprint Reduction (RG-2026-014). RG-2026-001 (AI-Enhanced Learning, BND 450K) is the largest active grant.',
+      severity: 'info',
+      expiresAt: expires30d,
+    },
   ]) {
     await prisma.executiveInsight.create({ data: ins })
   }

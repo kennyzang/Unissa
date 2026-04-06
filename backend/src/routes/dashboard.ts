@@ -173,11 +173,19 @@ router.get('/kpi', requireRole('admin', 'manager', 'finance'), async (req: AuthR
 
 // GET /api/v1/dashboard/insights
 router.get('/insights', requireRole('admin', 'manager'), async (_req: AuthRequest, res: Response) => {
-  const insights = await prisma.executiveInsight.findMany({
+  const rows = await prisma.executiveInsight.findMany({
     where: { expiresAt: { gt: new Date() } },
     orderBy: { generatedAt: 'desc' },
-    take: 6,
+    take: 8,
   })
+  const insights = rows.map(r => ({
+    id:          r.id,
+    category:    r.insightType,
+    headline:    r.title,
+    body:        r.body,
+    severity:    r.severity,
+    generatedAt: r.generatedAt,
+  }))
   res.json({ success: true, data: insights })
 })
 

@@ -203,6 +203,7 @@ const en = {
     newAppsToday: '{{count}} new student applications',
     activeGrantsText: '{{count}} research grants active',
     viewDetails: 'View details',
+    noInsights: 'No active insights at this time.',
     today: 'Today',
     now: 'now',
     twoMin: '2 min',

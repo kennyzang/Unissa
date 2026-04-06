@@ -197,6 +197,7 @@ const ms = {
     newAppsToday: '{{count}} permohonan pelajar baru',
     activeGrantsText: '{{count}} geran penyelidikan aktif',
     viewDetails: 'Lihat butiran',
+    noInsights: 'Tiada insight aktif pada masa ini.',
     today: 'Hari Ini',
     now: 'sekarang',
     twoMin: '2 min',

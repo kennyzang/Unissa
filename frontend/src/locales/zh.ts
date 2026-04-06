@@ -198,6 +198,7 @@ const zh = {
     newAppsToday: '{{count}} 份新入学申请',
     activeGrantsText: '{{count}} 项科研基金进行中',
     viewDetails: '查看详情',
+    noInsights: '当前暂无活跃洞察。',
     today: '今天',
     now: '刚刚',
     twoMin: '2分钟前',
