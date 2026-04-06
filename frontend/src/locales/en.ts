@@ -1372,6 +1372,14 @@ const en = {
     removeConfirm: 'Remove',
     removeStudentSuccess: 'Student removed and seat released',
     removeStudentFailed: 'Failed to remove student',
+    colStatus: 'Status',
+    approve: 'Approve',
+    reject: 'Reject',
+    approveSuccess: 'Course approved and published',
+    rejectSuccess: 'Course proposal rejected',
+    fieldLecturer: 'Assign Lecturer (optional)',
+    selectLecturer: 'Select lecturer',
+    lecturerNote: 'Assigning a lecturer here is for reference. Lecturers are formally linked when creating a course offering.',
   },
 
   // LMS Grading (Lecturer)

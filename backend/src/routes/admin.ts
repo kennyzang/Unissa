@@ -185,6 +185,150 @@ router.get('/email-status', requireRole('admin'), async (_req: AuthRequest, res:
   })
 })
 
+// ── Departments ──────────────────────────────────────────────────────────────
+
+// GET /admin/departments — all departments with children (admin/manager)
+router.get('/departments', requireRole('admin', 'manager'), async (_req: AuthRequest, res: Response) => {
+  const departments = await prisma.department.findMany({
+    where: { parentId: null },        // top-level only; children are nested
+    include: { children: true },
+    orderBy: { name: 'asc' },
+  })
+  res.json({ success: true, data: departments })
+})
+
+// ── Courses ───────────────────────────────────────────────────────────────────
+
+// GET /admin/courses — list courses with totalEnrolled (sum across all offerings)
+router.get('/courses', requireRole('admin', 'manager'), async (_req: AuthRequest, res: Response) => {
+  const courses = await prisma.course.findMany({
+    include: {
+      _count:    { select: { offerings: true } },
+      offerings: { select: { _count: { select: { enrolments: true } } } },
+    },
+    orderBy: { code: 'asc' },
+  })
+
+  const data = courses.map(({ offerings, ...rest }) => ({
+    ...rest,
+    totalEnrolled: offerings.reduce((s, o) => s + o._count.enrolments, 0),
+  }))
+
+  res.json({ success: true, data })
+})
+
+// POST /admin/courses — create course (admin only)
+router.post('/courses', requireRole('admin'), async (req: AuthRequest, res: Response) => {
+  const { code, name, departmentId, creditHours, level, isOpenToInternational, maxSeats } = req.body as {
+    code: string; name: string; departmentId: string
+    creditHours?: number; level?: number; isOpenToInternational?: boolean; maxSeats?: number
+  }
+
+  if (!code || !name || !departmentId) {
+    res.status(400).json({ success: false, message: 'code, name and departmentId are required' })
+    return
+  }
+
+  const existing = await prisma.course.findUnique({ where: { code } })
+  if (existing) {
+    res.status(409).json({ success: false, message: `Course code "${code}" already exists` })
+    return
+  }
+
+  const course = await prisma.course.create({
+    data: {
+      code,
+      name,
+      departmentId,
+      creditHours:            Number(creditHours ?? 3),
+      level:                  Number(level ?? 1),
+      isOpenToInternational:  isOpenToInternational ?? true,
+      maxSeats:               Number(maxSeats ?? 40),
+      status:                 'published',
+    },
+  })
+  res.status(201).json({ success: true, data: course, message: 'Course created' })
+})
+
+// PUT /admin/courses/:id — update course (admin/manager)
+router.put('/courses/:id', requireRole('admin', 'manager'), async (req: AuthRequest, res: Response) => {
+  const { name, departmentId, creditHours, level, isOpenToInternational, maxSeats } = req.body as {
+    name?: string; departmentId?: string; creditHours?: number
+    level?: number; isOpenToInternational?: boolean; maxSeats?: number
+  }
+
+  const course = await prisma.course.update({
+    where: { id: req.params.id },
+    data: { name, departmentId, creditHours, level, isOpenToInternational, maxSeats },
+  })
+  res.json({ success: true, data: course, message: 'Course updated' })
+})
+
+// DELETE /admin/courses/:id — delete course (admin only; blocked if offerings exist)
+router.delete('/courses/:id', requireRole('admin'), async (req: AuthRequest, res: Response) => {
+  const offeringCount = await prisma.courseOffering.count({ where: { courseId: req.params.id } })
+  if (offeringCount > 0) {
+    res.status(409).json({
+      success: false,
+      message: `Cannot delete: course has ${offeringCount} offering(s). Remove offerings first.`,
+    })
+    return
+  }
+  await prisma.course.delete({ where: { id: req.params.id } })
+  res.json({ success: true, message: 'Course deleted' })
+})
+
+// GET /admin/courses/:id/enrolments — all offerings with student rosters
+router.get('/courses/:id/enrolments', requireRole('admin', 'manager'), async (req: AuthRequest, res: Response) => {
+  const offerings = await prisma.courseOffering.findMany({
+    where: { courseId: req.params.id },
+    include: {
+      semester: { select: { name: true } },
+      lecturer: { include: { user: { select: { displayName: true } } } },
+      enrolments: {
+        where:   { status: 'registered' },
+        include: { student: { include: { user: { select: { displayName: true } } } } },
+        orderBy: { registeredAt: 'asc' },
+      },
+    },
+    orderBy: { createdAt: 'desc' },
+  })
+  res.json({ success: true, data: offerings })
+})
+
+// PATCH /admin/courses/:id/approve — approve or reject a pending course proposal
+router.patch('/courses/:id/approve', requireRole('admin', 'manager'), async (req: AuthRequest, res: Response) => {
+  const { action } = req.body as { action: 'approve' | 'reject' }
+  if (!action || !['approve', 'reject'].includes(action)) {
+    res.status(400).json({ success: false, message: 'action must be "approve" or "reject"' })
+    return
+  }
+  const course = await prisma.course.update({
+    where: { id: req.params.id },
+    data:  { status: action === 'approve' ? 'published' : 'draft' },
+  })
+  res.json({ success: true, data: course, message: action === 'approve' ? 'Course approved' : 'Course proposal rejected' })
+})
+
+// ── Enrolments ────────────────────────────────────────────────────────────────
+
+// DELETE /admin/enrolments/:enrolmentId — remove student from course offering
+router.delete('/enrolments/:enrolmentId', requireRole('admin', 'manager'), async (req: AuthRequest, res: Response) => {
+  const enrolment = await prisma.enrolment.findUnique({ where: { id: req.params.enrolmentId } })
+  if (!enrolment) {
+    res.status(404).json({ success: false, message: 'Enrolment not found' })
+    return
+  }
+  await prisma.enrolment.delete({ where: { id: req.params.enrolmentId } })
+  await prisma.courseOffering.updateMany({
+    where: { id: enrolment.offeringId, seatsTaken: { gt: 0 } },
+    data:  { seatsTaken: { decrement: 1 } },
+  })
+  res.json({ success: true, message: 'Student removed from course' })
+})
+
+// ─────────────────────────────────────────────────────────────────────────────
+
 router.post('/demo-reset', requireRole('admin'), async (_req: AuthRequest, res: Response) => {
   await prisma.attendanceRecord.deleteMany({})
   await prisma.attendanceSession.deleteMany({})

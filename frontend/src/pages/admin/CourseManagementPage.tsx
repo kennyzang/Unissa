@@ -26,9 +26,18 @@ interface Course {
   level: number
   isOpenToInternational: boolean
   maxSeats: number
+  status: string
+  proposedByStaffId?: string
   createdAt: string
   totalEnrolled: number
   _count: { offerings: number }
+}
+
+interface StaffLecturer {
+  id: string
+  staffId: string
+  fullName: string
+  designation: string
 }
 
 interface CourseForm {
@@ -97,6 +106,14 @@ const CourseManagementPage: React.FC = () => {
     },
   })
 
+  const { data: lecturers = [] } = useQuery<StaffLecturer[]>({
+    queryKey: ['hr', 'staff'],
+    queryFn: async () => {
+      const { data } = await apiClient.get('/hr/staff')
+      return (data.data as any[]).filter((s: any) => s.user?.role === 'lecturer' || s.lmsInstructorActive)
+    },
+  })
+
   const { data: offerings = [], isLoading: enrolmentsLoading } = useQuery<Offering[]>({
     queryKey: ['admin', 'course-enrolments', viewingCourse?.id],
     queryFn: async () => {
@@ -134,6 +151,16 @@ const CourseManagementPage: React.FC = () => {
       qc.invalidateQueries({ queryKey: ['admin', 'courses'] })
     },
     onError: (e: any) => message.error(e.response?.data?.message ?? t('courseManagement.deleteFailed')),
+  })
+
+  const approveMutation = useMutation({
+    mutationFn: ({ id, action }: { id: string; action: 'approve' | 'reject' }) =>
+      apiClient.patch(`/admin/courses/${id}/approve`, { action }),
+    onSuccess: (_res, { action }) => {
+      message.success(action === 'approve' ? t('courseManagement.approveSuccess') : t('courseManagement.rejectSuccess'))
+      qc.invalidateQueries({ queryKey: ['admin', 'courses'] })
+    },
+    onError: (e: any) => message.error(e.response?.data?.message ?? t('courseManagement.saveFailed')),
   })
 
   const removeEnrolmentMutation = useMutation({
@@ -352,12 +379,41 @@ const CourseManagementPage: React.FC = () => {
       ),
     },
     {
+      title: t('courseManagement.colStatus'),
+      dataIndex: 'status',
+      key: 'status',
+      width: 140,
+      align: 'center',
+      render: (status: string) => {
+        const color = status === 'published' ? 'green' : status === 'pending_approval' ? 'orange' : 'gray'
+        return <Badge color={color}>{status === 'pending_approval' ? 'Pending Approval' : status}</Badge>
+      },
+    },
+    {
       title: t('common.actions'),
       key: 'actions',
-      width: 130,
+      width: 200,
       align: 'center',
       render: (_: unknown, record: Course) => (
-        <div style={{ display: 'flex', gap: 6, justifyContent: 'center' }}>
+        <div style={{ display: 'flex', gap: 6, justifyContent: 'center', flexWrap: 'wrap' }}>
+          {record.status === 'pending_approval' && (
+            <>
+              <Button
+                size="sm"
+                onClick={() => approveMutation.mutate({ id: record.id, action: 'approve' })}
+                loading={approveMutation.isPending}
+              >
+                {t('courseManagement.approve')}
+              </Button>
+              <Button
+                variant="secondary" size="sm"
+                onClick={() => approveMutation.mutate({ id: record.id, action: 'reject' })}
+                loading={approveMutation.isPending}
+              >
+                {t('courseManagement.reject')}
+              </Button>
+            </>
+          )}
           <Button
             variant="ghost" size="sm"
             icon={<Users size={13} />}
@@ -499,6 +555,25 @@ const CourseManagementPage: React.FC = () => {
               checkedChildren={t('common.yes')}
               unCheckedChildren={t('common.no')}
             />
+          </div>
+
+          <div className={`${styles.formGroup} ${styles.fullWidth}`}>
+            <label>{t('courseManagement.fieldLecturer')}</label>
+            <AntSelect
+              style={{ width: '100%' }}
+              value={(form as any).lecturerId || undefined}
+              onChange={val => setForm(f => ({ ...f, lecturerId: val }))}
+              placeholder={t('courseManagement.selectLecturer')}
+              allowClear
+              showSearch
+              filterOption={(input, option) =>
+                (option?.label as string ?? '').toLowerCase().includes(input.toLowerCase())
+              }
+              options={lecturers.map(l => ({ value: l.id, label: `${l.fullName} (${l.staffId})` }))}
+            />
+            <div style={{ fontSize: 12, color: '#8c8c8c', marginTop: 4 }}>
+              {t('courseManagement.lecturerNote')}
+            </div>
           </div>
         </div>
 

@@ -59,6 +59,7 @@
   padding: v.$space-2 v.$space-3; font-size: v.$font-size-xs;
 }
 .productCode { font-family: monospace; background: white; border: 1px solid #bae6fd; border-radius: 3px; padding: 1px v.$space-2; font-weight: v.$font-weight-semibold; color: v.$brand-primary; }
+.productCategory { background: #e0f2fe; color: #0369a1; border-radius: 3px; padding: 1px 6px; font-size: 11px; font-weight: 500; }
 .productUnit { color: var(--color-gray-6); }
 .productPrice { font-weight: v.$font-weight-semibold; color: v.$color-success; margin-left: auto; }
 

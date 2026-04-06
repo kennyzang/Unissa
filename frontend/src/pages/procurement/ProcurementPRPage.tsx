@@ -263,6 +263,9 @@ const ProcurementPRPage: React.FC = () => {
             <div className={styles.productInfo}>
               <span className={styles.productCode}>{selectedProduct.code}</span>
               <span>{selectedProduct.name}</span>
+              {selectedProduct.category && (
+                <span className={styles.productCategory}>{selectedProduct.category.name}</span>
+              )}
               <span className={styles.productUnit}>{t('procurementPR.unitLabel')}: {selectedProduct.unit}</span>
               <span className={styles.productPrice}>{t('procurementPR.defaultPrice')}: BND {selectedProduct.defaultUnitPrice.toLocaleString()}</span>
             </div>

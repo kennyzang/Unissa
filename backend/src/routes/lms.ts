@@ -1174,6 +1174,50 @@ router.get('/attendance/records/student/:studentId', async (req: AuthRequest, re
   })
 })
 
+// POST /api/v1/lms/courses/propose — Lecturer submits a new course proposal
+router.post('/courses/propose', async (req: AuthRequest, res: Response) => {
+  if (req.user?.role !== 'lecturer' && req.user?.role !== 'admin') {
+    res.status(403).json({ success: false, message: 'Only lecturers can propose courses' })
+    return
+  }
+  const { code, name, departmentId, creditHours, level, isOpenToInternational, maxSeats } = req.body as {
+    code: string; name: string; departmentId: string
+    creditHours?: number; level?: number; isOpenToInternational?: boolean; maxSeats?: number
+  }
+
+  if (!code || !name || !departmentId) {
+    res.status(400).json({ success: false, message: 'code, name and departmentId are required' })
+    return
+  }
+
+  const existing = await prisma.course.findUnique({ where: { code } })
+  if (existing) {
+    res.status(409).json({ success: false, message: `Course code "${code}" already exists` })
+    return
+  }
+
+  const staff = await prisma.staff.findFirst({ where: { userId: req.user!.userId } })
+  if (!staff) {
+    res.status(404).json({ success: false, message: 'Staff record not found' })
+    return
+  }
+
+  const course = await prisma.course.create({
+    data: {
+      code,
+      name,
+      departmentId,
+      creditHours:           Number(creditHours ?? 3),
+      level:                 Number(level ?? 1),
+      isOpenToInternational: isOpenToInternational ?? true,
+      maxSeats:              Number(maxSeats ?? 40),
+      status:                'pending_approval',
+      proposedByStaffId:     staff.id,
+    },
+  })
+  res.status(201).json({ success: true, data: course, message: 'Course proposal submitted — pending admin approval' })
+})
+
 // GET /api/v1/lms/lecturer/dashboard — Full lecturer dashboard snapshot
 // Returns: staff record, all offerings (course, semester, enrolled count),
 //          student rosters per offering, assignment submission progress,

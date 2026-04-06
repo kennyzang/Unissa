@@ -307,6 +307,9 @@ model Course {
   level                  Int
   isOpenToInternational  Boolean  @default(true)
   maxSeats               Int
+  status                 String   @default("published") // published|draft|pending_approval
+  proposedByStaffId      String?
+  proposedBy             Staff?   @relation("CourseProposals", fields: [proposedByStaffId], references: [id])
   createdAt              DateTime @default(now())
 
   programmeCourses    ProgrammeCourse[]
@@ -818,6 +821,7 @@ model Staff {
   courseOfferings    CourseOffering[]
   researchGrants     ResearchGrant[]
   purchaseRequests   PurchaseRequest[]
+  proposedCourses    Course[]           @relation("CourseProposals")
 
   @@map("staff")
 }
