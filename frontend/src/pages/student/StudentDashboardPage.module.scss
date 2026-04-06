@@ -1,0 +1,269 @@
+@use '@/styles/variables' as v;
+
+.page {
+  padding: v.$space-6;
+  display: flex;
+  flex-direction: column;
+  gap: v.$space-5;
+  max-width: 760px;
+  animation: fadeIn 0.25s ease;
+
+  @media (max-width: v.$bp-md) {
+    padding: v.$space-4 v.$space-3;
+    gap: v.$space-4;
+  }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.loading {
+  padding: v.$space-10;
+  text-align: center;
+  color: v.$color-gray-5;
+}
+
+// ── Header ───────────────────────────────────────────────────
+.header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: v.$space-4;
+
+  @media (max-width: v.$bp-md) {
+    flex-direction: column;
+  }
+}
+
+.title {
+  font-size: 22px;
+  font-weight: 700;
+  color: v.$color-gray-8;
+  margin: 0 0 v.$space-1 0;
+}
+
+.subtitle {
+  font-size: 14px;
+  color: v.$color-gray-5;
+  margin: 0;
+}
+
+.studentIdBadge {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+  background: v.$color-gray-1;
+  border: 1px solid v.$border-color;
+  border-radius: v.$border-radius-md;
+  padding: v.$space-2 v.$space-3;
+  white-space: nowrap;
+}
+
+.studentIdLabel {
+  font-size: 11px;
+  color: v.$color-gray-5;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.studentIdValue {
+  font-size: 15px;
+  font-weight: 700;
+  color: v.$brand-primary;
+}
+
+// ── Progress ─────────────────────────────────────────────────
+.progressCard {
+  padding: v.$space-4 !important;
+}
+
+.progressHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: v.$space-2;
+}
+
+.progressLabel {
+  font-size: 13px;
+  font-weight: 600;
+  color: v.$color-gray-8;
+}
+
+.progressCount {
+  font-size: 12px;
+  color: v.$color-gray-5;
+}
+
+.progressBar {
+  height: 8px;
+  background: v.$border-color;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.progressFill {
+  height: 100%;
+  background: v.$brand-primary;
+  border-radius: 4px;
+  transition: width 0.4s ease;
+}
+
+// ── Steps ─────────────────────────────────────────────────────
+.steps {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.step {
+  display: flex;
+  gap: v.$space-4;
+
+  &.stepDone {
+    .stepTitle { color: v.$color-gray-5; }
+  }
+
+  &.stepDisabled {
+    opacity: 0.45;
+    pointer-events: none;
+  }
+}
+
+.stepLeft {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex-shrink: 0;
+  padding-top: 2px;
+}
+
+.stepIcon {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: 2px solid v.$border-color;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: v.$color-gray-5;
+  background: white;
+  flex-shrink: 0;
+  z-index: 1;
+
+  &.stepIconDone {
+    border-color: v.$color-success;
+    color: v.$color-success;
+    background: v.$color-success-bg;
+  }
+}
+
+.stepConnector {
+  width: 2px;
+  flex: 1;
+  background: v.$border-color;
+  margin: v.$space-1 0;
+  min-height: 24px;
+}
+
+.step:last-child .stepConnector {
+  display: none;
+}
+
+.stepBody {
+  flex: 1;
+  padding-bottom: v.$space-5;
+  padding-top: 2px;
+}
+
+.stepHeader {
+  display: flex;
+  align-items: center;
+  gap: v.$space-2;
+  margin-bottom: v.$space-1;
+}
+
+.stepIconColored {
+  width: 32px;
+  height: 32px;
+  border-radius: v.$border-radius-md;
+  background: v.$brand-primary-1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: v.$brand-primary;
+  flex-shrink: 0;
+}
+
+.stepNum {
+  font-size: 11px;
+  color: v.$color-gray-5;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  line-height: 1;
+}
+
+.stepTitle {
+  font-size: 15px;
+  font-weight: 600;
+  color: v.$color-gray-8;
+  line-height: 1.3;
+}
+
+.stepDesc {
+  font-size: 13px;
+  color: v.$color-gray-5;
+  margin: 0 0 v.$space-3 0;
+  line-height: 1.5;
+}
+
+.stepBtn {
+  margin-top: v.$space-1;
+}
+
+.stepComplete {
+  display: inline-flex;
+  align-items: center;
+  gap: v.$space-1;
+  font-size: 12px;
+  color: v.$color-success;
+  font-weight: 500;
+}
+
+// ── All done card ─────────────────────────────────────────────
+.readyCard {
+  background: linear-gradient(135deg, v.$brand-primary-1 0%, #EEF3FF 100%) !important;
+  border-color: v.$brand-primary-2 !important;
+}
+
+.readyContent {
+  display: flex;
+  align-items: center;
+  gap: v.$space-4;
+
+  @media (max-width: v.$bp-md) {
+    flex-direction: column;
+    text-align: center;
+  }
+}
+
+.readyIcon {
+  color: v.$brand-primary;
+  flex-shrink: 0;
+}
+
+.readyTitle {
+  font-size: 16px;
+  font-weight: 700;
+  color: v.$color-gray-8;
+  margin-bottom: v.$space-1;
+}
+
+.readyDesc {
+  font-size: 13px;
+  color: v.$color-gray-5;
+  line-height: 1.5;
+}

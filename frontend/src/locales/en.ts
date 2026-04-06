@@ -68,6 +68,7 @@ const en = {
     apply: 'Apply',
     applications: 'Applications',
     myCampus: 'My Campus',
+    myDashboard: 'Dashboard',
     myInfo: 'My Info',
     courseSelection: 'Course Selection',
     myGrades: 'My Grades',

@@ -66,6 +66,7 @@ const zh = {
     apply: '申请入学',
     applications: '入学申请',
     myCampus: '我的校园',
+    myDashboard: '仪表盘',
     myInfo: '我的信息',
     courseSelection: '选课',
     myGrades: '我的成绩',

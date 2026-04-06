@@ -14,7 +14,7 @@ const ROLE_HOME: Record<string, string> = {
   finance:    '/finance/dashboard',
   admissions: '/admission/review',
   lecturer:   '/lms/courses',
-  student:    '/admission/apply',
+  student:    '/student/dashboard',
   hradmin:    '/hr/staff',
 }
 
@@ -45,6 +45,7 @@ const AdmissionReviewPage      = lazy(() => import('@/pages/admission/AdmissionR
 const StudentProfilePage       = lazy(() => import('@/pages/student/StudentProfilePage'))
 const TranscriptPage           = lazy(() => import('@/pages/student/TranscriptPage'))
 const CampusCardPage           = lazy(() => import('@/pages/student/CampusCardPage'))
+const StudentDashboardPage     = lazy(() => import('@/pages/student/StudentDashboardPage'))
 const CourseRegistrationPage   = lazy(() => import('@/pages/courses/CourseRegistrationPage'))
 const FeeStatementPage         = lazy(() => import('@/pages/finance/FeeStatementPage'))
 const FinanceDashboardPage     = lazy(() => import('@/pages/finance/FinanceDashboardPage'))
@@ -91,6 +92,7 @@ export const router = createBrowserRouter([
       { path: 'admission/review', element: r(['admissions','admin'], <AdmissionReviewPage />) },
 
       // Student
+      { path: 'student/dashboard',  element: r(['student'], <StudentDashboardPage />) },
       { path: 'student/profile',    element: r(['student'], <StudentProfilePage />) },
       { path: 'student/courses',    element: r(['student'], <CourseRegistrationPage />) },
       { path: 'student/transcript', element: r(['student'], <TranscriptPage />) },

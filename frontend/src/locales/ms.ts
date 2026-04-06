@@ -64,6 +64,7 @@ const ms = {
     apply: 'Mohon',
     applications: 'Permohonan',
     myCampus: 'Kampus Saya',
+    myDashboard: 'Papan Pemuka',
     myInfo: 'Maklumat Saya',
     courseSelection: 'Pilihan Kursus',
     myGrades: 'Markah Saya',

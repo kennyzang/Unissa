@@ -450,7 +450,7 @@ async function main() {
     roomId: roomLH_A.id,
   })
 
-  // ── Clean up existing Noor applicant for clean seed ───────────
+  // ── Clean up existing Noor student/applicant data for a fresh demo state ──
   const existingStudentNoor = await prisma.student.findFirst({ where: { userId: uNoor.id } })
   if (existingStudentNoor) {
     await prisma.studentGpaRecord.deleteMany({ where: { studentId: existingStudentNoor.id } })
@@ -464,6 +464,11 @@ async function main() {
     await prisma.feeInvoice.deleteMany({ where: { studentId: existingStudentNoor.id } })
     await prisma.enrolment.deleteMany({ where: { studentId: existingStudentNoor.id } })
     await prisma.libraryAccount.deleteMany({ where: { studentId: existingStudentNoor.id } })
+    const campusCard = await prisma.campusCard.findUnique({ where: { studentId: existingStudentNoor.id } })
+    if (campusCard) {
+      await prisma.campusCardTransaction.deleteMany({ where: { cardId: campusCard.id } })
+      await prisma.campusCard.delete({ where: { id: campusCard.id } })
+    }
     await prisma.student.delete({ where: { id: existingStudentNoor.id } })
   }
   await prisma.applicant.deleteMany({ where: { userId: uNoor.id } })
@@ -491,10 +496,12 @@ async function main() {
       modeOfStudy: 'full_time',
       scholarshipApplied: false,
       status: 'offered',
+      offerRef: 'UNISSA-2026-0001',
+      offerLetterSentAt: new Date('2026-03-25'),
       submittedAt: new Date('2026-03-10'),
       decisionMadeAt: new Date('2026-03-25'),
     },
-    update: { userId: uNoor.id, status: 'offered' },
+    update: { userId: uNoor.id, status: 'offered', offerRef: 'UNISSA-2026-0001', offerLetterSentAt: new Date('2026-03-25') },
   })
 
   // Subject grades for Noor

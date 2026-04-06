@@ -39,6 +39,7 @@ const NAV_STRUCTURE: NavGroup[] = [
     key: 'g-campus', labelKey: 'nav.myCampus', icon: '🏫',
     roles: ['student'],
     children: [
+      { key: 'dashboard',   labelKey: 'nav.myDashboard',   path: '/student/dashboard', icon: '🏠', roles: ['student'] },
       { key: 'profile',     labelKey: 'nav.myInfo',        path: '/student/profile',   icon: '📝', roles: ['student'] },
       { key: 'courses-reg', labelKey: 'nav.courseSelection', path: '/student/courses', icon: '📚', roles: ['student'] },
       { key: 'transcript',  labelKey: 'nav.myGrades',      path: '/student/transcript',icon: '📊', roles: ['student'] },
@@ -236,17 +237,17 @@ const Sidebar = () => {
     }))
     .filter(g => g.path || (g.children && g.children.length > 0))
 
+  // For unenrolled students, only show dashboard + apply in myCampus group
   if (isStudentUnenrolled) {
-    visibleGroups = [
-      {
-        key: 'g-admission-apply',
-        labelKey: 'nav.apply',
-        icon: '📝',
-        roles: ['student'],
-        path: '/admission/apply',
-        children: undefined,
-      },
-    ]
+    visibleGroups = visibleGroups.map(g => {
+      if (g.key === 'g-campus') {
+        return {
+          ...g,
+          children: g.children?.filter(c => ['dashboard', 'profile'].includes(c.key)),
+        }
+      }
+      return g
+    }).filter(g => g.path || (g.children && g.children.length > 0))
   }
 
   return (

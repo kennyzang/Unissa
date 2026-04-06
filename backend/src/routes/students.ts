@@ -6,6 +6,45 @@ import { emailService } from '../services/emailService'
 const router = Router()
 router.use(authenticate)
 
+// GET /api/v1/students/onboarding-status  — current student's onboarding progress
+router.get('/onboarding-status', async (req: AuthRequest, res: Response) => {
+  const userId = req.user!.userId
+
+  const applicant = await prisma.applicant.findFirst({
+    where: { userId },
+    include: { programme: true },
+    orderBy: { createdAt: 'desc' },
+  })
+
+  const student = await prisma.student.findFirst({
+    where: { userId },
+    select: { id: true, studentId: true },
+  })
+
+  let hasEnrolments = false
+  let hasPendingInvoice = false
+
+  if (student) {
+    hasEnrolments = (await prisma.enrolment.count({ where: { studentId: student.id } })) > 0
+    hasPendingInvoice = (await prisma.feeInvoice.count({
+      where: { studentId: student.id, status: { not: 'paid' } },
+    })) > 0
+  }
+
+  res.json({
+    success: true,
+    data: {
+      applicantStatus: applicant?.status ?? null,
+      offerRef: applicant?.offerRef ?? null,
+      programmeName: applicant?.programme?.name ?? null,
+      studentId: student?.studentId ?? null,
+      isEnrolled: !!student,
+      hasEnrolments,
+      hasPendingInvoice,
+    },
+  })
+})
+
 // GET /api/v1/students/offerings  — list all available offerings for current semester
 router.get('/offerings', async (_req: AuthRequest, res: Response) => {
   const activeSemester = await prisma.semester.findFirst({
