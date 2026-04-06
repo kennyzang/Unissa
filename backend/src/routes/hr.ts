@@ -1,4 +1,5 @@
 import { Router, Response } from 'express'
+import bcrypt from 'bcryptjs'
 import prisma from '../lib/prisma'
 import { authenticate, requireRole, AuthRequest } from '../middleware/auth'
 
@@ -235,6 +236,116 @@ router.get('/onboarding', requireRole('manager', 'admin', 'hradmin'), async (_re
     orderBy: { createdAt: 'desc' },
   })
   res.json({ success: true, data: requests })
+})
+
+// GET /api/v1/hr/departments  (used by new-hire form)
+router.get('/departments', requireRole('manager', 'admin', 'hradmin'), async (_req: AuthRequest, res: Response) => {
+  const departments = await prisma.department.findMany({
+    select: { id: true, code: true, name: true },
+    orderBy: { name: 'asc' },
+  })
+  res.json({ success: true, data: departments })
+})
+
+// POST /api/v1/hr/new-hire  (creates User + Staff + OnboardingRequest in one shot)
+router.post('/new-hire', requireRole('manager', 'admin', 'hradmin'), async (req: AuthRequest, res: Response) => {
+  const {
+    fullName, dateOfBirth, icPassport, personalEmail,
+    gender, designation, departmentId, employmentType, startDate, salary,
+  } = req.body
+
+  // Validate required fields
+  if (!fullName || !dateOfBirth || !icPassport || !personalEmail || !designation || !departmentId || !employmentType || !startDate || !salary) {
+    res.status(400).json({ success: false, message: 'Missing required fields' }); return
+  }
+
+  // Check uniqueness early
+  const [emailTaken, icTaken] = await Promise.all([
+    prisma.user.findUnique({ where: { email: personalEmail } }),
+    prisma.staff.findFirst({ where: { icPassport } }),
+  ])
+  if (emailTaken) { res.status(409).json({ success: false, message: 'Email address is already registered' }); return }
+  if (icTaken)    { res.status(409).json({ success: false, message: 'IC/Passport number already exists' }); return }
+
+  // Verify department exists
+  const dept = await prisma.department.findUnique({ where: { id: departmentId } })
+  if (!dept) { res.status(404).json({ success: false, message: 'Department not found' }); return }
+
+  // Generate unique username: firstname.lastname (e.g. "john.doe")
+  const nameParts  = fullName.toLowerCase().replace(/[^a-z\s]/g, '').trim().split(/\s+/)
+  const baseName   = nameParts.length >= 2 ? `${nameParts[0]}.${nameParts[nameParts.length - 1]}` : nameParts[0]
+  let username     = baseName
+  let attempt      = 0
+  while (await prisma.user.findUnique({ where: { username } })) {
+    attempt++
+    username = `${baseName}${attempt}`
+  }
+
+  // Generate next staffId: find max and increment
+  const lastStaff = await prisma.staff.findFirst({
+    orderBy: { staffId: 'desc' },
+    select: { staffId: true },
+  })
+  let nextNum = 1
+  if (lastStaff) {
+    const match = lastStaff.staffId.match(/(\d+)$/)
+    if (match) nextNum = parseInt(match[1], 10) + 1
+  }
+  const newStaffId = `STF-${String(nextNum).padStart(3, '0')}`
+
+  const TEMP_PASSWORD = 'NewHire@2026'
+  const passwordHash  = await bcrypt.hash(TEMP_PASSWORD, 12)
+
+  // Create User, then Staff, then OnboardingRequest in sequence (FK deps)
+  const user = await prisma.user.create({
+    data: {
+      username,
+      passwordHash,
+      displayName: fullName,
+      role:        'lecturer',
+      email:       personalEmail,
+    },
+  })
+
+  const staff = await prisma.staff.create({
+    data: {
+      staffId:           newStaffId,
+      userId:            user.id,
+      fullName,
+      icPassport,
+      dateOfBirth:       new Date(dateOfBirth),
+      gender:            gender ?? 'male',
+      departmentId,
+      designation,
+      employmentType,
+      joinDate:          new Date(startDate),
+      payrollBasicSalary: Number(salary),
+      status:            'pending_onboarding',
+      lmsInstructorActive: false,
+    },
+    include: {
+      user:       { select: { displayName: true, email: true } },
+      department: { select: { name: true, code: true } },
+    },
+  })
+
+  // Auto-create onboarding request
+  await prisma.onboardingRequest.create({
+    data: {
+      staffId:        staff.id,
+      initiatedById:  req.user!.userId,
+      status:         'pending_approval',
+    },
+  })
+
+  res.status(201).json({
+    success: true,
+    message: 'New hire registered and onboarding request created',
+    data: {
+      staff,
+      credentials: { username, temporaryPassword: TEMP_PASSWORD },
+    },
+  })
 })
 
 // POST /api/v1/hr/onboarding  (HR Admin submits form for a staff member)

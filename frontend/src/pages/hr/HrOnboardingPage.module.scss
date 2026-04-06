@@ -24,6 +24,14 @@
   @media (max-width: $bp-sm) { flex-direction: column; }
 }
 
+.headerActions {
+  display: flex;
+  gap: $space-2;
+  flex-shrink: 0;
+
+  @media (max-width: $bp-sm) { width: 100%; flex-direction: column; }
+}
+
 .pageTitle {
   font-size: $font-size-xl;
   font-weight: $font-weight-bold;
@@ -230,4 +238,91 @@
   text-align: center;
   padding: $space-4;
   margin: 0;
+}
+
+// ── New-hire form ─────────────────────────────────────────────
+.newHireForm {
+  :global(.ant-form-item) { margin-bottom: 12px; }
+  :global(.ant-form-item-label > label) {
+    font-size: $font-size-sm;
+    font-weight: $font-weight-medium;
+    color: $color-gray-7;
+  }
+}
+
+.formRow {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: $space-3;
+
+  @media (max-width: $bp-sm) { grid-template-columns: 1fr; }
+}
+
+// ── Credentials box ───────────────────────────────────────────
+.credentialsBanner {
+  background: #f0f7ff;
+  border: 1.5px solid #91caff;
+  border-radius: $border-radius-lg;
+  padding: $space-4;
+  margin-bottom: $space-3;
+}
+
+.credentialsInfo {
+  font-size: $font-size-sm;
+  color: $color-gray-7;
+  margin: 0 0 $space-3;
+}
+
+.credentialRow {
+  display: flex;
+  align-items: center;
+  gap: $space-3;
+  padding: $space-2 0;
+  border-bottom: 1px solid #d6e8ff;
+
+  &:last-child { border-bottom: none; }
+}
+
+.credentialLabel {
+  font-size: $font-size-xs;
+  color: $color-gray-5;
+  min-width: 120px;
+  flex-shrink: 0;
+}
+
+.credentialValue {
+  font-size: $font-size-sm;
+  font-family: monospace;
+  color: $color-gray-8;
+  flex: 1;
+}
+
+.credentialPassword {
+  color: $brand-primary;
+  font-weight: $font-weight-semibold;
+  letter-spacing: 0.5px;
+}
+
+.copyBtn {
+  background: none;
+  border: $border;
+  border-radius: $border-radius-sm;
+  padding: 3px 6px;
+  cursor: pointer;
+  color: $color-gray-5;
+  display: flex;
+  align-items: center;
+
+  &:hover { background: $color-gray-1; color: $brand-primary; }
+}
+
+.credentialsWarning {
+  font-size: $font-size-xs;
+  color: $color-warning;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: $space-1;
+
+  &::before { content: '⚠️'; }
 }
