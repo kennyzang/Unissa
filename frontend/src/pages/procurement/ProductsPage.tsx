@@ -261,6 +261,7 @@ const ProductsPage: React.FC = () => {
         title={isEdit ? t('products.editProduct') : t('products.createProduct')}
         onClose={() => { setModal(null); reset() }}
         footer={null}
+        className={styles.productModal}
       >
         {/* Field rules banner */}
         <div className={styles.validationRules}>

@@ -84,3 +84,18 @@
 .approvalDate { color: var(--color-gray-5); font-size: v.$font-size-xs; margin-left: auto; }
 
 @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+
+// PR Modal
+.prModal {
+  :global {
+    .ant-modal-content {
+      max-height: 80vh;
+      overflow-y: auto;
+    }
+    .ant-modal-body {
+      max-height: 70vh;
+      overflow-y: auto;
+      padding: v.$space-4;
+    }
+  }
+}

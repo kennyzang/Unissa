@@ -1,7 +1,7 @@
 import { Resend } from 'resend'
 import { prisma } from '@/lib/prisma'
 
-const FROM_ADDRESS = 'UNISSA <noreply@unissa.edu.bn>'
+const FROM_ADDRESS = process.env.RESEND_FROM ?? 'UNISSA <noreply@send.unissa.edu.bn>'
 
 interface EmailOptions {
   to: string | string[]
@@ -27,6 +27,12 @@ class EmailService {
 
   async initialize(): Promise<void> {
     try {
+      const envKey = process.env.RESEND_API_KEY
+      if (envKey) {
+        this.resend = new Resend(envKey)
+        this.initialized = true
+        return
+      }
       const config = await prisma.systemConfig.findUnique({
         where: { key: 'resend_api_key' },
       })

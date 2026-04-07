@@ -8,6 +8,8 @@ import { Plus, AlertTriangle, Eye, FileText, CheckCircle, ExternalLink } from 'l
 import { apiClient } from '@/lib/apiClient'
 import { useUIStore } from '@/stores/uiStore'
 import { useAuthStore } from '@/stores/authStore'
+import { DatePicker } from 'antd'
+import dayjs from 'dayjs'
 import Card from '@/components/ui/Card'
 import Badge from '@/components/ui/Badge'
 import Table from '@/components/ui/Table'
@@ -17,6 +19,8 @@ import Button from '@/components/ui/Button'
 import Input from '@/components/ui/Input'
 import Select from '@/components/ui/Select'
 import styles from './ProcurementPRPage.module.scss'
+
+const { RangePicker } = DatePicker
 
 interface PR {
   id: string
@@ -234,6 +238,7 @@ const ProcurementPRPage: React.FC = () => {
         title={t('procurementPR.createPR')}
         onClose={() => { setCreateModal(false); reset() }}
         footer={null}
+        className={styles.prModal}
       >
         {/* Validation rules banner */}
         <div className={styles.validationRules}>
@@ -350,16 +355,19 @@ const ProcurementPRPage: React.FC = () => {
             control={control}
             name="requiredByDate"
             render={({ field }) => (
-              <Input
-                label={t('procurementPR.requiredBy')}
-                type="date"
-                required
-                value={field.value ?? ''}
-                onChange={field.onChange}
-                onBlur={field.onBlur}
-                error={errors.requiredByDate?.message}
-                hint={t('procurementPR.hints.requiredBy')}
-              />
+              <div style={{ marginBottom: 16 }}>
+                <label className="text-sm font-medium mb-1 block">{t('procurementPR.requiredBy')} <span className="text-red-500">*</span></label>
+                <DatePicker
+                  style={{ width: '100%' }}
+                  value={field.value ? dayjs(field.value) : null}
+                  onChange={(date) => field.onChange(date?.format('YYYY-MM-DD'))}
+                  onBlur={field.onBlur}
+                  placeholder={t('procurementPR.hints.requiredBy')}
+                />
+                {errors.requiredByDate && (
+                  <p className="text-red-500 text-xs mt-1">{errors.requiredByDate.message}</p>
+                )}
+              </div>
             )}
           />
 
