@@ -328,14 +328,29 @@ router.post('/demo-reset', requireRole('admin'), async (_req: AuthRequest, res: 
     await prisma.libraryAccount.deleteMany({})
     const { count: students } = await prisma.student.deleteMany({})
 
-    // Step 8: users with role = student (after student records removed)
-    const { count: users } = await prisma.user.deleteMany({ where: { role: 'student' } })
+    // Step 8: course materials (FK: uploadedBy → user)
+    await prisma.courseMaterial.deleteMany({})
 
-    // Step 9: applicants (after student FK removed)
+    // Step 9: chatbot conversations (FK: userId → user)
+    const { count: chatbotConversations } = await prisma.chatbotConversation.deleteMany({})
+
+    // Step 10: notifications (FK: userId → user)
+    await prisma.notification.deleteMany({})
+
+    // Step 11: push subscriptions (FK: userId → user)
+    await prisma.pushSubscription.deleteMany({})
+
+    // Step 12: audit logs (FK: userId → user)
+    await prisma.auditLog.deleteMany({})
+
+    // Step 13: esignatures (FK: userId → user)
+    await prisma.esignature.deleteMany({})
+
+    // Step 14: applicants (after student FK removed)
     const { count: applicants } = await prisma.applicant.deleteMany({})
 
-    // Step 10: chatbot history
-    const { count: chatbotConversations } = await prisma.chatbotConversation.deleteMany({})
+    // Step 15: users with role = student (after all FK removed)
+    const { count: users } = await prisma.user.deleteMany({ where: { role: 'student' } })
 
     res.json({
       success: true,
