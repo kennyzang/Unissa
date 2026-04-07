@@ -10,8 +10,11 @@ import Badge from '@/components/ui/Badge'
 import Button from '@/components/ui/Button'
 import Modal from '@/components/ui/Modal'
 import Input from '@/components/ui/Input'
+import { Select } from 'antd'
 import CourseCalendar, { type CalendarEntry } from './CourseCalendar'
 import styles from './LmsCoursesPage.module.scss'
+
+const { Option } = Select
 
 interface Enrolment {
   id: string
@@ -296,14 +299,14 @@ const LecturerCoursesView: React.FC = () => {
           />
           <div>
             <label style={{ fontSize: 13, fontWeight: 500 }}>{t('courseManagement.fieldDepartment')} *</label>
-            <select
-              style={{ width: '100%', marginTop: 4, padding: '6px 8px', borderRadius: 6, border: '1px solid #d1d5db', fontSize: 13 }}
+            <Select
+              style={{ width: '100%', marginTop: 4 }}
               value={proposeForm.departmentId}
-              onChange={e => setProposeForm(f => ({ ...f, departmentId: e.target.value }))}
+              onChange={value => setProposeForm(f => ({ ...f, departmentId: value }))}
             >
-              <option value="">{t('courseManagement.selectDepartment')}</option>
-              {departments.map(d => <option key={d.id} value={d.id}>{d.name}</option>)}
-            </select>
+              <Option value="">{t('courseManagement.selectDepartment')}</Option>
+              {departments.map(d => <Option key={d.id} value={d.id}>{d.name}</Option>)}
+            </Select>
           </div>
           <Input
             label={t('courseManagement.fieldCredits')}

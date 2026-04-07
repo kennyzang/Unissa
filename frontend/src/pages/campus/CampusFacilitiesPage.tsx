@@ -10,7 +10,10 @@ import Badge from '@/components/ui/Badge'
 import Button from '@/components/ui/Button'
 import Modal from '@/components/ui/Modal'
 import Input from '@/components/ui/Input'
+import { Select } from 'antd'
 import styles from './CampusFacilitiesPage.module.scss'
+
+const { Option } = Select
 
 // ── Types ──────────────────────────────────────────────────────
 interface Facility {
@@ -468,20 +471,20 @@ export default function CampusFacilitiesPage() {
         <div className={styles.form}>
           <div>
             <label className={styles.label}>Facility *</label>
-            <select
+            <Select
               className={styles.select}
               value={bookForm.facilityId}
-              onChange={e => setBookForm(f => ({ ...f, facilityId: e.target.value }))}
+              onChange={value => setBookForm(f => ({ ...f, facilityId: value }))}
             >
-              <option value="">Select a facility…</option>
+              <Option value="">Select a facility…</Option>
               {facilities
                 .filter(f => f.todayStatus !== 'maintenance')
                 .map(f => (
-                  <option key={f.id} value={f.id}>
+                  <Option key={f.id} value={f.id}>
                     {f.name} ({f.building}) — cap. {f.capacity}
-                  </option>
+                  </Option>
                 ))}
-            </select>
+            </Select>
           </div>
           <Input
             label="Date *"
@@ -538,16 +541,16 @@ export default function CampusFacilitiesPage() {
         <div className={styles.form}>
           <div>
             <label className={styles.label}>Facility *</label>
-            <select
+            <Select
               className={styles.select}
               value={maintForm.facilityId}
-              onChange={e => setMaintForm(f => ({ ...f, facilityId: e.target.value }))}
+              onChange={value => setMaintForm(f => ({ ...f, facilityId: value }))}
             >
-              <option value="">Select a facility…</option>
+              <Option value="">Select a facility…</Option>
               {facilities.map(f => (
-                <option key={f.id} value={f.id}>{f.name} ({f.building})</option>
+                <Option key={f.id} value={f.id}>{f.name} ({f.building})</Option>
               ))}
-            </select>
+            </Select>
           </div>
           <Input
             label="Issue Title *"

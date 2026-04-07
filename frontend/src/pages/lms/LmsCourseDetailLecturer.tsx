@@ -13,6 +13,8 @@ import Card from '@/components/ui/Card'
 import Badge from '@/components/ui/Badge'
 import Button from '@/components/ui/Button'
 import Modal from '@/components/ui/Modal'
+import { Input, DatePicker, TimePicker } from 'antd'
+import dayjs from 'dayjs'
 import styles from './LmsCourseDetailLecturer.module.scss'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -1124,8 +1126,12 @@ const LmsCourseDetailLecturer: React.FC = () => {
             {/* Title */}
             <div className={styles.formGroup}>
               <label className={styles.formLabel}>{t('lmsCourseDetailLecturer.title', { defaultValue: 'Title' })} *</label>
-              <input type="text" className={styles.formInput} value={asnTitle} onChange={e => setAsnTitle(e.target.value)}
-                placeholder={t('lmsCourseDetailLecturer.asnTitlePlaceholder', { defaultValue: 'e.g. Lab Report 1 – Linked List' })} />
+              <Input
+                className={styles.formInput}
+                value={asnTitle}
+                onChange={e => setAsnTitle(e.target.value)}
+                placeholder={t('lmsCourseDetailLecturer.asnTitlePlaceholder', { defaultValue: 'e.g. Lab Report 1 – Linked List' })}
+              />
             </div>
             {/* Description */}
             <div className={styles.formGroup}>
@@ -1137,15 +1143,34 @@ const LmsCourseDetailLecturer: React.FC = () => {
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12 }}>
               <div className={styles.formGroup}>
                 <label className={styles.formLabel}>{t('lmsCourseDetailLecturer.dueDate', { defaultValue: 'Due Date' })} *</label>
-                <input type="datetime-local" className={styles.formInput} value={asnDueDate} onChange={e => setAsnDueDate(e.target.value)} />
+                <Input
+                  className={styles.formInput}
+                  type="datetime-local"
+                  value={asnDueDate}
+                  onChange={e => setAsnDueDate(e.target.value)}
+                />
               </div>
               <div className={styles.formGroup}>
                 <label className={styles.formLabel}>{t('lmsCourseDetailLecturer.maxMarks', { defaultValue: 'Max Marks' })}</label>
-                <input type="number" className={styles.formInput} min={1} value={asnMaxMarks} onChange={e => setAsnMaxMarks(e.target.value)} />
+                <Input
+                  className={styles.formInput}
+                  type="number"
+                  min={1}
+                  value={asnMaxMarks}
+                  onChange={e => setAsnMaxMarks(e.target.value)}
+                />
               </div>
               <div className={styles.formGroup}>
                 <label className={styles.formLabel}>{t('lmsCourseDetailLecturer.weightPct', { defaultValue: 'Weight (%)' })}</label>
-                <input type="number" className={styles.formInput} min={0} max={100} step={0.5} value={asnWeight} onChange={e => setAsnWeight(e.target.value)} />
+                <Input
+                  className={styles.formInput}
+                  type="number"
+                  min={0}
+                  max={100}
+                  step={0.5}
+                  value={asnWeight}
+                  onChange={e => setAsnWeight(e.target.value)}
+                />
               </div>
             </div>
 
@@ -1160,10 +1185,22 @@ const LmsCourseDetailLecturer: React.FC = () => {
               </div>
               {asnCriteria.map((c, i) => (
                 <div key={i} style={{ display: 'flex', gap: 8, marginBottom: 6 }}>
-                  <input type="text" className={styles.formInput} style={{ flex: 3 }} placeholder={t('lmsCourseDetailLecturer.criterionName', { defaultValue: 'Criterion name' })}
-                    value={c.criterion} onChange={e => setAsnCriteria(prev => prev.map((x, xi) => xi === i ? { ...x, criterion: e.target.value } : x))} />
-                  <input type="number" className={styles.formInput} style={{ flex: 1 }} min={1} placeholder="Marks"
-                    value={c.max_marks} onChange={e => setAsnCriteria(prev => prev.map((x, xi) => xi === i ? { ...x, max_marks: parseInt(e.target.value) || 0 } : x))} />
+                  <Input
+                    className={styles.formInput}
+                    style={{ flex: 3 }}
+                    placeholder={t('lmsCourseDetailLecturer.criterionName', { defaultValue: 'Criterion name' })}
+                    value={c.criterion}
+                    onChange={e => setAsnCriteria(prev => prev.map((x, xi) => xi === i ? { ...x, criterion: e.target.value } : x))}
+                  />
+                  <Input
+                    className={styles.formInput}
+                    style={{ flex: 1 }}
+                    type="number"
+                    min={1}
+                    placeholder="Marks"
+                    value={c.max_marks}
+                    onChange={e => setAsnCriteria(prev => prev.map((x, xi) => xi === i ? { ...x, max_marks: parseInt(e.target.value) || 0 } : x))}
+                  />
                   <Button size="sm" variant="ghost" icon={<Minus size={12} />}
                     onClick={() => setAsnCriteria(prev => prev.filter((_, xi) => xi !== i))} />
                 </div>

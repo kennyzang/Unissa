@@ -452,18 +452,18 @@ const HrOnboardingPage: React.FC = () => {
             {availableStaff.length === 0 ? (
               <p className={styles.noStaff}>{t('onboarding.allStaffOnboarded')}</p>
             ) : (
-              <select
+              <Select
                 className={styles.select}
                 value={selectedStaffId}
-                onChange={e => setSelectedStaffId(e.target.value)}
+                onChange={value => setSelectedStaffId(value)}
               >
-                <option value="">{t('onboarding.selectStaffPlaceholder')}</option>
+                <Option value="">{t('onboarding.selectStaffPlaceholder')}</Option>
                 {availableStaff.map(s => (
-                  <option key={s.id} value={s.id}>
+                  <Option key={s.id} value={s.id}>
                     {s.staffId} — {s.fullName} ({s.designation})
-                  </option>
+                  </Option>
                 ))}
-              </select>
+              </Select>
             )}
             <p className={styles.formHint}>{t('onboarding.formHint')}</p>
           </div>

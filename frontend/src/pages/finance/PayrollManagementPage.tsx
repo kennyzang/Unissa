@@ -2,7 +2,7 @@ import { useTranslation } from 'react-i18next'
 import React, { useState, useMemo } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { DollarSign, Users, CheckCircle, Clock, Edit2, CreditCard, RefreshCw, Search } from 'lucide-react'
-import { Input as AntInput, DatePicker, message as antMessage } from 'antd'
+import { Input as AntInput, DatePicker, Checkbox, message as antMessage } from 'antd'
 import dayjs, { Dayjs } from 'dayjs'
 import { apiClient } from '@/lib/apiClient'
 import Card from '@/components/ui/Card'
@@ -189,15 +189,14 @@ const PayrollManagementPage: React.FC = () => {
     {
       key: 'select',
       title: (
-        <input
-          type="checkbox"
+        <Checkbox
           checked={allDraftSelected}
           onChange={toggleAllDraft}
           title={t('payroll.selectAllDraft')}
         />
       ) as any,
       render: r => r.status === 'draft'
-        ? <input type="checkbox" checked={selected.has(r.id)} onChange={() => toggleSelect(r.id)} />
+        ? <Checkbox checked={selected.has(r.id)} onChange={() => toggleSelect(r.id)} />
         : null,
     },
     {

@@ -747,16 +747,16 @@ const DocumentUploadSection: React.FC<DocumentUploadSectionProps> = ({
                   <div className={styles.docFileError}>{item.error}</div>
                 )}
               </div>
-              <select
+              <Select
                 className={styles.docTypeSelect}
                 value={item.docType}
-                onChange={e => onTypeChange(item.id, e.target.value)}
+                onChange={value => onTypeChange(item.id, value)}
                 disabled={disabled || item.status === 'uploading'}
               >
                 {DOC_TYPE_OPTIONS.map(o => (
-                  <option key={o.value} value={o.value}>{o.label}</option>
+                  <Option key={o.value} value={o.value}>{o.label}</Option>
                 ))}
-              </select>
+              </Select>
               <div className={styles.docFileActions}>
                 {item.file.type.startsWith('image/') && (
                   <button

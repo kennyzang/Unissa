@@ -6,13 +6,15 @@ import {
   ChevronUp, RefreshCw, X, UserCheck, AlertTriangle, Calendar,
   Copy, Check, FileText, Upload, Eye,
 } from 'lucide-react'
-import { QRCode } from 'antd'
+import { QRCode, Select } from 'antd'
 import { apiClient } from '@/lib/apiClient'
 import { useAuthStore } from '@/stores/authStore'
 import { useUIStore } from '@/stores/uiStore'
 import Badge from '@/components/ui/Badge'
 import Modal from '@/components/ui/Modal'
 import styles from './AttendancePage.module.scss'
+
+const { Option } = Select
 
 // ─── Clipboard fallback (works on HTTP / non-secure contexts) ─────────────────
 function fallbackCopy(text: string, onDone: () => void) {
@@ -796,17 +798,17 @@ const AdminView: React.FC = () => {
       <div className={styles.adminFilterArea}>
         <div className={styles.adminOfferingSelect}>
           <label className={styles.selectLabel}>{t('attendance.selectCourse')}</label>
-          <select
+          <Select
             className={styles.courseSelect}
-            value={selectedOffering ?? ''}
-            onChange={e => setSelectedOffering(e.target.value || null)}
+            value={selectedOffering}
+            onChange={value => setSelectedOffering(value || null)}
           >
             {offerings.map(o => (
-              <option key={o.id} value={o.id}>
+              <Option key={o.id} value={o.id}>
                 {o.course.code} – {o.course.name}
-              </option>
+              </Option>
             ))}
-          </select>
+          </Select>
         </div>
       </div>
 
