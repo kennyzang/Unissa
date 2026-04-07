@@ -238,7 +238,7 @@ router.post('/risk-scores/compute/:offeringId', async (req: AuthRequest, res: Re
   const totalSessions = offering.attendanceSessions.length
   const totalAssignments = offering.assignments.length
 
-  const results = []
+  const results: Awaited<ReturnType<typeof prisma.studentRiskScore.upsert>>[] = []
 
   for (const { studentId } of offering.enrolments) {
     // Attendance rate

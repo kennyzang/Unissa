@@ -141,7 +141,7 @@ router.post('/grants', requireRole('lecturer', 'admin'), upload.array('files', 1
 
   // Create file assets for uploaded files
   if (files.length > 0) {
-    const fileAssets = []
+    const fileAssets: Awaited<ReturnType<typeof prisma.fileAsset.create>>[] = []
     for (const file of files) {
       const asset = await prisma.fileAsset.create({
         data: {

@@ -631,7 +631,7 @@ router.post('/submissions', upload.array('files', 5), async (req: AuthRequest, r
     }
 
     // Create file assets for uploaded files
-    const fileAssets = []
+    const fileAssets: Awaited<ReturnType<typeof prisma.fileAsset.create>>[] = []
     for (const file of files) {
       const asset = await prisma.fileAsset.create({
         data: {
@@ -647,7 +647,7 @@ router.post('/submissions', upload.array('files', 5), async (req: AuthRequest, r
     }
 
     // Create content file if provided
-    let contentAsset = null
+    let contentAsset: Awaited<ReturnType<typeof prisma.fileAsset.create>> | null = null
     if (trimmedContent) {
       contentAsset = await prisma.fileAsset.create({
         data: {
