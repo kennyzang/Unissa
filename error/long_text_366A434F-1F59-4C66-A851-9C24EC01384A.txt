@@ -1,0 +1,280 @@
+4.976 src/routes/admin.ts(225,14): error TS2322: Type 'string | string[]' is not assignable to type 'string | undefined'.
+4.976   Type 'string[]' is not assignable to type 'string'.
+4.976 src/routes/admin.ts(233,70): error TS2322: Type 'string | string[]' is not assignable to type 'string | StringFilter<"CourseOffering"> | undefined'.
+4.976   Type 'string[]' is not assignable to type 'string | StringFilter<"CourseOffering"> | undefined'.
+4.976 src/routes/admin.ts(241,41): error TS2322: Type 'string | string[]' is not assignable to type 'string | undefined'.
+4.976   Type 'string[]' is not assignable to type 'string'.
+4.977 src/routes/admin.ts(248,14): error TS2322: Type 'string | string[]' is not assignable to type 'string | StringFilter<"CourseOffering"> | undefined'.
+4.977   Type 'string[]' is not assignable to type 'string | StringFilter<"CourseOffering"> | undefined'.
+4.977 src/routes/admin.ts(275,14): error TS2322: Type 'string | string[]' is not assignable to type 'string | undefined'.
+4.977   Type 'string[]' is not assignable to type 'string'.
+4.977 src/routes/admin.ts(285,66): error TS2322: Type 'string | string[]' is not assignable to type 'string | (EnrolmentStudentIdOfferingIdCompoundUniqueInput & string) | undefined'.
+4.977   Type 'string[]' is not assignable to type 'string | (EnrolmentStudentIdOfferingIdCompoundUniqueInput & string) | undefined'.
+4.977     Type 'string[]' is not assignable to type 'EnrolmentStudentIdOfferingIdCompoundUniqueInput & string'.
+4.977       Type 'string[]' is missing the following properties from type 'EnrolmentStudentIdOfferingIdCompoundUniqueInput': studentId, offeringId
+4.977 src/routes/admin.ts(290,44): error TS2322: Type 'string | string[]' is not assignable to type 'string | (EnrolmentStudentIdOfferingIdCompoundUniqueInput & string) | undefined'.
+4.977   Type 'string[]' is not assignable to type 'string | (EnrolmentStudentIdOfferingIdCompoundUniqueInput & string) | undefined'.
+4.977     Type 'string[]' is not assignable to type 'EnrolmentStudentIdOfferingIdCompoundUniqueInput & string'.
+4.977       Type 'string[]' is missing the following properties from type 'EnrolmentStudentIdOfferingIdCompoundUniqueInput': studentId, offeringId
+4.977 src/routes/admissions.ts(73,32): error TS2353: Object literal may only specify known properties, and 'name' does not exist in type 'IntakeSelect<DefaultArgs>'.
+4.977 src/routes/admissions.ts(571,68): error TS2322: Type 'string | string[]' is not assignable to type 'string | undefined'.
+4.977   Type 'string[]' is not assignable to type 'string'.
+4.977 src/routes/admissions.ts(598,17): error TS2322: Type 'string | string[]' is not assignable to type 'string | undefined'.
+4.977   Type 'string[]' is not assignable to type 'string'.
+4.977 src/routes/admissions.ts(610,14): error TS2322: Type 'string | string[]' is not assignable to type 'string | StringFilter<"ApplicantDocument"> | undefined'.
+4.977   Type 'string[]' is not assignable to type 'string | StringFilter<"ApplicantDocument"> | undefined'.
+4.977 src/routes/ai.ts(207,14): error TS2322: Type 'string | string[]' is not assignable to type 'string | StringFilter<"StudentRiskScore"> | undefined'.
+4.977   Type 'string[]' is not assignable to type 'string | StringFilter<"StudentRiskScore"> | undefined'.
+4.977 src/routes/ai.ts(222,14): error TS2322: Type 'string | string[]' is not assignable to type 'string | (CourseOfferingCourseIdSemesterIdDayOfWeekStartTimeCompoundUniqueInput & string) | undefined'.
+4.977   Type 'string[]' is not assignable to type 'string | (CourseOfferingCourseIdSemesterIdDayOfWeekStartTimeCompoundUniqueInput & string) | undefined'.
+4.977     Type 'string[]' is not assignable to type 'CourseOfferingCourseIdSemesterIdDayOfWeekStartTimeCompoundUniqueInput & string'.
+4.977       Type 'string[]' is missing the following properties from type 'CourseOfferingCourseIdSemesterIdDayOfWeekStartTimeCompoundUniqueInput': courseId, semesterId, dayOfWeek, startTime
+4.977 src/routes/ai.ts(238,34): error TS2339: Property 'attendanceSessions' does not exist on type '{ id: string; createdAt: Date; courseId: string; semesterId: string; lecturerId: string; departmentId: string; dayOfWeek: string; startTime: string; endTime: string; room: string; seatsTaken: number; }'.
+4.977 src/routes/ai.ts(239,37): error TS2339: Property 'assignments' does not exist on type '{ id: string; createdAt: Date; courseId: string; semesterId: string; lecturerId: string; departmentId: string; dayOfWeek: string; startTime: string; endTime: string; room: string; seatsTaken: number; }'.
+4.977 src/routes/ai.ts(243,40): error TS2339: Property 'enrolments' does not exist on type '{ id: string; createdAt: Date; courseId: string; semesterId: string; lecturerId: string; departmentId: string; dayOfWeek: string; startTime: string; endTime: string; room: string; seatsTaken: number; }'.
+4.977 src/routes/ai.ts(246,38): error TS2322: Type 'string | string[]' is not assignable to type 'string | StringFilter<"AttendanceSession"> | undefined'.
+4.977   Type 'string[]' is not assignable to type 'string | StringFilter<"AttendanceSession"> | undefined'.
+4.977 src/routes/ai.ts(252,41): error TS2322: Type 'string | string[]' is not assignable to type 'string | StringFilter<"Assignment"> | undefined'.
+4.977   Type 'string[]' is not assignable to type 'string | StringFilter<"Assignment"> | undefined'.
+4.977 src/routes/ai.ts(258,41): error TS2322: Type 'string | string[]' is not assignable to type 'string | StringFilter<"Assignment"> | undefined'.
+4.977   Type 'string[]' is not assignable to type 'string | StringFilter<"Assignment"> | undefined'.
+4.978 src/routes/ai.ts(262,77): error TS2551: Property 'assignment' does not exist on type '{ id: string; studentId: string; assignmentId: string; assetId: string; submittedAt: Date; aiRubricScores: string | null; aiGeneratedAt: Date | null; instructorScores: string | null; finalMarks: number | null; gradedAt: Date | null; gradedById: string | null; }'. Did you mean 'assignmentId'?
+4.978 src/routes/ai.ts(280,51): error TS2322: Type 'string | string[]' is not assignable to type 'string'.
+4.978   Type 'string[]' is not assignable to type 'string'.
+4.978 src/routes/ai.ts(282,20): error TS2322: Type 'string | string[]' is not assignable to type 'string | undefined'.
+4.978   Type 'string[]' is not assignable to type 'string'.
+4.978 src/routes/ai.ts(305,18): error TS2345: Argument of type '{ id: string; studentId: string; offeringId: string; computedAt: Date; attendancePct: number; quizAvg: number; submissionRate: number; riskScore: number; predictedOutcome: string; confidence: number; advisorNotifiedAt: Date | null; }' is not assignable to parameter of type 'never'.
+4.978 src/routes/ai.ts(309,28): error TS2339: Property 'riskScore' does not exist on type 'never'.
+4.978 src/routes/ai.ts(309,42): error TS2339: Property 'riskScore' does not exist on type 'never'.
+4.978 src/routes/campus.ts(142,70): error TS2322: Type 'string | string[]' is not assignable to type 'string | undefined'.
+4.978   Type 'string[]' is not assignable to type 'string'.
+4.978 src/routes/campus.ts(146,14): error TS2322: Type 'string | string[]' is not assignable to type 'string | undefined'.
+4.978   Type 'string[]' is not assignable to type 'string'.
+4.978 src/routes/campus.ts(218,71): error TS2322: Type 'string | string[]' is not assignable to type 'string | undefined'.
+4.978   Type 'string[]' is not assignable to type 'string'.
+4.978 src/routes/campus.ts(222,14): error TS2322: Type 'string | string[]' is not assignable to type 'string | undefined'.
+4.978   Type 'string[]' is not assignable to type 'string'.
+4.978 src/routes/finance.ts(71,7): error TS2345: Argument of type 'Promise<void>' is not assignable to parameter of type 'never'.
+4.978 src/routes/finance.ts(122,7): error TS2345: Argument of type 'Promise<void>' is not assignable to parameter of type 'never'.
+4.978 src/routes/hr.ts(50,21): error TS2322: Type 'string | string[]' is not assignable to type 'string | StringFilter<"Staff"> | undefined'.
+4.978   Type 'string[]' is not assignable to type 'string | StringFilter<"Staff"> | undefined'.
+4.978 src/routes/hr.ts(50,44): error TS2322: Type 'string | string[]' is not assignable to type 'string | StringFilter<"Staff"> | undefined'.
+4.978   Type 'string[]' is not assignable to type 'string | StringFilter<"Staff"> | undefined'.
+4.978 src/routes/hr.ts(178,14): error TS2322: Type 'string | string[]' is not assignable to type 'string | undefined'.
+4.978   Type 'string[]' is not assignable to type 'string'.
+4.978 src/routes/hr.ts(206,14): error TS2322: Type 'string | string[]' is not assignable to type 'string | undefined'.
+4.978   Type 'string[]' is not assignable to type 'string'.
+4.978 src/routes/hr.ts(215,28): error TS2551: Property 'staff' does not exist on type '{ id: string; status: string; submittedAt: Date; startDate: Date; endDate: Date; reason: string; staffId: string; leaveType: string; durationDays: number; coveringOfficerId: string; ... 4 more ...; rejectRemarks: string | null; }'. Did you mean 'staffId'?
+4.978 src/routes/hr.ts(403,14): error TS2322: Type 'string | string[]' is not assignable to type 'string | undefined'.
+4.978   Type 'string[]' is not assignable to type 'string'.
+4.978 src/routes/hr.ts(417,11): error TS2339: Property 'staff' does not exist on type '{ id: string; createdAt: Date; status: string; staffId: string; initiatedById: string; hrDirectorApprovedAt: Date | null; loginCreated: boolean; lmsProvisioned: boolean; payrollCreated: boolean; appointmentLetterGenerated: boolean; completedAt: Date | null; }'.
+4.978 src/routes/lms.ts(37,7): error TS2322: Type 'string | string[]' is not assignable to type 'string | StringFilter<"CourseMaterial"> | undefined'.
+4.978   Type 'string[]' is not assignable to type 'string | StringFilter<"CourseMaterial"> | undefined'.
+4.978 src/routes/lms.ts(69,16): error TS2322: Type 'string | string[]' is not assignable to type 'string | (CourseOfferingCourseIdSemesterIdDayOfWeekStartTimeCompoundUniqueInput & string) | undefined'.
+4.978   Type 'string[]' is not assignable to type 'string | (CourseOfferingCourseIdSemesterIdDayOfWeekStartTimeCompoundUniqueInput & string) | undefined'.
+4.978     Type 'string[]' is not assignable to type 'CourseOfferingCourseIdSemesterIdDayOfWeekStartTimeCompoundUniqueInput & string'.
+4.978       Type 'string[]' is missing the following properties from type 'CourseOfferingCourseIdSemesterIdDayOfWeekStartTimeCompoundUniqueInput': courseId, semesterId, dayOfWeek, startTime
+4.978 src/routes/lms.ts(79,33): error TS2551: Property 'lecturer' does not exist on type '{ id: string; createdAt: Date; courseId: string; semesterId: string; lecturerId: string; departmentId: string; dayOfWeek: string; startTime: string; endTime: string; room: string; seatsTaken: number; }'. Did you mean 'lecturerId'?
+4.978 src/routes/lms.ts(88,16): error TS2322: Type 'string | string[]' is not assignable to type 'string | StringFilter<"CourseMaterial"> | undefined'.
+4.978   Type 'string[]' is not assignable to type 'string | StringFilter<"CourseMaterial"> | undefined'.
+4.978 src/routes/lms.ts(91,24): error TS18048: 'maxOrder._max' is possibly 'undefined'.
+4.978 src/routes/lms.ts(123,9): error TS2322: Type 'string | string[]' is not assignable to type 'string | undefined'.
+4.978   Type 'string[]' is not assignable to type 'string'.
+4.978 src/routes/lms.ts(150,16): error TS2322: Type 'string | string[]' is not assignable to type 'string | undefined'.
+4.978   Type 'string[]' is not assignable to type 'string'.
+4.978 src/routes/lms.ts(160,33): error TS2551: Property 'offering' does not exist on type '{ id: string; createdAt: Date; updatedAt: Date; description: string | null; assetId: string | null; offeringId: string; title: string; materialType: string; externalUrl: string | null; duration: number | null; orderIndex: number; isPublished: boolean; uploadedById: string; }'. Did you mean 'offeringId'?
+4.978 src/routes/lms.ts(168,16): error TS2322: Type 'string | string[]' is not assignable to type 'string | undefined'.
+4.978   Type 'string[]' is not assignable to type 'string'.
+4.978 src/routes/lms.ts(184,16): error TS2322: Type 'string | string[]' is not assignable to type 'string | undefined'.
+4.978   Type 'string[]' is not assignable to type 'string'.
+4.978 src/routes/lms.ts(194,33): error TS2551: Property 'offering' does not exist on type '{ id: string; createdAt: Date; updatedAt: Date; description: string | null; assetId: string | null; offeringId: string; title: string; materialType: string; externalUrl: string | null; duration: number | null; orderIndex: number; isPublished: boolean; uploadedById: string; }'. Did you mean 'offeringId'?
+4.978 src/routes/lms.ts(202,16): error TS2322: Type 'string | string[]' is not assignable to type 'string | undefined'.
+4.978   Type 'string[]' is not assignable to type 'string'.
+4.978 src/routes/lms.ts(225,21): error TS2322: Type 'string | string[]' is not assignable to type 'string | StringFilter<"Staff"> | undefined'.
+4.978   Type 'string[]' is not assignable to type 'string | StringFilter<"Staff"> | undefined'.
+4.978 src/routes/lms.ts(225,52): error TS2322: Type 'string | string[]' is not assignable to type 'string | StringFilter<"Staff"> | undefined'.
+4.978   Type 'string[]' is not assignable to type 'string | StringFilter<"Staff"> | undefined'.
+4.978 src/routes/lms.ts(225,88): error TS2322: Type 'string | string[]' is not assignable to type 'string | StringFilter<"Staff"> | undefined'.
+4.978   Type 'string[]' is not assignable to type 'string | StringFilter<"Staff"> | undefined'.
+4.978 src/routes/lms.ts(267,21): error TS2322: Type 'string | string[]' is not assignable to type 'string | StringFilter<"Staff"> | undefined'.
+4.978   Type 'string[]' is not assignable to type 'string | StringFilter<"Staff"> | undefined'.
+4.979 src/routes/lms.ts(267,52): error TS2322: Type 'string | string[]' is not assignable to type 'string | StringFilter<"Staff"> | undefined'.
+4.979   Type 'string[]' is not assignable to type 'string | StringFilter<"Staff"> | undefined'.
+4.979 src/routes/lms.ts(267,88): error TS2322: Type 'string | string[]' is not assignable to type 'string | StringFilter<"Staff"> | undefined'.
+4.979   Type 'string[]' is not assignable to type 'string | StringFilter<"Staff"> | undefined'.
+4.979 src/routes/lms.ts(308,14): error TS2322: Type 'string | string[]' is not assignable to type 'string | (SubmissionAssignmentIdStudentIdCompoundUniqueInput & string) | undefined'.
+4.979   Type 'string[]' is not assignable to type 'string | (SubmissionAssignmentIdStudentIdCompoundUniqueInput & string) | undefined'.
+4.979     Type 'string[]' is not assignable to type 'SubmissionAssignmentIdStudentIdCompoundUniqueInput & string'.
+4.979       Type 'string[]' is missing the following properties from type 'SubmissionAssignmentIdStudentIdCompoundUniqueInput': assignmentId, studentId
+4.979 src/routes/lms.ts(328,91): error TS2551: Property 'assignment' does not exist on type '{ id: string; studentId: string; assignmentId: string; assetId: string; submittedAt: Date; aiRubricScores: string | null; aiGeneratedAt: Date | null; instructorScores: string | null; finalMarks: number | null; gradedAt: Date | null; gradedById: string | null; }'. Did you mean 'assignmentId'?
+4.979 src/routes/lms.ts(331,14): error TS2322: Type 'string | string[]' is not assignable to type 'string | (SubmissionAssignmentIdStudentIdCompoundUniqueInput & string) | undefined'.
+4.979   Type 'string[]' is not assignable to type 'string | (SubmissionAssignmentIdStudentIdCompoundUniqueInput & string) | undefined'.
+4.979     Type 'string[]' is not assignable to type 'SubmissionAssignmentIdStudentIdCompoundUniqueInput & string'.
+4.979       Type 'string[]' is missing the following properties from type 'SubmissionAssignmentIdStudentIdCompoundUniqueInput': assignmentId, studentId
+4.979 src/routes/lms.ts(362,30): error TS2551: Property 'assignment' does not exist on type '{ id: string; studentId: string; assignmentId: string; assetId: string; submittedAt: Date; aiRubricScores: string | null; aiGeneratedAt: Date | null; instructorScores: string | null; finalMarks: number | null; gradedAt: Date | null; gradedById: string | null; }'. Did you mean 'assignmentId'?
+4.979 src/routes/lms.ts(367,26): error TS2869: Right operand of ?? is unreachable because the left operand is never nullish.
+4.979 src/routes/lms.ts(367,36): error TS2339: Property 'totalCredits' does not exist on type '{ id: string; studentId: string; semesterId: string; semesterGpa: number; cumulativeGpa: number; totalChPassed: number; computedAt: Date; }'.
+4.979 src/routes/lms.ts(367,62): error TS2551: Property 'assignment' does not exist on type '{ id: string; studentId: string; assignmentId: string; assetId: string; submittedAt: Date; aiRubricScores: string | null; aiGeneratedAt: Date | null; instructorScores: string | null; finalMarks: number | null; gradedAt: Date | null; gradedById: string | null; }'. Did you mean 'assignmentId'?
+4.979 src/routes/lms.ts(368,34): error TS2339: Property 'currentGpa' does not exist on type '{ id: string; studentId: string; semesterId: string; semesterGpa: number; cumulativeGpa: number; totalChPassed: number; computedAt: Date; }'.
+4.979 src/routes/lms.ts(369,45): error TS2339: Property 'totalCredits' does not exist on type '{ id: string; studentId: string; semesterId: string; semesterGpa: number; cumulativeGpa: number; totalChPassed: number; computedAt: Date; }'.
+4.979 src/routes/lms.ts(369,92): error TS2551: Property 'assignment' does not exist on type '{ id: string; studentId: string; assignmentId: string; assetId: string; submittedAt: Date; aiRubricScores: string | null; aiGeneratedAt: Date | null; instructorScores: string | null; finalMarks: number | null; gradedAt: Date | null; gradedById: string | null; }'. Did you mean 'assignmentId'?
+4.979 src/routes/lms.ts(374,9): error TS2353: Object literal may only specify known properties, and 'totalCredits' does not exist in type '(Without<StudentGpaRecordUpdateInput, StudentGpaRecordUncheckedUpdateInput> & StudentGpaRecordUncheckedUpdateInput) | (Without<...> & StudentGpaRecordUpdateInput)'.
+4.979 src/routes/lms.ts(382,26): error TS2551: Property 'student' does not exist on type '{ id: string; studentId: string; assignmentId: string; assetId: string; submittedAt: Date; aiRubricScores: string | null; aiGeneratedAt: Date | null; instructorScores: string | null; finalMarks: number | null; gradedAt: Date | null; gradedById: string | null; }'. Did you mean 'studentId'?
+4.979 src/routes/lms.ts(384,48): error TS2551: Property 'assignment' does not exist on type '{ id: string; studentId: string; assignmentId: string; assetId: string; submittedAt: Date; aiRubricScores: string | null; aiGeneratedAt: Date | null; instructorScores: string | null; finalMarks: number | null; gradedAt: Date | null; gradedById: string | null; }'. Did you mean 'assignmentId'?
+4.979 src/routes/lms.ts(385,42): error TS2551: Property 'assignment' does not exist on type '{ id: string; studentId: string; assignmentId: string; assetId: string; submittedAt: Date; aiRubricScores: string | null; aiGeneratedAt: Date | null; instructorScores: string | null; finalMarks: number | null; gradedAt: Date | null; gradedById: string | null; }'. Did you mean 'assignmentId'?
+4.979 src/routes/lms.ts(385,107): error TS2551: Property 'assignment' does not exist on type '{ id: string; studentId: string; assignmentId: string; assetId: string; submittedAt: Date; aiRubricScores: string | null; aiGeneratedAt: Date | null; instructorScores: string | null; finalMarks: number | null; gradedAt: Date | null; gradedById: string | null; }'. Did you mean 'assignmentId'?
+4.979 src/routes/lms.ts(385,160): error TS2551: Property 'student' does not exist on type '{ id: string; studentId: string; assignmentId: string; assetId: string; submittedAt: Date; aiRubricScores: string | null; aiGeneratedAt: Date | null; instructorScores: string | null; finalMarks: number | null; gradedAt: Date | null; gradedById: string | null; }'. Did you mean 'studentId'?
+4.979 src/routes/lms.ts(395,27): error TS2551: Property 'student' does not exist on type '{ id: string; studentId: string; assignmentId: string; assetId: string; submittedAt: Date; aiRubricScores: string | null; aiGeneratedAt: Date | null; instructorScores: string | null; finalMarks: number | null; gradedAt: Date | null; gradedById: string | null; }'. Did you mean 'studentId'?
+4.979 src/routes/lms.ts(407,14): error TS2322: Type 'string | string[]' is not assignable to type 'string | (CourseOfferingCourseIdSemesterIdDayOfWeekStartTimeCompoundUniqueInput & string) | undefined'.
+4.979   Type 'string[]' is not assignable to type 'string | (CourseOfferingCourseIdSemesterIdDayOfWeekStartTimeCompoundUniqueInput & string) | undefined'.
+4.979     Type 'string[]' is not assignable to type 'CourseOfferingCourseIdSemesterIdDayOfWeekStartTimeCompoundUniqueInput & string'.
+4.979       Type 'string[]' is missing the following properties from type 'CourseOfferingCourseIdSemesterIdDayOfWeekStartTimeCompoundUniqueInput': courseId, semesterId, dayOfWeek, startTime
+4.979 src/routes/lms.ts(446,41): error TS2322: Type 'string | string[]' is not assignable to type 'string | StringFilter<"Enrolment"> | undefined'.
+4.979   Type 'string[]' is not assignable to type 'string | StringFilter<"Enrolment"> | undefined'.
+4.979 src/routes/lms.ts(470,67): error TS2322: Type 'string | string[]' is not assignable to type 'string | (CourseOfferingCourseIdSemesterIdDayOfWeekStartTimeCompoundUniqueInput & string) | undefined'.
+4.979   Type 'string[]' is not assignable to type 'string | (CourseOfferingCourseIdSemesterIdDayOfWeekStartTimeCompoundUniqueInput & string) | undefined'.
+4.979     Type 'string[]' is not assignable to type 'CourseOfferingCourseIdSemesterIdDayOfWeekStartTimeCompoundUniqueInput & string'.
+4.979       Type 'string[]' is missing the following properties from type 'CourseOfferingCourseIdSemesterIdDayOfWeekStartTimeCompoundUniqueInput': courseId, semesterId, dayOfWeek, startTime
+4.980 src/routes/lms.ts(478,14): error TS2322: Type 'string | string[]' is not assignable to type 'string | StringFilter<"Enrolment"> | undefined'.
+4.980   Type 'string[]' is not assignable to type 'string | StringFilter<"Enrolment"> | undefined'.
+4.980 src/routes/lms.ts(536,67): error TS2322: Type 'string | string[]' is not assignable to type 'string | (CourseOfferingCourseIdSemesterIdDayOfWeekStartTimeCompoundUniqueInput & string) | undefined'.
+4.980   Type 'string[]' is not assignable to type 'string | (CourseOfferingCourseIdSemesterIdDayOfWeekStartTimeCompoundUniqueInput & string) | undefined'.
+4.980     Type 'string[]' is not assignable to type 'CourseOfferingCourseIdSemesterIdDayOfWeekStartTimeCompoundUniqueInput & string'.
+4.980       Type 'string[]' is missing the following properties from type 'CourseOfferingCourseIdSemesterIdDayOfWeekStartTimeCompoundUniqueInput': courseId, semesterId, dayOfWeek, startTime
+4.980 src/routes/lms.ts(544,14): error TS2322: Type 'string | string[]' is not assignable to type 'string | StringFilter<"Assignment"> | undefined'.
+4.980   Type 'string[]' is not assignable to type 'string | StringFilter<"Assignment"> | undefined'.
+4.980 src/routes/lms.ts(563,21): error TS2322: Type 'string | string[]' is not assignable to type 'string | StringFilter<"Student"> | undefined'.
+4.980   Type 'string[]' is not assignable to type 'string | StringFilter<"Student"> | undefined'.
+4.980 src/routes/lms.ts(563,51): error TS2322: Type 'string | string[]' is not assignable to type 'string | StringFilter<"Student"> | undefined'.
+4.980   Type 'string[]' is not assignable to type 'string | StringFilter<"Student"> | undefined'.
+4.980 src/routes/lms.ts(642,23): error TS2345: Argument of type '{ id: string; uploadedAt: Date; uploadedById: string; fileName: string; originalName: string; fileUrl: string; mimeType: string; fileSizeBytes: number; }' is not assignable to parameter of type 'never'.
+4.980 src/routes/lms.ts(648,7): error TS2322: Type '{ id: string; uploadedAt: Date; uploadedById: string; fileName: string; originalName: string; fileUrl: string; mimeType: string; fileSizeBytes: number; }' is not assignable to type 'null'.
+4.980 src/routes/lms.ts(675,66): error TS2339: Property 'id' does not exist on type 'never'.
+4.980 src/routes/lms.ts(675,86): error TS2339: Property 'id' does not exist on type 'never'.
+4.980 src/routes/lms.ts(740,9): error TS2322: Type 'string | string[]' is not assignable to type 'string | StringFilter<"Submission"> | undefined'.
+4.980   Type 'string[]' is not assignable to type 'string | StringFilter<"Submission"> | undefined'.
+4.980 src/routes/lms.ts(742,11): error TS2322: Type 'string | string[]' is not assignable to type 'string | StringFilter<"Assignment"> | undefined'.
+4.980   Type 'string[]' is not assignable to type 'string | StringFilter<"Assignment"> | undefined'.
+4.980 src/routes/lms.ts(798,14): error TS2322: Type 'string | string[]' is not assignable to type 'string | (SubmissionAssignmentIdStudentIdCompoundUniqueInput & string) | undefined'.
+4.980   Type 'string[]' is not assignable to type 'string | (SubmissionAssignmentIdStudentIdCompoundUniqueInput & string) | undefined'.
+4.980     Type 'string[]' is not assignable to type 'SubmissionAssignmentIdStudentIdCompoundUniqueInput & string'.
+4.980       Type 'string[]' is missing the following properties from type 'SubmissionAssignmentIdStudentIdCompoundUniqueInput': assignmentId, studentId
+4.980 src/routes/lms.ts(805,39): error TS2551: Property 'assignment' does not exist on type '{ id: string; studentId: string; assignmentId: string; assetId: string; submittedAt: Date; aiRubricScores: string | null; aiGeneratedAt: Date | null; instructorScores: string | null; finalMarks: number | null; gradedAt: Date | null; gradedById: string | null; }'. Did you mean 'assignmentId'?
+4.980 src/routes/lms.ts(812,14): error TS2322: Type 'string | string[]' is not assignable to type 'string | (SubmissionAssignmentIdStudentIdCompoundUniqueInput & string) | undefined'.
+4.980   Type 'string[]' is not assignable to type 'string | (SubmissionAssignmentIdStudentIdCompoundUniqueInput & string) | undefined'.
+4.980     Type 'string[]' is not assignable to type 'SubmissionAssignmentIdStudentIdCompoundUniqueInput & string'.
+4.980       Type 'string[]' is missing the following properties from type 'SubmissionAssignmentIdStudentIdCompoundUniqueInput': assignmentId, studentId
+4.980 src/routes/lms.ts(850,32): error TS2551: Property 'assignment' does not exist on type '{ id: string; studentId: string; assignmentId: string; assetId: string; submittedAt: Date; aiRubricScores: string | null; aiGeneratedAt: Date | null; instructorScores: string | null; finalMarks: number | null; gradedAt: Date | null; gradedById: string | null; }'. Did you mean 'assignmentId'?
+4.980 src/routes/lms.ts(889,29): error TS2551: Property 'assignment' does not exist on type '{ id: string; studentId: string; assignmentId: string; assetId: string; submittedAt: Date; aiRubricScores: string | null; aiGeneratedAt: Date | null; instructorScores: string | null; finalMarks: number | null; gradedAt: Date | null; gradedById: string | null; }'. Did you mean 'assignmentId'?
+4.980 src/routes/lms.ts(889,84): error TS2551: Property 'assignment' does not exist on type '{ id: string; studentId: string; assignmentId: string; assetId: string; submittedAt: Date; aiRubricScores: string | null; aiGeneratedAt: Date | null; instructorScores: string | null; finalMarks: number | null; gradedAt: Date | null; gradedById: string | null; }'. Did you mean 'assignmentId'?
+4.980 src/routes/lms.ts(914,26): error TS2551: Property 'student' does not exist on type '{ id: string; studentId: string; assignmentId: string; assetId: string; submittedAt: Date; aiRubricScores: string | null; aiGeneratedAt: Date | null; instructorScores: string | null; finalMarks: number | null; gradedAt: Date | null; gradedById: string | null; }'. Did you mean 'studentId'?
+4.980 src/routes/lms.ts(916,48): error TS2551: Property 'assignment' does not exist on type '{ id: string; studentId: string; assignmentId: string; assetId: string; submittedAt: Date; aiRubricScores: string | null; aiGeneratedAt: Date | null; instructorScores: string | null; finalMarks: number | null; gradedAt: Date | null; gradedById: string | null; }'. Did you mean 'assignmentId'?
+4.980 src/routes/lms.ts(917,42): error TS2551: Property 'assignment' does not exist on type '{ id: string; studentId: string; assignmentId: string; assetId: string; submittedAt: Date; aiRubricScores: string | null; aiGeneratedAt: Date | null; instructorScores: string | null; finalMarks: number | null; gradedAt: Date | null; gradedById: string | null; }'. Did you mean 'assignmentId'?
+4.980 src/routes/lms.ts(965,14): error TS2322: Type 'string | string[]' is not assignable to type 'string | undefined'.
+4.980   Type 'string[]' is not assignable to type 'string'.
+4.980 src/routes/lms.ts(980,74): error TS2322: Type 'string | string[]' is not assignable to type 'string | undefined'.
+4.980   Type 'string[]' is not assignable to type 'string'.
+4.980 src/routes/lms.ts(993,16): error TS2322: Type 'string | string[]' is not assignable to type 'string | undefined'.
+4.980   Type 'string[]' is not assignable to type 'string'.
+4.980 src/routes/lms.ts(1054,14): error TS2322: Type 'string | string[]' is not assignable to type 'string | StringFilter<"AttendanceRecord"> | undefined'.
+4.980   Type 'string[]' is not assignable to type 'string | StringFilter<"AttendanceRecord"> | undefined'.
+4.980 src/routes/lms.ts(1062,14): error TS2322: Type 'string | string[]' is not assignable to type 'string | StringFilter<"AttendanceSession"> | undefined'.
+4.980   Type 'string[]' is not assignable to type 'string | StringFilter<"AttendanceSession"> | undefined'.
+4.980 src/routes/lms.ts(1079,14): error TS2322: Type 'string | string[]' is not assignable to type 'string | undefined'.
+4.980   Type 'string[]' is not assignable to type 'string'.
+4.980 src/routes/lms.ts(1132,21): error TS2322: Type 'string | string[]' is not assignable to type 'string | StringFilter<"Student"> | undefined'.
+4.980   Type 'string[]' is not assignable to type 'string | StringFilter<"Student"> | undefined'.
+4.980 src/routes/lms.ts(1132,51): error TS2322: Type 'string | string[]' is not assignable to type 'string | StringFilter<"Student"> | undefined'.
+4.980   Type 'string[]' is not assignable to type 'string | StringFilter<"Student"> | undefined'.
+4.980 src/routes/lms.ts(1132,88): error TS2322: Type 'string | string[]' is not assignable to type 'string | StringFilter<"Student"> | undefined'.
+4.980   Type 'string[]' is not assignable to type 'string | StringFilter<"Student"> | undefined'.
+4.980 src/routes/lms.ts(1339,21): error TS2322: Type 'string | string[]' is not assignable to type 'string | StringFilter<"Staff"> | undefined'.
+4.980   Type 'string[]' is not assignable to type 'string | StringFilter<"Staff"> | undefined'.
+4.980 src/routes/lms.ts(1339,36): error TS2322: Type 'string | string[]' is not assignable to type 'string | StringFilter<"Staff"> | undefined'.
+4.980   Type 'string[]' is not assignable to type 'string | StringFilter<"Staff"> | undefined'.
+4.980 src/routes/lms.ts(1339,56): error TS2322: Type 'string | string[]' is not assignable to type 'string | StringFilter<"Staff"> | undefined'.
+4.980   Type 'string[]' is not assignable to type 'string | StringFilter<"Staff"> | undefined'.
+4.980 src/routes/notifications.ts(23,14): error TS2322: Type 'string | string[]' is not assignable to type 'string | StringFilter<"Notification"> | undefined'.
+4.980   Type 'string[]' is not assignable to type 'string | StringFilter<"Notification"> | undefined'.
+4.980 src/routes/notifications.ts(28,14): error TS2322: Type 'string | string[]' is not assignable to type 'string | undefined'.
+4.980   Type 'string[]' is not assignable to type 'string'.
+4.980 src/routes/procurement.ts(45,14): error TS2322: Type 'string | string[]' is not assignable to type 'string | undefined'.
+4.980   Type 'string[]' is not assignable to type 'string'.
+4.980 src/routes/procurement.ts(131,14): error TS2322: Type 'string | string[]' is not assignable to type 'string | undefined'.
+4.980   Type 'string[]' is not assignable to type 'string'.
+4.980 src/routes/procurement.ts(187,15): error TS2322: Type 'string | string[]' is not assignable to type 'string | undefined'.
+4.980   Type 'string[]' is not assignable to type 'string'.
+4.980 src/routes/procurement.ts(189,46): error TS2322: Type 'string | string[]' is not assignable to type 'string | undefined'.
+4.980   Type 'string[]' is not assignable to type 'string'.
+4.980 src/routes/procurement.ts(269,14): error TS2322: Type 'string | string[]' is not assignable to type 'string | undefined'.
+4.980   Type 'string[]' is not assignable to type 'string'.
+4.980 src/routes/products.ts(30,14): error TS2322: Type 'string | string[]' is not assignable to type 'string | undefined'.
+4.980   Type 'string[]' is not assignable to type 'string'.
+4.980 src/routes/products.ts(69,14): error TS2322: Type 'string | string[]' is not assignable to type 'string | undefined'.
+4.980   Type 'string[]' is not assignable to type 'string'.
+4.980 src/routes/products.ts(78,62): error TS2322: Type 'string | string[]' is not assignable to type 'string | undefined'.
+4.980   Type 'string[]' is not assignable to type 'string'.
+4.980 src/routes/products.ts(82,14): error TS2322: Type 'string | string[]' is not assignable to type 'string | undefined'.
+4.980   Type 'string[]' is not assignable to type 'string'.
+4.980 src/routes/research.ts(55,14): error TS2322: Type 'string | string[]' is not assignable to type 'string | undefined'.
+4.980   Type 'string[]' is not assignable to type 'string'.
+4.980 src/routes/research.ts(165,23): error TS2345: Argument of type '{ id: string; uploadedAt: Date; uploadedById: string; fileName: string; originalName: string; fileUrl: string; mimeType: string; fileSizeBytes: number; }' is not assignable to parameter of type 'never'.
+4.980 src/routes/research.ts(177,66): error TS2322: Type 'string | string[]' is not assignable to type 'string | undefined'.
+4.980   Type 'string[]' is not assignable to type 'string'.
+4.980 src/routes/research.ts(181,14): error TS2322: Type 'string | string[]' is not assignable to type 'string | undefined'.
+4.980   Type 'string[]' is not assignable to type 'string'.
+4.980 src/routes/research.ts(198,66): error TS2322: Type 'string | string[]' is not assignable to type 'string | undefined'.
+4.980   Type 'string[]' is not assignable to type 'string'.
+4.980 src/routes/research.ts(202,14): error TS2322: Type 'string | string[]' is not assignable to type 'string | undefined'.
+4.980   Type 'string[]' is not assignable to type 'string'.
+4.980 src/routes/students.ts(92,21): error TS2322: Type 'string | string[]' is not assignable to type 'string | StringFilter<"Student"> | undefined'.
+4.980   Type 'string[]' is not assignable to type 'string | StringFilter<"Student"> | undefined'.
+4.980 src/routes/students.ts(92,44): error TS2322: Type 'string | string[]' is not assignable to type 'string | StringFilter<"Student"> | undefined'.
+4.980   Type 'string[]' is not assignable to type 'string | StringFilter<"Student"> | undefined'.
+4.980 src/routes/students.ts(107,21): error TS2322: Type 'string | string[]' is not assignable to type 'string | StringFilter<"Student"> | undefined'.
+4.980   Type 'string[]' is not assignable to type 'string | StringFilter<"Student"> | undefined'.
+4.980 src/routes/students.ts(107,44): error TS2322: Type 'string | string[]' is not assignable to type 'string | StringFilter<"Student"> | undefined'.
+4.980   Type 'string[]' is not assignable to type 'string | StringFilter<"Student"> | undefined'.
+4.980 src/routes/students.ts(128,21): error TS2322: Type 'string | string[]' is not assignable to type 'string | StringFilter<"Student"> | undefined'.
+4.980   Type 'string[]' is not assignable to type 'string | StringFilter<"Student"> | undefined'.
+4.980 src/routes/students.ts(128,44): error TS2322: Type 'string | string[]' is not assignable to type 'string | StringFilter<"Student"> | undefined'.
+4.980   Type 'string[]' is not assignable to type 'string | StringFilter<"Student"> | undefined'.
+4.980 src/routes/students.ts(144,21): error TS2322: Type 'string | string[]' is not assignable to type 'string | StringFilter<"Student"> | undefined'.
+4.980   Type 'string[]' is not assignable to type 'string | StringFilter<"Student"> | undefined'.
+4.981 src/routes/students.ts(144,44): error TS2322: Type 'string | string[]' is not assignable to type 'string | StringFilter<"Student"> | undefined'.
+4.981   Type 'string[]' is not assignable to type 'string | StringFilter<"Student"> | undefined'.
+4.981 src/routes/students.ts(159,21): error TS2322: Type 'string | string[]' is not assignable to type 'string | StringFilter<"Student"> | undefined'.
+4.981   Type 'string[]' is not assignable to type 'string | StringFilter<"Student"> | undefined'.
+4.981 src/routes/students.ts(159,44): error TS2322: Type 'string | string[]' is not assignable to type 'string | StringFilter<"Student"> | undefined'.
+4.981   Type 'string[]' is not assignable to type 'string | StringFilter<"Student"> | undefined'.
+4.981 src/routes/students.ts(170,31): error TS2339: Property 'libraryAccount' does not exist on type '{ id: string; createdAt: Date; userId: string; status: string; studentId: string; nationality: string; intakeId: string; programmeId: string; modeOfStudy: string; applicantId: string; studentType: string; ... 5 more ...; enrolledAt: Date; }'.
+4.981 src/routes/students.ts(180,21): error TS2322: Type 'string | string[]' is not assignable to type 'string | StringFilter<"Student"> | undefined'.
+4.981   Type 'string[]' is not assignable to type 'string | StringFilter<"Student"> | undefined'.
+4.981 src/routes/students.ts(180,44): error TS2322: Type 'string | string[]' is not assignable to type 'string | StringFilter<"Student"> | undefined'.
+4.981   Type 'string[]' is not assignable to type 'string | StringFilter<"Student"> | undefined'.
+4.981 src/routes/students.ts(180,74): error TS2322: Type 'string | string[]' is not assignable to type 'string | StringFilter<"Student"> | undefined'.
+4.981   Type 'string[]' is not assignable to type 'string | StringFilter<"Student"> | undefined'.
+4.981 src/routes/students.ts(293,16): error TS2551: Property 'programme' does not exist on type '{ id: string; createdAt: Date; userId: string; status: string; studentId: string; nationality: string; intakeId: string; programmeId: string; modeOfStudy: string; applicantId: string; studentType: string; ... 5 more ...; enrolledAt: Date; }'. Did you mean 'programmeId'?
+4.981 src/routes/students.ts(294,16): error TS2551: Property 'programme' does not exist on type '{ id: string; createdAt: Date; userId: string; status: string; studentId: string; nationality: string; intakeId: string; programmeId: string; modeOfStudy: string; applicantId: string; studentType: string; ... 5 more ...; enrolledAt: Date; }'. Did you mean 'programmeId'?
+4.981 src/routes/students.ts(351,21): error TS2322: Type 'string | string[]' is not assignable to type 'string | StringFilter<"Student"> | undefined'.
+4.981   Type 'string[]' is not assignable to type 'string | StringFilter<"Student"> | undefined'.
+4.981 src/routes/students.ts(351,44): error TS2322: Type 'string | string[]' is not assignable to type 'string | StringFilter<"Student"> | undefined'.
+4.981   Type 'string[]' is not assignable to type 'string | StringFilter<"Student"> | undefined'.
+4.981 src/routes/students.ts(357,37): error TS2322: Type 'string | string[]' is not assignable to type 'string | StringFilter<"Enrolment"> | undefined'.
+4.981   Type 'string[]' is not assignable to type 'string | StringFilter<"Enrolment"> | undefined'.
+4.981 src/routes/students.ts(362,30): error TS2551: Property 'offering' does not exist on type '{ id: string; status: string; studentId: string; semesterId: string; offeringId: string; finalGrade: string | null; gradePoints: number | null; registeredAt: Date; droppedAt: Date | null; }'. Did you mean 'offeringId'?
+4.981 src/routes/students.ts(366,16): error TS2551: Property 'programme' does not exist on type '{ id: string; createdAt: Date; userId: string; status: string; studentId: string; nationality: string; intakeId: string; programmeId: string; modeOfStudy: string; applicantId: string; studentType: string; ... 5 more ...; enrolledAt: Date; }'. Did you mean 'programmeId'?
+4.981 src/routes/students.ts(367,16): error TS2551: Property 'programme' does not exist on type '{ id: string; createdAt: Date; userId: string; status: string; studentId: string; nationality: string; intakeId: string; programmeId: string; modeOfStudy: string; applicantId: string; studentType: string; ... 5 more ...; enrolledAt: Date; }'. Did you mean 'programmeId'?
+4.981 src/routes/students.ts(420,60): error TS2339: Property 'user' does not exist on type '{ id: string; createdAt: Date; userId: string; status: string; studentId: string; nationality: string; intakeId: string; programmeId: string; modeOfStudy: string; applicantId: string; studentType: string; ... 5 more ...; enrolledAt: Date; }'.
+4.981 src/routes/students.ts(424,23): error TS2339: Property 'user' does not exist on type '{ id: string; createdAt: Date; userId: string; status: string; studentId: string; nationality: string; intakeId: string; programmeId: string; modeOfStudy: string; applicantId: string; studentType: string; ... 5 more ...; enrolledAt: Date; }'.
+4.981 src/routes/students.ts(429,33): error TS2339: Property 'user' does not exist on type '{ id: string; createdAt: Date; userId: string; status: string; studentId: string; nationality: string; intakeId: string; programmeId: string; modeOfStudy: string; applicantId: string; studentType: string; ... 5 more ...; enrolledAt: Date; }'.
+------
+Dockerfile:16
+--------------------
+  14 |     
+  15 |     RUN npx prisma generate
+  16 | >>> RUN npm run build
+  17 |     
+  18 |     # ---- Runtime stage ----
+--------------------
+ERROR: failed to build: failed to solve: process "/bin/sh -c npm run build" did not complete successfully: exit code: 2

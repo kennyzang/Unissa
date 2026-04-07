@@ -34,7 +34,7 @@ router.get('/materials/:offeringId', async (req: AuthRequest, res: Response) => 
   }
   const materials = await prisma.courseMaterial.findMany({
     where: {
-      offeringId: req.params.offeringId,
+      offeringId: String(req.params.offeringId),
       isPublished: true,
     },
     include: {
@@ -66,7 +66,7 @@ router.post('/materials/:offeringId', sessionMaterialUpload.single('file'), asyn
 
     // Check if user is lecturer of this offering or admin
     const offering = await prisma.courseOffering.findUnique({
-      where: { id: offeringId },
+      where: { id: String(offeringId) },
       include: { lecturer: true },
     })
 
@@ -85,7 +85,7 @@ router.post('/materials/:offeringId', sessionMaterialUpload.single('file'), asyn
 
     // Get max order index
     const maxOrder = await prisma.courseMaterial.aggregate({
-      where: { offeringId },
+      where: { offeringId: String(offeringId) },
       _max: { orderIndex: true },
     })
     const nextOrder = (maxOrder._max.orderIndex ?? -1) + 1
@@ -120,7 +120,7 @@ router.post('/materials/:offeringId', sessionMaterialUpload.single('file'), asyn
 
     const material = await prisma.courseMaterial.create({
       data: {
-        offeringId,
+        offeringId: String(offeringId),
         title,
         description: description || null,
         materialType: finalMaterialType,
@@ -147,7 +147,7 @@ router.post('/materials/:offeringId', sessionMaterialUpload.single('file'), asyn
 router.delete('/materials/:materialId', async (req: AuthRequest, res: Response) => {
   try {
     const material = await prisma.courseMaterial.findUnique({
-      where: { id: req.params.materialId },
+      where: { id: String(req.params.materialId) },
       include: { offering: { include: { lecturer: true } } },
     })
 
@@ -165,7 +165,7 @@ router.delete('/materials/:materialId', async (req: AuthRequest, res: Response) 
     }
 
     await prisma.courseMaterial.delete({
-      where: { id: req.params.materialId },
+      where: { id: String(req.params.materialId) },
     })
 
     res.json({ success: true, message: 'Material deleted successfully' })
@@ -181,7 +181,7 @@ router.patch('/materials/:materialId', async (req: AuthRequest, res: Response) =
     const { title, description, isPublished, orderIndex } = req.body
 
     const material = await prisma.courseMaterial.findUnique({
-      where: { id: req.params.materialId },
+      where: { id: String(req.params.materialId) },
       include: { offering: { include: { lecturer: true } } },
     })
 
@@ -199,7 +199,7 @@ router.patch('/materials/:materialId', async (req: AuthRequest, res: Response) =
     }
 
     const updated = await prisma.courseMaterial.update({
-      where: { id: req.params.materialId },
+      where: { id: String(req.params.materialId) },
       data: {
         title: title ?? material.title,
         description: description ?? material.description,
@@ -222,7 +222,7 @@ router.patch('/materials/:materialId', async (req: AuthRequest, res: Response) =
 // GET /api/v1/lms/submissions/pending/:lecturerId
 router.get('/submissions/pending/:lecturerId', async (req: AuthRequest, res: Response) => {
   const staff = await prisma.staff.findFirst({
-    where: { OR: [{ id: req.params.lecturerId }, { staffId: req.params.lecturerId }, { userId: req.params.lecturerId }] },
+    where: { OR: [{ id: String(req.params.lecturerId) }, { staffId: String(req.params.lecturerId) }, { userId: String(req.params.lecturerId) }] },
   })
   if (!staff) { res.status(404).json({ success: false, message: 'Lecturer not found' }); return }
 
@@ -264,7 +264,7 @@ router.get('/submissions/lecturer/:lecturerId', async (req: AuthRequest, res: Re
   const { status } = req.query as { status?: 'pending' | 'graded' | 'all' }
   
   const staff = await prisma.staff.findFirst({
-    where: { OR: [{ id: req.params.lecturerId }, { staffId: req.params.lecturerId }, { userId: req.params.lecturerId }] },
+    where: { OR: [{ id: String(req.params.lecturerId) }, { staffId: String(req.params.lecturerId) }, { userId: String(req.params.lecturerId) }] },
   })
   if (!staff) { res.status(404).json({ success: false, message: 'Lecturer not found' }); return }
 
@@ -305,9 +305,13 @@ router.get('/submissions/lecturer/:lecturerId', async (req: AuthRequest, res: Re
 // PATCH /api/v1/lms/submissions/:id/accept-ai
 router.patch('/submissions/:id/accept-ai', async (req: AuthRequest, res: Response) => {
   const submission = await prisma.submission.findUnique({
-    where: { id: req.params.id },
+    where: { id: String(req.params.id) },
     include: {
-      assignment: true,
+      assignment: {
+        include: {
+          offering: true
+        }
+      },
       student: true,
     },
   })
@@ -328,7 +332,7 @@ router.patch('/submissions/:id/accept-ai', async (req: AuthRequest, res: Respons
   const finalMarks = maxPossible > 0 ? Math.round((totalScore / maxPossible) * submission.assignment.maxMarks) : 0
 
   const updated = await prisma.submission.update({
-    where: { id: req.params.id },
+    where: { id: String(req.params.id) },
     data: {
       instructorScores: JSON.stringify(aiScores.map((s: any) => ({
         criterion: s.criterion,
@@ -364,15 +368,14 @@ router.patch('/submissions/:id/accept-ai', async (req: AuthRequest, res: Respons
   })
 
   if (gpaRecord) {
-    const totalCredits = gpaRecord.totalCredits + submission.assignment.weightPct ?? 0
-    const currentGpa = gpaRecord.currentGpa
-    const newGpa = ((currentGpa * gpaRecord.totalCredits) + (finalMarks / 10 * (submission.assignment.weightPct ?? 0))) / totalCredits
+    const totalChPassed = gpaRecord.totalChPassed + (submission.assignment.weightPct ?? 0)
+    const currentGpa = gpaRecord.semesterGpa
+    const newGpa = ((currentGpa * gpaRecord.totalChPassed) + (finalMarks / 10 * (submission.assignment.weightPct ?? 0))) / totalChPassed
 
     await prisma.studentGpaRecord.update({
       where: { id: gpaRecord.id },
       data: {
-        totalCredits,
-        currentGpa: newGpa,
+        semesterGpa: newGpa,
       },
     })
   }
@@ -404,7 +407,7 @@ router.get('/offerings/:offeringId', async (req: AuthRequest, res: Response) => 
   const requestingUser = req.user
 
   const offering = await prisma.courseOffering.findUnique({
-    where: { id: offeringId },
+    where: { id: String(offeringId) },
     include: {
       course: true,
       lecturer: { include: { user: { select: { displayName: true, email: true } } } },

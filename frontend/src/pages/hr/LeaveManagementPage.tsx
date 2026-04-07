@@ -48,7 +48,7 @@ interface LeaveFormValues {
 const STATUS_COLOR: Record<string, 'blue' | 'green' | 'red' | 'orange' | 'gray'> = {
   pending:         'orange',
   pending_hr:      'blue',
-  pending_manager: 'purple',
+  pending_manager: 'blue',
   approved:        'green',
   rejected:        'red',
   cancelled:       'gray',

@@ -1,0 +1,52 @@
+=> ERROR [frontend-builder 6/6] RUN npm run build                                                                                                                                                                                                                                   12.4s 
+------                                                                                                                                                                                                                                                                                     
+ > [frontend-builder 6/6] RUN npm run build:                                                                                                                                                                                                                                               
+0.975                                                                                                                                                                                                                                                                                      
+0.975 > frontend@1.0.0 build                                                                                                                                                                                                                                                               
+0.975 > tsc && vite build
+0.975 
+12.26 src/locales/en.ts(797,3): error TS1117: An object literal cannot have multiple properties with the same name.
+12.26 src/locales/en.ts(816,3): error TS1117: An object literal cannot have multiple properties with the same name.
+12.26 src/locales/en.ts(821,3): error TS1117: An object literal cannot have multiple properties with the same name.
+12.26 src/locales/en.ts(1356,3): error TS1117: An object literal cannot have multiple properties with the same name.
+12.26 src/locales/en.ts(1743,3): error TS1117: An object literal cannot have multiple properties with the same name.
+12.26 src/locales/ms.ts(783,3): error TS1117: An object literal cannot have multiple properties with the same name.
+12.26 src/locales/ms.ts(802,3): error TS1117: An object literal cannot have multiple properties with the same name.
+12.26 src/locales/ms.ts(807,3): error TS1117: An object literal cannot have multiple properties with the same name.
+12.26 src/locales/ms.ts(1317,3): error TS1117: An object literal cannot have multiple properties with the same name.
+12.26 src/locales/zh.ts(784,3): error TS1117: An object literal cannot have multiple properties with the same name.
+12.26 src/locales/zh.ts(803,3): error TS1117: An object literal cannot have multiple properties with the same name.
+12.26 src/locales/zh.ts(808,3): error TS1117: An object literal cannot have multiple properties with the same name.
+12.26 src/locales/zh.ts(1344,3): error TS1117: An object literal cannot have multiple properties with the same name.
+12.26 src/pages/admin/SettingsPage.tsx(554,13): error TS2322: Type '"warning"' is not assignable to type 'Variant | undefined'.
+12.26 src/pages/admission/AdmissionApplyPage.tsx(757,19): error TS2607: JSX element class does not support attributes because it does not have a 'props' property.
+12.26 src/pages/admission/AdmissionApplyPage.tsx(757,20): error TS2786: 'Option' cannot be used as a JSX component.
+12.26   Its type 'new (text?: string | undefined, value?: string | undefined, defaultSelected?: boolean | undefined, selected?: boolean | undefined) => HTMLOptionElement' is not a valid JSX element type.
+12.26     Type 'new (text?: string | undefined, value?: string | undefined, defaultSelected?: boolean | undefined, selected?: boolean | undefined) => HTMLOptionElement' is not assignable to type 'new (props: any, deprecatedLegacyContext?: any) => Component<any, any, any>'.
+12.26       Type 'HTMLOptionElement' is missing the following properties from type 'Component<any, any, any>': context, setState, forceUpdate, render, and 3 more.
+12.26 src/pages/hr/HrOnboardingPage.tsx(460,17): error TS2607: JSX element class does not support attributes because it does not have a 'props' property.
+12.26 src/pages/hr/HrOnboardingPage.tsx(460,18): error TS2786: 'Option' cannot be used as a JSX component.
+12.26   Its type 'new (text?: string | undefined, value?: string | undefined, defaultSelected?: boolean | undefined, selected?: boolean | undefined) => HTMLOptionElement' is not a valid JSX element type.
+12.26     Type 'new (text?: string | undefined, value?: string | undefined, defaultSelected?: boolean | undefined, selected?: boolean | undefined) => HTMLOptionElement' is not assignable to type 'new (props: any, deprecatedLegacyContext?: any) => Component<any, any, any>'.
+12.26       Type 'HTMLOptionElement' is missing the following properties from type 'Component<any, any, any>': context, setState, forceUpdate, render, and 3 more.
+12.26 src/pages/hr/HrOnboardingPage.tsx(462,19): error TS2607: JSX element class does not support attributes because it does not have a 'props' property.
+12.26 src/pages/hr/HrOnboardingPage.tsx(462,20): error TS2786: 'Option' cannot be used as a JSX component.
+12.26   Its type 'new (text?: string | undefined, value?: string | undefined, defaultSelected?: boolean | undefined, selected?: boolean | undefined) => HTMLOptionElement' is not a valid JSX element type.
+12.26     Type 'new (text?: string | undefined, value?: string | undefined, defaultSelected?: boolean | undefined, selected?: boolean | undefined) => HTMLOptionElement' is not assignable to type 'new (props: any, deprecatedLegacyContext?: any) => Component<any, any, any>'.
+12.26       Type 'HTMLOptionElement' is missing the following properties from type 'Component<any, any, any>': context, setState, forceUpdate, render, and 3 more.
+12.26 src/pages/hr/LeaveManagementPage.tsx(51,3): error TS2322: Type '"purple"' is not assignable to type '"red" | "green" | "blue" | "gray" | "orange"'.
+12.26 src/pages/lms/AttendancePage.tsx(216,44): error TS2339: Property 'originFileObj' does not exist on type 'RcFile'.
+12.26 src/pages/lms/LecturerDashboardPage.tsx(329,58): error TS2304: Cannot find name 't'.
+12.26 src/pages/lms/LecturerDashboardPage.tsx(330,65): error TS2304: Cannot find name 't'.
+12.26 src/pages/lms/LecturerDashboardPage.tsx(390,19): error TS2304: Cannot find name 't'.
+12.26 src/pages/lms/LmsCourseDetailStudent.tsx(440,89): error TS2551: Property 'weightPct' does not exist on type 'Assignment'. Did you mean 'weight'?
+------
+Dockerfile:15
+--------------------
+  13 |     
+  14 |     COPY frontend/ .
+  15 | >>> RUN npm run build
+  16 |     
+  17 |     # ---- Nginx 镜像 ----
+--------------------
+ERROR: failed to build: failed to solve: process "/bin/sh -c npm run build" did not complete successfully: exit code: 2

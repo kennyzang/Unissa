@@ -551,7 +551,7 @@ const SettingsPage: React.FC = () => {
         
         <div className={styles.actions}>
           <Button
-            variant="warning"
+            variant="danger"
             icon={<RefreshCw size={14} />}
             loading={studentResetMutation.isPending}
             onClick={() => setStudentConfirmOpen(true)}

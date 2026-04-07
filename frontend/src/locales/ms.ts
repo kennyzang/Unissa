@@ -399,6 +399,7 @@ const ms = {
     modeOfStudy: 'Mod Pengajian',
     weeklyTimetableHours: 'Jadual Mingguan — {{hours}} Jam Kredit',
     inactive: 'Tidak Aktif',
+    notEnrolledTitle: 'Belum Mendaftar',
   },
 
   courseReg: {
@@ -436,6 +437,7 @@ const ms = {
     viewInvoice: 'Lihat Invois',
     viewCampus: 'Lihat Perkhidmatan Kampus',
     goToLms: 'Pergi ke LMS',
+    notEnrolledTitle: 'Belum Mendaftar',
   },
 
   feeStatement: {
@@ -476,6 +478,7 @@ const ms = {
     eWalletNote: 'Anda akan dipindahkan untuk melengkapkan pembayaran melalui dompet elektronik. (Demo: diluluskan secara automatik)',
     pay: 'Bayar',
     cancel: 'Batal',
+    notEnrolledTitle: 'Belum Mendaftar',
   },
 
   financeDashboard: {
@@ -779,11 +782,6 @@ const ms = {
     lmsActive: 'LMS Aktif',
   },
 
-  // Fee Statement
-  feeStatement: {
-    notEnrolledTitle: 'Belum Mendaftar',
-  },
-
   // Student Course Detail
   lmsCourseDetailStudent: {
     notEnrolled: 'Anda tidak mendaftar kursus ini.',
@@ -796,21 +794,6 @@ const ms = {
     materials: 'Bahan Tersedia',
     tabAttendance: 'Kehadiran',
     tabProgress: 'Kemajuan Saya',
-  },
-
-  // Course Registration
-  courseReg: {
-    notEnrolledTitle: 'Belum Mendaftar',
-  },
-
-  // Student Profile
-  studentProfile: {
-    notEnrolledTitle: 'Belum Mendaftar',
-  },
-
-  // Campus Services
-  campusServices: {
-    notEnrolledTitle: 'Belum Mendaftar',
   },
 
   attendance: {
@@ -1351,6 +1334,7 @@ const ms = {
     campusCardSubtitle: 'Kad Kampus',
     universityEmailSubtitle: 'E-mel Universiti',
     financeAccountSubtitle: 'Akaun Kewangan',
+    notEnrolledTitle: 'Belum Mendaftar',
   },
 
   settings: {

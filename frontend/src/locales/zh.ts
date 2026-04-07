@@ -400,6 +400,7 @@ const zh = {
     modeOfStudy: '学习方式',
     weeklyTimetableHours: '每周课程表 — {{hours}} 学分',
     inactive: '未激活',
+    notEnrolledTitle: '暂未选课',
   },
 
   courseReg: {
@@ -437,6 +438,7 @@ const zh = {
     viewInvoice: '查看账单',
     viewCampus: '查看校园服务',
     goToLms: '前往LMS',
+    notEnrolledTitle: '暂未选课',
   },
 
   feeStatement: {
@@ -477,6 +479,7 @@ const zh = {
     eWalletNote: '您将被重定向至电子钱包完成支付。（演示：自动批准）',
     pay: '支付',
     cancel: '取消',
+    notEnrolledTitle: '暂未选课',
   },
 
   financeDashboard: {
@@ -780,11 +783,6 @@ const zh = {
     lmsActive: 'LMS 活跃',
   },
 
-  // Fee Statement
-  feeStatement: {
-    notEnrolledTitle: '暂未选课',
-  },
-
   // Student Course Detail
   lmsCourseDetailStudent: {
     notEnrolled: '您未选此课程。',
@@ -797,21 +795,6 @@ const zh = {
     materials: '可用资料',
     tabAttendance: '考勤',
     tabProgress: '我的进度',
-  },
-
-  // Course Registration
-  courseReg: {
-    notEnrolledTitle: '暂未选课',
-  },
-
-  // Student Profile
-  studentProfile: {
-    notEnrolledTitle: '暂未选课',
-  },
-
-  // Campus Services
-  campusServices: {
-    notEnrolledTitle: '暂未选课',
   },
 
   attendance: {
@@ -1378,6 +1361,7 @@ const zh = {
     campusCardSubtitle: '校园卡',
     universityEmailSubtitle: '大学邮箱',
     financeAccountSubtitle: '财务账户',
+    notEnrolledTitle: '暂未选课',
   },
 
   settings: {

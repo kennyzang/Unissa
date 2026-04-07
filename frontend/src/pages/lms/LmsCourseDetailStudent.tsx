@@ -437,7 +437,7 @@ const LmsCourseDetailStudent: React.FC = () => {
                   <div className={styles.assignmentTitle}>{a.title}</div>
                   <div className={styles.assignmentMeta}>
                     <span>{t('lmsCourseDetail.maxMarks', { defaultValue: 'Max' })}: {a.maxMarks} pts</span>
-                    <span>{t('lmsCourseDetail.weight', { defaultValue: 'Weight' })}: {a.weightPct || 0}%</span>
+                    <span>{t('lmsCourseDetail.weight', { defaultValue: 'Weight' })}: {a.weight || 0}%</span>
                     {a.dueDate && (
                       <span className={isDue ? styles.overdue : styles.dueSoon}>
                         <Clock size={11} />

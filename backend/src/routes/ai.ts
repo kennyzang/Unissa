@@ -204,7 +204,7 @@ router.post('/chat', async (req: AuthRequest, res: Response) => {
 // GET /api/v1/ai/risk-dashboard/:offeringId
 router.get('/risk-dashboard/:offeringId', async (req: AuthRequest, res: Response) => {
   const scores = await prisma.studentRiskScore.findMany({
-    where: { offeringId: req.params.offeringId },
+    where: { offeringId: String(req.params.offeringId) },
     include: {
       student: { include: { user: { select: { displayName: true } } } },
     },
@@ -219,7 +219,7 @@ router.post('/risk-scores/compute/:offeringId', async (req: AuthRequest, res: Re
   const { offeringId } = req.params
 
   const offering = await prisma.courseOffering.findUnique({
-    where: { id: offeringId },
+    where: { id: String(offeringId) },
     include: {
       enrolments: {
         where: { status: 'registered' },
@@ -243,19 +243,19 @@ router.post('/risk-scores/compute/:offeringId', async (req: AuthRequest, res: Re
   for (const { studentId } of offering.enrolments) {
     // Attendance rate
     const presentCount = await prisma.attendanceRecord.count({
-      where: { studentId, session: { offeringId }, status: 'present' },
+      where: { studentId: String(studentId), session: { offeringId: String(offeringId) }, status: 'present' },
     })
     const attendancePct = totalSessions > 0 ? (presentCount / totalSessions) * 100 : 100
 
     // Submission rate
     const submissionsCount = await prisma.submission.count({
-      where: { studentId, assignment: { offeringId } },
+      where: { studentId: String(studentId), assignment: { offeringId: String(offeringId) } },
     })
     const submissionRate = totalAssignments > 0 ? (submissionsCount / totalAssignments) * 100 : 100
 
     // Quiz average from graded submissions (normalised to 0-100)
     const gradedSubmissions = await prisma.submission.findMany({
-      where: { studentId, assignment: { offeringId }, finalMarks: { not: null } },
+      where: { studentId: String(studentId), assignment: { offeringId: String(offeringId) }, finalMarks: { not: null } },
       include: { assignment: { select: { maxMarks: true } } },
     })
     const quizAvg = gradedSubmissions.length > 0
@@ -277,9 +277,9 @@ router.post('/risk-scores/compute/:offeringId', async (req: AuthRequest, res: Re
     const round3 = (n: number) => Math.round(n * 1000) / 1000
 
     const record = await prisma.studentRiskScore.upsert({
-      where: { studentId_offeringId: { studentId, offeringId } },
+      where: { studentId_offeringId: { studentId: String(studentId), offeringId: String(offeringId) } },
       create: {
-        studentId, offeringId,
+        studentId: String(studentId), offeringId: String(offeringId),
         attendancePct: round1(attendancePct),
         quizAvg: round1(quizAvg),
         submissionRate: round1(submissionRate),
@@ -301,7 +301,6 @@ router.post('/risk-scores/compute/:offeringId', async (req: AuthRequest, res: Re
         student: { include: { user: { select: { displayName: true } } } },
       },
     })
-
     results.push(record)
   }
 

@@ -139,11 +139,11 @@ router.post('/bookings', async (req: AuthRequest, res: Response) => {
 router.patch('/bookings/:id/approve', requireRole('manager', 'admin'), async (req: AuthRequest, res: Response) => {
   const { action, remarks } = req.body as { action: 'approve' | 'reject'; remarks?: string }
 
-  const booking = await prisma.facilityBooking.findUnique({ where: { id: req.params.id } })
+  const booking = await prisma.facilityBooking.findUnique({ where: { id: String(req.params.id) } })
   if (!booking) { res.status(404).json({ success: false, message: 'Booking not found' }); return }
 
   const updated = await prisma.facilityBooking.update({
-    where: { id: req.params.id },
+    where: { id: String(req.params.id) },
     data: { status: action === 'approve' ? 'confirmed' : 'rejected' },
     include: {
       facility: { select: { name: true } },
@@ -215,11 +215,11 @@ router.post('/maintenance', async (req: AuthRequest, res: Response) => {
 router.patch('/maintenance/:id', requireRole('manager', 'admin'), async (req: AuthRequest, res: Response) => {
   const { status, assignedToId } = req.body as { status?: string; assignedToId?: string }
 
-  const ticket = await prisma.maintenanceTicket.findUnique({ where: { id: req.params.id } })
+  const ticket = await prisma.maintenanceTicket.findUnique({ where: { id: String(req.params.id) } })
   if (!ticket) { res.status(404).json({ success: false, message: 'Ticket not found' }); return }
 
   const updated = await prisma.maintenanceTicket.update({
-    where: { id: req.params.id },
+    where: { id: String(req.params.id) },
     data: {
       ...(status ? { status } : {}),
       ...(assignedToId ? { assignedToId } : {}),

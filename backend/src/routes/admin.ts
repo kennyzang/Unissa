@@ -222,7 +222,7 @@ router.put('/courses/:id', requireRole('admin', 'manager'), async (req: AuthRequ
   }
 
   const course = await prisma.course.update({
-    where: { id: req.params.id },
+    where: { id: String(req.params.id) },
     data: { name, departmentId, creditHours, level, isOpenToInternational, maxSeats },
   })
   res.json({ success: true, data: course, message: 'Course updated' })
@@ -230,7 +230,7 @@ router.put('/courses/:id', requireRole('admin', 'manager'), async (req: AuthRequ
 
 // DELETE /admin/courses/:id — delete course (admin only; blocked if offerings exist)
 router.delete('/courses/:id', requireRole('admin'), async (req: AuthRequest, res: Response) => {
-  const offeringCount = await prisma.courseOffering.count({ where: { courseId: req.params.id } })
+  const offeringCount = await prisma.courseOffering.count({ where: { courseId: String(req.params.id) } })
   if (offeringCount > 0) {
     res.status(409).json({
       success: false,
@@ -238,14 +238,14 @@ router.delete('/courses/:id', requireRole('admin'), async (req: AuthRequest, res
     })
     return
   }
-  await prisma.course.delete({ where: { id: req.params.id } })
+  await prisma.course.delete({ where: { id: String(req.params.id) } })
   res.json({ success: true, message: 'Course deleted' })
 })
 
 // GET /admin/courses/:id/enrolments — all offerings with student rosters + assignments
 router.get('/courses/:id/enrolments', requireRole('admin', 'manager'), async (req: AuthRequest, res: Response) => {
   const offerings = await prisma.courseOffering.findMany({
-    where: { courseId: req.params.id },
+    where: { courseId: String(req.params.id) },
     include: {
       semester: { select: { name: true, isActive: true } },
       lecturer: { include: { user: { select: { displayName: true } } } },
@@ -272,7 +272,7 @@ router.patch('/courses/:id/approve', requireRole('admin', 'manager'), async (req
     return
   }
   const course = await prisma.course.update({
-    where: { id: req.params.id },
+    where: { id: String(req.params.id) },
     data:  { status: action === 'approve' ? 'published' : 'draft' },
   })
   res.json({ success: true, data: course, message: action === 'approve' ? 'Course approved' : 'Course proposal rejected' })
@@ -282,12 +282,12 @@ router.patch('/courses/:id/approve', requireRole('admin', 'manager'), async (req
 
 // DELETE /admin/enrolments/:enrolmentId — remove student from course offering
 router.delete('/enrolments/:enrolmentId', requireRole('admin', 'manager'), async (req: AuthRequest, res: Response) => {
-  const enrolment = await prisma.enrolment.findUnique({ where: { id: req.params.enrolmentId } })
+  const enrolment = await prisma.enrolment.findUnique({ where: { id: String(req.params.enrolmentId) } })
   if (!enrolment) {
     res.status(404).json({ success: false, message: 'Enrolment not found' })
     return
   }
-  await prisma.enrolment.delete({ where: { id: req.params.enrolmentId } })
+  await prisma.enrolment.delete({ where: { id: String(req.params.enrolmentId) } })
   await prisma.courseOffering.updateMany({
     where: { id: enrolment.offeringId, seatsTaken: { gt: 0 } },
     data:  { seatsTaken: { decrement: 1 } },
@@ -355,10 +355,7 @@ router.post('/demo-reset', requireRole('admin'), async (_req: AuthRequest, res: 
     const { count: users } = await prisma.user.deleteMany({ 
       where: { 
         role: 'student',
-        NOT: [
-          { username: 'noor' },
-          { username: 'zara' }
-        ]
+        username: { notIn: ['noor', 'zara'] }
       } 
     })
 

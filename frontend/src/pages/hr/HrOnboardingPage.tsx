@@ -15,6 +15,8 @@ import Table from '@/components/ui/Table'
 import type { ColumnDef } from '@/components/ui/Table'
 import styles from './HrOnboardingPage.module.scss'
 
+const { Option } = Select
+
 interface OnboardingRequest {
   id: string
   staffId: string

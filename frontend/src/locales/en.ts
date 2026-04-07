@@ -408,6 +408,7 @@ const en = {
     modeOfStudy: 'Mode of Study',
     weeklyTimetableHours: 'Weekly Timetable — {{hours}} Credit Hours',
     inactive: 'Inactive',
+    notEnrolledTitle: 'Not Enrolled Yet',
   },
 
   // Course Registration
@@ -446,6 +447,7 @@ const en = {
     viewInvoice: 'View Invoice',
     viewCampus: 'View Campus Services',
     goToLms: 'Go to LMS',
+    notEnrolledTitle: 'Not Enrolled Yet',
   },
 
   // Fee Statement
@@ -487,6 +489,7 @@ const en = {
     eWalletNote: 'You will be redirected to complete payment via e-wallet. (Demo: auto-approved)',
     pay: 'Pay',
     cancel: 'Cancel',
+    notEnrolledTitle: 'Not Enrolled Yet',
   },
 
   // Finance Dashboard
@@ -793,11 +796,6 @@ const en = {
     lmsActive: 'LMS Active',
   },
 
-  // Fee Statement
-  feeStatement: {
-    notEnrolledTitle: 'Not Enrolled Yet',
-  },
-
   // Student Course Detail
   lmsCourseDetailStudent: {
     notEnrolled: 'You are not enrolled in this course.',
@@ -810,21 +808,6 @@ const en = {
     materials: 'Materials Available',
     tabAttendance: 'Attendance',
     tabProgress: 'My Progress',
-  },
-
-  // Course Registration
-  courseReg: {
-    notEnrolledTitle: 'Not Enrolled Yet',
-  },
-
-  // Student Profile
-  studentProfile: {
-    notEnrolledTitle: 'Not Enrolled Yet',
-  },
-
-  // Campus Services
-  campusServices: {
-    notEnrolledTitle: 'Not Enrolled Yet',
   },
 
   // Attendance
@@ -1390,6 +1373,7 @@ const en = {
     campusCardSubtitle: 'Campus Card',
     universityEmailSubtitle: 'University Email',
     financeAccountSubtitle: 'Finance Account',
+    notEnrolledTitle: 'Not Enrolled Yet',
   },
 
   // Admin Settings
@@ -1737,28 +1721,6 @@ const en = {
     colDecision: 'Status',
     colCompletedAt: 'Completed On',
     noCompleted: 'No completed onboarding records found.',
-  },
-
-  // Staff Portal
-  staffPortal: {
-    welcome: 'Welcome, {{name}}',
-    noRecord: 'Staff record not found. Please contact HR.',
-    annualLeave: 'Annual Leave',
-    medicalLeave: 'Medical Leave',
-    daysRemaining: 'days remaining',
-    teachingLoad: 'Teaching Load',
-    creditHours: 'credit hours',
-    latestPayslip: 'Latest Payslip',
-    teachingSchedule: 'My Teaching Schedule',
-    noSchedule: 'No active course offerings found.',
-    enrolled: 'enrolled',
-    payslipHistory: 'Payslip History',
-    basic: 'Basic',
-    allowances: 'Allowances',
-    deductions: 'Deductions',
-    paid: 'Paid',
-    draft: 'Draft',
-    myInfo: 'My Staff Information',
   },
 
   // Payroll Management

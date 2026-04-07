@@ -70,7 +70,7 @@ router.get('/funnel', authenticate, requireRole('admissions', 'admin', 'manager'
       orderBy: { createdAt: 'desc' },
       include: {
         programme: { select: { name: true, code: true } },
-        intake:    { select: { name: true } },
+        intake:    { select: { intakeStart: true, intakeEnd: true } },
       },
     }),
   ])
@@ -568,7 +568,7 @@ router.post(
       return
     }
 
-    const applicant = await prisma.applicant.findUnique({ where: { id: applicantId } })
+    const applicant = await prisma.applicant.findUnique({ where: { id: String(applicantId) } })
     if (!applicant) {
       res.status(404).json({ success: false, message: 'Application not found' })
       return
@@ -595,7 +595,7 @@ router.post(
         },
       })
       const doc = await prisma.applicantDocument.create({
-        data: { applicantId, assetId: asset.id, docType },
+        data: { applicantId: String(applicantId), assetId: asset.id, docType },
       })
       created.push({ ...doc, asset })
     }
@@ -607,7 +607,7 @@ router.post(
 // GET /api/v1/admissions/:applicantId/documents  — List uploaded documents for an application
 router.get('/:applicantId/documents', authenticate, async (req: AuthRequest, res: Response) => {
   const docs = await prisma.applicantDocument.findMany({
-    where: { applicantId: req.params.applicantId },
+    where: { applicantId: String(req.params.applicantId) },
     include: { asset: true },
     orderBy: { uploadedAt: 'desc' },
   })

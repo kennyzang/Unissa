@@ -315,6 +315,7 @@ const OfferingCard: React.FC<{ offering: OfferingSnapshot }> = ({ offering }) =>
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 const LecturerDashboardPage: React.FC = () => {
+  const { t } = useTranslation()
   const user = useAuthStore(s => s.user)
 
   const { data, isLoading, isError } = useQuery<LecturerDashboard>({

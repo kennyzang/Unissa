@@ -213,7 +213,7 @@ const CreateSessionModal: React.FC<{
                 return false
               }
               setError('')
-              setFiles(fileList.map(f => f.originFileObj!))
+              setFiles([...fileList])
               return false
             }}
             className={styles.fileDropZone}

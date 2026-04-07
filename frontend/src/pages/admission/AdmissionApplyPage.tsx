@@ -24,6 +24,7 @@ import { useAuthStore } from '@/stores/authStore'
 import styles from './AdmissionApplyPage.module.scss'
 
 const { Title, Text } = Typography
+const { Option } = Select
 
 // ── Enrolled student status card ──────────────────────────────────────────────
 const EnrolledStudentCard: React.FC = () => {

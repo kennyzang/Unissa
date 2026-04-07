@@ -26,7 +26,7 @@ async function activateStudentServices(studentId: string, userId: string) {
 
   if (!student) return
 
-  const notifications = []
+  const notifications: Promise<void>[] = []
 
   if (!student.libraryAccount) {
     await prisma.libraryAccount.create({

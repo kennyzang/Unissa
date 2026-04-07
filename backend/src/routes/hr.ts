@@ -47,7 +47,7 @@ router.get('/staff/portal', async (req: AuthRequest, res: Response) => {
 // GET /api/v1/hr/staff/:id
 router.get('/staff/:id', requireRole('manager', 'admin', 'hradmin'), async (req: AuthRequest, res: Response) => {
   const member = await prisma.staff.findFirst({
-    where: { OR: [{ id: req.params.id }, { staffId: req.params.id }] },
+    where: { OR: [{ id: String(req.params.id) }, { staffId: String(req.params.id) }] },
     include: {
       user: { select: { displayName: true, email: true, isActive: true, lastLoginAt: true } },
       department: true,
@@ -175,7 +175,7 @@ router.patch('/leave/:id/approve', requireRole('manager', 'admin', 'hradmin'), a
   const userId = req.user!.userId
 
   const leave = await prisma.leaveRequest.findUnique({
-    where: { id: req.params.id },
+    where: { id: String(req.params.id) },
     include: { staff: true },
   })
   if (!leave) { res.status(404).json({ success: false, message: 'Leave request not found' }); return }
@@ -203,7 +203,7 @@ router.patch('/leave/:id/approve', requireRole('manager', 'admin', 'hradmin'), a
   }
 
   const updated = await prisma.leaveRequest.update({
-    where: { id: req.params.id },
+    where: { id: String(req.params.id) },
     data: updateData,
   })
 
@@ -400,7 +400,7 @@ router.post('/onboarding', requireRole('manager', 'admin', 'hradmin'), async (re
 // PATCH /api/v1/hr/onboarding/:id/approve  (Manager approves → 4 automated steps)
 router.patch('/onboarding/:id/approve', requireRole('manager', 'admin'), async (req: AuthRequest, res: Response) => {
   const request = await prisma.onboardingRequest.findUnique({
-    where: { id: req.params.id },
+    where: { id: String(req.params.id) },
     include: {
       staff: {
         include: { user: true },
