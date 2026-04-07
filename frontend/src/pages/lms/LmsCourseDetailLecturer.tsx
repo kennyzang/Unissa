@@ -138,7 +138,7 @@ const LmsCourseDetailLecturer: React.FC = () => {
   const [assignmentModal, setAssignmentModal]   = useState(false)
   const [asnTitle, setAsnTitle]                 = useState('')
   const [asnDesc, setAsnDesc]                   = useState('')
-  const [asnDueDate, setAsnDueDate]             = useState('')
+  const [asnDueDate, setAsnDueDate]             = useState<dayjs.Dayjs | null>(null)
   const [asnMaxMarks, setAsnMaxMarks]           = useState('100')
   const [asnWeight, setAsnWeight]               = useState('10')
   const [asnCriteria, setAsnCriteria]           = useState<{ criterion: string; max_marks: number }[]>([
@@ -148,7 +148,7 @@ const LmsCourseDetailLecturer: React.FC = () => {
   const [asnQuestions, setAsnQuestions]         = useState<Question[]>([])
 
   const resetAssignmentForm = () => {
-    setAsnTitle(''); setAsnDesc(''); setAsnDueDate(''); setAsnMaxMarks('100'); setAsnWeight('10')
+    setAsnTitle(''); setAsnDesc(''); setAsnDueDate(null); setAsnMaxMarks('100'); setAsnWeight('10')
     setAsnCriteria([{ criterion: 'Content', max_marks: 60 }, { criterion: 'Presentation', max_marks: 40 }])
     setAsnQuestions([])
   }
@@ -288,7 +288,7 @@ const LmsCourseDetailLecturer: React.FC = () => {
         offeringId,
         title,
         description: asnDesc.trim() || title,
-        dueDate: asnDueDate,
+        dueDate: asnDueDate.toISOString(),
         maxMarks: parseInt(asnMaxMarks) || 100,
         weightPct: parseFloat(asnWeight) || 10,
         rubricCriteria,
@@ -1145,11 +1145,13 @@ const LmsCourseDetailLecturer: React.FC = () => {
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12 }}>
               <div className={styles.formGroup}>
                 <label className={styles.formLabel}>{t('lmsCourseDetailLecturer.dueDate', { defaultValue: 'Due Date' })} *</label>
-                <Input
+                <DatePicker
                   className={styles.formInput}
-                  type="datetime-local"
+                  showTime
                   value={asnDueDate}
-                  onChange={e => setAsnDueDate(e.target.value)}
+                  onChange={(date) => setAsnDueDate(date)}
+                  format="YYYY-MM-DD HH:mm"
+                  style={{ width: '100%' }}
                 />
               </div>
               <div className={styles.formGroup}>

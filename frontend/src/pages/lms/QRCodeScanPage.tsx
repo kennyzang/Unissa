@@ -1,5 +1,6 @@
 import { useState, useRef } from 'react'
 import { Button, Alert, Card, Spin, Result, Upload, message } from 'antd'
+import type { UploadProps } from 'antd'
 import { ScanOutlined, UploadOutlined } from '@ant-design/icons'
 import { useTranslation } from 'react-i18next'
 import apiClient from '@/lib/apiClient'
@@ -15,7 +16,6 @@ interface AttendanceData {
 const QRCodeScanPage = () => {
   const { t } = useTranslation()
   const user = useAuthStore(s => s.user)
-  const fileInputRef = useRef<HTMLInputElement>(null)
   const [scanning, setScanning] = useState(false)
   const [scanResult, setScanResult] = useState<AttendanceData | null>(null)
   const [error, setError] = useState<string | null>(null)
@@ -45,7 +45,7 @@ const QRCodeScanPage = () => {
   }
 
   const startScanning = () => {
-    fileInputRef.current?.click()
+    // 由Upload组件处理文件选择
   }
 
   const resetScan = () => {
@@ -77,31 +77,29 @@ const QRCodeScanPage = () => {
           <p className={styles.subtitle}>{t('attendance.scanInstruction')}</p>
         </div>
 
-        <input
-          ref={fileInputRef}
-          type="file"
+        <Upload
+          name="file"
           accept=".txt,.json"
-          style={{ display: 'none' }}
-          onChange={(e) => {
-            const file = e.target.files?.[0]
-            if (file) handleFileUpload(file)
+          multiple={false}
+          showUploadList={false}
+          beforeUpload={(file) => {
+            handleFileUpload(file)
+            return false
           }}
-        />
+        >
+          <Button
+            type="primary"
+            size="large"
+            icon={<ScanOutlined />}
+            className={styles.scanButton}
+          >
+            {t('attendance.startScan')}
+          </Button>
+        </Upload>
 
         {!scanning && !scanResult && (
-          <div className={styles.actions}>
-            <Button
-              type="primary"
-              size="large"
-              icon={<ScanOutlined />}
-              onClick={startScanning}
-              className={styles.scanButton}
-            >
-              {t('attendance.startScan')}
-            </Button>
-            <div style={{ marginTop: '16px', textAlign: 'center', fontSize: '12px', color: '#999' }}>
-              POC版本：请上传包含考勤信息的JSON文件
-            </div>
+          <div style={{ marginTop: '16px', textAlign: 'center', fontSize: '12px', color: '#999' }}>
+            POC版本：请上传包含考勤信息的JSON文件
           </div>
         )}
 

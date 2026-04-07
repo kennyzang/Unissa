@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react'
 import { useMutation } from '@tanstack/react-query'
+import { Input } from 'antd'
 import { Send, Bot, User, Sparkles, RefreshCw } from 'lucide-react'
 import { apiClient } from '@/lib/apiClient'
 import styles from './ChatbotPage.module.scss'
@@ -178,8 +179,8 @@ const ChatbotPage: React.FC = () => {
 
         {/* Input */}
         <div className={styles.inputRow}>
-          <textarea
-            ref={inputRef}
+          <Input.TextArea
+            ref={inputRef as any}
             className={styles.input}
             rows={1}
             placeholder="Ask me anything about your studies…"

@@ -18,7 +18,6 @@ const QRScanner = () => {
   const user = useAuthStore(s => s.user)
   const videoRef = useRef<HTMLVideoElement>(null)
   const canvasRef = useRef<HTMLCanvasElement>(null)
-  const fileInputRef = useRef<HTMLInputElement>(null)
   const [scanning, setScanning] = useState(false)
   const [cameraActive, setCameraActive] = useState(false)
   const [scanResult, setScanResult] = useState<AttendanceData | null>(null)
@@ -287,24 +286,24 @@ const QRScanner = () => {
 
         {/* 备用文件上传 */}
         <div className={styles.fallbackUpload}>
-          <input
-            ref={fileInputRef}
-            type="file"
+          <Upload
+            name="file"
             accept=".txt,.json"
-            style={{ display: 'none' }}
-            onChange={(e) => {
-              const file = e.target.files?.[0]
-              if (file) handleFileUpload(file)
+            multiple={false}
+            showUploadList={false}
+            beforeUpload={(file) => {
+              handleFileUpload(file)
+              return false
             }}
-          />
-          <Button
-            size="small"
-            icon={<UploadOutlined />}
-            onClick={() => fileInputRef.current?.click()}
-            className={styles.fallbackUploadBtn}
           >
-            {t('attendance.uploadFallback')}
-          </Button>
+            <Button
+              size="small"
+              icon={<UploadOutlined />}
+              className={styles.fallbackUploadBtn}
+            >
+              {t('attendance.uploadFallback')}
+            </Button>
+          </Upload>
           <p className={styles.fallbackNote}>{t('attendance.fallbackNote')}</p>
         </div>
 
