@@ -65,17 +65,31 @@ const StudentDashboardPage: React.FC = () => {
     {
       num: 1,
       icon: <FileText size={20} />,
-      title: t('studentDashboard.stepOfferTitle', { defaultValue: 'Accept Offer Letter' }),
-      desc: status.offerRef
-        ? t('studentDashboard.stepOfferDesc', {
-            defaultValue: `Offer reference: {{ref}} — {{programme}}`,
-            ref: status.offerRef,
-            programme: status.programmeName ?? '',
-          })
-        : t('studentDashboard.stepOfferDescNoRef', { defaultValue: 'Review and accept your admission offer from UNISSA.' }),
+      title: status.applicantStatus === 'submitted' 
+        ? t('studentDashboard.stepApplicationTitle', { defaultValue: 'Application Submitted' })
+        : status.applicantStatus 
+          ? t('studentDashboard.stepOfferTitle', { defaultValue: 'Accept Offer Letter' })
+          : t('studentDashboard.stepNoApplicationTitle', { defaultValue: 'Submit Admission Application' }),
+      desc: status.applicantStatus === 'submitted'
+        ? t('studentDashboard.stepApplicationDesc', { defaultValue: 'Your application has been submitted. The admissions team is reviewing it. You will receive an offer letter once approved.' })
+        : status.applicantStatus
+          ? status.offerRef
+            ? t('studentDashboard.stepOfferDesc', {
+                defaultValue: `Offer reference: {{ref}} — {{programme}}`,
+                ref: status.offerRef,
+                programme: status.programmeName ?? '',
+              })
+            : t('studentDashboard.stepOfferDescNoRef', { defaultValue: 'Review and accept your admission offer from UNISSA.' })
+          : t('studentDashboard.stepNoApplicationDesc', { defaultValue: 'You need to submit an admission application before you can enrol in courses.' }),
       done: offerAccepted,
-      action: offerAccepted ? null : () => acceptMutation.mutate(),
-      actionLabel: t('studentDashboard.acceptOffer', { defaultValue: 'Accept Offer & Enrol' }),
+      action: (offerAccepted || status.applicantStatus === 'submitted') 
+        ? null 
+        : status.applicantStatus 
+          ? () => acceptMutation.mutate()
+          : () => navigate('/admission/apply'),
+      actionLabel: status.applicantStatus 
+        ? t('studentDashboard.acceptOffer', { defaultValue: 'Accept Offer & Enrol' })
+        : t('studentDashboard.submitApplication', { defaultValue: 'Submit Application' }),
       loading: acceptMutation.isPending,
     },
     {
