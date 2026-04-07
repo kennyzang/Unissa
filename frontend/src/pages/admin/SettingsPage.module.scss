@@ -412,3 +412,38 @@
     gap: $space-1;
   }
 }
+
+// ── Student Reset ────────────────────────────────────────────────
+.studentSelect {
+  margin: $space-4 0;
+  padding: $space-4;
+  background: $color-gray-1;
+  border-radius: $border-radius-md;
+}
+
+.checkboxGroup {
+  display: flex;
+  flex-direction: column;
+  gap: $space-2;
+  margin-top: $space-2;
+}
+
+.checkboxItem {
+  display: flex;
+  align-items: center;
+  gap: $space-2;
+  font-size: $font-size-sm;
+  color: $color-gray-7;
+
+  input[type="checkbox"] {
+    width: 16px;
+    height: 16px;
+    accent-color: $brand-primary;
+  }
+
+  label {
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+  }
+}

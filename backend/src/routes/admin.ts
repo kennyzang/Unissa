@@ -305,51 +305,53 @@ router.post('/demo-reset', requireRole('admin'), async (_req: AuthRequest, res: 
 
     // Step 2: submissions and their file assets
     const { count: submissions } = await prisma.submission.deleteMany({})
+
+    // Step 3: course materials (FK: uploadedBy → user, may reference fileAsset)
+    await prisma.courseMaterial.deleteMany({})
+
+    // Step 4: now delete file assets (all references should be removed)
     await prisma.fileAsset.deleteMany({})
 
-    // Step 3: payments, invoice adjustments, invoices (FK order)
+    // Step 5: payments, invoice adjustments, invoices (FK order)
     const { count: payments } = await prisma.payment.deleteMany({})
     await prisma.invoiceAdjustment.deleteMany({})
     const { count: invoices } = await prisma.feeInvoice.deleteMany({})
 
-    // Step 4: enrolments, then reset seat counts
+    // Step 6: enrolments, then reset seat counts
     const { count: enrolments } = await prisma.enrolment.deleteMany({})
     await prisma.courseOffering.updateMany({ data: { seatsTaken: 0 } })
 
-    // Step 5: analytics records
+    // Step 7: analytics records
     await prisma.studentGpaRecord.deleteMany({})
     await prisma.studentRiskScore.deleteMany({})
 
-    // Step 6: campus cards
+    // Step 8: campus cards
     const { count: campusCardTransactions } = await prisma.campusCardTransaction.deleteMany({})
     await prisma.campusCard.deleteMany({})
 
-    // Step 7: library accounts, then students (FK: student → user)
+    // Step 9: library accounts, then students (FK: student → user)
     await prisma.libraryAccount.deleteMany({})
     const { count: students } = await prisma.student.deleteMany({})
 
-    // Step 8: course materials (FK: uploadedBy → user)
-    await prisma.courseMaterial.deleteMany({})
-
-    // Step 9: chatbot conversations (FK: userId → user)
+    // Step 10: chatbot conversations (FK: userId → user)
     const { count: chatbotConversations } = await prisma.chatbotConversation.deleteMany({})
 
-    // Step 10: notifications (FK: userId → user)
+    // Step 11: notifications (FK: userId → user)
     await prisma.notification.deleteMany({})
 
-    // Step 11: push subscriptions (FK: userId → user)
+    // Step 12: push subscriptions (FK: userId → user)
     await prisma.pushSubscription.deleteMany({})
 
-    // Step 12: audit logs (FK: userId → user)
+    // Step 13: audit logs (FK: userId → user)
     await prisma.auditLog.deleteMany({})
 
-    // Step 13: esignatures (FK: userId → user)
+    // Step 14: esignatures (FK: userId → user)
     await prisma.esignature.deleteMany({})
 
-    // Step 14: applicants (after student FK removed)
+    // Step 15: applicants (after student FK removed)
     const { count: applicants } = await prisma.applicant.deleteMany({})
 
-    // Step 15: users with role = student (after all FK removed), except noor and zara
+    // Step 16: users with role = student (after all FK removed), except noor and zara
     const { count: users } = await prisma.user.deleteMany({ 
       where: { 
         role: 'student',
@@ -382,6 +384,182 @@ router.post('/demo-reset', requireRole('admin'), async (_req: AuthRequest, res: 
     res.status(500).json({
       success: false,
       message: 'Demo reset failed',
+      error: error.message,
+    })
+  }
+})
+
+router.post('/reset-student-enrollment', requireRole('admin'), async (req: AuthRequest, res: Response) => {
+  try {
+    const { usernames } = req.body as { usernames: string[] }
+
+    if (!usernames || !Array.isArray(usernames) || usernames.length === 0) {
+      res.status(400).json({ success: false, message: 'Usernames array is required' })
+      return
+    }
+
+    // Get users by usernames
+    const users = await prisma.user.findMany({
+      where: { username: { in: usernames } },
+      include: { student: true }
+    })
+
+    const deleted = {
+      enrolments: 0,
+      submissions: 0,
+      attendanceRecords: 0,
+      payments: 0,
+      invoices: 0,
+      libraryAccounts: 0,
+      gpaRecords: 0,
+      riskScores: 0,
+      campusCards: 0,
+      campusCardTransactions: 0,
+      applicants: 0
+    }
+
+    for (const user of users) {
+      // Process student-related data if exists
+      if (user.student) {
+        // Step 1: Attendance records
+        const { count: attendanceCount } = await prisma.attendanceRecord.deleteMany({
+          where: { studentId: user.student.id }
+        })
+        deleted.attendanceRecords += attendanceCount
+
+        // Step 2: Submissions
+        const { count: submissionCount } = await prisma.submission.deleteMany({
+          where: { studentId: user.student.id }
+        })
+        deleted.submissions += submissionCount
+
+        // Step 3: Enrolments
+        const enrolments = await prisma.enrolment.findMany({
+          where: { studentId: user.student.id }
+        })
+        deleted.enrolments += enrolments.length
+
+        // Reset seat counts for course offerings
+        for (const enrolment of enrolments) {
+          await prisma.courseOffering.updateMany({
+            where: { id: enrolment.offeringId, seatsTaken: { gt: 0 } },
+            data: { seatsTaken: { decrement: 1 } }
+          })
+        }
+
+        await prisma.enrolment.deleteMany({ where: { studentId: user.student.id } })
+
+        // Step 4: Invoices and payments
+        const invoices = await prisma.feeInvoice.findMany({
+          where: { studentId: user.student.id }
+        })
+        deleted.invoices += invoices.length
+
+        for (const invoice of invoices) {
+          // Delete payments for this invoice
+          const { count: paymentCount } = await prisma.payment.deleteMany({
+            where: { invoiceId: invoice.id }
+          })
+          deleted.payments += paymentCount
+
+          // Delete invoice adjustments
+          await prisma.invoiceAdjustment.deleteMany({ where: { invoiceId: invoice.id } })
+        }
+
+        // Delete invoices
+        await prisma.feeInvoice.deleteMany({ where: { studentId: user.student.id } })
+
+        // Step 5: Library account
+        const { count: libraryCount } = await prisma.libraryAccount.deleteMany({
+          where: { studentId: user.student.id }
+        })
+        deleted.libraryAccounts += libraryCount
+
+        // Step 6: GPA and risk records
+        const { count: gpaCount } = await prisma.studentGpaRecord.deleteMany({
+          where: { studentId: user.student.id }
+        })
+        deleted.gpaRecords += gpaCount
+
+        const { count: riskCount } = await prisma.studentRiskScore.deleteMany({
+          where: { studentId: user.student.id }
+        })
+        deleted.riskScores += riskCount
+
+        // Step 7: Campus card and transactions
+        const campusCard = await prisma.campusCard.findUnique({
+          where: { studentId: user.student.id }
+        })
+
+        if (campusCard) {
+          const { count: transactionCount } = await prisma.campusCardTransaction.deleteMany({
+            where: { cardId: campusCard.id }
+          })
+          deleted.campusCardTransactions += transactionCount
+
+          await prisma.campusCard.delete({ where: { id: campusCard.id } })
+          deleted.campusCards += 1
+        }
+
+        // Step 8: Delete student record (will not delete user)
+        await prisma.student.delete({ where: { id: user.student.id } })
+      }
+
+      // Step 9: Delete applicant record if exists (regardless of student status)
+      const { count: applicantCount } = await prisma.applicant.deleteMany({
+        where: { userId: user.id }
+      })
+      deleted.applicants += applicantCount
+    }
+
+    // After reset, set up initial state for noor (admitted) and zara (no application)
+    for (const user of users) {
+      if (user.username === 'noor') {
+        // Create applicant record for noor with admitted status
+        const intake = await prisma.intake.findFirst({ orderBy: { id: 'desc' } })
+        if (intake) {
+          await prisma.applicant.create({
+            data: {
+              userId: user.id,
+              applicationRef: `APP-${Date.now()}-NOOR`,
+              fullName: 'Noor Ahmad',
+              icPassport: '123456789',
+              dateOfBirth: new Date('2000-01-01'),
+              gender: 'male',
+              nationality: 'Brunei Darussalam',
+              email: user.email,
+              mobile: '8888888',
+              homeAddress: 'Bandar Seri Begawan, Brunei',
+              highestQualification: 'High School',
+              previousInstitution: 'Sultan Omar Ali Saifuddien College',
+              yearOfCompletion: 2024,
+              intakeId: intake.id,
+              programmeId: intake.programmeId,
+              modeOfStudy: 'full_time',
+              scholarshipApplied: false,
+              status: 'admitted',
+              submittedAt: new Date(),
+              decisionMadeAt: new Date(),
+              accountCreated: true,
+              accountCreatedAt: new Date()
+            }
+          })
+        }
+      }
+      // zara remains with no application record
+    }
+
+    res.json({
+      success: true,
+      message: 'Student enrollment reset completed',
+      deleted,
+      resetUsers: users.map(u => u.username)
+    })
+  } catch (error: any) {
+    console.error('Student enrollment reset failed:', error)
+    res.status(500).json({
+      success: false,
+      message: 'Student enrollment reset failed',
       error: error.message,
     })
   }

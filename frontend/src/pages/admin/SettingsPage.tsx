@@ -87,6 +87,13 @@ const SettingsPage: React.FC = () => {
   const [resetDone, setResetDone] = useState(false)
   const [resetCounts, setResetCounts] = useState<Record<string, number> | null>(null)
   const [confirmOpen, setConfirmOpen] = useState(false)
+  
+  // Student reset state
+  const [studentResetDone, setStudentResetDone] = useState(false)
+  const [studentResetCounts, setStudentResetCounts] = useState<Record<string, number> | null>(null)
+  const [studentResetUsers, setStudentResetUsers] = useState<string[]>([])
+  const [studentConfirmOpen, setStudentConfirmOpen] = useState(false)
+  const [selectedStudents, setSelectedStudents] = useState<string[]>(['noor', 'zara'])
 
   const demoResetMutation = useMutation({
     mutationFn: () => apiClient.post('/admin/demo-reset'),
@@ -135,6 +142,17 @@ const SettingsPage: React.FC = () => {
     onError: (e: any) => {
       setEmailTestResult({ success: false, message: e.response?.data?.error ?? e.response?.data?.message ?? t('settings.emailTestFailed') })
     },
+  })
+
+  const studentResetMutation = useMutation({
+    mutationFn: (usernames: string[]) => apiClient.post('/admin/reset-student-enrollment', { usernames }),
+    onSuccess: (res) => {
+      setStudentResetDone(true)
+      setStudentResetCounts(res.data.deleted ?? null)
+      setStudentResetUsers(res.data.resetUsers ?? [])
+      addToast({ type: 'success', message: t('settings.studentResetToast', { defaultValue: 'Student enrollment reset completed' }) })
+    },
+    onError: (e: any) => addToast({ type: 'error', message: e.response?.data?.message ?? t('settings.studentResetFailed', { defaultValue: 'Student enrollment reset failed' }) }),
   })
 
   const handleProviderChange = (provider: AiConfig['provider']) => {
@@ -439,6 +457,7 @@ const SettingsPage: React.FC = () => {
 
   const demoTab = (
     <div className={styles.tabContent}>
+      {/* Demo Reset Modal */}
       <Modal
         title={t('settings.demoResetConfirmTitle', { defaultValue: 'Confirm Demo Reset' })}
         open={confirmOpen}
@@ -456,6 +475,94 @@ const SettingsPage: React.FC = () => {
         <p>{t('settings.demoResetConfirmBody', { defaultValue: 'This will permanently delete all student accounts, enrolments, submissions, payments, and transactional data. This cannot be undone. Are you sure?' })}</p>
       </Modal>
 
+      {/* Student Reset Modal */}
+      <Modal
+        title={t('settings.studentResetConfirmTitle', { defaultValue: 'Confirm Student Enrollment Reset' })}
+        open={studentConfirmOpen}
+        onOk={() => {
+          setStudentConfirmOpen(false)
+          setStudentResetDone(false)
+          setStudentResetCounts(null)
+          setStudentResetUsers([])
+          studentResetMutation.mutate(selectedStudents)
+        }}
+        onCancel={() => setStudentConfirmOpen(false)}
+        okText={t('settings.studentResetConfirmOk', { defaultValue: 'Yes, Reset Now' })}
+        cancelText={t('common.cancel', { defaultValue: 'Cancel' })}
+        okButtonProps={{ danger: true }}
+      >
+        <p>{t('settings.studentResetConfirmBody', { defaultValue: 'This will reset the enrollment status for the selected students, including their course enrolments, submissions, payments, and other related data. This cannot be undone. Are you sure?' })}</p>
+        <div style={{ marginTop: 16, fontSize: 14 }}>
+          <strong>Selected students:</strong> {selectedStudents.join(', ')}
+        </div>
+      </Modal>
+
+      {/* Student Reset Card */}
+      <Card title={t('settings.studentResetTitle', { defaultValue: 'Reset Student Enrollment' })} className={styles.configCard}>
+        <div className={styles.demoResetDesc}>
+          <p>{t('settings.studentResetDesc', { defaultValue: 'Reset enrollment status for specific students, including their course enrolments, submissions, payments, and other related data. This will not delete the student accounts.' })}</p>
+        </div>
+        
+        <div className={styles.studentSelect}>
+          <label className={styles.label}>{t('settings.studentResetSelect', { defaultValue: 'Select Students' })}</label>
+          <div className={styles.checkboxGroup}>
+            {[
+              { value: 'noor', label: 'Noor (noor@unissa.edu.bn)' },
+              { value: 'zara', label: 'Zara (zara@unissa.edu.bn)' },
+            ].map(student => (
+              <div key={student.value} className={styles.checkboxItem}>
+                <input
+                  type="checkbox"
+                  id={`student-${student.value}`}
+                  checked={selectedStudents.includes(student.value)}
+                  onChange={(e) => {
+                    if (e.target.checked) {
+                      setSelectedStudents([...selectedStudents, student.value])
+                    } else {
+                      setSelectedStudents(selectedStudents.filter(s => s !== student.value))
+                    }
+                  }}
+                />
+                <label htmlFor={`student-${student.value}`}>{student.label}</label>
+              </div>
+            ))}
+          </div>
+        </div>
+        
+        {studentResetDone && (
+          <div className={`${styles.testResult} ${styles.testOk}`}>
+            <CheckCircle size={16} />
+            <span>
+              {t('settings.studentResetSuccess', { defaultValue: 'Student enrollment reset completed' })}
+              {studentResetCounts && (
+                <span style={{ marginLeft: 8, fontWeight: 400, fontSize: 12 }}>
+                  {[
+                    studentResetCounts.enrolments > 0 && `${studentResetCounts.enrolments} enrolments`,
+                    studentResetCounts.submissions > 0 && `${studentResetCounts.submissions} submissions`,
+                    studentResetCounts.attendanceRecords > 0 && `${studentResetCounts.attendanceRecords} attendance records`,
+                    studentResetCounts.payments > 0 && `${studentResetCounts.payments} payments`,
+                    studentResetCounts.invoices > 0 && `${studentResetCounts.invoices} invoices`,
+                  ].filter(Boolean).join(' · ')}
+                </span>
+              )}
+            </span>
+          </div>
+        )}
+        
+        <div className={styles.actions}>
+          <Button
+            variant="warning"
+            icon={<RefreshCw size={14} />}
+            loading={studentResetMutation.isPending}
+            onClick={() => setStudentConfirmOpen(true)}
+            disabled={selectedStudents.length === 0}
+          >
+            {t('settings.studentResetBtn', { defaultValue: 'Reset Selected Students' })}
+          </Button>
+        </div>
+      </Card>
+
+      {/* Demo Reset Card */}
       <Card title={t('settings.demoInitTitle')} className={styles.configCard}>
         <div className={styles.demoResetDesc}>
           <p>{t('settings.demoInitDesc')}</p>

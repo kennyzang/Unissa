@@ -1477,6 +1477,17 @@ const en = {
     demoResetBtn: 'System Initialize',
     demoResetFailed: 'Initialization failed',
     demoResetToast: 'System initialized: student data cleared, noor can re-register courses',
+    // Student Reset
+    studentResetTitle: 'Reset Student Enrollment',
+    studentResetDesc: 'Reset enrollment status for specific students, including their course enrolments, submissions, payments, and other related data. This will not delete the student accounts.',
+    studentResetSelect: 'Select Students',
+    studentResetBtn: 'Reset Selected Students',
+    studentResetConfirmTitle: 'Confirm Student Enrollment Reset',
+    studentResetConfirmBody: 'This will reset the enrollment status for the selected students, including their course enrolments, submissions, payments, and other related data. This cannot be undone. Are you sure?',
+    studentResetConfirmOk: 'Yes, Reset Now',
+    studentResetToast: 'Student enrollment reset completed!',
+    studentResetFailed: 'Student enrollment reset failed. Please try again.',
+    studentResetSuccess: 'Student enrollment reset completed!',
     // Email Configuration
     emailConfig: 'Email Configuration',
     enableEmail: 'Enable Email Service',

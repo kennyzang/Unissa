@@ -209,6 +209,8 @@ const FeeStatementPage: React.FC = () => {
       setPayModal(null)
       reset()
       qc.invalidateQueries({ queryKey: ['invoices'] })
+      qc.invalidateQueries({ queryKey: ['student', 'onboarding-status'] })
+      qc.invalidateQueries({ queryKey: ['student', 'me'] })
     },
     onError: (e: any) => {
       addToast({ type: 'error', message: e.response?.data?.message ?? 'Payment failed' })
