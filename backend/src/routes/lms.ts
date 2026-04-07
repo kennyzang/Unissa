@@ -403,7 +403,7 @@ router.patch('/submissions/:id/accept-ai', async (req: AuthRequest, res: Respons
 
 // GET /api/v1/lms/offerings/:offeringId — Offering detail with course/lecturer/assignments/sessions
 router.get('/offerings/:offeringId', async (req: AuthRequest, res: Response) => {
-  const { offeringId } = req.params
+  const offeringId = String(req.params.offeringId)
   const requestingUser = req.user
 
   const offering = await prisma.courseOffering.findUnique({
@@ -460,7 +460,7 @@ router.get('/offerings/:offeringId', async (req: AuthRequest, res: Response) => 
 
 // GET /api/v1/lms/offerings/:offeringId/enrolments — Student roster for a course offering
 router.get('/offerings/:offeringId/enrolments', async (req: AuthRequest, res: Response) => {
-  const { offeringId } = req.params
+  const offeringId = String(req.params.offeringId)
   const requestingUser = req.user
 
   if (requestingUser?.role === 'student') {
@@ -526,7 +526,7 @@ router.post('/assignments', async (req: AuthRequest, res: Response) => {
 
 // GET /api/v1/lms/submissions/offering/:offeringId — All submissions for a course offering (lecturer/admin only)
 router.get('/submissions/offering/:offeringId', async (req: AuthRequest, res: Response) => {
-  const { offeringId } = req.params
+  const offeringId = String(req.params.offeringId)
   const requestingUser = req.user
 
   if (requestingUser?.role === 'student') {
@@ -562,8 +562,9 @@ router.get('/submissions/offering/:offeringId', async (req: AuthRequest, res: Re
 
 // GET /api/v1/lms/courses/:studentId
 router.get('/courses/:studentId', async (req: AuthRequest, res: Response) => {
+  const studentId = String(req.params.studentId)
   const student = await prisma.student.findFirst({
-    where: { OR: [{ id: req.params.studentId }, { studentId: req.params.studentId }] },
+    where: { OR: [{ id: studentId }, { studentId }] },
   })
   if (!student) { res.status(404).json({ success: false, message: 'Student not found' }); return }
 
@@ -736,7 +737,8 @@ router.post('/submissions', upload.array('files', 5), async (req: AuthRequest, r
 
 // GET /api/v1/lms/submissions/history/:offeringId/:studentId
   router.get('/submissions/history/:offeringId/:studentId', async (req: AuthRequest, res: Response) => {
-    const { offeringId, studentId } = req.params
+    const offeringId = String(req.params.offeringId)
+    const studentId = String(req.params.studentId)
 
     const submissions = await prisma.submission.findMany({
       where: {
@@ -773,6 +775,7 @@ router.post('/submissions', upload.array('files', 5), async (req: AuthRequest, r
 
 // PATCH /api/v1/lms/submissions/:id/grade
 router.patch('/submissions/:id/grade', async (req: AuthRequest, res: Response) => {
+  const submissionId = String(req.params.id)
   const { instructorScores, finalMarks } = req.body as {
     instructorScores: any[]; finalMarks: number
   }
@@ -798,7 +801,7 @@ router.patch('/submissions/:id/grade', async (req: AuthRequest, res: Response) =
 
   // Fetch submission to validate finalMarks against assignment.maxMarks
   const existingSubmission = await prisma.submission.findUnique({
-    where: { id: req.params.id },
+    where: { id: submissionId },
     include: { assignment: { select: { maxMarks: true } } },
   })
   if (!existingSubmission) {
@@ -812,7 +815,7 @@ router.patch('/submissions/:id/grade', async (req: AuthRequest, res: Response) =
   }
 
   const submission = await prisma.submission.update({
-    where: { id: req.params.id },
+    where: { id: submissionId },
     data: {
       instructorScores: JSON.stringify(instructorScores),
       finalMarks,
@@ -964,8 +967,9 @@ router.post('/attendance/sessions', async (req: AuthRequest, res: Response) => {
 
 // GET /api/v1/attendance/sessions/:sessionId  — Fetch single session details
 router.get('/attendance/sessions/:sessionId', async (req: AuthRequest, res: Response) => {
+  const sessionId = String(req.params.sessionId)
   const session = await prisma.attendanceSession.findUnique({
-    where: { id: req.params.sessionId },
+    where: { id: sessionId },
     include: {
       records: { select: { id: true, status: true, scannedAt: true, studentId: true } },
     },
@@ -979,8 +983,9 @@ router.post(
   '/attendance/sessions/:sessionId/materials',
   sessionMaterialUpload.array('files', 10),
   async (req: AuthRequest, res: Response) => {
+    const sessionId = String(req.params.sessionId)
     const files = (req.files ?? []) as Express.Multer.File[]
-    const session = await prisma.attendanceSession.findUnique({ where: { id: req.params.sessionId } })
+    const session = await prisma.attendanceSession.findUnique({ where: { id: sessionId } })
     if (!session) { res.status(404).json({ success: false, message: 'Session not found' }); return }
 
     const existing: any[] = session.materials ? JSON.parse(session.materials as string) : []
@@ -993,7 +998,7 @@ router.post(
     }))
 
     const updated = await prisma.attendanceSession.update({
-      where: { id: req.params.sessionId },
+      where: { id: sessionId },
       data: { materials: JSON.stringify([...existing, ...added]) },
     })
     res.json({ success: true, data: { ...updated, qrData: updated.sessionToken } })
@@ -1054,7 +1059,7 @@ router.post('/attendance/check-in', async (req: AuthRequest, res: Response) => {
 // GET /api/v1/attendance/live-count/:sessionId
 router.get('/attendance/live-count/:sessionId', async (req: AuthRequest, res: Response) => {
   const count = await prisma.attendanceRecord.count({
-    where: { sessionId: req.params.sessionId, status: 'present' },
+    where: { sessionId: String(req.params.sessionId), status: 'present' },
   })
   res.json({ success: true, data: { count } })
 })
@@ -1062,7 +1067,7 @@ router.get('/attendance/live-count/:sessionId', async (req: AuthRequest, res: Re
 // GET /api/v1/attendance/sessions/offering/:offeringId  — List sessions for a course offering
 router.get('/attendance/sessions/offering/:offeringId', async (req: AuthRequest, res: Response) => {
   const sessions = await prisma.attendanceSession.findMany({
-    where: { offeringId: req.params.offeringId },
+    where: { offeringId: String(req.params.offeringId) },
     include: {
       records: { select: { id: true, status: true, scannedAt: true, studentId: true } },
     },
@@ -1079,7 +1084,7 @@ router.get('/attendance/sessions/offering/:offeringId', async (req: AuthRequest,
 // PATCH /api/v1/attendance/sessions/:sessionId/close  — Lecturer closes session
 router.patch('/attendance/sessions/:sessionId/close', async (req: AuthRequest, res: Response) => {
   const session = await prisma.attendanceSession.update({
-    where: { id: req.params.sessionId },
+    where: { id: String(req.params.sessionId) },
     data: { endedAt: new Date() },
   })
   res.json({ success: true, data: session })
@@ -1088,7 +1093,7 @@ router.patch('/attendance/sessions/:sessionId/close', async (req: AuthRequest, r
 // GET /api/v1/attendance/records/offering/:offeringId  — Full attendance report for a course
 router.get('/attendance/records/offering/:offeringId', async (req: AuthRequest, res: Response) => {
   const sessions = await prisma.attendanceSession.findMany({
-    where: { offeringId: req.params.offeringId as string },
+    where: { offeringId: String(req.params.offeringId) },
     include: {
       records: {
         include: {
@@ -1131,8 +1136,9 @@ router.get('/attendance/records/offering/:offeringId', async (req: AuthRequest, 
 
 // GET /api/v1/attendance/records/student/:studentId  — Student's own attendance across all courses
 router.get('/attendance/records/student/:studentId', async (req: AuthRequest, res: Response) => {
+  const studentId = String(req.params.studentId)
   const student = await prisma.student.findFirst({
-    where: { OR: [{ id: req.params.studentId }, { studentId: req.params.studentId }, { userId: req.params.studentId }] },
+    where: { OR: [{ id: studentId }, { studentId }, { userId: studentId }] },
   })
   if (!student) { res.status(404).json({ success: false, message: 'Student not found' }); return }
 
@@ -1324,7 +1330,7 @@ router.get('/lecturer/dashboard', async (req: AuthRequest, res: Response) => {
 
 // GET /api/v1/attendance/offerings/lecturer/:lecturerId — Offerings taught by lecturer
 router.get('/attendance/offerings/lecturer/:lecturerId', async (req: AuthRequest, res: Response) => {
-  const param = req.params.lecturerId
+  const param = String(req.params.lecturerId)
 
   // Admin "all" sentinel — return all offerings
   if (param === 'all') {

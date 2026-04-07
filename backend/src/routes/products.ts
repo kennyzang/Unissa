@@ -27,7 +27,7 @@ router.get('/all', requireRole('manager', 'finance', 'admin'), async (_req: Auth
 // GET /api/v1/products/:id
 router.get('/:id', async (req: AuthRequest, res: Response) => {
   const product = await prisma.product.findUnique({
-    where: { id: req.params.id },
+    where: { id: String(req.params.id) },
     include: { category: true },
   })
   if (!product) { res.status(404).json({ success: false, message: 'Product not found' }); return }
@@ -66,7 +66,7 @@ router.put('/:id', requireRole('manager', 'admin'), async (req: AuthRequest, res
   }
 
   const product = await prisma.product.update({
-    where: { id: req.params.id },
+    where: { id: String(req.params.id) },
     data: { name, description, unit, defaultUnitPrice, categoryId },
     include: { category: true },
   })
@@ -75,11 +75,12 @@ router.put('/:id', requireRole('manager', 'admin'), async (req: AuthRequest, res
 
 // PATCH /api/v1/products/:id/toggle  – toggle active status (admin)
 router.patch('/:id/toggle', requireRole('admin'), async (req: AuthRequest, res: Response) => {
-  const product = await prisma.product.findUnique({ where: { id: req.params.id } })
+  const id = String(req.params.id)
+  const product = await prisma.product.findUnique({ where: { id } })
   if (!product) { res.status(404).json({ success: false, message: 'Product not found' }); return }
 
   const updated = await prisma.product.update({
-    where: { id: req.params.id },
+    where: { id },
     data: { isActive: !product.isActive },
   })
   res.json({ success: true, data: updated, message: `Product ${updated.isActive ? 'activated' : 'deactivated'}` })

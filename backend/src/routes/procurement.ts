@@ -42,7 +42,7 @@ router.get('/pr', async (req: AuthRequest, res: Response) => {
 // GET /api/v1/procurement/pr/:id
 router.get('/pr/:id', async (req: AuthRequest, res: Response) => {
   const pr = await prisma.purchaseRequest.findUnique({
-    where: { id: req.params.id },
+    where: { id: String(req.params.id) },
     include: {
       requestor: { include: { user: true, department: true } },
       department: true,
@@ -126,9 +126,10 @@ router.post('/pr', requireRole('manager', 'admin'), async (req: AuthRequest, res
 // POST /api/v1/procurement/pr/:id/approve
 router.post('/pr/:id/approve', requireRole('manager', 'finance', 'admin'), async (req: AuthRequest, res: Response) => {
   const { remarks, signatureData } = req.body as { remarks?: string; signatureData?: string }
+  const id = String(req.params.id)
 
   const pr = await prisma.purchaseRequest.findUnique({
-    where: { id: req.params.id },
+    where: { id },
     include: { approvals: true, glCode: true },
   })
   if (!pr) { res.status(404).json({ success: false, message: 'PR not found' }); return }
@@ -179,14 +180,15 @@ router.post('/pr/:id/approve', requireRole('manager', 'finance', 'admin'), async
 // POST /api/v1/procurement/pr/:id/reject
 router.post('/pr/:id/reject', requireRole('manager', 'finance', 'admin'), async (req: AuthRequest, res: Response) => {
   const { remarks } = req.body as { remarks: string }
+  const id = String(req.params.id)
   const role = req.user!.role
   const approvalLevel = role === 'manager' ? 1 : role === 'finance' ? 2 : 3
 
   await prisma.$transaction([
     prisma.prApproval.create({
-      data: { prId: req.params.id, level: approvalLevel, approverId: req.user!.userId, action: 'rejected', remarks },
+      data: { prId: id, level: approvalLevel, approverId: req.user!.userId, action: 'rejected', remarks },
     }),
-    prisma.purchaseRequest.update({ where: { id: req.params.id }, data: { status: 'rejected' } }),
+    prisma.purchaseRequest.update({ where: { id }, data: { status: 'rejected' } }),
   ])
   res.json({ success: true, message: 'PR rejected' })
 })
@@ -266,7 +268,7 @@ router.get('/anomalies', requireRole('finance', 'admin'), async (_req, res: Resp
 // PATCH /api/v1/procurement/pr/:id/generate-po  — admin explicit PO generation
 router.patch('/pr/:id/generate-po', requireRole('admin'), async (req: AuthRequest, res: Response) => {
   const pr = await prisma.purchaseRequest.findUnique({
-    where: { id: req.params.id },
+    where: { id: String(req.params.id) },
   })
   if (!pr) { res.status(404).json({ success: false, message: 'PR not found' }); return }
   if (pr.status !== 'finance_approved') {

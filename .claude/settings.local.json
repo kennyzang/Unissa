@@ -59,7 +59,8 @@
       "Bash(done)",
       "Bash(npm test:*)",
       "Bash(node -e ':*)",
-      "Bash(grep -E \"\\\\.\\(tsx?|vue\\)$\")"
+      "Bash(grep -E \"\\\\.\\(tsx?|vue\\)$\")",
+      "Bash(npm run:*)"
     ]
   }
 }

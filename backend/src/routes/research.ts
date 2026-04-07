@@ -52,7 +52,7 @@ router.get('/grants', async (req: AuthRequest, res: Response) => {
 // GET /api/v1/research/grants/:id
 router.get('/grants/:id', async (req: AuthRequest, res: Response) => {
   const grant = await prisma.researchGrant.findUnique({
-    where: { id: req.params.id },
+    where: { id: String(req.params.id) },
     include: {
       pi: { include: { user: { select: { displayName: true } } } },
       department: true,
@@ -173,12 +173,13 @@ router.post('/grants', requireRole('lecturer', 'admin'), upload.array('files', 1
 router.patch('/grants/:id/review', requireRole('manager', 'admin'), async (req: AuthRequest, res: Response) => {
   const { action, remarks } = req.body as { action: 'dept_approved' | 'rejected'; remarks?: string }
   const userId = req.user!.userId
+  const id = String(req.params.id)
 
-  const grant = await prisma.researchGrant.findUnique({ where: { id: req.params.id } })
+  const grant = await prisma.researchGrant.findUnique({ where: { id } })
   if (!grant) { res.status(404).json({ success: false, message: 'Grant not found' }); return }
 
   const updated = await prisma.researchGrant.update({
-    where: { id: req.params.id },
+    where: { id },
     data: {
       status:      action === 'dept_approved' ? 'dept_approved' : 'rejected',
       l1DeptHeadId: userId,
@@ -194,12 +195,13 @@ router.patch('/grants/:id/review', requireRole('manager', 'admin'), async (req: 
 router.patch('/grants/:id/finance', requireRole('finance', 'admin'), async (req: AuthRequest, res: Response) => {
   const { action, remarks } = req.body as { action: 'approved' | 'rejected'; remarks?: string }
   const userId = req.user!.userId
+  const id = String(req.params.id)
 
-  const grant = await prisma.researchGrant.findUnique({ where: { id: req.params.id } })
+  const grant = await prisma.researchGrant.findUnique({ where: { id } })
   if (!grant) { res.status(404).json({ success: false, message: 'Grant not found' }); return }
 
   const updated = await prisma.researchGrant.update({
-    where: { id: req.params.id },
+    where: { id },
     data: {
       status:                action,
       l3FinanceApprovedById: userId,
