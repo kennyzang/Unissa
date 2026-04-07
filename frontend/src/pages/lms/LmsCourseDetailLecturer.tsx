@@ -4,7 +4,7 @@ import { useParams, useNavigate } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import {
   ArrowLeft, Users, BookOpen, FileText, ClipboardList,
-  Star, Clock, CheckCircle, Video, Link, Calendar, Upload, Trash2, Eye, Play, Download, Plus, Minus,
+  Star, Clock, CheckCircle, Video, Link, Calendar, Upload as UploadIcon, Trash2, Eye, Play, Download, Plus, Minus,
 } from 'lucide-react'
 import { apiClient } from '@/lib/apiClient'
 import { useAuthStore } from '@/stores/authStore'
@@ -13,7 +13,8 @@ import Card from '@/components/ui/Card'
 import Badge from '@/components/ui/Badge'
 import Button from '@/components/ui/Button'
 import Modal from '@/components/ui/Modal'
-import { Input, DatePicker, TimePicker } from 'antd'
+import { Input, DatePicker, TimePicker, Upload, Checkbox } from 'antd'
+import { UploadOutlined } from '@ant-design/icons'
 import dayjs from 'dayjs'
 import styles from './LmsCourseDetailLecturer.module.scss'
 
@@ -513,7 +514,7 @@ const LmsCourseDetailLecturer: React.FC = () => {
     <Card 
       title={t('lmsCourseDetail.courseMaterials', { defaultValue: 'Course Materials' })}
       extra={
-        <Button size="sm" icon={<Upload size={14} />} onClick={() => setMaterialModal(true)}>
+        <Button size="sm" icon={<UploadIcon size={14} />} onClick={() => setMaterialModal(true)}>
           {t('lmsCourseDetailLecturer.uploadMaterial', { defaultValue: 'Upload Material' })}
         </Button>
       }
@@ -852,14 +853,14 @@ const LmsCourseDetailLecturer: React.FC = () => {
               <label style={{ fontSize: '13px', fontWeight: 600, color: 'var(--color-gray-7)' }}>
                 {t('lmsCourseDetailLecturer.finalMarks', { defaultValue: 'Final Marks' })}:
               </label>
-              <input
+              <Input
                 type="number"
-                className={styles.gradeInput}
                 min={0}
                 max={gradingTarget.assignment.maxMarks}
                 value={gradingMarks}
                 onChange={e => setGradingMarks(e.target.value)}
                 placeholder="0"
+                style={{ width: 100, marginRight: 8 }}
               />
               <span className={styles.gradeInputMax}>/ {gradingTarget.assignment.maxMarks}</span>
             </div>
@@ -966,9 +967,7 @@ const LmsCourseDetailLecturer: React.FC = () => {
           <div className={styles.uploadForm}>
             <div className={styles.formGroup}>
               <label className={styles.formLabel}>{t('lmsCourseDetailLecturer.title', { defaultValue: 'Title' })} *</label>
-              <input
-                type="text"
-                className={styles.formInput}
+              <Input
                 value={materialTitle}
                 onChange={e => setMaterialTitle(e.target.value)}
                 placeholder={t('lmsCourseDetailLecturer.titlePlaceholder', { defaultValue: 'Enter material title' })}
@@ -976,8 +975,7 @@ const LmsCourseDetailLecturer: React.FC = () => {
             </div>
             <div className={styles.formGroup}>
               <label className={styles.formLabel}>{t('lmsCourseDetailLecturer.description', { defaultValue: 'Description' })}</label>
-              <textarea
-                className={styles.formTextarea}
+              <Input.TextArea
                 value={materialDesc}
                 onChange={e => setMaterialDesc(e.target.value)}
                 placeholder={t('lmsCourseDetailLecturer.descPlaceholder', { defaultValue: 'Optional description' })}
@@ -986,33 +984,37 @@ const LmsCourseDetailLecturer: React.FC = () => {
             </div>
             <div className={styles.formGroup}>
               <label className={styles.formLabel}>{t('lmsCourseDetailLecturer.file', { defaultValue: 'File' })} *</label>
-              <input
-                type="file"
-                className={styles.formFileInput}
-                onChange={e => setMaterialFile(e.target.files?.[0] ?? null)}
-                accept=".pdf,.ppt,.pptx,.doc,.docx,.xls,.xlsx,.txt,.zip,.png,.jpg,.jpeg,.mp4,.webm,.mov,.avi,.mkv"
-              />
-              {materialFile && (
-                <div className={styles.filePreview}>
-                  <FileText size={14} />
-                  <span>{materialFile.name}</span>
-                  <span className={styles.fileSize}>
-                    ({materialFile.size > 1024 * 1024 
-                      ? `${(materialFile.size / 1024 / 1024).toFixed(2)} MB` 
-                      : `${(materialFile.size / 1024).toFixed(0)} KB`})
-                  </span>
-                </div>
-              )}
+              <Upload.Dragger
+                name="file"
+                multiple={false}
+                beforeUpload={(file) => {
+                  setMaterialFile(file)
+                  return false
+                }}
+                fileList={materialFile ? [{ 
+                  uid: '1', 
+                  name: materialFile.name, 
+                  status: 'done',
+                  size: materialFile.size
+                }] : []}
+                onRemove={() => setMaterialFile(null)}
+              >
+                <p className="ant-upload-drag-icon">
+                  <UploadOutlined />
+                </p>
+                <p className="ant-upload-text">Click or drag file to this area to upload</p>
+                <p className="ant-upload-hint">
+                  Support for a variety of file types including PDF, PPT, Word, Excel, images, and videos.
+                </p>
+              </Upload.Dragger>
             </div>
             <div className={styles.formGroup}>
-              <label className={styles.checkboxLabel}>
-                <input
-                  type="checkbox"
-                  checked={materialPublished}
-                  onChange={e => setMaterialPublished(e.target.checked)}
-                />
-                <span>{t('lmsCourseDetailLecturer.publishImmediately', { defaultValue: 'Publish immediately (visible to students)' })}</span>
-              </label>
+              <Checkbox
+                checked={materialPublished}
+                onChange={e => setMaterialPublished(e.target.checked)}
+              >
+                {t('lmsCourseDetailLecturer.publishImmediately', { defaultValue: 'Publish immediately (visible to students)' })}
+              </Checkbox>
             </div>
           </div>
         </Modal>
@@ -1230,26 +1232,37 @@ const LmsCourseDetailLecturer: React.FC = () => {
                       Q{qi + 1} · {q.type}
                     </span>
                     <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
-                      <input type="number" min={1} value={q.marks} style={{ width: 52, fontSize: 12, padding: '2px 6px', border: '1px solid var(--color-gray-3)', borderRadius: 4 }}
-                        onChange={e => setAsnQuestions(prev => prev.map((x, xi) => xi === qi ? { ...x, marks: parseInt(e.target.value) || 1 } : x))} />
+                      <Input
+                        type="number"
+                        min={1}
+                        value={q.marks}
+                        onChange={e => setAsnQuestions(prev => prev.map((x, xi) => xi === qi ? { ...x, marks: parseInt(e.target.value) || 1 } : x))}
+                        style={{ width: 52, fontSize: 12 }}
+                      />
                       <span style={{ fontSize: 11, color: 'var(--color-gray-5)' }}>pts</span>
                       <Button size="sm" variant="ghost" icon={<Minus size={12} />}
                         onClick={() => setAsnQuestions(prev => prev.filter((_, xi) => xi !== qi))} />
                     </div>
                   </div>
-                  <input type="text" className={styles.formInput} style={{ marginBottom: 6 }}
+                  <Input
                     placeholder={t('lmsCourseDetailLecturer.questionText', { defaultValue: 'Question text' })}
-                    value={q.text} onChange={e => setAsnQuestions(prev => prev.map((x, xi) => xi === qi ? { ...x, text: e.target.value } : x))} />
+                    value={q.text}
+                    onChange={e => setAsnQuestions(prev => prev.map((x, xi) => xi === qi ? { ...x, text: e.target.value } : x))}
+                    style={{ marginBottom: 6 }}
+                  />
                   {q.type !== 'open-ended' && (
                     <div>
                       {q.options.map((opt, oi) => (
                         <div key={oi} style={{ display: 'flex', gap: 6, marginBottom: 4 }}>
                           <span style={{ fontSize: 12, color: 'var(--color-gray-5)', padding: '6px 2px', minWidth: 16 }}>{String.fromCharCode(65 + oi)}.</span>
-                          <input type="text" className={styles.formInput} style={{ flex: 1 }}
+                          <Input
                             placeholder={t('lmsCourseDetailLecturer.optionText', { defaultValue: `Option ${String.fromCharCode(65 + oi)}` })}
-                            value={opt} onChange={e => setAsnQuestions(prev => prev.map((x, xi) => xi === qi ? {
+                            value={opt}
+                            onChange={e => setAsnQuestions(prev => prev.map((x, xi) => xi === qi ? {
                               ...x, options: x.options.map((o, oi2) => oi2 === oi ? e.target.value : o)
-                            } : x))} />
+                            } : x))}
+                            style={{ flex: 1 }}
+                          />
                           {q.options.length > 2 && (
                             <Button size="sm" variant="ghost" icon={<Minus size={11} />}
                               onClick={() => setAsnQuestions(prev => prev.map((x, xi) => xi === qi ? { ...x, options: x.options.filter((_, oi2) => oi2 !== oi) } : x))} />
