@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next'
-import React, { useState } from 'react'
+import React, { useState, useRef, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import {
@@ -17,6 +17,9 @@ import { Input, DatePicker, TimePicker, Upload, Checkbox, Modal as AntdModal } f
 import { UploadOutlined } from '@ant-design/icons'
 import dayjs from 'dayjs'
 import styles from './LmsCourseDetailLecturer.module.scss'
+
+// PPT preview library
+import { init } from 'pptx-preview'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 interface LecturerOffering {
@@ -132,7 +135,50 @@ const LmsCourseDetailLecturer: React.FC = () => {
   const [materialFile, setMaterialFile]         = useState<File | null>(null)
   const [materialPublished, setMaterialPublished] = useState(true)
   const [materialPreview, setMaterialPreview]   = useState<CourseMaterial | null>(null)
-  const [pptPreviewMode, setPptPreviewMode]     = useState<'office' | 'download'>('office')
+  const [pptPreviewMode, setPptPreviewMode]     = useState<'native' | 'download'>('native')
+  const [pptFileBuffer, setPptFileBuffer]       = useState<ArrayBuffer | null>(null)
+  const [pptLoading, setPptLoading]             = useState(false)
+  const [pptPreviewer, setPptPreviewer]         = useState<any>(null)
+  const pptRef = useRef<HTMLDivElement>(null)
+
+  // PPT file loading effect
+  useEffect(() => {
+    if (materialPreview && materialPreview.asset && pptPreviewMode === 'native' && pptRef.current) {
+      const loadPPTFile = async () => {
+        try {
+          setPptLoading(true)
+          const response = await fetch(materialPreview.asset.fileUrl)
+          if (!response.ok) {
+            throw new Error('Failed to load PPT file')
+          }
+          const arrayBuffer = await response.arrayBuffer()
+          setPptFileBuffer(arrayBuffer)
+          
+          // Initialize PPT previewer
+          if (pptRef.current) {
+            const previewer = init(pptRef.current, { width: 800 })
+            setPptPreviewer(previewer)
+            previewer.preview(arrayBuffer)
+          }
+        } catch (error) {
+          console.error('PPT file loading failed:', error)
+          setPptFileBuffer(null)
+        } finally {
+          setPptLoading(false)
+        }
+      }
+      
+      loadPPTFile()
+    }
+    
+    // Cleanup
+    return () => {
+      if (pptPreviewer) {
+        // Clean up previewer instance
+        setPptPreviewer(null)
+      }
+    }
+  }, [materialPreview, pptPreviewMode])
 
   // ── Create Assignment modal state ───────────────────────────────────────────
   const [assignmentModal, setAssignmentModal]   = useState(false)
@@ -536,7 +582,7 @@ const LmsCourseDetailLecturer: React.FC = () => {
             const isPPT = m.materialType === 'presentation' || (m.asset?.mimeType?.includes('presentation') || m.asset?.originalName?.match(/\.pptx?$/i))
             const iconClass = isVideo ? 'video' : isLink ? 'link' : 'doc'
             const href = isLink ? m.externalUrl : m.asset?.fileUrl
-            const canPreview = isVideo || isPPT
+            const canPreview = isVideo
             return (
               <div key={m.id} className={styles.materialItem}>
                 <div className={`${styles.materialIcon} ${styles[iconClass]}`}>
@@ -1072,49 +1118,47 @@ const LmsCourseDetailLecturer: React.FC = () => {
               </div>
             ) : (
               <div className={styles.pptPreviewWrapper}>
-                <div className={styles.pptPreviewTabs}>
-                  <Button 
-                    size="sm" 
-                    variant={pptPreviewMode === 'office' ? 'primary' : 'secondary'}
-                    onClick={() => setPptPreviewMode('office')}
-                  >
-                    {t('lmsCourseDetail.onlinePreview', { defaultValue: 'Online Preview' })}
-                  </Button>
-                  <Button 
-                    size="sm" 
-                    variant={pptPreviewMode === 'download' ? 'primary' : 'secondary'}
-                    onClick={() => setPptPreviewMode('download')}
-                  >
-                    {t('lmsCourseDetail.fileInfo', { defaultValue: 'File Info' })}
-                  </Button>
-                </div>
-                
-                {pptPreviewMode === 'office' ? (
-                  <div className={styles.pptIframeContainer}>
-                    <iframe
-                      src={`https://view.officeapps.live.com/op/embed.aspx?src=${encodeURIComponent(window.location.origin + materialPreview.asset.fileUrl)}`}
-                      className={styles.pptIframe}
-                      frameBorder="0"
+                  <div className={styles.pptPreviewTabs}>
+                    <Button 
+                      size="sm" 
+                      variant={pptPreviewMode === 'native' ? 'primary' : 'secondary'}
+                      onClick={() => setPptPreviewMode('native')}
                     >
-                      {t('lmsCourseDetail.iframeNotSupported', { defaultValue: 'Your browser does not support iframes.' })}
-                    </iframe>
-                    <div className={styles.pptPreviewHint}>
-                      {t('lmsCourseDetail.pptPreviewHint', { defaultValue: 'If preview fails, please download the file or check if the file is publicly accessible.' })}
-                    </div>
+                      {t('lmsCourseDetail.nativePreview', { defaultValue: 'Native Preview' })}
+                    </Button>
+                    <Button 
+                      size="sm" 
+                      variant={pptPreviewMode === 'download' ? 'primary' : 'secondary'}
+                      onClick={() => setPptPreviewMode('download')}
+                    >
+                      {t('lmsCourseDetail.fileInfo', { defaultValue: 'File Info' })}
+                    </Button>
                   </div>
-                ) : (
-                  <div className={styles.pptPreviewContainer}>
-                    <div className={styles.pptPreviewInfo}>
-                      <FileText size={48} />
-                      <h3>{materialPreview.asset.originalName ?? materialPreview.asset.fileName}</h3>
-                      <p>{t('lmsCourseDetail.pptPreviewNote', { defaultValue: 'PPT files can be previewed online or downloaded for offline viewing.' })}</p>
-                      <div className={styles.pptFileInfo}>
-                        <span>{(materialPreview.asset.fileSizeBytes / 1024 / 1024).toFixed(2)} MB</span>
+                  
+                  {pptPreviewMode === 'native' ? (
+                    <div className={styles.pptNativeContainer}>
+                      {pptLoading ? (
+                        <div className={styles.pptLoading}>
+                          <div className={styles.pptLoadingSpinner}></div>
+                          <p>{t('lmsCourseDetail.loadingPPT', { defaultValue: 'Loading PPT...' })}</p>
+                        </div>
+                      ) : (
+                        <div ref={pptRef} className={styles.pptNativePreview}></div>
+                      )}
+                    </div>
+                  ) : (
+                    <div className={styles.pptPreviewContainer}>
+                      <div className={styles.pptPreviewInfo}>
+                        <FileText size={48} />
+                        <h3>{materialPreview.asset.originalName ?? materialPreview.asset.fileName}</h3>
+                        <p>{t('lmsCourseDetail.pptPreviewNote', { defaultValue: 'PPT files can be previewed online or downloaded for offline viewing.' })}</p>
+                        <div className={styles.pptFileInfo}>
+                          <span>{(materialPreview.asset.fileSizeBytes / 1024 / 1024).toFixed(2)} MB</span>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                )}
-              </div>
+                  )}
+                </div>
             )}
             {materialPreview.description && (
               <div className={styles.materialPreviewDesc}>

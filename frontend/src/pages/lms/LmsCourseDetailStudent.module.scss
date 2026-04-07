@@ -779,3 +779,91 @@
   background: #ffebee;
   color: #c62828;
 }
+
+// PPT Native Preview styles
+.pptNativeContainer {
+  margin-top: v.$space-3;
+  border: 1px solid var(--color-gray-2);
+  border-radius: v.$border-radius;
+  overflow: hidden;
+  min-height: 600px;
+  background: white;
+  
+  .pptNativePreview {
+    width: 100%;
+    min-height: 500px;
+    background: white;
+  }
+  
+  :global {
+    .react-pptx-preview-kit {
+      height: 100%;
+    }
+  }
+}
+
+.pptLoading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 400px;
+  background: var(--color-gray-1);
+  border-radius: v.$border-radius;
+  
+  .pptLoadingSpinner {
+    width: 40px;
+    height: 40px;
+    border: 3px solid var(--color-gray-2);
+    border-top: 3px solid v.$brand-primary;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin-bottom: v.$space-3;
+  }
+  
+  p {
+    color: var(--color-gray-5);
+    font-size: v.$font-size-sm;
+  }
+}
+
+.pptError {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 400px;
+  background: var(--color-gray-1);
+  border-radius: v.$border-radius;
+  padding: v.$space-4;
+  text-align: center;
+  
+  svg {
+    color: v.$color-warning;
+    margin-bottom: v.$space-3;
+  }
+  
+  p {
+    color: var(--color-gray-8);
+    margin-bottom: v.$space-2;
+  }
+  
+  .pptErrorHint {
+    color: var(--color-gray-5);
+    font-size: v.$font-size-sm;
+  }
+}
+
+// Material Preview Modal
+.materialPreviewModal {
+  :global {
+    .ant-modal-body {
+      max-height: 80vh;
+      overflow-y: auto;
+      padding: v.$space-4;
+    }
+    .ant-modal-content {
+      border-radius: v.$border-radius-lg;
+    }
+  }
+}
