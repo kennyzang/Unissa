@@ -1538,7 +1538,7 @@ const AdmissionApplyPage: React.FC = () => {
             </Col>
           </Row>
           {/* Supporting Documents */}
-          <Col xs={24}>
+          <Col xs={24} style={{ marginTop: 24 }}>
             <div style={{ fontWeight: 600, fontSize: 13, color: '#165DFF', marginBottom: 8, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
               <PaperClipOutlined style={{ marginRight: 5 }} />
               {t('admissionApply.supportingDocuments', { defaultValue: 'Supporting Documents' })}

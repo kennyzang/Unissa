@@ -1,5 +1,6 @@
 import React, { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
+import { useTranslation } from 'react-i18next'
 import {
   BookOpen, Users, ClipboardList, Clock, CheckCircle,
   ChevronDown, ChevronRight, AlertTriangle, User, Award,
@@ -75,6 +76,7 @@ const isPast = (d: string | null) => !!d && new Date(d) < new Date()
 
 // ─── Offering Card ────────────────────────────────────────────────────────────
 const OfferingCard: React.FC<{ offering: OfferingSnapshot }> = ({ offering }) => {
+  const { t } = useTranslation()
   const [expanded, setExpanded] = useState(false)
   const [tab, setTab]           = useState<TabKey>('students')
 
@@ -156,15 +158,15 @@ const OfferingCard: React.FC<{ offering: OfferingSnapshot }> = ({ offering }) =>
           {/* ── Students Tab ── */}
           {tab === 'students' && (
             offering.students.length === 0
-              ? <p className={styles.empty}>No enrolled students.</p>
+              ? <p className={styles.empty}>{t('lecturerDashboard.noStudents', { defaultValue: 'No enrolled students.' })}</p>
               : (
                 <div className={styles.tableWrap}>
                   <table className={styles.table}>
                     <thead>
                       <tr>
                         <th>#</th>
-                        <th>Name</th>
-                        <th>Student ID</th>
+                        <th>{t('lecturerDashboard.name', { defaultValue: 'Name' })}</th>
+                        <th>{t('lecturerDashboard.studentId', { defaultValue: 'Student ID' })}</th>
                         <th>CGPA</th>
                       </tr>
                     </thead>
@@ -195,16 +197,16 @@ const OfferingCard: React.FC<{ offering: OfferingSnapshot }> = ({ offering }) =>
           {/* ── Assignments Tab ── */}
           {tab === 'assignments' && (
             offering.assignments.length === 0
-              ? <p className={styles.empty}>No assignments created.</p>
+              ? <p className={styles.empty}>{t('lecturerDashboard.noAssignments', { defaultValue: 'No assignments created.' })}</p>
               : (
                 <div className={styles.tableWrap}>
                   <table className={styles.table}>
                     <thead>
                       <tr>
-                        <th>Title</th>
-                        <th>Due Date</th>
-                        <th>Submissions</th>
-                        <th>Progress</th>
+                        <th>{t('lecturerDashboard.title', { defaultValue: 'Title' })}</th>
+                        <th>{t('lecturerDashboard.dueDate', { defaultValue: 'Due Date' })}</th>
+                        <th>{t('lecturerDashboard.submissions', { defaultValue: 'Submissions' })}</th>
+                        <th>{t('lecturerDashboard.progress', { defaultValue: 'Progress' })}</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -220,7 +222,7 @@ const OfferingCard: React.FC<{ offering: OfferingSnapshot }> = ({ offering }) =>
                                 {overdue && <AlertTriangle size={13} className={styles.overdue} />}
                                 {a.title}
                               </div>
-                              <div className={styles.assignMeta}>{a.weightPct}% · {a.maxMarks} marks</div>
+                              <div className={styles.assignMeta}>{a.weightPct}% · {a.maxMarks} {t('lecturerDashboard.marks', { defaultValue: 'marks' })}</div>
                             </td>
                             <td>
                               <span className={overdue ? styles.overdue : ''}>
@@ -255,17 +257,17 @@ const OfferingCard: React.FC<{ offering: OfferingSnapshot }> = ({ offering }) =>
           {/* ── Attendance Tab ── */}
           {tab === 'attendance' && (
             offering.recentAttendanceSessions.length === 0
-              ? <p className={styles.empty}>No attendance sessions yet.</p>
+              ? <p className={styles.empty}>{t('lecturerDashboard.noSessions', { defaultValue: 'No attendance sessions yet.' })}</p>
               : (
                 <div className={styles.tableWrap}>
                   <table className={styles.table}>
                     <thead>
                       <tr>
-                        <th>Session</th>
-                        <th>Date</th>
-                        <th>Present</th>
-                        <th>Attendance %</th>
-                        <th>Status</th>
+                        <th>{t('lecturerDashboard.session', { defaultValue: 'Session' })}</th>
+                        <th>{t('lecturerDashboard.date', { defaultValue: 'Date' })}</th>
+                        <th>{t('lecturerDashboard.present', { defaultValue: 'Present' })}</th>
+                        <th>{t('lecturerDashboard.attendancePct', { defaultValue: 'Attendance %' })}</th>
+                        <th>{t('lecturerDashboard.status', { defaultValue: 'Status' })}</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -293,8 +295,8 @@ const OfferingCard: React.FC<{ offering: OfferingSnapshot }> = ({ offering }) =>
                             </td>
                             <td>
                               {s.endedAt
-                                ? <Badge color="gray"  size="sm"><CheckCircle size={11} /> Closed</Badge>
-                                : <Badge color="green" size="sm">Live</Badge>
+                                ? <Badge color="gray"  size="sm"><CheckCircle size={11} /> {t('lecturerDashboard.closed', { defaultValue: 'Closed' })}</Badge>
+                                : <Badge color="green" size="sm">{t('lecturerDashboard.live', { defaultValue: 'Live' })}</Badge>
                               }
                             </td>
                           </tr>

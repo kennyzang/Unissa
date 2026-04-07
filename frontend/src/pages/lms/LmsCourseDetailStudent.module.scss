@@ -218,6 +218,7 @@
   padding: v.$space-2 v.$space-3;
   border-radius: v.$border-radius;
   transition: all 0.2s ease;
+  white-space: nowrap;
   &:hover { background: v.$brand-dark; }
 }
 

@@ -88,7 +88,7 @@ const StaffPortalPage: React.FC = () => {
           <p className={styles.welcomeSub}>
             {portal.designation} · {portal.department.name}
             {portal.lmsInstructorActive && (
-              <Badge color="green" style={{ marginLeft: 8 }}>LMS Active</Badge>
+              <Badge color="green" style={{ marginLeft: 8 }}>{t('staffPortal.lmsActive', { defaultValue: 'LMS Active' })}</Badge>
             )}
           </p>
         </div>
