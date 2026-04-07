@@ -927,22 +927,28 @@
 
 // ── File upload zone ──────────────────────────────────────────────────────────
 .fileDropZone {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: v.$space-1;
   padding: v.$space-4;
   border: 2px dashed var(--color-border);
   border-radius: v.$border-radius-md;
   cursor: pointer;
   text-align: center;
-  color: var(--color-gray-5);
   transition: border-color 0.15s, background 0.15s;
 
   &:hover {
     border-color: v.$brand-primary;
     background: var(--color-bg-hover);
+  }
+}
+
+.fileDropContent {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: v.$space-1;
+  color: var(--color-gray-5);
+
+  .fileDropZone:hover & {
     color: v.$brand-primary;
   }
 }

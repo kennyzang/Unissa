@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
-import { Button, Alert, Card, Spin, Result, message } from 'antd'
+import { Button, Alert, Card, Spin, Result, message, Upload } from 'antd'
 import { ScanOutlined, UploadOutlined } from '@ant-design/icons'
 import { X as XIcon } from 'lucide-react'
 import { useTranslation } from 'react-i18next'

@@ -4,9 +4,10 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import {
   QrCode, Users, CheckCircle, Clock, BookOpen, ChevronDown,
   ChevronUp, RefreshCw, X, UserCheck, AlertTriangle, Calendar,
-  Copy, Check, FileText, Upload, Eye,
+  Copy, Check, FileText, Upload as UploadIcon, Eye,
 } from 'lucide-react'
-import { QRCode, Select } from 'antd'
+import { QRCode, Select, Upload } from 'antd'
+import { UploadOutlined } from '@ant-design/icons'
 import { apiClient } from '@/lib/apiClient'
 import { useAuthStore } from '@/stores/authStore'
 import { useUIStore } from '@/stores/uiStore'
@@ -200,22 +201,33 @@ const CreateSessionModal: React.FC<{
 
         <div className={styles.formField}>
           <label className={styles.fieldLabel}>{t('attendance.uploadMaterials')}</label>
-          <label className={styles.fileDropZone}>
-            <input
-              type="file"
-              multiple
-              accept=".pdf,.ppt,.pptx,.doc,.docx,.xls,.xlsx,.txt,.zip,.png,.jpg,.jpeg"
-              onChange={handleFiles}
-              className={styles.fileInputHidden}
-            />
-            <Upload size={18} />
-            <span className={styles.fileDropText}>
-              {files.length > 0
-                ? t('attendance.filesSelected', { count: files.length })
-                : t('attendance.uploadBtn')}
-            </span>
-            <span className={styles.fileHint}>{t('attendance.uploadMaterialsHint')}</span>
-          </label>
+          <Upload
+            name="files"
+            multiple
+            accept=".pdf,.ppt,.pptx,.doc,.docx,.xls,.xlsx,.txt,.zip,.png,.jpg,.jpeg"
+            showUploadList={false}
+            beforeUpload={(file, fileList) => {
+              const oversized = fileList.filter(f => f.size > 50 * 1024 * 1024)
+              if (oversized.length > 0) {
+                setError(t('attendance.fileTooLarge'))
+                return false
+              }
+              setError('')
+              setFiles(fileList.map(f => f.originFileObj!))
+              return false
+            }}
+            className={styles.fileDropZone}
+          >
+            <div className={styles.fileDropContent}>
+              <UploadOutlined style={{ fontSize: 24, color: '#1677ff' }} />
+              <span className={styles.fileDropText}>
+                {files.length > 0
+                  ? t('attendance.filesSelected', { count: files.length })
+                  : t('attendance.uploadBtn')}
+              </span>
+              <span className={styles.fileHint}>{t('attendance.uploadMaterialsHint')}</span>
+            </div>
+          </Upload>
           {files.length > 0 && (
             <ul className={styles.filePreviewList}>
               {files.map((f, i) => (
