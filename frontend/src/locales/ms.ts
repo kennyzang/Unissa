@@ -720,6 +720,10 @@ const ms = {
     token: 'Token',
     sessionActive: 'Sesi Aktif',
     sessionEnded: 'Sesi Tamat',
+    confirmDelete: 'Adakah anda pasti mahu memadamkan bahan ini?',
+    confirmDeleteTitle: 'Sahkan Padam',
+    saveGrade: 'Simpan Markah',
+    invalidMarks: 'Markah mesti antara 0–{{max}}',
   },
 
   // Lecturer Dashboard
@@ -741,6 +745,15 @@ const ms = {
     marks: 'markah',
     closed: 'Tertutup',
     live: 'Aktif',
+    active: 'Aktif',
+    students: 'Pelajar',
+    assignments: 'Tugasan',
+    sessions: 'Sesi',
+    pending: 'terpending',
+    cgpa: 'CGPA',
+    loading: 'Memuatkan dashboard…',
+    loadingFailed: 'Gagal memuatkan dashboard pensyarah.',
+    noCourses: 'Tiada penawaran kursus ditugaskan.',
   },
 
   // Staff Portal
@@ -769,6 +782,20 @@ const ms = {
   // Fee Statement
   feeStatement: {
     notEnrolledTitle: 'Belum Mendaftar',
+  },
+
+  // Student Course Detail
+  lmsCourseDetailStudent: {
+    notEnrolled: 'Anda tidak mendaftar kursus ini.',
+    noAttendance: 'Tiada rekod kehadiran.',
+    attendanceRate: 'Kadar kehadiran',
+    absent: 'Tidak hadir',
+    finalGrade: 'Gred',
+    assignments: 'Tugasan Diserahkan',
+    attendance: 'Kehadiran',
+    materials: 'Bahan Tersedia',
+    tabAttendance: 'Kehadiran',
+    tabProgress: 'Kemajuan Saya',
   },
 
   // Course Registration

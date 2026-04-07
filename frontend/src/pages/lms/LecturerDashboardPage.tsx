@@ -101,7 +101,7 @@ const OfferingCard: React.FC<{ offering: OfferingSnapshot }> = ({ offering }) =>
             </span>
             <span className={styles.metaChip}>{offering.room}</span>
             {offering.semester.isActive && (
-              <Badge color="green" size="sm">Active</Badge>
+              <Badge color="green" size="sm">{t('lecturerDashboard.active', { defaultValue: 'Active' })}</Badge>
             )}
             <Badge color="gray" size="sm">{offering.semester.name}</Badge>
           </div>
@@ -111,21 +111,21 @@ const OfferingCard: React.FC<{ offering: OfferingSnapshot }> = ({ offering }) =>
           <div className={styles.statPill}>
             <Users size={14} />
             <span>{offering.enrolledCount}</span>
-            <label>Students</label>
+            <label>{t('lecturerDashboard.students', { defaultValue: 'Students' })}</label>
           </div>
           <div className={styles.statPill}>
             <ClipboardList size={14} />
             <span>{offering.assignments.length}</span>
-            <label>Assignments</label>
+            <label>{t('lecturerDashboard.assignments', { defaultValue: 'Assignments' })}</label>
           </div>
           <div className={styles.statPill}>
             <Clock size={14} />
             <span>{offering.recentAttendanceSessions.length}</span>
-            <label>Sessions</label>
+            <label>{t('lecturerDashboard.sessions', { defaultValue: 'Sessions' })}</label>
           </div>
           {pendingAssignments.length > 0 && (
             <Badge color="orange" size="sm">
-              <AlertTriangle size={10} /> {pendingAssignments.length} pending
+              <AlertTriangle size={10} /> {pendingAssignments.length} {t('lecturerDashboard.pending', { defaultValue: 'pending' })}
             </Badge>
           )}
           {expanded ? <ChevronDown size={18} className={styles.chevron} /> : <ChevronRight size={18} className={styles.chevron} />}
@@ -167,7 +167,7 @@ const OfferingCard: React.FC<{ offering: OfferingSnapshot }> = ({ offering }) =>
                         <th>#</th>
                         <th>{t('lecturerDashboard.name', { defaultValue: 'Name' })}</th>
                         <th>{t('lecturerDashboard.studentId', { defaultValue: 'Student ID' })}</th>
-                        <th>CGPA</th>
+                        <th>{t('lecturerDashboard.cgpa', { defaultValue: 'CGPA' })}</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -326,8 +326,8 @@ const LecturerDashboardPage: React.FC = () => {
     enabled: !!user,
   })
 
-  if (isLoading) return <div className={styles.loading}>Loading dashboard…</div>
-  if (isError || !data) return <div className={styles.loading}>Failed to load lecturer dashboard.</div>
+  if (isLoading) return <div className={styles.loading}>{t('lecturerDashboard.loading', { defaultValue: 'Loading dashboard…' })}</div>
+  if (isError || !data) return <div className={styles.loading}>{t('lecturerDashboard.loadingFailed', { defaultValue: 'Failed to load lecturer dashboard.' })}</div>
 
   const { staff, offerings } = data
 
@@ -387,7 +387,7 @@ const LecturerDashboardPage: React.FC = () => {
           <Card>
             <div className={styles.empty}>
               <BookOpen size={40} />
-              <p>No course offerings assigned.</p>
+              <p>{t('lecturerDashboard.noCourses', { defaultValue: 'No course offerings assigned.' })}</p>
             </div>
           </Card>
         )

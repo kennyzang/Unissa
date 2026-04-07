@@ -721,6 +721,10 @@ const zh = {
     token: '令牌',
     sessionActive: '会话进行中',
     sessionEnded: '会话已结束',
+    confirmDelete: '确定要删除此资料吗？',
+    confirmDeleteTitle: '确认删除',
+    saveGrade: '保存评分',
+    invalidMarks: '分数必须在 0–{{max}} 之间',
   },
 
   // Lecturer Dashboard
@@ -742,6 +746,15 @@ const zh = {
     marks: '分',
     closed: '已关闭',
     live: '进行中',
+    active: '活跃',
+    students: '学生',
+    assignments: '作业',
+    sessions: '会话',
+    pending: '待处理',
+    cgpa: '平均绩点',
+    loading: '加载仪表板中…',
+    loadingFailed: '加载讲师仪表板失败。',
+    noCourses: '暂无课程分配。',
   },
 
   // Staff Portal
@@ -770,6 +783,20 @@ const zh = {
   // Fee Statement
   feeStatement: {
     notEnrolledTitle: '暂未选课',
+  },
+
+  // Student Course Detail
+  lmsCourseDetailStudent: {
+    notEnrolled: '您未选此课程。',
+    noAttendance: '暂无考勤记录。',
+    attendanceRate: '出勤率',
+    absent: '缺勤',
+    finalGrade: '成绩',
+    assignments: '已提交作业',
+    attendance: '考勤',
+    materials: '可用资料',
+    tabAttendance: '考勤',
+    tabProgress: '我的进度',
   },
 
   // Course Registration

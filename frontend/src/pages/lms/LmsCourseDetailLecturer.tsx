@@ -13,7 +13,7 @@ import Card from '@/components/ui/Card'
 import Badge from '@/components/ui/Badge'
 import Button from '@/components/ui/Button'
 import Modal from '@/components/ui/Modal'
-import { Input, DatePicker, TimePicker, Upload, Checkbox } from 'antd'
+import { Input, DatePicker, TimePicker, Upload, Checkbox, Modal as AntdModal } from 'antd'
 import { UploadOutlined } from '@ant-design/icons'
 import dayjs from 'dayjs'
 import styles from './LmsCourseDetailLecturer.module.scss'
@@ -138,7 +138,14 @@ const LmsCourseDetailLecturer: React.FC = () => {
   const [assignmentModal, setAssignmentModal]   = useState(false)
   const [asnTitle, setAsnTitle]                 = useState('')
   const [asnDesc, setAsnDesc]                   = useState('')
-  const [asnDueDate, setAsnDueDate]             = useState<dayjs.Dayjs | null>(null)
+  const [asnDueDate, setAsnDueDate]             = useState<dayjs.Dayjs | null>(() => {
+    const today = dayjs()
+    const april15 = dayjs(today.year() + '-' + (today.month() >= 3 ? '04-15' : '04-15'))
+    if (today.isBefore(april15)) {
+      return april15
+    }
+    return today.add(7, 'day')
+  })
   const [asnMaxMarks, setAsnMaxMarks]           = useState('100')
   const [asnWeight, setAsnWeight]               = useState('10')
   const [asnCriteria, setAsnCriteria]           = useState<{ criterion: string; max_marks: number }[]>([
@@ -442,7 +449,7 @@ const LmsCourseDetailLecturer: React.FC = () => {
                 <span className={styles.assignmentBlockMeta}>{assignment.maxMarks} pts</span>
                 {assignment.dueDate && (
                   <Badge color={new Date(assignment.dueDate) < new Date() ? 'red' : 'orange'} size="sm">
-                    {t('lmsCourseDetail.due', { defaultValue: 'Due' })}: {new Date(assignment.dueDate).toLocaleDateString()}
+                    {t('lmsCourseDetail.due', { defaultValue: 'Due' })} {new Date(assignment.dueDate).toLocaleDateString()}
                   </Badge>
                 )}
                 {ungraded.length > 0 && (
@@ -564,7 +571,7 @@ const LmsCourseDetailLecturer: React.FC = () => {
                     </Button>
                   )}
                   {href && (
-                    <a href={href} target="_blank" rel="noreferrer" className={styles.slideAction} download>
+                    <a href={href} target="_blank" rel="noreferrer" className={styles.materialDownloadBtn} download>
                       <Download size={14} />
                       {t('lmsCourseDetail.download', { defaultValue: 'Download' })}
                     </a>
@@ -572,10 +579,16 @@ const LmsCourseDetailLecturer: React.FC = () => {
                   <Button 
                     size="sm" 
                     variant="ghost" 
+                    style={{ color: '#ff4d4f' }} 
                     onClick={() => {
-                      if (window.confirm(t('lmsCourseDetailLecturer.confirmDelete', { defaultValue: 'Are you sure you want to delete this material?' }))) {
-                        deleteMaterialMutation.mutate(m.id)
-                      }
+                      AntdModal.confirm({
+                        title: t('lmsCourseDetailLecturer.confirmDeleteTitle', { defaultValue: 'Confirm Delete' }),
+                        content: t('lmsCourseDetailLecturer.confirmDelete', { defaultValue: 'Are you sure you want to delete this material?' }),
+                        okText: t('common.ok', { defaultValue: 'OK' }),
+                        cancelText: t('common.cancel', { defaultValue: 'Cancel' }),
+                        okType: 'danger',
+                        onOk: () => deleteMaterialMutation.mutate(m.id)
+                      })
                     }}
                   >
                     <Trash2 size={14} />
@@ -781,7 +794,7 @@ const LmsCourseDetailLecturer: React.FC = () => {
           onOk={() => {
             const marks = parseFloat(gradingMarks)
             if (isNaN(marks) || marks < 0 || marks > gradingTarget.assignment.maxMarks) {
-              addToast({ type: 'error', message: `Marks must be 0–${gradingTarget.assignment.maxMarks}` })
+              addToast({ type: 'error', message: t('lmsCourseDetailLecturer.invalidMarks', { defaultValue: 'Marks must be 0–{{max}}', max: gradingTarget.assignment.maxMarks }) })
               return
             }
             gradeMutation.mutate({ submissionId: gradingTarget.sub.id, marks })

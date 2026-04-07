@@ -219,7 +219,11 @@
   border-radius: v.$border-radius;
   transition: all 0.2s ease;
   white-space: nowrap;
-  &:hover { background: v.$brand-dark; }
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  &:hover {
+    background: v.$brand-dark;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
+  }
 }
 
 // ─── Sessions (in Materials tab) ───────────────────────────────────────────────

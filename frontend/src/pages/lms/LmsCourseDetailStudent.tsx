@@ -53,6 +53,7 @@ interface CourseMaterial {
   externalUrl?: string
   duration?: number
   orderIndex: number
+  isPublished?: boolean
   asset?: {
     id: string
     fileName: string
@@ -325,7 +326,7 @@ const LmsCourseDetailStudent: React.FC = () => {
           <div className={styles.emptyState}>{t('lmsCourseDetail.noMaterials', { defaultValue: 'No materials available yet.' })}</div>
         ) : (
           <div className={styles.materialsList}>
-            {materials.map(m => {
+            {materials.filter(m => m.isPublished !== false).map(m => {
               const isVideo = m.materialType === 'video'
               const isLink  = m.materialType === 'link'
               const isPPT = m.materialType === 'presentation' || (m.asset?.mimeType?.includes('presentation') || m.asset?.originalName?.match(/\.pptx?$/i))
@@ -436,11 +437,11 @@ const LmsCourseDetailStudent: React.FC = () => {
                   <div className={styles.assignmentTitle}>{a.title}</div>
                   <div className={styles.assignmentMeta}>
                     <span>{t('lmsCourseDetail.maxMarks', { defaultValue: 'Max' })}: {a.maxMarks} pts</span>
-                    <span>{t('lmsCourseDetail.weight', { defaultValue: 'Weight' })}: {a.weight}%</span>
+                    <span>{t('lmsCourseDetail.weight', { defaultValue: 'Weight' })}: {a.weightPct || 0}%</span>
                     {a.dueDate && (
                       <span className={isDue ? styles.overdue : styles.dueSoon}>
                         <Clock size={11} />
-                        {t('lmsCourseDetail.due', { defaultValue: 'Due' })}: {new Date(a.dueDate).toLocaleDateString()}
+                        {t('lmsCourseDetail.due', { defaultValue: 'Due' })} {new Date(a.dueDate).toLocaleDateString()}
                       </span>
                     )}
                   </div>
@@ -566,7 +567,7 @@ const LmsCourseDetailStudent: React.FC = () => {
                 return (
                   <div key={s.id} className={styles.attendanceRecordItem}>
                     <span className={styles.attendanceRecordDate}>
-                      {s.name ?? `Session ${idx + 1}`} · {new Date(s.startedAt).toLocaleDateString()}
+                      {s.name ?? `${t('lmsCourseDetail.session', { defaultValue: 'Session' })} ${idx + 1}`} · {new Date(s.startedAt).toLocaleDateString()}
                     </span>
                     <Badge color={attended ? 'green' : 'red'} size="sm">
                       {attended
@@ -655,7 +656,7 @@ const LmsCourseDetailStudent: React.FC = () => {
                   <div key={s.id} className={styles.attendanceRecordItem}>
                     <UserCheck size={14} color={attended ? '#52c41a' : '#bbb'} />
                     <span className={styles.attendanceRecordDate}>
-                      {s.name ?? `Session ${idx + 1}`} · {new Date(s.startedAt).toLocaleDateString()}
+                      {s.name ?? `${t('lmsCourseDetail.session', { defaultValue: 'Session' })} ${idx + 1}`} · {new Date(s.startedAt).toLocaleDateString()}
                     </span>
                     <Badge color={attended ? 'green' : 'red'} size="sm">
                       {attended

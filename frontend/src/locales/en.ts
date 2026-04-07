@@ -734,6 +734,10 @@ const en = {
     token: 'Token',
     sessionActive: 'Session Active',
     sessionEnded: 'Session Ended',
+    confirmDelete: 'Are you sure you want to delete this material?',
+    confirmDeleteTitle: 'Confirm Delete',
+    saveGrade: 'Save Grade',
+    invalidMarks: 'Marks must be 0–{{max}}',
   },
 
   // Lecturer Dashboard
@@ -755,6 +759,15 @@ const en = {
     marks: 'marks',
     closed: 'Closed',
     live: 'Live',
+    active: 'Active',
+    students: 'Students',
+    assignments: 'Assignments',
+    sessions: 'Sessions',
+    pending: 'pending',
+    cgpa: 'CGPA',
+    loading: 'Loading dashboard…',
+    loadingFailed: 'Failed to load lecturer dashboard.',
+    noCourses: 'No course offerings assigned.',
   },
 
   // Staff Portal
@@ -783,6 +796,20 @@ const en = {
   // Fee Statement
   feeStatement: {
     notEnrolledTitle: 'Not Enrolled Yet',
+  },
+
+  // Student Course Detail
+  lmsCourseDetailStudent: {
+    notEnrolled: 'You are not enrolled in this course.',
+    noAttendance: 'No sessions recorded.',
+    attendanceRate: 'Attendance rate',
+    absent: 'Absent',
+    finalGrade: 'Grade',
+    assignments: 'Assignments Submitted',
+    attendance: 'Attendance',
+    materials: 'Materials Available',
+    tabAttendance: 'Attendance',
+    tabProgress: 'My Progress',
   },
 
   // Course Registration
