@@ -349,8 +349,16 @@ router.post('/demo-reset', requireRole('admin'), async (_req: AuthRequest, res: 
     // Step 14: applicants (after student FK removed)
     const { count: applicants } = await prisma.applicant.deleteMany({})
 
-    // Step 15: users with role = student (after all FK removed)
-    const { count: users } = await prisma.user.deleteMany({ where: { role: 'student' } })
+    // Step 15: users with role = student (after all FK removed), except noor and zara
+    const { count: users } = await prisma.user.deleteMany({ 
+      where: { 
+        role: 'student',
+        NOT: [
+          { username: 'noor' },
+          { username: 'zara' }
+        ]
+      } 
+    })
 
     res.json({
       success: true,
