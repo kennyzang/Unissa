@@ -60,7 +60,8 @@
       "Bash(npm test:*)",
       "Bash(node -e ':*)",
       "Bash(grep -E \"\\\\.\\(tsx?|vue\\)$\")",
-      "Bash(npm run:*)"
+      "Bash(npm run:*)",
+      "Bash(xargs cat:*)"
     ]
   }
 }

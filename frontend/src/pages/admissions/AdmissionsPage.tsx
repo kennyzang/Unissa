@@ -1,7 +1,7 @@
 import React from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { useNavigate } from 'react-router-dom'
-import { Users, ChevronRight, ArrowRight } from 'lucide-react'
+import { Users, ChevronRight, ArrowRight, WifiOff, RefreshCw } from 'lucide-react'
 import { apiClient } from '@/lib/apiClient'
 import Badge from '@/components/ui/Badge'
 import Card from '@/components/ui/Card'
@@ -13,7 +13,7 @@ interface Applicant {
   status: string
   createdAt: string
   programme?: { name: string; code: string } | null
-  intake?: { name: string } | null
+  intake?: { intakeStart: string; intakeEnd: string; semester?: { name: string } } | null
 }
 
 interface FunnelData {
@@ -41,7 +41,7 @@ const FUNNEL_STEPS = [
 export default function AdmissionsPage() {
   const navigate = useNavigate()
 
-  const { data, isLoading } = useQuery<FunnelData>({
+  const { data, isLoading, isError, refetch } = useQuery<FunnelData>({
     queryKey: ['admissions', 'funnel'],
     queryFn: async () => {
       const { data } = await apiClient.get('/admissions/funnel')
@@ -51,6 +51,18 @@ export default function AdmissionsPage() {
 
   if (isLoading) {
     return <div className={styles.loading}>Loading enrollment data…</div>
+  }
+
+  if (isError) {
+    return (
+      <div className={styles.errorWrap}>
+        <WifiOff size={32} color="#F53F3F" />
+        <p>Failed to load enrollment data. Please check your connection and try again.</p>
+        <button className={styles.retryBtn} onClick={() => refetch()}>
+          <RefreshCw size={14} /> Retry
+        </button>
+      </div>
+    )
   }
 
   const funnel = data?.funnel ?? { applied: 0, offered: 0, accepted: 0, enrolled: 0 }
@@ -145,7 +157,13 @@ export default function AdmissionsPage() {
                       ? <><span className={styles.code}>{app.programme.code}</span> {app.programme.name}</>
                       : '—'}
                   </td>
-                  <td>{app.intake?.name ?? '—'}</td>
+                  <td>
+                    {app.intake?.semester?.name
+                      ? app.intake.semester.name
+                      : app.intake?.intakeStart
+                      ? new Date(app.intake.intakeStart).toLocaleDateString('en-GB', { month: 'short', year: 'numeric' })
+                      : '—'}
+                  </td>
                   <td>
                     <Badge color={STATUS_COLOR[app.status] ?? 'gray'} size="sm">
                       {app.status.replace(/_/g, ' ')}

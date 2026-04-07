@@ -4,6 +4,7 @@ import AppLayout from '@/layouts/AppLayout'
 import AuthLayout from '@/layouts/AuthLayout'
 import ProtectedRoute from '@/layouts/ProtectedRoute'
 import PageLoader from '@/components/ui/PageLoader'
+import ErrorBoundary from '@/components/ui/ErrorBoundary'
 import { useAuthStore } from '@/stores/authStore'
 import type { UserRole } from '@/types'
 
@@ -73,7 +74,11 @@ const AdmissionsPage           = lazy(() => import('@/pages/admissions/Admission
 const SettingsPage             = lazy(() => import('@/pages/admin/SettingsPage'))
 const CourseManagementPage     = lazy(() => import('@/pages/admin/CourseManagementPage'))
 
-const wrap = (el: React.ReactNode) => <Suspense fallback={<PageLoader />}>{el}</Suspense>
+const wrap = (el: React.ReactNode) => (
+  <ErrorBoundary>
+    <Suspense fallback={<PageLoader />}>{el}</Suspense>
+  </ErrorBoundary>
+)
 
 export const router = createBrowserRouter([
   {

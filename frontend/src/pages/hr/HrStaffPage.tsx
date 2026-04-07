@@ -1,7 +1,7 @@
 import { useTranslation } from 'react-i18next'
 import React, { useMemo, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { Users, Search, UserCheck, Calendar, Briefcase, Eye, EyeOff } from 'lucide-react'
+import { Users, Search, UserCheck, Calendar, Briefcase, Eye, EyeOff, WifiOff, RefreshCw } from 'lucide-react'
 import { Input as AntInput, Select, Table as AntTable } from 'antd'
 import type { TableColumnsType } from 'antd'
 import { apiClient } from '@/lib/apiClient'
@@ -84,7 +84,7 @@ const HrStaffPage: React.FC = () => {
   const [selected,    setSelected]    = useState<Staff | null>(null)
   const [showPassword,setShowPassword]= useState(false)
 
-  const { data: staffList = [], isLoading } = useQuery<Staff[]>({
+  const { data: staffList = [], isLoading, isError, refetch } = useQuery<Staff[]>({
     queryKey: ['hr', 'staff'],
     queryFn: async () => {
       const { data } = await apiClient.get('/hr/staff')
@@ -207,6 +207,18 @@ const HrStaffPage: React.FC = () => {
       ),
     },
   ]
+
+  if (isError) {
+    return (
+      <div className={styles.errorWrap}>
+        <WifiOff size={32} color="#F53F3F" />
+        <p>{t('hrStaff.loadError', { defaultValue: 'Failed to load staff data. Please check your connection and try again.' })}</p>
+        <button className={styles.retryBtn} onClick={() => refetch()}>
+          <RefreshCw size={14} /> {t('common.retry')}
+        </button>
+      </div>
+    )
+  }
 
   return (
     <div className={styles.page}>

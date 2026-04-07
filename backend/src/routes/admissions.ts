@@ -70,7 +70,7 @@ router.get('/funnel', authenticate, requireRole('admissions', 'admin', 'manager'
       orderBy: { createdAt: 'desc' },
       include: {
         programme: { select: { name: true, code: true } },
-        intake:    { select: { intakeStart: true, intakeEnd: true } },
+        intake:    { select: { intakeStart: true, intakeEnd: true, semester: { select: { name: true } } } },
       },
     }),
   ])

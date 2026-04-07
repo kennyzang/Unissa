@@ -14,6 +14,40 @@
   color: var(--color-gray-5);
 }
 
+.errorWrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 40vh;
+  gap: v.$space-3;
+  color: var(--color-gray-6);
+  text-align: center;
+
+  p {
+    margin: 0;
+    font-size: v.$font-size-sm;
+    max-width: 360px;
+  }
+}
+
+.retryBtn {
+  display: flex;
+  align-items: center;
+  gap: v.$space-1;
+  padding: v.$space-2 v.$space-4;
+  background: var(--color-primary);
+  color: #fff;
+  border: none;
+  border-radius: v.$radius-md;
+  cursor: pointer;
+  font-size: v.$font-size-sm;
+  font-weight: v.$font-weight-medium;
+  transition: opacity 0.15s;
+
+  &:hover { opacity: 0.85; }
+}
+
 .header {
   display: flex;
   align-items: flex-start;

@@ -17,6 +17,40 @@
   to   { opacity: 1; transform: translateY(0); }
 }
 
+.errorWrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 40vh;
+  gap: $space-3;
+  color: $color-gray-6;
+  text-align: center;
+
+  p {
+    margin: 0;
+    font-size: $font-size-sm;
+    max-width: 360px;
+  }
+}
+
+.retryBtn {
+  display: flex;
+  align-items: center;
+  gap: $space-1;
+  padding: $space-2 $space-4;
+  background: $color-primary;
+  color: #fff;
+  border: none;
+  border-radius: $radius-md;
+  cursor: pointer;
+  font-size: $font-size-sm;
+  font-weight: $font-weight-medium;
+  transition: opacity 0.15s;
+
+  &:hover { opacity: 0.85; }
+}
+
 .header { margin-bottom: $space-6; }
 
 .pageTitle {
