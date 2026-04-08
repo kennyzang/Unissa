@@ -170,7 +170,7 @@ const Navbar = () => {
 
         {/* QR Code Scan for Attendance (Student only) */}
         {user?.role === 'student' && (
-          <Link to="/lms/attendance/scan" className={styles.iconBtn} title={t('navbar.qrScan')}>
+          <Link to="/lms/attendance/scan" className={`${styles.iconBtn} ${styles.qrScanBtn}`} title={t('navbar.qrScan')}>
             <Scan size={16} />
           </Link>
         )}

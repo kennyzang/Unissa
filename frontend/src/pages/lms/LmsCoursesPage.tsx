@@ -83,9 +83,9 @@ const LecturerCoursesView: React.FC = () => {
   const [proposeForm, setProposeForm]   = useState({ code: '', name: '', departmentId: '', creditHours: '3' })
   const [proposeError, setProposeError] = useState('')
 
-  // GET /admin/departments for the department field in propose modal
-  const { data: departments = [] } = useQuery<{ id: string; name: string }[]>({
-    queryKey: ['admin', 'departments'],
+  // GET departments for the department field in propose modal
+  const { data: departments = [], isError: deptLoadError } = useQuery<{ id: string; name: string }[]>({
+    queryKey: ['departments'],
     queryFn: async () => {
       const { data } = await apiClient.get('/admin/departments')
       return data.data
@@ -165,12 +165,18 @@ const LecturerCoursesView: React.FC = () => {
               <label style={{ fontSize: 13, fontWeight: 500 }}>{t('courseManagement.fieldDepartment')} *</label>
               <Select
                 style={{ width: '100%', marginTop: 4 }}
-                value={proposeForm.departmentId}
+                placeholder={t('courseManagement.selectDepartment')}
+                value={proposeForm.departmentId || undefined}
                 onChange={value => setProposeForm(f => ({ ...f, departmentId: value }))}
+                notFoundContent={deptLoadError ? 'Failed to load departments — please refresh.' : 'No departments found'}
               >
-                <Option value="">{t('courseManagement.selectDepartment')}</Option>
                 {departments.map(d => <Option key={d.id} value={d.id}>{d.name}</Option>)}
               </Select>
+              {deptLoadError && (
+                <p style={{ color: '#ef4444', fontSize: 12, margin: '4px 0 0' }}>
+                  Could not load departments. Please refresh the page and try again.
+                </p>
+              )}
             </div>
             <Input
               label={t('courseManagement.fieldCredits')}
@@ -187,7 +193,7 @@ const LecturerCoursesView: React.FC = () => {
                 type="button"
                 loading={proposeMutation.isPending}
                 onClick={() => {
-                  if (!proposeForm.code || !proposeForm.name || !proposeForm.departmentId) {
+                  if (!proposeForm.code.trim() || !proposeForm.name.trim() || !proposeForm.departmentId) {
                     setProposeError('Code, name and department are required')
                     return
                   }
@@ -368,12 +374,18 @@ const LecturerCoursesView: React.FC = () => {
             <label style={{ fontSize: 13, fontWeight: 500 }}>{t('courseManagement.fieldDepartment')} *</label>
             <Select
               style={{ width: '100%', marginTop: 4 }}
-              value={proposeForm.departmentId}
+              placeholder={t('courseManagement.selectDepartment')}
+              value={proposeForm.departmentId || undefined}
               onChange={value => setProposeForm(f => ({ ...f, departmentId: value }))}
+              notFoundContent={deptLoadError ? 'Failed to load departments — please refresh.' : 'No departments found'}
             >
-              <Option value="">{t('courseManagement.selectDepartment')}</Option>
               {departments.map(d => <Option key={d.id} value={d.id}>{d.name}</Option>)}
             </Select>
+            {deptLoadError && (
+              <p style={{ color: '#ef4444', fontSize: 12, margin: '4px 0 0' }}>
+                Could not load departments. Please refresh the page and try again.
+              </p>
+            )}
           </div>
           <Input
             label={t('courseManagement.fieldCredits')}
@@ -390,7 +402,7 @@ const LecturerCoursesView: React.FC = () => {
               type="button"
               loading={proposeMutation.isPending}
               onClick={() => {
-                if (!proposeForm.code || !proposeForm.name || !proposeForm.departmentId) {
+                if (!proposeForm.code.trim() || !proposeForm.name.trim() || !proposeForm.departmentId) {
                   setProposeError('Code, name and department are required')
                   return
                 }

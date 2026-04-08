@@ -1268,6 +1268,8 @@ const zh = {
     durationRequired: '请填写研究周期',
     durationMin: '研究周期至少为1个月',
     durationMax: '研究周期不能超过60个月',
+    durationInvalid: '请输入有效的研究周期数字',
+    budgetInvalid: '请输入有效的预算数字',
     durationRuleHint: '请输入1至60之间的月数',
     budgetRequired: '请填写预算',
     budgetMin: '预算须在 BND 100 至 BND 1,000,000 之间。',

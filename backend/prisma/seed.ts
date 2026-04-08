@@ -98,7 +98,7 @@ async function main() {
 
   const uNoor       = await upsertUser({ username: 'noor',       displayName: 'Noor (Demo Student)', role: 'student',    email: 'noor@unissa.edu.bn',       hash: hash(PASS) })
   // Scene-1 demo account: fresh applicant — always reset so demo starts from the very beginning
-  const uZara       = await upsertUser({ username: 'zara',       displayName: 'Noor Aisyah Binti Hassan', role: 'student',    email: 'zara@unissa.edu.bn',       hash: hash(PASS) })
+  const uZara       = await upsertUser({ username: 'zara',       displayName: 'Zara Binti Hassan', role: 'student',    email: 'zara@unissa.edu.bn',       hash: hash(PASS) })
   const uAdmissions = await upsertUser({ username: 'admissions', displayName: 'Admissions Officer',  role: 'admissions', email: 'admissions@unissa.edu.bn',  hash: hash(PASS) })
   const uDrSiti     = await upsertUser({ username: 'drsiti',     displayName: 'Dr. Siti (Lecturer)', role: 'lecturer',   email: 'drsiti@unissa.edu.bn',      hash: hash(PASS) })
   const uManager    = await upsertUser({ username: 'manager',    displayName: 'Dept Manager',        role: 'manager',    email: 'manager@unissa.edu.bn',     hash: hash(PASS) })

@@ -113,8 +113,8 @@ router.get('/email-status', requireRole('admin'), async (_req: AuthRequest, res:
 
 // ── Departments ──────────────────────────────────────────────────────────────
 
-// GET /admin/departments — all departments with children (admin/manager)
-router.get('/departments', requireRole('admin', 'manager'), async (_req: AuthRequest, res: Response) => {
+// GET /admin/departments — all departments with children (admin/manager/lecturer)
+router.get('/departments', requireRole('admin', 'manager', 'lecturer'), async (_req: AuthRequest, res: Response) => {
   const departments = await prisma.department.findMany({
     where: { parentId: null },        // top-level only; children are nested
     include: { children: true },

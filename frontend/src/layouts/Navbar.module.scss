@@ -396,3 +396,10 @@
   // Hidden on mobile – logout is in BottomTab More sheet
   @include m.max-md { display: none; }
 }
+
+// QR Scan button – only show on mobile
+.qrScanBtn {
+  display: none;
+
+  @include m.max-md { display: block; }
+}

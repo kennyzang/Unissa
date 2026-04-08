@@ -1278,6 +1278,8 @@ const en = {
     durationRequired: 'Duration is required',
     durationMin: 'Duration must be at least 1 month',
     durationMax: 'Duration cannot exceed 60 months',
+    durationInvalid: 'Please enter a valid number for duration',
+    budgetInvalid: 'Please enter a valid number for budget',
     durationRuleHint: 'Enter a value between 1 and 60 months',
     budgetRequired: 'Budget is required',
     budgetMin: 'Must be between BND 100 and BND 1,000,000.',

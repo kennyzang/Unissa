@@ -1,7 +1,7 @@
 import { useTranslation } from 'react-i18next'
 import React, { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { useForm } from 'react-hook-form'
+import { useForm, Controller } from 'react-hook-form'
 import { FlaskConical, Plus, CheckCircle, XCircle, Clock, DollarSign, Search, Upload, FileText, History } from 'lucide-react'
 import { Input as AntInput } from 'antd'
 import { apiClient } from '@/lib/apiClient'
@@ -39,8 +39,8 @@ interface Grant {
 interface GrantForm {
   title: string
   abstract: string
-  durationMonths: number
-  totalBudget: number
+  durationMonths: string | number
+  totalBudget: string | number
 }
 
 const STATUS_COLOR: Record<string, 'blue' | 'green' | 'red' | 'orange' | 'gray' | 'purple'> = {
@@ -113,7 +113,7 @@ const ResearchGrantsPage: React.FC = () => {
   const isFinance  = user?.role === 'finance'  || user?.role === 'admin'
   const isLecturer = user?.role === 'lecturer'
 
-  const { register, handleSubmit, reset, watch, formState: { errors } } = useForm<GrantForm>()
+  const { register, handleSubmit, reset, watch, control, formState: { errors } } = useForm<GrantForm>()
   const abstractValue = watch('abstract', '')
 
   const { data: grants = [], isLoading } = useQuery<Grant[]>({
@@ -439,16 +439,20 @@ const ResearchGrantsPage: React.FC = () => {
             <label className={styles.label}>
               {t('researchGrants.researchTitle')} <span className={styles.required}>*</span>
             </label>
-            <AntInput
-              className={styles.input}
-              placeholder={t('researchGrants.researchTitlePlaceholder')}
-              {...register('title', { 
+            <Controller
+              name="title"
+              control={control}
+              rules={{
                 required: t('researchGrants.titleRequired'),
-                maxLength: {
-                  value: 255,
-                  message: t('researchGrants.titleMaxLength')
-                }
-              })}
+                maxLength: { value: 255, message: t('researchGrants.titleMaxLength') },
+              }}
+              render={({ field }) => (
+                <AntInput
+                  className={styles.input}
+                  placeholder={t('researchGrants.researchTitlePlaceholder')}
+                  {...field}
+                />
+              )}
             />
             {errors.title && <span className={styles.error}>{errors.title.message}</span>}
             <div className={styles.ruleHint}>{t('researchGrants.titleRuleHint')}</div>
@@ -482,21 +486,23 @@ const ResearchGrantsPage: React.FC = () => {
               <label className={styles.label}>
                 {t('researchGrants.durationMonths')} <span className={styles.required}>*</span>
               </label>
-              <AntInput
-                type="number"
-                className={styles.input}
-                placeholder="e.g. 24"
-                {...register('durationMonths', { 
+              <Controller
+                name="durationMonths"
+                control={control}
+                rules={{
                   required: t('researchGrants.durationRequired'),
-                  min: {
-                    value: 1,
-                    message: t('researchGrants.durationMin')
+                  validate: (value) => {
+                    const numValue = Number(value)
+                    if (!value && value !== 0) return t('researchGrants.durationRequired')
+                    if (isNaN(numValue))     return t('researchGrants.durationInvalid')
+                    if (numValue < 1)        return t('researchGrants.durationMin')
+                    if (numValue > 60)       return t('researchGrants.durationMax')
+                    return true
                   },
-                  max: {
-                    value: 60,
-                    message: t('researchGrants.durationMax')
-                  }
-                })}
+                }}
+                render={({ field }) => (
+                  <AntInput type="number" className={styles.input} placeholder="e.g. 24" {...field} />
+                )}
               />
               {errors.durationMonths && <span className={styles.error}>{errors.durationMonths.message}</span>}
               <div className={styles.ruleHint}>{t('researchGrants.durationRuleHint')}</div>
@@ -506,21 +512,23 @@ const ResearchGrantsPage: React.FC = () => {
               <label className={styles.label}>
                 {t('researchGrants.totalBudget')} <span className={styles.required}>*</span>
               </label>
-              <AntInput
-                type="number"
-                className={styles.input}
-                placeholder="e.g. 25000"
-                {...register('totalBudget', { 
+              <Controller
+                name="totalBudget"
+                control={control}
+                rules={{
                   required: t('researchGrants.budgetRequired'),
-                  min: {
-                    value: 100,
-                    message: t('researchGrants.budgetMin')
+                  validate: (value) => {
+                    const numValue = Number(value)
+                    if (!value && value !== 0) return t('researchGrants.budgetRequired')
+                    if (isNaN(numValue))       return t('researchGrants.budgetInvalid')
+                    if (numValue < 100)        return t('researchGrants.budgetMin')
+                    if (numValue > 1000000)    return t('researchGrants.budgetMax')
+                    return true
                   },
-                  max: {
-                    value: 1000000,
-                    message: t('researchGrants.budgetMax')
-                  }
-                })}
+                }}
+                render={({ field }) => (
+                  <AntInput type="number" className={styles.input} placeholder="e.g. 25000" {...field} />
+                )}
               />
               {errors.totalBudget && <span className={styles.error}>{errors.totalBudget.message}</span>}
               <div className={styles.ruleHint}>{t('researchGrants.budgetRuleHint')}</div>
