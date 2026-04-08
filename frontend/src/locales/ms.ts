@@ -883,6 +883,7 @@ const ms = {
     sessionId: 'ID Sesi',
     timestamp: 'Cap Masa',
     session: 'Sesi',
+    pocVersionHint: 'Versi POC: Sila muat naik fail JSON yang mengandungi maklumat kehadiran',
     // Imbas kamera
     startCamera: 'Buka kamera untuk imbas',
     stopScan: 'Henti imbasan',

@@ -900,6 +900,7 @@ const en = {
     sessionId: 'Session ID',
     timestamp: 'Timestamp',
     session: 'Session',
+    pocVersionHint: 'POC version: Please upload a JSON file containing attendance information',
   },
 
   // Procurement PR

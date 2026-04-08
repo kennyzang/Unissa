@@ -99,7 +99,7 @@ const QRCodeScanPage = () => {
 
         {!scanning && !scanResult && (
           <div style={{ marginTop: '16px', textAlign: 'center', fontSize: '12px', color: '#999' }}>
-            POC版本：请上传包含考勤信息的JSON文件
+            {t('attendance.pocVersionHint')}
           </div>
         )}
 

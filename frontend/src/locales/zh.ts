@@ -886,6 +886,7 @@ const zh = {
     sessionId: '会话ID',
     timestamp: '时间戳',
     session: '会话',
+    pocVersionHint: 'POC版本：请上传包含考勤信息的JSON文件',
     // 相机扫码
     startCamera: '打开相机扫码',
     stopScan: '停止扫码',
