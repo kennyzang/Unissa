@@ -131,7 +131,7 @@ export const router = createBrowserRouter([
       { path: 'staff/portal',   element: r(['lecturer','manager','admin','hradmin'], <StaffPortalPage />) },
 
       // Research
-      { path: 'research/grants', element: r(['lecturer','manager','admin'], <ResearchGrantsPage />) },
+      { path: 'research/grants', element: r(['lecturer','manager','admin','finance'], <ResearchGrantsPage />) },
 
       // AI Analytics
       { path: 'ai/risk', element: r(['lecturer','admin'], <RiskDashboardPage />) },

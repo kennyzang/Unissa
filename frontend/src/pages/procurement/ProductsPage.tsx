@@ -5,6 +5,7 @@ import { useForm, Controller } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { Plus, Edit2, Package } from 'lucide-react'
+import { Pagination } from 'antd'
 import { apiClient } from '@/lib/apiClient'
 import { useUIStore } from '@/stores/uiStore'
 import { useAuthStore } from '@/stores/authStore'
@@ -52,6 +53,8 @@ const ProductsPage: React.FC = () => {
   const [modal, setModal] = useState<'create' | 'edit' | null>(null)
   const [editTarget, setEditTarget] = useState<Product | null>(null)
   const [search, setSearch] = useState('')
+  const [currentPage, setCurrentPage] = useState(1)
+  const [pageSize] = useState(10)
 
   const canManage = user?.role === 'manager' || user?.role === 'admin'
 
@@ -152,6 +155,12 @@ const ProductsPage: React.FC = () => {
     (p.category?.name ?? '').toLowerCase().includes(search.toLowerCase())
   )
 
+  // Pagination logic
+  const totalItems = filtered.length
+  const startIndex = (currentPage - 1) * pageSize
+  const endIndex = startIndex + pageSize
+  const paginatedData = filtered.slice(startIndex, endIndex)
+
   const columns: ColumnDef<Product>[] = [
     { key: 'code', title: t('products.code'), render: v => <span className={styles.productCode}>{v.code}</span> },
     { key: 'name', title: t('products.name'), render: v => (
@@ -247,12 +256,25 @@ const ProductsPage: React.FC = () => {
       <Card noPadding>
         <Table<Product>
           columns={columns}
-          dataSource={filtered}
+          dataSource={paginatedData}
           rowKey="id"
           loading={isLoading}
           size="sm"
           emptyText={t('products.noProductsFound')}
         />
+        {totalItems > 0 && (
+          <div className={styles.pagination}>
+            <Pagination
+              current={currentPage}
+              pageSize={pageSize}
+              total={totalItems}
+              onChange={(page) => setCurrentPage(page)}
+              showSizeChanger={false}
+              showQuickJumper
+              showTotal={(total) => `${t('common.total')}: ${total}`}
+            />
+          </div>
+        )}
       </Card>
 
       {/* Create / Edit Modal */}

@@ -309,7 +309,7 @@ const HrStaffPage: React.FC = () => {
           rowKey="id"
           loading={isLoading}
           size="small"
-          pagination={{ pageSize: 20, showSizeChanger: false, showTotal: (total) => `${total} ${t('hrStaff.staffTotal')}` }}
+          pagination={{ pageSize: 10, showSizeChanger: false, showTotal: (total) => `${total} ${t('hrStaff.staffTotal')}` }}
           locale={{ emptyText: t('hrStaff.noStaff') }}
           className={styles.antTable}
         />

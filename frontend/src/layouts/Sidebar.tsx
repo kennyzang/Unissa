@@ -69,13 +69,7 @@ const NAV_STRUCTURE: NavGroup[] = [
       { key: 'risk',          labelKey: 'nav.learningAnalysis', path: '/ai/risk',        icon: '📈', roles: ['lecturer'] },
     ],
   },
-  {
-    key: 'g-research', labelKey: 'nav.researchManagement', icon: '🔬',
-    roles: ['lecturer'],
-    children: [
-      { key: 'research', labelKey: 'nav.researchFund', path: '/research/grants', icon: '💰', roles: ['lecturer'] },
-    ],
-  },
+
   {
     key: 'g-hr', labelKey: 'nav.humanResources', icon: '👥',
     roles: ['hradmin'],
@@ -183,9 +177,9 @@ const NAV_STRUCTURE: NavGroup[] = [
   },
   {
     key: 'g-admin-research', labelKey: 'nav.researchManagement', icon: '🔬',
-    roles: ['admin'],
+    roles: ['admin', 'manager', 'finance', 'lecturer'],
     children: [
-      { key: 'research', labelKey: 'nav.researchFundControl', path: '/research/grants', icon: '💰', roles: ['admin'] },
+      { key: 'research', labelKey: 'nav.researchFundControl', path: '/research/grants', icon: '💰', roles: ['admin', 'manager', 'finance', 'lecturer'] },
     ],
   },
   {
