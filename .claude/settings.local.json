@@ -62,7 +62,9 @@
       "Bash(grep -E \"\\\\.\\(tsx?|vue\\)$\")",
       "Bash(npm run:*)",
       "Bash(xargs cat:*)",
-      "Bash(npx prisma:*)"
+      "Bash(npx prisma:*)",
+      "Bash(find /Users/xiex/Documents/GIT/OVERSEABU/unissa-poc/doc* -name \"*purchase*\" -o -name \"*procurement*\" -o -name \"*approval*\")",
+      "Bash(grep -r \"purchase\\\\|procurement\\\\|approval.*flow\\\\|approval.*level\" /Users/xiex/Documents/GIT/OVERSEABU/unissa-poc/*.md)"
     ]
   }
 }

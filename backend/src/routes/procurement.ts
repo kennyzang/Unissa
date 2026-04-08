@@ -130,12 +130,28 @@ router.post('/pr/:id/approve', requireRole('manager', 'finance', 'admin'), async
 
   const pr = await prisma.purchaseRequest.findUnique({
     where: { id },
-    include: { approvals: true, glCode: true },
+    include: { approvals: true, glCode: true, requestor: true },
   })
   if (!pr) { res.status(404).json({ success: false, message: 'PR not found' }); return }
 
   const role = req.user!.role
   const approvalLevel = role === 'manager' ? 1 : role === 'finance' ? 2 : 3
+
+  // Prevent self-approval: requestor cannot approve their own PR
+  if (pr.requestor.userId === req.user!.userId) {
+    res.status(403).json({ success: false, message: 'You cannot approve your own purchase request' })
+    return
+  }
+
+  // Validate the PR is in the correct status for this approver's level
+  const requiredStatus = approvalLevel === 1 ? 'submitted' : approvalLevel === 2 ? 'dept_approved' : 'finance_approved'
+  if (pr.status !== requiredStatus) {
+    res.status(400).json({
+      success: false,
+      message: `Cannot approve: PR must be in '${requiredStatus}' status for this approval level (current: '${pr.status}')`,
+    })
+    return
+  }
 
   // Create e-signature if provided
   let esigId: string | undefined
@@ -183,6 +199,28 @@ router.post('/pr/:id/reject', requireRole('manager', 'finance', 'admin'), async 
   const id = String(req.params.id)
   const role = req.user!.role
   const approvalLevel = role === 'manager' ? 1 : role === 'finance' ? 2 : 3
+
+  const prForReject = await prisma.purchaseRequest.findUnique({
+    where: { id },
+    include: { requestor: true },
+  })
+  if (!prForReject) { res.status(404).json({ success: false, message: 'PR not found' }); return }
+
+  // Prevent self-rejection
+  if (prForReject.requestor.userId === req.user!.userId) {
+    res.status(403).json({ success: false, message: 'You cannot reject your own purchase request' })
+    return
+  }
+
+  // Validate status pre-condition
+  const requiredStatusForReject = approvalLevel === 1 ? 'submitted' : approvalLevel === 2 ? 'dept_approved' : 'finance_approved'
+  if (prForReject.status !== requiredStatusForReject) {
+    res.status(400).json({
+      success: false,
+      message: `Cannot reject: PR must be in '${requiredStatusForReject}' status for this approval level (current: '${prForReject.status}')`,
+    })
+    return
+  }
 
   await prisma.$transaction([
     prisma.prApproval.create({
