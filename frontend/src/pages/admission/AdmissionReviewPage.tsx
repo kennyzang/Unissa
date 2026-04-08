@@ -2,7 +2,7 @@ import { useTranslation } from 'react-i18next'
 import React, { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { CheckCircle, XCircle, Clock, Search, Eye, Users, FileText, FileImage, File } from 'lucide-react'
-import { Input as AntInput } from 'antd'
+import { Input as AntInput, Pagination } from 'antd'
 import { apiClient } from '@/lib/apiClient'
 import { useUIStore } from '@/stores/uiStore'
 import Card from '@/components/ui/Card'
@@ -73,6 +73,8 @@ const STATUS_KEY: Record<string, string> = {
 const AdmissionReviewPage: React.FC = () => {
   const { t } = useTranslation()
   const [search, setSearch] = useState('')
+  const [page, setPage] = useState(1)
+  const PAGE_SIZE = 10
   const [selected, setSelected] = useState<Application | null>(null)
   const [decisionModal, setDecisionModal] = useState<{ app: Application; action: 'accepted' | 'rejected' | 'waitlisted' } | null>(null)
   const [remarks, setRemarks] = useState('')
@@ -149,6 +151,8 @@ const AdmissionReviewPage: React.FC = () => {
     a.programme.name.toLowerCase().includes(search.toLowerCase())
   )
 
+  const pagedData = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE)
+
   const columns: ColumnDef<Application>[] = [
     { key: 'applicationRef', title: t('admissionReview.refNo'), render: (v) => <span className={styles.refNo}>{v.applicationRef}</span> },
     { key: 'fullName', title: t('admissionReview.applicant'), render: (v) => (
@@ -208,7 +212,7 @@ const AdmissionReviewPage: React.FC = () => {
             className={styles.searchInput}
             placeholder={t('admissionReview.searchPlaceholder')}
             value={search}
-            onChange={e => setSearch(e.target.value)}
+            onChange={e => { setSearch(e.target.value); setPage(1) }}
             prefix={<Search size={14} />}
             allowClear
           />
@@ -217,12 +221,24 @@ const AdmissionReviewPage: React.FC = () => {
       >
         <Table<Application>
           columns={columns}
-          dataSource={filtered}
+          dataSource={pagedData}
           rowKey="id"
           loading={isLoading}
           size="sm"
           emptyText={t('admissionReview.noApplications')}
         />
+        {filtered.length > PAGE_SIZE && (
+          <div className={styles.paginationWrap}>
+            <Pagination
+              current={page}
+              pageSize={PAGE_SIZE}
+              total={filtered.length}
+              onChange={setPage}
+              showSizeChanger={false}
+              showTotal={(total, range) => `${range[0]}–${range[1]} / ${total}`}
+            />
+          </div>
+        )}
       </Card>
 
       {/* Detail Modal — always mounted, open controlled by !!selected */}
