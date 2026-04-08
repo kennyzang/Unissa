@@ -4,6 +4,7 @@ import { MessageCircle, X, Send, Bot, User, Sparkles, RefreshCw, Minimize2 } fro
 import { apiClient } from '@/lib/apiClient'
 import styles from './AiChatBubble.module.scss'
 import clsx from 'clsx'
+import { useAuthStore } from '@/stores/authStore'
 
 interface Message {
   id: string
@@ -12,12 +13,48 @@ interface Message {
   timestamp: Date
 }
 
-const QUICK_PROMPTS = [
-  'What is my current fee?',
-  'Course registration deadline?',
-  'How to apply for leave?',
-  'My CGPA status',
-]
+const QUICK_PROMPTS_BY_ROLE: Record<string, string[]> = {
+  student: [
+    'What is my current fee?',
+    'Course registration deadline?',
+    'How to apply for leave?',
+    'My CGPA status',
+  ],
+  lecturer: [
+    'Show me attendance stats for my courses',
+    'Which students have not submitted the latest assignment?',
+    'What is the average grade for my course?',
+    'How many students are at risk of failing?',
+  ],
+  admin: [
+    'How many students are currently enrolled?',
+    'What is the total outstanding fee balance?',
+    'Show me pending purchase requests',
+    'How many staff are on leave today?',
+  ],
+  finance: [
+    'How many purchase requests are pending approval?',
+    'Which GL code has the least available budget?',
+    'What is the total outstanding tuition fee balance?',
+    'Which departments have the highest procurement spend?',
+  ],
+  manager: [
+    'How many staff are on leave this week?',
+    'Which purchase requests require my approval?',
+    'What is the total budget utilization across my department?',
+    'Show me headcount by department under my oversight',
+  ],
+}
+
+const DEFAULT_QUICK_PROMPTS = QUICK_PROMPTS_BY_ROLE.student
+
+const WELCOME_BY_ROLE: Record<string, string> = {
+  student: "Hello! I'm UNIBOT, your UNISSA AI assistant. I can help you with course registration, fee enquiries, assignments, CGPA, and more. How can I help you today?",
+  lecturer: "Hello! I'm UNIBOT, your UNISSA AI assistant. I have access to your course enrolments, student submissions, attendance records, and academic analytics. What would you like to know?",
+  admin: "Hello! I'm UNIBOT, your UNISSA AI assistant. I have system-wide access to financial records, procurement data, student risk profiles, and institutional analytics. What insights can I surface for you?",
+  finance: "Hello! I'm UNIBOT, your UNISSA AI assistant. I can query live procurement records, GL budgets, tuition invoices, and payroll data. How can I assist you?",
+  manager: "Hello! I'm UNIBOT, your UNISSA AI assistant. I can help you with departmental analytics, staff management, procurement approvals, and research fund oversight. What do you need?",
+}
 
 function parseMarkdown(text: string): React.ReactNode {
   const parts = text.split(/(\*\*.*?\*\*|\*.*?\*|\n)/g)
@@ -30,12 +67,17 @@ function parseMarkdown(text: string): React.ReactNode {
 }
 
 const AiChatBubble: React.FC = () => {
+  const { user } = useAuthStore()
+  const userRole = user?.role ?? 'student'
+  const quickPrompts = QUICK_PROMPTS_BY_ROLE[userRole] ?? DEFAULT_QUICK_PROMPTS
+  const welcomeMessage = WELCOME_BY_ROLE[userRole] ?? WELCOME_BY_ROLE.student
+  
   const [open, setOpen]               = useState(false)
   const [minimized, setMinimized]     = useState(false)
   const [messages, setMessages]       = useState<Message[]>([{
     id: 'welcome',
     role: 'assistant',
-    content: "Hello! I'm UNIBOT, your UNISSA AI assistant. How can I help you today?",
+    content: welcomeMessage,
     timestamp: new Date(),
   }])
   const [input, setInput]             = useState('')
@@ -230,7 +272,7 @@ const AiChatBubble: React.FC = () => {
 
               {/* Quick prompts */}
               <div className={styles.quickPrompts}>
-                {QUICK_PROMPTS.map((p, i) => (
+                {quickPrompts.map((p, i) => (
                   <button
                     key={i}
                     className={styles.quickBtn}

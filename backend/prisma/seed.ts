@@ -1219,7 +1219,94 @@ async function main() {
     })
   }
 
-  // Submissions: risk students only (Noor is pre-enrollment, no submissions yet)
+  // ── LMS Submissions (Demo data) ──────────────────────────────
+  // asn-ifn101-cs1: PENDING submissions with high AI scores (teacher grades during demo → triggers My Grades update)
+  const cs1AiScores = JSON.stringify([
+    { criterion: 'Clarity',      ai_score: 9, ai_comment: 'Well-structured presentation with clear writing and logical flow throughout the document.',           max_marks: 25 },
+    { criterion: 'References',   ai_score: 8, ai_comment: 'Good use of peer-reviewed sources; IEEE and ACM citations correctly formatted.',                      max_marks: 20 },
+    { criterion: 'Analysis',     ai_score: 9, ai_comment: 'Correct Big-O derivations with thorough comparative analysis across all three algorithms.',            max_marks: 35 },
+    { criterion: 'Presentation', ai_score: 8, ai_comment: 'Professional formatting with clear headings and helpful visual aids (complexity comparison table).',   max_marks: 20 },
+  ])
+  // finalMarks when accepted: round((9+8+9+8)/(4×10) × 100) = round(34/40 × 100) = 85 → grade A
+
+  for (const student of [riskStudents[0], riskStudents[1]]) {
+    await prisma.submission.upsert({
+      where: { assignmentId_studentId: { assignmentId: 'asn-ifn101-cs1', studentId: student.id } },
+      create: {
+        assignmentId: 'asn-ifn101-cs1',
+        studentId: student.id,
+        content: 'I have analysed the time and space complexity of QuickSort, MergeSort, and HeapSort. QuickSort has O(n log n) average but O(n²) worst case. MergeSort is O(n log n) in all cases. HeapSort is O(n log n) with O(1) extra space.',
+        aiRubricScores: cs1AiScores,
+        aiGeneratedAt: new Date('2026-04-18T10:00:00'),
+        submittedAt:   new Date('2026-04-18T10:00:00'),
+      },
+      update: {},
+    })
+  }
+
+  // asn-t-07 (IFN201 ER Diagram): pre-graded submission for riskStudents[0] to pre-populate My Grades
+  const t07AiScores = JSON.stringify([
+    { criterion: 'Entity & Attribute Completeness', ai_score: 9, ai_comment: 'All five required entities present with correct primary keys and meaningful attributes.', max_marks: 25 },
+    { criterion: 'Relationship Cardinality',        ai_score: 8, ai_comment: 'Cardinality correctly marked for most relationships; M:N resolved via junction table.',  max_marks: 25 },
+    { criterion: 'Normalisation to 3NF',            ai_score: 9, ai_comment: 'Clear 1NF→2NF→3NF decomposition with well-explained examples at each stage.',            max_marks: 35 },
+    { criterion: 'Diagram Presentation',            ai_score: 8, ai_comment: 'Standard ER notation used throughout; layout is readable and well-labelled.',             max_marks: 15 },
+  ])
+  const t07InstructorScores = JSON.stringify([
+    { criterion: 'Entity & Attribute Completeness', ai_score: 9, ai_comment: 'All five required entities present with correct primary keys and meaningful attributes.', instructor_score: 9, instructor_comment: 'Excellent — all entities correctly identified.' },
+    { criterion: 'Relationship Cardinality',        ai_score: 8, ai_comment: 'Cardinality correctly marked for most relationships; M:N resolved via junction table.',  instructor_score: 8, instructor_comment: 'Good work on the M:N resolution.' },
+    { criterion: 'Normalisation to 3NF',            ai_score: 9, ai_comment: 'Clear 1NF→2NF→3NF decomposition with well-explained examples at each stage.',            instructor_score: 9, instructor_comment: 'Thorough and accurate normalisation steps.' },
+    { criterion: 'Diagram Presentation',            ai_score: 8, ai_comment: 'Standard ER notation used throughout; layout is readable and well-labelled.',             instructor_score: 8, instructor_comment: 'Professional diagram, easy to follow.' },
+  ])
+  // finalMarks: round((9+8+9+8)/(4×10) × 100) = 85 → grade A
+  const t07FinalMarks = 85
+  const t07Grade = 'A'
+  const t07GradePoints = 4.0
+
+  const t07Submission = await prisma.submission.upsert({
+    where: { assignmentId_studentId: { assignmentId: 'asn-t-07', studentId: riskStudents[0].id } },
+    create: {
+      assignmentId:     'asn-t-07',
+      studentId:        riskStudents[0].id,
+      content:          'ER diagram for the university library system with Member, Book, Author, Loan, and Fine entities. Normalised to 3NF with full decomposition steps.',
+      aiRubricScores:   t07AiScores,
+      aiGeneratedAt:    new Date('2026-04-20T14:00:00'),
+      submittedAt:      new Date('2026-04-20T14:00:00'),
+      instructorScores: t07InstructorScores,
+      finalMarks:       t07FinalMarks,
+      gradedAt:         new Date('2026-04-22T09:00:00'),
+      gradedById:       uDrSiti.id,
+    },
+    update: {},
+  })
+  void t07Submission
+
+  // Update enrolment for riskStudents[0] in IFN201 with the graded result
+  await prisma.enrolment.update({
+    where: { studentId_offeringId: { studentId: riskStudents[0].id, offeringId: offeringIFN201.id } },
+    data: { finalGrade: t07Grade, gradePoints: t07GradePoints },
+  })
+
+  // Update student GPA record
+  await prisma.studentGpaRecord.upsert({
+    where: { studentId_semesterId: { studentId: riskStudents[0].id, semesterId: semSep2026.id } },
+    create: {
+      studentId:     riskStudents[0].id,
+      semesterId:    semSep2026.id,
+      semesterGpa:   t07GradePoints,
+      cumulativeGpa: t07GradePoints,
+      totalChPassed: 3,
+    },
+    update: {
+      semesterGpa:   t07GradePoints,
+      cumulativeGpa: t07GradePoints,
+    },
+  })
+
+  // Update student CGPA
+  await prisma.student.update({
+    where: { id: riskStudents[0].id },
+    data: { currentCgpa: t07GradePoints },
+  })
 
   // ── Attendance ────────────────────────────────────────────────
   const atSess1 = await prisma.attendanceSession.upsert({

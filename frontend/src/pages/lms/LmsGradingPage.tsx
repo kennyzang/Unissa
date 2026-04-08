@@ -112,6 +112,7 @@ const LmsGradingPage: React.FC = () => {
       qc.invalidateQueries({ queryKey: ['lms', 'submissions', 'lecturer', user?.id] })
       qc.invalidateQueries({ queryKey: ['submissions', 'all'] })
       qc.invalidateQueries({ queryKey: ['submissions', 'history'] })
+      qc.invalidateQueries({ queryKey: ['submissions'] })
     },
     onError: (e: any) => {
       const isNetworkError = !e.response && e.message === 'Network Error'
@@ -136,6 +137,7 @@ const LmsGradingPage: React.FC = () => {
       qc.invalidateQueries({ queryKey: ['lms', 'submissions', 'lecturer', user?.id] })
       qc.invalidateQueries({ queryKey: ['submissions', 'all'] })
       qc.invalidateQueries({ queryKey: ['submissions', 'history'] })
+      qc.invalidateQueries({ queryKey: ['submissions'] })
     },
     onError: (e: any) => {
       const isNetworkError = !e.response && e.message === 'Network Error'
