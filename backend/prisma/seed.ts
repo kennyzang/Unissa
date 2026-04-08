@@ -5,6 +5,9 @@
 import 'dotenv/config'
 import { PrismaClient } from '@prisma/client'
 import bcrypt from 'bcryptjs'
+import fs from 'fs'
+import path from 'path'
+import { generateOfferLetterPDF } from '../src/services/offerLetterService'
 
 const prisma = new PrismaClient()
 
@@ -533,6 +536,51 @@ async function main() {
       where: { id: `noor-grade-${g.subject}` },
       create: { id: `noor-grade-${g.subject}`, applicantId: applicantNoor.id, subjectName: g.subject, grade: g.grade, qualificationType: g.type },
       update: {},
+    })
+  }
+
+  // ── Offer Letter PDF for Noor ─────────────────────────────────
+  // Generate the PDF so Noor can view/download it from the dashboard
+  {
+    const uploadDir = process.env.UPLOAD_DIR || path.resolve(__dirname, '../uploads')
+    if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir, { recursive: true })
+
+    const offerRef  = 'UNISSA-2026-0001'
+    const fileName  = `offer-letter-${offerRef}.pdf`
+    const filePath  = path.join(uploadDir, fileName)
+
+    const pdfBuffer = await generateOfferLetterPDF({
+      applicant:       applicantNoor,
+      programme:       { ...progBSC,   department: deptIFN   },
+      intake:          { ...intakeBSC, semester:   semSep2026 },
+      offerRef,
+      offerDate:       new Date('2026-03-25'),
+      confirmDeadline: new Date('2026-04-15'),
+    })
+
+    fs.writeFileSync(filePath, pdfBuffer)
+
+    // Remove stale FileAsset from previous runs (idempotent)
+    const existing = await prisma.fileAsset.findFirst({ where: { fileName } })
+    if (existing) {
+      await prisma.applicant.updateMany({ where: { offerLetterAssetId: existing.id }, data: { offerLetterAssetId: null } })
+      await prisma.fileAsset.delete({ where: { id: existing.id } })
+    }
+
+    const offerAsset = await prisma.fileAsset.create({
+      data: {
+        fileName,
+        originalName: `Offer Letter - ${offerRef}.pdf`,
+        mimeType:     'application/pdf',
+        fileSizeBytes: pdfBuffer.length,
+        fileUrl:      `/uploads/${fileName}`,
+        uploadedById: uAdmin.id,
+      },
+    })
+
+    await prisma.applicant.update({
+      where: { id: applicantNoor.id },
+      data:  { offerLetterAssetId: offerAsset.id },
     })
   }
 
@@ -1804,6 +1852,22 @@ async function main() {
   // ── Executive Insights ────────────────────────────────────────
   const expires30d = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
   await prisma.notification.deleteMany({})
+
+  // ── Admission offer notification for Noor ────────────────────
+  // Recreated after deleteMany so Noor sees her offer notice in the notification bell
+  await prisma.notification.create({
+    data: {
+      userId:             uNoor.id,
+      type:               'push',
+      subject:            'Admission Result — Noor Aisyah Binti Hassan (APP-2026-0001)',
+      body:               'Congratulations Noor Aisyah Binti Hassan, you have been admitted to UNISSA! Please log in to accept your offer and complete enrolment. Application Ref: APP-2026-0001',
+      status:             'sent',
+      sentAt:             new Date('2026-03-25'),
+      triggeredByEvent:   'admission_accepted',
+      isRead:             false,
+    },
+  })
+
   await prisma.executiveInsight.deleteMany({})
   for (const ins of [
     {
