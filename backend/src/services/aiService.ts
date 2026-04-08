@@ -110,6 +110,58 @@ async function callOpenAI(cfg: AiConfig, messages: ChatMessage[]): Promise<strin
   return data.choices?.[0]?.message?.content ?? ''
 }
 
+/** Call OpenAI-compatible chat completions API with streaming */
+async function callOpenAIStream(
+  cfg: AiConfig,
+  messages: ChatMessage[],
+  onChunk: (chunk: string) => void,
+): Promise<void> {
+  const response = await fetch(`${cfg.baseUrl}/chat/completions`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${cfg.apiKey}`,
+    },
+    body: JSON.stringify({
+      model: cfg.model,
+      messages,
+      temperature: cfg.temperature,
+      max_tokens: cfg.maxTokens,
+      stream: true,
+    }),
+  })
+
+  if (!response.ok) {
+    const err = await response.text()
+    throw new Error(`OpenAI API error ${response.status}: ${err}`)
+  }
+
+  const reader = response.body!.getReader()
+  const decoder = new TextDecoder()
+  let buffer = ''
+
+  while (true) {
+    const { done, value } = await reader.read()
+    if (done) break
+
+    buffer += decoder.decode(value, { stream: true })
+    const lines = buffer.split('\n')
+    buffer = lines.pop() ?? ''
+
+    for (const line of lines) {
+      const trimmed = line.trim()
+      if (!trimmed.startsWith('data: ')) continue
+      const dataStr = trimmed.slice(6)
+      if (dataStr === '[DONE]') return
+      try {
+        const data = JSON.parse(dataStr) as any
+        const chunk = data.choices?.[0]?.delta?.content
+        if (chunk) onChunk(chunk)
+      } catch { /* ignore parse errors */ }
+    }
+  }
+}
+
 /** Call Anthropic Messages API */
 async function callAnthropic(cfg: AiConfig, messages: ChatMessage[]): Promise<string> {
   // Extract system prompt and non-system messages
@@ -140,23 +192,109 @@ async function callAnthropic(cfg: AiConfig, messages: ChatMessage[]): Promise<st
   return data.content?.[0]?.text ?? ''
 }
 
+/** Call Anthropic Messages API with streaming */
+async function callAnthropicStream(
+  cfg: AiConfig,
+  messages: ChatMessage[],
+  onChunk: (chunk: string) => void,
+): Promise<void> {
+  const systemMsg = messages.find(m => m.role === 'system')?.content ?? cfg.systemPrompt
+  const chatMsgs  = messages.filter(m => m.role !== 'system')
+
+  const response = await fetch(`${cfg.baseUrl}/messages`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'x-api-key': cfg.apiKey,
+      'anthropic-version': '2023-06-01',
+    },
+    body: JSON.stringify({
+      model: cfg.model,
+      system: systemMsg,
+      messages: chatMsgs,
+      max_tokens: cfg.maxTokens,
+      stream: true,
+    }),
+  })
+
+  if (!response.ok) {
+    const err = await response.text()
+    throw new Error(`Anthropic API error ${response.status}: ${err}`)
+  }
+
+  const reader = response.body!.getReader()
+  const decoder = new TextDecoder()
+  let buffer = ''
+
+  while (true) {
+    const { done, value } = await reader.read()
+    if (done) break
+
+    buffer += decoder.decode(value, { stream: true })
+    const lines = buffer.split('\n')
+    buffer = lines.pop() ?? ''
+
+    for (const line of lines) {
+      const trimmed = line.trim()
+      if (!trimmed.startsWith('data: ')) continue
+      try {
+        const data = JSON.parse(trimmed.slice(6)) as any
+        if (data.type === 'content_block_delta' && data.delta?.type === 'text_delta') {
+          onChunk(data.delta.text)
+        }
+      } catch { /* ignore parse errors */ }
+    }
+  }
+}
+
 /**
- * Main chat function – calls the configured LLM provider.
+ * Streaming chat – calls the configured LLM and emits text chunks via onChunk.
+ * Returns the full assembled answer string.
  * Falls back to demo mode if AI is disabled or not configured.
  */
-export async function chat(
+export async function chatStream(
   userMessage: string,
   contextData: any = {},
-  conversationHistory: ChatMessage[] = [],
+  conversationHistory: ChatMessage[],
+  onChunk: (chunk: string) => void,
 ): Promise<string> {
   const cfg = await loadAiConfig()
 
-  // Fall back to demo if AI not enabled or no API key
   if (!cfg.enabled || !cfg.apiKey) {
-    return getDemoAnswer(userMessage, contextData)
+    const answer = getDemoAnswer(userMessage, contextData)
+    onChunk(answer)
+    return answer
   }
 
-  // Build context string from RAG data
+  // Build context string (reuse same logic as chat())
+  const tempMessages = await buildMessages(cfg, userMessage, contextData, conversationHistory)
+
+  let fullText = ''
+  const collect = (chunk: string) => { fullText += chunk; onChunk(chunk) }
+
+  try {
+    if (cfg.provider === 'anthropic') {
+      await callAnthropicStream(cfg, tempMessages, collect)
+    } else {
+      await callOpenAIStream(cfg, tempMessages, collect)
+    }
+  } catch (err) {
+    console.error('[AI Service] Streaming error:', err)
+    const errMsg = "I'm currently experiencing technical difficulties. Please try again shortly."
+    onChunk(errMsg)
+    return errMsg
+  }
+
+  return fullText
+}
+
+/** Shared message-builder used by both chat() and chatStream() */
+async function buildMessages(
+  cfg: AiConfig,
+  userMessage: string,
+  contextData: any,
+  conversationHistory: ChatMessage[],
+): Promise<ChatMessage[]> {
   let contextStr = ''
 
   if (contextData.student) {
@@ -164,19 +302,15 @@ export async function chat(
     const enrolmentLines = (s.enrolments ?? []).map((e: any) =>
       `  • ${e.offering?.course?.code} – ${e.offering?.course?.name} (${e.offering?.semester?.name ?? ''})`
     ).join('\n') || '  None'
-
     const submissionLines = (s.submissions ?? []).map((sub: any) =>
       `  • ${sub.assignment?.title}: ${sub.finalMarks != null ? `${sub.finalMarks}/${sub.assignment?.maxMarks}` : 'submitted, not yet graded'} (submitted ${new Date(sub.submittedAt).toLocaleDateString('en-GB')})`
     ).join('\n') || '  None'
-
     const gpaLines = (s.gpaRecords ?? []).map((g: any) =>
       `  • ${g.semester?.name} ${g.semester?.academicYear?.year ?? ''}: Semester GPA ${g.semesterGpa.toFixed(2)}, Cumulative GPA ${g.cumulativeGpa.toFixed(2)}`
     ).join('\n') || '  No records yet'
-
     const invoiceLines = (s.feeInvoices ?? []).map((inv: any) =>
       `  • ${inv.invoiceNo}: BND ${inv.totalAmount?.toFixed(2)} (${inv.status}, outstanding: BND ${inv.outstandingBalance?.toFixed(2)}, due ${new Date(inv.dueDate).toLocaleDateString('en-GB')})`
     ).join('\n') || '  None'
-
     contextStr = `=== STUDENT CONTEXT ===
 Name: ${s.user?.displayName ?? 'Unknown'} | Student ID: ${s.studentId}
 Programme: ${s.programme?.name ?? 'Unknown'} | CGPA: ${s.currentCgpa} | Status: ${s.status}
@@ -200,7 +334,6 @@ ${invoiceLines}
       const enrolledStudents = (o.enrolments ?? []).map((e: any) =>
         `    - ${e.student?.user?.displayName ?? 'Unknown'} (ID: ${e.student?.studentId}, CGPA: ${e.student?.currentCgpa?.toFixed(2) ?? 'N/A'})`
       ).join('\n') || '    None'
-
       const assignmentLines = (o.assignments ?? []).map((a: any) => {
         const submittedIds = new Set((a.submissions ?? []).map((s: any) => s.studentId))
         const enrolledCount = (o.enrolments ?? []).length
@@ -209,13 +342,11 @@ ${invoiceLines}
           .map((e: any) => e.student?.user?.displayName ?? 'Unknown')
         return `    • "${a.title}" due ${new Date(a.dueDate).toLocaleDateString('en-GB')}: ${submittedIds.size}/${enrolledCount} submitted. Not submitted: ${notSubmitted.join(', ') || 'all submitted'}`
       }).join('\n') || '    None'
-
       const recentSessions = (o.attendanceSessions ?? []).map((ses: any) => {
         const presentCount = (ses.records ?? []).filter((r: any) => r.status === 'present').length
         const totalRecords = (ses.records ?? []).length
         return `    • Session ${new Date(ses.startedAt).toLocaleDateString('en-GB')}: ${presentCount}/${totalRecords} present`
       }).join('\n') || '    No sessions yet'
-
       return `  [${o.course?.code} – ${o.course?.name}] (${o.semester?.name ?? ''} ${o.semester?.academicYear?.year ?? ''}) – ${(o.enrolments ?? []).length} enrolled students
   Students:
 ${enrolledStudents}
@@ -224,7 +355,6 @@ ${assignmentLines}
   Recent Attendance (last 5 sessions):
 ${recentSessions}`
     }).join('\n\n') || '  No courses assigned'
-
     contextStr = `=== LECTURER CONTEXT ===
 Name: ${lec.fullName} | Staff ID: ${lec.staffId}
 Department: ${lec.department?.name ?? 'Unknown'} (${lec.department?.code ?? ''})
@@ -239,7 +369,6 @@ ${offeringBlocks}
       const utilPct = g.totalBudget > 0 ? ((g.spentAmount / g.totalBudget) * 100).toFixed(1) : '0.0'
       return `  • ${g.code} – ${g.description}: Budget BND ${g.totalBudget.toFixed(0)}, Committed BND ${g.committedAmount.toFixed(0)}, Spent BND ${g.spentAmount.toFixed(0)} (${utilPct}% utilised)`
     }).join('\n') || '  None'
-
     contextStr = `=== ADMIN/MANAGER CONTEXT ===
 Active Students: ${a.activeStudents}
 Active Staff: ${a.activeStaff}
@@ -262,7 +391,6 @@ ${glLines}
       const utilPct = g.totalBudget > 0 ? ((g.spentAmount / g.totalBudget) * 100).toFixed(1) : '0.0'
       return `  • ${g.code} – ${g.description}: Budget BND ${g.totalBudget.toFixed(0)}, Committed BND ${g.committedAmount.toFixed(0)}, Spent BND ${g.spentAmount.toFixed(0)}, Available BND ${available.toFixed(0)} (${utilPct}% spent)`
     }).join('\n') || '  None'
-
     contextStr = `=== FINANCE CONTEXT ===
 Outstanding Invoices: ${f.outstandingInvoiceCount} invoices totalling BND ${f.outstandingTotal.toFixed(2)}
 Recent Payments (last 7 days): ${f.recentPaymentCount} payments totalling BND ${f.recentPaymentTotal.toFixed(2)}
@@ -276,15 +404,12 @@ ${glLines}
     const staffLines = (h.allStaff ?? []).map((s: any) =>
       `  • ${s.fullName} (${s.staffId}) – ${s.designation}, ${s.department?.name ?? 'Unknown'}, ${s.employmentType}`
     ).join('\n') || '  None'
-
     const leaveLines = (h.pendingLeaves ?? []).map((l: any) =>
       `  • ${l.staff?.fullName} (${l.leaveType}): ${new Date(l.startDate).toLocaleDateString('en-GB')} – ${new Date(l.endDate).toLocaleDateString('en-GB')} (${l.durationDays} days)`
     ).join('\n') || '  None'
-
     const onboardingLines = (h.pendingOnboarding ?? []).map((o: any) =>
       `  • ${o.staff?.fullName} – ${o.staff?.designation}, ${o.staff?.department?.name ?? 'Unknown'}`
     ).join('\n') || '  None'
-
     contextStr = `=== HR CONTEXT ===
 Active Staff (${(h.allStaff ?? []).length} total):
 ${staffLines}
@@ -297,27 +422,39 @@ ${onboardingLines}
 ==================`
   }
 
-  // Build messages array
-  const systemContent = contextStr
-    ? `${cfg.systemPrompt}\n\n${contextStr}`
-    : cfg.systemPrompt
-
-  const messages: ChatMessage[] = [
+  const systemContent = contextStr ? `${cfg.systemPrompt}\n\n${contextStr}` : cfg.systemPrompt
+  return [
     { role: 'system', content: systemContent },
-    ...conversationHistory.slice(-10), // keep last 10 messages for context
+    ...conversationHistory.slice(-10),
     { role: 'user', content: userMessage },
   ]
+}
+
+/**
+ * Main chat function – calls the configured LLM provider.
+ * Falls back to demo mode if AI is disabled or not configured.
+ */
+export async function chat(
+  userMessage: string,
+  contextData: any = {},
+  conversationHistory: ChatMessage[] = [],
+): Promise<string> {
+  const cfg = await loadAiConfig()
+
+  if (!cfg.enabled || !cfg.apiKey) {
+    return getDemoAnswer(userMessage, contextData)
+  }
+
+  const messages = await buildMessages(cfg, userMessage, contextData, conversationHistory)
 
   try {
     if (cfg.provider === 'anthropic') {
       return await callAnthropic(cfg, messages)
     } else {
-      // openai or custom (OpenAI-compatible)
       return await callOpenAI(cfg, messages)
     }
   } catch (err) {
     console.error('[AI Service] Error calling LLM:', err)
-    // Return informative error that won't expose credentials
     return "I'm currently experiencing technical difficulties. Please try again shortly, or contact the university helpdesk for urgent matters."
   }
 }

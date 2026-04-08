@@ -1,7 +1,5 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react'
-import { useMutation } from '@tanstack/react-query'
 import { MessageCircle, X, Send, Bot, User, Sparkles, RefreshCw, Minimize2 } from 'lucide-react'
-import { apiClient } from '@/lib/apiClient'
 import styles from './AiChatBubble.module.scss'
 import clsx from 'clsx'
 import { useAuthStore } from '@/stores/authStore'
@@ -83,6 +81,7 @@ const AiChatBubble: React.FC = () => {
   const [input, setInput]             = useState('')
   const [conversationId, setConversationId] = useState<string | undefined>()
   const [unread, setUnread]           = useState(0)
+  const [isStreaming, setIsStreaming]  = useState(false)
 
   // Drag state – null means use CSS default (bottom-right)
   const [position, setPosition] = useState<{ top: number; left: number } | null>(null)
@@ -91,6 +90,7 @@ const AiChatBubble: React.FC = () => {
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const inputRef       = useRef<HTMLTextAreaElement>(null)
   const wasDragged     = useRef(false)
+  const abortRef       = useRef<AbortController | null>(null)
 
   useEffect(() => {
     if (open) {
@@ -103,34 +103,10 @@ const AiChatBubble: React.FC = () => {
     if (open) inputRef.current?.focus()
   }, [open])
 
-  const chatMutation = useMutation({
-    mutationFn: async (message: string) => {
-      const { data } = await apiClient.post('/ai/chat', { message, conversationId })
-      return data.data as { answer: string; conversationId: string }
-    },
-    onSuccess: (data) => {
-      setConversationId(data.conversationId)
-      setMessages(prev => [...prev, {
-        id: `a-${Date.now()}`,
-        role: 'assistant',
-        content: data.answer,
-        timestamp: new Date(),
-      }])
-      if (!open) setUnread(u => u + 1)
-    },
-    onError: () => {
-      setMessages(prev => [...prev, {
-        id: `err-${Date.now()}`,
-        role: 'assistant',
-        content: "I'm having trouble connecting. Please try again shortly.",
-        timestamp: new Date(),
-      }])
-    },
-  })
-
-  const sendMessage = (text: string) => {
+  const sendMessage = async (text: string) => {
     const trimmed = text.trim()
-    if (!trimmed) return
+    if (!trimmed || isStreaming) return
+
     setMessages(prev => [...prev, {
       id: `u-${Date.now()}`,
       role: 'user',
@@ -138,8 +114,74 @@ const AiChatBubble: React.FC = () => {
       timestamp: new Date(),
     }])
     setInput('')
-    chatMutation.mutate(trimmed)
+    setIsStreaming(true)
     inputRef.current?.focus()
+
+    const streamingId = `a-${Date.now()}`
+    setMessages(prev => [...prev, {
+      id: streamingId,
+      role: 'assistant',
+      content: '',
+      timestamp: new Date(),
+    }])
+
+    try {
+      const token = useAuthStore.getState().token
+      const abort = new AbortController()
+      abortRef.current = abort
+
+      const response = await fetch('/api/v1/ai/chat/stream', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify({ message: trimmed, conversationId }),
+        signal: abort.signal,
+      })
+
+      if (!response.ok || !response.body) throw new Error('Stream failed')
+
+      const reader = response.body.getReader()
+      const decoder = new TextDecoder()
+      let buffer = ''
+
+      while (true) {
+        const { done, value } = await reader.read()
+        if (done) break
+
+        buffer += decoder.decode(value, { stream: true })
+        const lines = buffer.split('\n')
+        buffer = lines.pop() ?? ''
+
+        for (const line of lines) {
+          if (!line.startsWith('data: ')) continue
+          try {
+            const data = JSON.parse(line.slice(6))
+            if (data.chunk) {
+              setMessages(prev => prev.map(m =>
+                m.id === streamingId ? { ...m, content: m.content + data.chunk } : m
+              ))
+            }
+            if (data.done) {
+              setConversationId(data.conversationId)
+              if (!open) setUnread(u => u + 1)
+            }
+          } catch { /* ignore parse errors */ }
+        }
+      }
+    } catch (err: any) {
+      if (err.name !== 'AbortError') {
+        setMessages(prev => prev.map(m =>
+          m.id === streamingId
+            ? { ...m, content: "I'm having trouble connecting. Please try again shortly." }
+            : m
+        ))
+      }
+    } finally {
+      setIsStreaming(false)
+      abortRef.current = null
+    }
   }
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -252,21 +294,18 @@ const AiChatBubble: React.FC = () => {
                       {msg.role === 'user' ? <User size={12} /> : <Sparkles size={12} />}
                     </div>
                     <div className={styles.msgBubble}>
-                      <div className={styles.msgContent}>{parseMarkdown(msg.content)}</div>
+                      <div className={styles.msgContent}>
+                        {msg.role === 'assistant' && msg.content === ''
+                          ? <div className={styles.typing}><span /><span /><span /></div>
+                          : parseMarkdown(msg.content)
+                        }
+                      </div>
                       <div className={styles.msgTime}>
                         {msg.timestamp.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}
                       </div>
                     </div>
                   </div>
                 ))}
-                {chatMutation.isPending && (
-                  <div className={clsx(styles.msg, styles.botMsg)}>
-                    <div className={styles.msgAvatar}><Sparkles size={12} /></div>
-                    <div className={styles.msgBubble}>
-                      <div className={styles.typing}><span /><span /><span /></div>
-                    </div>
-                  </div>
-                )}
                 <div ref={messagesEndRef} />
               </div>
 
@@ -277,7 +316,7 @@ const AiChatBubble: React.FC = () => {
                     key={i}
                     className={styles.quickBtn}
                     onClick={() => sendMessage(p)}
-                    disabled={chatMutation.isPending}
+                    disabled={isStreaming}
                   >
                     {p}
                   </button>
@@ -294,12 +333,12 @@ const AiChatBubble: React.FC = () => {
                   value={input}
                   onChange={e => setInput(e.target.value)}
                   onKeyDown={handleKeyDown}
-                  disabled={chatMutation.isPending}
+                  disabled={isStreaming}
                 />
                 <button
                   className={styles.sendBtn}
                   onClick={() => sendMessage(input)}
-                  disabled={!input.trim() || chatMutation.isPending}
+                  disabled={!input.trim() || isStreaming}
                 >
                   <Send size={14} />
                 </button>

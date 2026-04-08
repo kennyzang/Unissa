@@ -1,24 +1,15 @@
 import { Router, Response } from 'express'
 import prisma from '../lib/prisma'
 import { authenticate, requireRole, AuthRequest } from '../middleware/auth'
-import { chat, loadAiConfig, saveAiConfig, testConnection } from '../services/aiService'
+import { chat, chatStream, loadAiConfig, saveAiConfig, testConnection } from '../services/aiService'
 
 const router = Router()
 router.use(authenticate)
 
-// POST /api/v1/ai/chat
-router.post('/chat', async (req: AuthRequest, res: Response) => {
-  const { message, conversationId } = req.body as { message: string; conversationId?: string }
-  const userId = req.user!.userId
+// ── Shared helpers ──────────────────────────────────────────
 
-  if (!message?.trim()) {
-    res.status(400).json({ success: false, message: 'Message is required' }); return
-  }
-
-  // RAG: pull role-based context before every AI call
-  let contextData: any = {}
-  const role = req.user!.role
-
+/** Build RAG context data from DB based on the caller's role */
+async function buildContextData(userId: string, role: string) {
   if (role === 'student') {
     const student = await prisma.student.findFirst({
       where: { userId },
@@ -45,7 +36,7 @@ router.post('/chat', async (req: AuthRequest, res: Response) => {
         },
       },
     })
-    if (student) contextData = { student }
+    return student ? { student } : {}
 
   } else if (role === 'lecturer') {
     const staff = await prisma.staff.findFirst({
@@ -73,7 +64,7 @@ router.post('/chat', async (req: AuthRequest, res: Response) => {
         },
       },
     })
-    if (staff) contextData = { lecturer: staff }
+    return staff ? { lecturer: staff } : {}
 
   } else if (role === 'admin' || role === 'manager') {
     const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)
@@ -90,7 +81,7 @@ router.post('/chat', async (req: AuthRequest, res: Response) => {
         orderBy: { code: 'asc' },
       }),
     ])
-    contextData = { admin: { activeStudents, activeStaff, pendingPRs, pendingLeaves, pendingGrants, recentApplicants, glCodes } }
+    return { admin: { activeStudents, activeStaff, pendingPRs, pendingLeaves, pendingGrants, recentApplicants, glCodes } }
 
   } else if (role === 'finance') {
     const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
@@ -111,7 +102,7 @@ router.post('/chat', async (req: AuthRequest, res: Response) => {
         orderBy: { code: 'asc' },
       }),
     ])
-    contextData = {
+    return {
       finance: {
         outstandingInvoiceCount: outstandingAgg._count.id,
         outstandingTotal: outstandingAgg._sum.outstandingBalance ?? 0,
@@ -143,40 +134,45 @@ router.post('/chat', async (req: AuthRequest, res: Response) => {
         orderBy: { createdAt: 'desc' },
       }),
     ])
-    contextData = { hr: { allStaff, pendingLeaves, pendingOnboarding } }
+    return { hr: { allStaff, pendingLeaves, pendingOnboarding } }
   }
 
-  // Load previous conversation history for context
-  let conversationHistory: { role: 'user' | 'assistant'; content: string }[] = []
-  let existingConversation: any = null
+  return {}
+}
 
-  if (conversationId) {
-    existingConversation = await prisma.chatbotConversation.findUnique({ where: { id: conversationId } })
-    if (existingConversation) {
-      try {
-        const prev = JSON.parse(existingConversation.messages)
-        // Extract last 10 messages for LLM context (skip timestamps)
-        conversationHistory = prev.slice(-10).map((m: any) => ({
-          role: m.role as 'user' | 'assistant',
-          content: m.content,
-        }))
-      } catch { /* ignore parse errors */ }
-    }
+/** Load up to 10 recent messages from an existing conversation */
+async function loadConversationHistory(conversationId?: string) {
+  if (!conversationId) return { history: [], existing: null }
+  const existing = await prisma.chatbotConversation.findUnique({ where: { id: conversationId } })
+  if (!existing) return { history: [], existing: null }
+  try {
+    const prev = JSON.parse(existing.messages)
+    const history = prev.slice(-10).map((m: any) => ({
+      role: m.role as 'user' | 'assistant',
+      content: m.content,
+    }))
+    return { history, existing }
+  } catch {
+    return { history: [], existing }
   }
+}
 
-  // Call AI service (real LLM or demo fallback)
-  const answer = await chat(message, contextData, conversationHistory)
-
-  // Persist conversation
+/** Persist a completed chat turn to the database */
+async function persistConversation(
+  userId: string,
+  message: string,
+  answer: string,
+  contextData: any,
+  existing: any,
+  conversationId?: string,
+) {
   const newMessages = [
     { role: 'user',      content: message, timestamp: new Date().toISOString() },
     { role: 'assistant', content: answer,  timestamp: new Date().toISOString() },
   ]
-
-  let conversation
-  if (existingConversation) {
-    const prev = JSON.parse(existingConversation.messages)
-    conversation = await prisma.chatbotConversation.update({
+  if (existing) {
+    const prev = JSON.parse(existing.messages)
+    return prisma.chatbotConversation.update({
       where: { id: conversationId! },
       data: {
         messages:       JSON.stringify([...prev, ...newMessages]),
@@ -184,21 +180,71 @@ router.post('/chat', async (req: AuthRequest, res: Response) => {
         contextData:    JSON.stringify(contextData),
       },
     })
-  } else {
-    conversation = await prisma.chatbotConversation.create({
-      data: {
-        userId,
-        messages:       JSON.stringify(newMessages),
-        contextData:    JSON.stringify(contextData),
-        lastActivityAt: new Date(),
-      },
-    })
   }
+  return prisma.chatbotConversation.create({
+    data: {
+      userId,
+      messages:       JSON.stringify(newMessages),
+      contextData:    JSON.stringify(contextData),
+      lastActivityAt: new Date(),
+    },
+  })
+}
+
+// ── Routes ──────────────────────────────────────────────────
+
+// POST /api/v1/ai/chat  (non-streaming, kept for compatibility)
+router.post('/chat', async (req: AuthRequest, res: Response) => {
+  const { message, conversationId } = req.body as { message: string; conversationId?: string }
+  const userId = req.user!.userId
+
+  if (!message?.trim()) {
+    res.status(400).json({ success: false, message: 'Message is required' }); return
+  }
+
+  const [contextData, { history, existing }] = await Promise.all([
+    buildContextData(userId, req.user!.role),
+    loadConversationHistory(conversationId),
+  ])
+
+  const answer = await chat(message, contextData, history)
+  const conversation = await persistConversation(userId, message, answer, contextData, existing, conversationId)
 
   res.json({
     success: true,
     data: { answer, conversationId: conversation.id, sources: Object.keys(contextData) },
   })
+})
+
+// POST /api/v1/ai/chat/stream  (SSE streaming)
+router.post('/chat/stream', async (req: AuthRequest, res: Response) => {
+  const { message, conversationId } = req.body as { message: string; conversationId?: string }
+  const userId = req.user!.userId
+
+  if (!message?.trim()) {
+    res.status(400).json({ success: false, message: 'Message is required' }); return
+  }
+
+  // Set SSE headers before any async work so the browser can start reading
+  res.setHeader('Content-Type', 'text/event-stream')
+  res.setHeader('Cache-Control', 'no-cache')
+  res.setHeader('Connection', 'keep-alive')
+  res.setHeader('X-Accel-Buffering', 'no')
+  res.flushHeaders()
+
+  const [contextData, { history, existing }] = await Promise.all([
+    buildContextData(userId, req.user!.role),
+    loadConversationHistory(conversationId),
+  ])
+
+  const answer = await chatStream(message, contextData, history, (chunk) => {
+    res.write(`data: ${JSON.stringify({ chunk })}\n\n`)
+  })
+
+  const conversation = await persistConversation(userId, message, answer, contextData, existing, conversationId)
+
+  res.write(`data: ${JSON.stringify({ done: true, conversationId: conversation.id })}\n\n`)
+  res.end()
 })
 
 // GET /api/v1/ai/risk-dashboard/:offeringId
