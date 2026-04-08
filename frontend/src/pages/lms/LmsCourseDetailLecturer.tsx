@@ -149,6 +149,7 @@ const LmsCourseDetailLecturer: React.FC = () => {
       const loadPPTFile = async () => {
         try {
           setPptLoading(true)
+          if (!materialPreview.asset) return
           const response = await fetch(materialPreview.asset.fileUrl)
           if (!response.ok) {
             throw new Error('Failed to load PPT file')
@@ -1152,7 +1153,7 @@ const LmsCourseDetailLecturer: React.FC = () => {
         <Modal
           open
           title={materialPreview.title}
-          onClose={() => { setMaterialPreview(null); setPptPreviewMode('office') }}
+          onClose={() => { setMaterialPreview(null); setPptPreviewMode('download') }}
           width={900}
           footer={
             <div style={{ display: 'flex', gap: 8 }}>
@@ -1167,7 +1168,7 @@ const LmsCourseDetailLecturer: React.FC = () => {
                   {t('lmsCourseDetail.download', { defaultValue: 'Download' })}
                 </Button>
               </a>
-              <Button variant="secondary" onClick={() => { setMaterialPreview(null); setPptPreviewMode('office') }}>
+              <Button variant="secondary" onClick={() => { setMaterialPreview(null); setPptPreviewMode('download') }}>
                 {t('lmsCourseDetail.close', { defaultValue: 'Close' })}
               </Button>
             </div>

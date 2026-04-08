@@ -139,6 +139,7 @@ const LmsCourseDetailStudent: React.FC = () => {
       const loadPPTFile = async () => {
         try {
           setPptLoading(true)
+          if (!materialPreview.asset) return
           console.log('Loading PPT file from:', materialPreview.asset.fileUrl)
           const response = await fetch(materialPreview.asset.fileUrl)
           console.log('PPT file response status:', response.status)
@@ -167,7 +168,7 @@ const LmsCourseDetailStudent: React.FC = () => {
         console.log('Initializing PPT preview')
         // Initialize pptx previewer
         if (!pptxPreviewer.current) {
-          pptxPreviewer.current = pptxPreview.init(pptRef.current, { width: '100%' })
+          pptxPreviewer.current = pptxPreview.init(pptRef.current, { width: 800 })
         }
         // Preview the PPT file
         pptxPreviewer.current.preview(pptFileBuffer)
