@@ -27,6 +27,7 @@ interface Assignment {
   dueDate?: string
   assignmentType: string
   weight: number
+  rubricCriteria?: string
 }
 
 interface Submission {
@@ -115,6 +116,7 @@ const LmsCourseDetailStudent: React.FC = () => {
   const [submitModal, setSubmitModal]             = useState<Assignment | null>(null)
   const [submissionContent, setSubmissionContent] = useState('')
   const [submissionFiles, setSubmissionFiles]     = useState<File[]>([])
+  const [questionAnswers, setQuestionAnswers]     = useState<Record<number, string | string[]>>({})
   const [fileErrors, setFileErrors]               = useState<string[]>([])
   const [aiLoading, setAiLoading]                 = useState(false)
   const [showConfirmation, setShowConfirmation]   = useState(false)
@@ -313,18 +315,18 @@ const LmsCourseDetailStudent: React.FC = () => {
 
   // ── Submit mutation ──────────────────────────────────────────────────────────
   const submitMutation = useMutation({
-    mutationFn: async ({ assignmentId, content, files }: { assignmentId: string; content: string; files: File[] }) => {
+    mutationFn: async ({ assignmentId, content, files, answers }: { assignmentId: string; content: string; files: File[]; answers?: Array<{ questionIndex: number; type: string; answer: string | string[] }> }) => {
       const v = validateFiles(files)
       if (!v.valid) throw new Error(v.errors.join('; '))
       const trimmedContent = content.trim()
-      if (!trimmedContent && files.length === 0) {
-        throw new Error(t('lmsCourseDetail.emptySubmissionError', { defaultValue: 'Please enter content or upload at least one attachment before submitting.' }))
-      }
       const fd = new FormData()
       fd.append('assignmentId', assignmentId)
       fd.append('studentId', studentProfile?.id!)
       fd.append('content', trimmedContent)
       files.forEach(f => fd.append('files', f))
+      if (answers && answers.length > 0) {
+        fd.append('answers', JSON.stringify(answers))
+      }
       setAiLoading(true)
       const { data } = await apiClient.post('/lms/submissions', fd, { headers: { 'Content-Type': 'multipart/form-data' } })
       await new Promise(r => setTimeout(r, 2000))
@@ -338,6 +340,7 @@ const LmsCourseDetailStudent: React.FC = () => {
       setSubmissionContent('')
       setSubmissionFiles([])
       setFileErrors([])
+      setQuestionAnswers({})
       qc.invalidateQueries({ queryKey: ['submissions', 'history', offeringId, studentProfile?.id] })
       qc.invalidateQueries({ queryKey: ['lms', 'courses', studentProfile?.id] })
     },
@@ -355,6 +358,18 @@ const LmsCourseDetailStudent: React.FC = () => {
   const parseRubric = (jsonStr?: string) => {
     if (!jsonStr) return []
     try { return JSON.parse(jsonStr) } catch { return [] }
+  }
+
+  const parseAssignmentQuestions = (assignment: Assignment | null) => {
+    if (!assignment) return []
+    try {
+      const rubric = typeof assignment.rubricCriteria === 'string'
+        ? JSON.parse(assignment.rubricCriteria)
+        : assignment.rubricCriteria
+      return rubric?.questions ?? []
+    } catch {
+      return []
+    }
   }
 
   // ── Loading / access denied ──────────────────────────────────────────────────
@@ -878,9 +893,33 @@ const LmsCourseDetailStudent: React.FC = () => {
         <Modal
           open
           title={`${t('lmsCourseDetail.submit', { defaultValue: 'Submit' })}: ${submitModal.title}`}
-          onClose={() => { setSubmitModal(null); setSubmissionFiles([]); setAiLoading(false) }}
+          onClose={() => { setSubmitModal(null); setSubmissionFiles([]); setAiLoading(false); setQuestionAnswers({}) }}
           okText={aiLoading ? t('lmsCourseDetail.aiGrading', { defaultValue: 'AI grading…' }) : t('lmsCourseDetail.submitAssignment', { defaultValue: 'Submit Assignment' })}
-          onOk={() => submitMutation.mutate({ assignmentId: submitModal.id, content: submissionContent, files: submissionFiles })}
+          onOk={() => {
+            const questions = parseAssignmentQuestions(submitModal)
+            const unanswered = questions.filter((_: any, qi: number) => {
+              const ans = questionAnswers[qi]
+              if (ans === undefined || ans === null) return true
+              if (typeof ans === 'string') return ans.trim() === ''
+              if (Array.isArray(ans)) return ans.length === 0
+              return true
+            })
+            if (unanswered.length > 0) {
+              addToast({ type: 'error', message: `Please answer all ${unanswered.length} required question(s) before submitting.` })
+              return
+            }
+            const answersArray = questions.map((_: any, qi: number) => ({
+              questionIndex: qi,
+              type: questions[qi].type,
+              answer: questionAnswers[qi] ?? '',
+            }))
+            submitMutation.mutate({
+              assignmentId: submitModal.id,
+              content: submissionContent,
+              files: submissionFiles,
+              answers: answersArray,
+            })
+          }}
           okLoading={submitMutation.isPending || aiLoading}
         >
           {aiLoading ? (
@@ -896,48 +935,159 @@ const LmsCourseDetailStudent: React.FC = () => {
             </div>
           ) : (
             <>
-              <p className={styles.submitInfo}>{t('lmsCourseDetail.maxMarks', { defaultValue: 'Max' })}: {submitModal.maxMarks} · {t('lmsCourseDetail.weight', { defaultValue: 'Weight' })}: {submitModal.weight}%</p>
-              <label className={styles.submitLabel}>{t('lmsCourseDetail.yourAnswerNotes', { defaultValue: 'Your answer / notes' })}</label>
-              <textarea
-                className={styles.submitTextarea}
-                rows={6}
-                placeholder={t('lmsCourseDetail.typeYourResponse', { defaultValue: 'Type your response here…' })}
-                value={submissionContent}
-                onChange={e => setSubmissionContent(e.target.value)}
-              />
-              <label className={styles.submitLabel}>{t('lmsCourseDetail.uploadImages', { defaultValue: 'Upload images (optional)' })}</label>
-              <div className={styles.fileUpload}>
-                <input
-                  type="file" multiple accept="image/jpeg,image/jpg,image/png,image/gif,image/webp,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/plain"
-                  className={styles.fileInput}
-                  onChange={e => {
-                    if (e.target.files) {
-                      const files = Array.from(e.target.files)
-                      const v = validateFiles(files)
-                      if (v.valid) { setSubmissionFiles(files); setFileErrors([]) }
-                      else setFileErrors(v.errors)
-                    }
-                  }}
-                />
-                <div className={styles.fileButton}><Upload size={16} /><span>{t('lmsCourseDetail.chooseImages', { defaultValue: 'Choose images' })}</span></div>
+              <p className={styles.submitInfo}>
+                {t('lmsCourseDetail.maxMarks', { defaultValue: 'Max' })}: {submitModal.maxMarks} pts
+                {' · '}{t('lmsCourseDetail.weight', { defaultValue: 'Weight' })}: {submitModal.weight}%
+              </p>
+
+              {/* Per-question answer section */}
+              {(() => {
+                const questions = parseAssignmentQuestions(submitModal)
+                if (questions.length === 0) {
+                  return (
+                    <>
+                      <label className={styles.submitLabel}>
+                        {t('lmsCourseDetail.yourAnswerNotes', { defaultValue: 'Your answer / notes' })}
+                      </label>
+                      <textarea
+                        className={styles.submitTextarea}
+                        rows={6}
+                        placeholder={t('lmsCourseDetail.typeYourResponse', { defaultValue: 'Type your response here…' })}
+                        value={submissionContent}
+                        onChange={e => setSubmissionContent(e.target.value)}
+                      />
+                    </>
+                  )
+                }
+                return (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+                    {questions.map((q: any, qi: number) => (
+                      <div key={qi} style={{
+                        background: 'var(--color-gray-1)',
+                        borderRadius: 8,
+                        padding: '12px 14px',
+                        border: '1px solid var(--color-gray-3)',
+                      }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
+                          <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--color-gray-8)' }}>
+                            Q{qi + 1}. {q.text}
+                          </span>
+                          <span style={{ fontSize: 11, color: 'var(--color-gray-5)', whiteSpace: 'nowrap', marginLeft: 8 }}>
+                            {q.marks} pts · <span style={{ color: 'var(--color-danger)', fontWeight: 700 }}>Required</span>
+                          </span>
+                        </div>
+
+                        {q.type === 'single-choice' && (
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                            {q.options.map((opt: string, oi: number) => {
+                              const label = String.fromCharCode(65 + oi)
+                              return (
+                                <label key={oi} style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', fontSize: 13 }}>
+                                  <input
+                                    type="radio"
+                                    name={`q-${qi}`}
+                                    value={label}
+                                    checked={questionAnswers[qi] === label}
+                                    onChange={() => setQuestionAnswers(prev => ({ ...prev, [qi]: label }))}
+                                    style={{ accentColor: 'var(--color-primary)' }}
+                                  />
+                                  <span style={{ fontWeight: 600, minWidth: 16 }}>{label}.</span>
+                                  <span>{opt}</span>
+                                </label>
+                              )
+                            })}
+                          </div>
+                        )}
+
+                        {q.type === 'multiple-choice' && (
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                            <div style={{ fontSize: 11, color: 'var(--color-gray-5)', marginBottom: 2 }}>Select all that apply</div>
+                            {q.options.map((opt: string, oi: number) => {
+                              const label = String.fromCharCode(65 + oi)
+                              const selected: string[] = Array.isArray(questionAnswers[qi]) ? questionAnswers[qi] as string[] : []
+                              return (
+                                <label key={oi} style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', fontSize: 13 }}>
+                                  <input
+                                    type="checkbox"
+                                    value={label}
+                                    checked={selected.includes(label)}
+                                    onChange={() => {
+                                      setQuestionAnswers(prev => {
+                                        const cur: string[] = Array.isArray(prev[qi]) ? prev[qi] as string[] : []
+                                        return {
+                                          ...prev,
+                                          [qi]: cur.includes(label) ? cur.filter(x => x !== label) : [...cur, label]
+                                        }
+                                      })
+                                    }}
+                                    style={{ accentColor: 'var(--color-primary)' }}
+                                  />
+                                  <span style={{ fontWeight: 600, minWidth: 16 }}>{label}.</span>
+                                  <span>{opt}</span>
+                                </label>
+                              )
+                            })}
+                          </div>
+                        )}
+
+                        {q.type === 'open-ended' && (
+                          <textarea
+                            style={{
+                              width: '100%', minHeight: 80, padding: '8px 10px',
+                              border: '1px solid var(--color-gray-3)', borderRadius: 6,
+                              fontSize: 13, resize: 'vertical', fontFamily: 'inherit',
+                              background: 'white',
+                            }}
+                            placeholder="Type your answer here…"
+                            value={typeof questionAnswers[qi] === 'string' ? questionAnswers[qi] as string : ''}
+                            onChange={e => setQuestionAnswers(prev => ({ ...prev, [qi]: e.target.value }))}
+                          />
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )
+              })()}
+
+              {/* File upload (always optional) */}
+              <div style={{ marginTop: 12 }}>
+                <label className={styles.submitLabel}>
+                  {t('lmsCourseDetail.uploadImages', { defaultValue: 'Attach files (optional)' })}
+                </label>
+                <div className={styles.fileUpload}>
+                  <input
+                    type="file" multiple accept="image/jpeg,image/jpg,image/png,image/gif,image/webp,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/plain"
+                    className={styles.fileInput}
+                    onChange={e => {
+                      if (e.target.files) {
+                        const files = Array.from(e.target.files)
+                        const v = validateFiles(files)
+                        if (v.valid) { setSubmissionFiles(files); setFileErrors([]) }
+                        else setFileErrors(v.errors)
+                      }
+                    }}
+                  />
+                  <div className={styles.fileButton}><Upload size={16} /><span>{t('lmsCourseDetail.chooseImages', { defaultValue: 'Choose files' })}</span></div>
+                </div>
+                {fileErrors.length > 0 && (
+                  <div className={styles.fileErrors}>
+                    {fileErrors.map((e, i) => <div key={i} className={styles.fileError}>{e}</div>)}
+                  </div>
+                )}
+                {submissionFiles.length > 0 && (
+                  <div className={styles.filesList}>
+                    {submissionFiles.map((f, i) => (
+                      <div key={i} className={styles.fileItem}>
+                        <FileText size={14} />
+                        <span className={styles.fileName}>{f.name}</span>
+                        <span className={styles.fileSize}>{(f.size / 1024).toFixed(1)} KB</span>
+                        <button className={styles.removeFile} onClick={() => setSubmissionFiles(submissionFiles.filter((_, j) => j !== i))}>×</button>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
-              {fileErrors.length > 0 && (
-                <div className={styles.fileErrors}>
-                  {fileErrors.map((e, i) => <div key={i} className={styles.fileError}>{e}</div>)}
-                </div>
-              )}
-              {submissionFiles.length > 0 && (
-                <div className={styles.filesList}>
-                  {submissionFiles.map((f, i) => (
-                    <div key={i} className={styles.fileItem}>
-                      <FileText size={14} />
-                      <span className={styles.fileName}>{f.name}</span>
-                      <span className={styles.fileSize}>{(f.size / 1024).toFixed(1)} KB</span>
-                      <button className={styles.removeFile} onClick={() => setSubmissionFiles(submissionFiles.filter((_, j) => j !== i))}>×</button>
-                    </div>
-                  ))}
-                </div>
-              )}
+
               <p className={styles.aiNote}>🤖 {t('lmsCourseDetail.aiRubricGrading', { defaultValue: 'Submission will be assessed by AI rubric' })}</p>
             </>
           )}

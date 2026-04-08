@@ -448,12 +448,13 @@ model Submission {
   assignment       Assignment @relation(fields: [assignmentId], references: [id])
   studentId        String
   student          Student    @relation(fields: [studentId], references: [id])
-  assetId          String     @unique
-  asset            FileAsset  @relation(fields: [assetId], references: [id])
+  assetId          String?    @unique
+  asset            FileAsset? @relation(fields: [assetId], references: [id])
+  answers          String?    // JSON: [{questionIndex, type, answer}]
   submittedAt      DateTime   @default(now())
-  aiRubricScores   String?   
+  aiRubricScores   String?
   aiGeneratedAt    DateTime?
-  instructorScores String?   
+  instructorScores String?
   finalMarks       Float?
   gradedAt         DateTime?
   gradedById       String?

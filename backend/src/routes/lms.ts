@@ -3,6 +3,7 @@ import { sign, verify } from 'jsonwebtoken'
 import prisma from '../lib/prisma'
 import { authenticate, AuthRequest } from '../middleware/auth'
 import { upload, sessionMaterialUpload } from '../lib/upload'
+import { scoreSubmission } from '../services/aiService'
 
 const router = Router()
 router.use(authenticate)
@@ -597,11 +598,21 @@ router.post('/submissions', upload.array('files', 5), async (req: AuthRequest, r
     const files = req.files as Express.Multer.File[] || []
     const trimmedContent = content?.trim() || ''
 
-    // Validate: must have either content or files
-    if (!trimmedContent && files.length === 0) {
-      res.status(400).json({ 
-        success: false, 
-        message: 'Please provide either content or at least one file attachment' 
+    // Parse student answers from request body
+    let studentAnswers: Array<{ questionIndex: number; type: string; answer: string | string[] }> = []
+    try {
+      if (req.body.answers) {
+        studentAnswers = typeof req.body.answers === 'string'
+          ? JSON.parse(req.body.answers)
+          : req.body.answers
+      }
+    } catch { studentAnswers = [] }
+
+    // Validate: must have either answers, content, or files
+    if (studentAnswers.length === 0 && !trimmedContent && files.length === 0) {
+      res.status(400).json({
+        success: false,
+        message: 'Please provide answers, content, or at least one file attachment'
       })
       return
     }
@@ -622,9 +633,9 @@ router.post('/submissions', upload.array('files', 5), async (req: AuthRequest, r
         return
       }
       if (file.size > 10 * 1024 * 1024) {
-        res.status(400).json({ 
-          success: false, 
-          message: `File too large: ${file.originalname}. Maximum size is 10MB.` 
+        res.status(400).json({
+          success: false,
+          message: `File too large: ${file.originalname}. Maximum size is 10MB.`
         })
         return
       }
@@ -659,7 +670,7 @@ router.post('/submissions', upload.array('files', 5), async (req: AuthRequest, r
           uploadedById: req.user?.userId ?? '',
         },
       })
-      
+
       // Write content to file
       const fs = await import('fs')
       const path = await import('path')
@@ -667,35 +678,68 @@ router.post('/submissions', upload.array('files', 5), async (req: AuthRequest, r
       fs.writeFileSync(filePath, trimmedContent)
     }
 
-    // Pre-seeded AI rubric scores (demo) — each criterion scored out of 10
-    const aiRubricScores = JSON.stringify([
-      { criterion: 'Clarity', ai_score: 8.0, ai_comment: 'The submission is well-structured with clear headings and logical flow. Arguments are presented in an easy-to-follow manner.', ai_suggestions: 'Consider adding a brief summary at the end to reinforce the key points.' },
-      { criterion: 'References', ai_score: 6.5, ai_comment: 'A good range of peer-reviewed sources are cited. Most references are from reputable IEEE and ACM publications.', ai_suggestions: 'Ensure all in-text citations are consistently formatted and every reference is used within the body of the work.' },
-      { criterion: 'Analysis', ai_score: 7.5, ai_comment: 'Big-O derivations are largely correct and the trade-off discussion is solid. The candidate demonstrates a sound understanding of algorithm complexity.', ai_suggestions: 'Strengthen the analysis by including worst-case and average-case comparisons side by side.' },
-      { criterion: 'Code Quality', ai_score: 7.0, ai_comment: 'Code samples are readable and follow consistent naming conventions. Edge cases are handled appropriately.', ai_suggestions: 'Add inline comments for non-trivial logic blocks to improve long-term maintainability.' }
-    ])
+    // Fetch assignment for rubric/questions and scoring
+    const assignmentForScoring = await prisma.assignment.findUnique({
+      where: { id: assignmentId },
+    })
 
-    // Use the first file asset or content asset
-    const primaryAssetId = fileAssets.length > 0 ? fileAssets[0].id : (contentAsset?.id ?? null)
-    
-    if (!primaryAssetId) {
-      res.status(400).json({ success: false, message: 'No content or files provided' })
-      return
+    // Parse assignment rubric and questions
+    let rubricCriteria: Array<{ criterion: string; max_marks: number; ai_suggestion?: string }> = []
+    let assignmentQuestions: Array<{ type: string; text: string; options?: string[]; marks: number; correctAnswer?: string | string[] }> = []
+    try {
+      if (assignmentForScoring?.rubricCriteria) {
+        const parsed = JSON.parse(assignmentForScoring.rubricCriteria)
+        // Support both array format (legacy) and object format with criteria/questions
+        if (Array.isArray(parsed)) {
+          rubricCriteria = parsed
+        } else {
+          rubricCriteria = parsed.criteria ?? []
+          assignmentQuestions = parsed.questions ?? []
+        }
+      }
+    } catch { /* ignore parse errors */ }
+
+    // Run real AI scoring
+    let aiRubricScores = '[]'
+    try {
+      const scores = await scoreSubmission({
+        assignmentTitle: assignmentForScoring?.title ?? assignmentId,
+        rubricCriteria,
+        questions: assignmentQuestions as any,
+        answers: studentAnswers,
+        textContent: trimmedContent || undefined,
+        maxMarks: assignmentForScoring?.maxMarks ?? 100,
+      })
+      aiRubricScores = JSON.stringify(scores)
+    } catch (err) {
+      console.error('[submissions] AI scoring failed:', err)
+      aiRubricScores = JSON.stringify(rubricCriteria.map(c => ({
+        criterion: c.criterion,
+        ai_score: 5,
+        max_marks: c.max_marks,
+        ai_comment: 'AI grading temporarily unavailable.',
+        ai_suggestions: 'Please review manually.',
+      })))
     }
+
+    // Use the first file asset or content asset (optional for Q&A submissions)
+    const primaryAssetId = fileAssets.length > 0 ? fileAssets[0].id : (contentAsset?.id ?? null)
 
     const submission = await prisma.submission.upsert({
       where: { assignmentId_studentId: { assignmentId, studentId } },
       create: {
         assignmentId,
         studentId,
-        assetId: primaryAssetId,
+        ...(primaryAssetId ? { assetId: primaryAssetId } : {}),
+        answers: studentAnswers.length > 0 ? JSON.stringify(studentAnswers) : null,
         aiRubricScores,
         aiGeneratedAt: new Date(),
         submittedAt: new Date(),
       },
-      update: { 
-        assetId: primaryAssetId, 
-        aiRubricScores, 
+      update: {
+        ...(primaryAssetId ? { assetId: primaryAssetId } : {}),
+        answers: studentAnswers.length > 0 ? JSON.stringify(studentAnswers) : null,
+        aiRubricScores,
         aiGeneratedAt: new Date(),
         submittedAt: new Date()
       },

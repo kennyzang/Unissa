@@ -380,3 +380,185 @@ function getDemoAnswer(message: string, ctx: any): string {
 
   return "I can help you with course registration, fee enquiries, assignment deadlines, CGPA, campus services, HR matters, and more. Please ask a specific question, or contact the relevant department for detailed assistance.\n\n*Note: Configure a real AI model in Admin → Settings → AI Configuration for enhanced responses.*"
 }
+
+// ============================================================
+// Assignment Scoring
+// ============================================================
+
+interface RubricCriterion {
+  criterion: string
+  max_marks: number
+  ai_suggestion?: string
+}
+
+interface AssignmentQuestion {
+  type: 'single-choice' | 'multiple-choice' | 'open-ended'
+  text: string
+  options?: string[]
+  marks: number
+  correctAnswer?: string | string[]
+}
+
+interface StudentAnswer {
+  questionIndex: number
+  type: string
+  answer: string | string[]
+}
+
+interface RubricScore {
+  criterion: string
+  ai_score: number
+  max_marks: number
+  ai_comment: string
+  ai_suggestions: string
+}
+
+export async function scoreSubmission(params: {
+  assignmentTitle: string
+  rubricCriteria: RubricCriterion[]
+  questions: AssignmentQuestion[]
+  answers: StudentAnswer[]
+  textContent?: string
+  maxMarks: number
+}): Promise<RubricScore[]> {
+  const { assignmentTitle, rubricCriteria, questions, answers, textContent, maxMarks } = params
+  const scores: RubricScore[] = []
+
+  // Step 1: Auto-grade objective questions (MCQ)
+  const objectiveQuestions = questions.filter(q => q.type !== 'open-ended')
+  let objectiveTotal = 0
+  let objectiveMax = 0
+  const objectiveDetails: string[] = []
+
+  for (const q of objectiveQuestions) {
+    const qi = questions.indexOf(q)
+    const studentAnswer = answers.find(a => a.questionIndex === qi)
+    objectiveMax += q.marks
+
+    if (!studentAnswer || !q.correctAnswer) {
+      objectiveDetails.push(`Q${qi + 1}: "${q.text.slice(0, 60)}" — No answer or no correct answer defined (0/${q.marks} pts)`)
+      continue
+    }
+
+    const sa = studentAnswer.answer
+    const ca = q.correctAnswer
+    let isCorrect = false
+
+    if (q.type === 'single-choice') {
+      isCorrect = String(sa).trim().toUpperCase() === String(ca).trim().toUpperCase()
+    } else if (q.type === 'multiple-choice') {
+      const saArr = (Array.isArray(sa) ? sa : [sa]).map(s => s.trim().toUpperCase()).sort()
+      const caArr = (Array.isArray(ca) ? ca : [ca]).map(c => c.trim().toUpperCase()).sort()
+      isCorrect = JSON.stringify(saArr) === JSON.stringify(caArr)
+    }
+
+    if (isCorrect) {
+      objectiveTotal += q.marks
+      objectiveDetails.push(`Q${qi + 1}: "${q.text.slice(0, 60)}" — Correct ✓ (${q.marks}/${q.marks} pts)`)
+    } else {
+      objectiveDetails.push(`Q${qi + 1}: "${q.text.slice(0, 60)}" — Incorrect ✗ (0/${q.marks} pts, correct: ${JSON.stringify(ca)})`)
+    }
+  }
+
+  if (objectiveMax > 0) {
+    scores.push({
+      criterion: 'Objective Questions (MCQ)',
+      ai_score: Math.round((objectiveTotal / objectiveMax) * 10 * 10) / 10,
+      max_marks: objectiveMax,
+      ai_comment: `Scored ${objectiveTotal}/${objectiveMax} marks on objective questions.\n${objectiveDetails.join('\n')}`,
+      ai_suggestions: objectiveTotal < objectiveMax
+        ? 'Review the questions answered incorrectly and revisit the related course materials.'
+        : 'All objective questions answered correctly. Well done!',
+    })
+  }
+
+  // Step 2: AI-grade open-ended questions and rubric criteria
+  const openEndedQuestions = questions.filter(q => q.type === 'open-ended')
+  const openEndedAnswers: string[] = []
+
+  for (const q of openEndedQuestions) {
+    const qi = questions.indexOf(q)
+    const studentAnswer = answers.find(a => a.questionIndex === qi)
+    openEndedAnswers.push(
+      `Q${qi + 1} [${q.marks} pts]: ${q.text}\nStudent Answer: ${studentAnswer ? String(studentAnswer.answer) : '(No answer provided)'}`
+    )
+  }
+
+  const freeTextContent = textContent ? `\nFree-text submission:\n${textContent}` : ''
+  const hasAiContent = openEndedAnswers.length > 0 || freeTextContent || rubricCriteria.length > 0
+
+  if (hasAiContent && rubricCriteria.length > 0) {
+    try {
+      const cfg = await loadAiConfig()
+
+      const systemPrompt = `You are an academic assignment grader. Assess the student's work strictly against the provided rubric criteria.
+Always respond in English regardless of the language of the submission.
+Return ONLY valid JSON — an array of rubric score objects. Do not include any text outside the JSON array.`
+
+      const userPrompt = `Assignment: "${assignmentTitle}"
+Max Marks: ${maxMarks}
+
+RUBRIC CRITERIA:
+${rubricCriteria.map(c => `- ${c.criterion} (${c.max_marks} marks): ${c.ai_suggestion ?? 'Assess quality and completeness'}`).join('\n')}
+
+OPEN-ENDED QUESTIONS AND STUDENT ANSWERS:
+${openEndedAnswers.join('\n\n') || '(No open-ended questions)'}
+${freeTextContent}
+
+INSTRUCTIONS:
+Evaluate the student's submission against each rubric criterion.
+Score each criterion from 0 to 10 (where 10 = full marks for that criterion).
+Be fair but rigorous. Penalise incomplete or off-topic answers.
+
+Return a JSON array in this exact format:
+[
+  {
+    "criterion": "criterion name exactly as given",
+    "ai_score": <number 0-10>,
+    "ai_comment": "specific feedback about this criterion",
+    "ai_suggestions": "concrete suggestions for improvement"
+  }
+]`
+
+      const messages: ChatMessage[] = [
+        { role: 'system', content: systemPrompt },
+        { role: 'user', content: userPrompt },
+      ]
+
+      let responseText = ''
+      if (cfg.provider === 'anthropic') {
+        responseText = await callAnthropic(cfg, messages)
+      } else {
+        responseText = await callOpenAI(cfg, messages)
+      }
+
+      const jsonMatch = responseText.match(/\[[\s\S]*\]/)
+      if (jsonMatch) {
+        const aiScores: Array<{ criterion: string; ai_score: number; ai_comment: string; ai_suggestions: string }> = JSON.parse(jsonMatch[0])
+        for (const s of aiScores) {
+          const criterion = rubricCriteria.find(c => c.criterion === s.criterion)
+          scores.push({
+            criterion: s.criterion,
+            ai_score: Math.max(0, Math.min(10, Number(s.ai_score) || 0)),
+            max_marks: criterion?.max_marks ?? 10,
+            ai_comment: s.ai_comment ?? '',
+            ai_suggestions: s.ai_suggestions ?? '',
+          })
+        }
+      }
+    } catch (err) {
+      console.error('[scoreSubmission] AI grading error:', err)
+      for (const c of rubricCriteria) {
+        scores.push({
+          criterion: c.criterion,
+          ai_score: 5,
+          max_marks: c.max_marks,
+          ai_comment: 'AI grading temporarily unavailable. Please review manually.',
+          ai_suggestions: 'Instructor review recommended.',
+        })
+      }
+    }
+  }
+
+  return scores
+}

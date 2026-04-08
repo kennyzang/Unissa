@@ -927,14 +927,69 @@ async function main() {
       dueDate: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000),
       maxMarks: 100,
       weightPct: 20,
-      rubricCriteria: JSON.stringify([
-        { criterion: 'Clarity', max_marks: 25, ai_suggestion: 'Award marks for structured presentation and clear writing' },
-        { criterion: 'References', max_marks: 20, ai_suggestion: 'Peer-reviewed sources from IEEE or ACM preferred' },
-        { criterion: 'Analysis', max_marks: 35, ai_suggestion: 'Check for correct Big-O derivation' },
-        { criterion: 'Presentation', max_marks: 20, ai_suggestion: 'Formatting, headings, and visual aids' },
-      ]),
+      rubricCriteria: JSON.stringify({
+        criteria: [
+          { criterion: 'Clarity', max_marks: 25, ai_suggestion: 'Award marks for structured presentation and clear writing' },
+          { criterion: 'References', max_marks: 20, ai_suggestion: 'Peer-reviewed sources from IEEE or ACM preferred' },
+          { criterion: 'Analysis', max_marks: 35, ai_suggestion: 'Check for correct Big-O derivation' },
+          { criterion: 'Presentation', max_marks: 20, ai_suggestion: 'Formatting, headings, and visual aids' },
+        ],
+        questions: [
+          {
+            type: 'single-choice',
+            text: 'What is the time complexity of binary search?',
+            options: ['O(n)', 'O(log n)', 'O(n²)', 'O(1)'],
+            marks: 10,
+            correctAnswer: 'B',
+          },
+          {
+            type: 'multiple-choice',
+            text: 'Which of the following are comparison-based sorting algorithms?',
+            options: ['Quicksort', 'Counting Sort', 'Merge Sort', 'Radix Sort'],
+            marks: 10,
+            correctAnswer: ['A', 'C'],
+          },
+          {
+            type: 'open-ended',
+            text: 'Explain the difference between best-case and worst-case time complexity for QuickSort, with an example.',
+            options: [],
+            marks: 20,
+          },
+        ],
+      }),
     },
-    update: {},
+    update: {
+      rubricCriteria: JSON.stringify({
+        criteria: [
+          { criterion: 'Clarity', max_marks: 25, ai_suggestion: 'Award marks for structured presentation and clear writing' },
+          { criterion: 'References', max_marks: 20, ai_suggestion: 'Peer-reviewed sources from IEEE or ACM preferred' },
+          { criterion: 'Analysis', max_marks: 35, ai_suggestion: 'Check for correct Big-O derivation' },
+          { criterion: 'Presentation', max_marks: 20, ai_suggestion: 'Formatting, headings, and visual aids' },
+        ],
+        questions: [
+          {
+            type: 'single-choice',
+            text: 'What is the time complexity of binary search?',
+            options: ['O(n)', 'O(log n)', 'O(n²)', 'O(1)'],
+            marks: 10,
+            correctAnswer: 'B',
+          },
+          {
+            type: 'multiple-choice',
+            text: 'Which of the following are comparison-based sorting algorithms?',
+            options: ['Quicksort', 'Counting Sort', 'Merge Sort', 'Radix Sort'],
+            marks: 10,
+            correctAnswer: ['A', 'C'],
+          },
+          {
+            type: 'open-ended',
+            text: 'Explain the difference between best-case and worst-case time complexity for QuickSort, with an example.',
+            options: [],
+            marks: 20,
+          },
+        ],
+      }),
+    },
   })
 
   // ── 14 Assignments Due Today (LMS dashboard) ─────────────────
@@ -984,10 +1039,46 @@ async function main() {
       id: 'asn-t-05', offeringId: offeringIFN102.id, title: 'Quiz 2 – Tree Traversal Algorithms',
       description: 'Given a binary search tree diagram, write out the node visit order for: (a) in-order, (b) pre-order, and (c) post-order traversal. Then answer 4 short-answer questions on BST insertion and deletion.',
       maxMarks: 25, weight: 5,
-      rubric: [
-        { criterion: 'Traversal Sequences', max_marks: 15, ai_suggestion: '5 marks per traversal type; partial credit for mostly correct sequences' },
-        { criterion: 'Short Answers', max_marks: 10, ai_suggestion: '2.5 marks each; accept equivalent correct answers' },
-      ],
+      rubric: {
+        criteria: [
+          { criterion: 'Traversal Sequences', max_marks: 15, ai_suggestion: '5 marks per traversal type; partial credit for mostly correct sequences' },
+          { criterion: 'Short Answers', max_marks: 10, ai_suggestion: '2.5 marks each; accept equivalent correct answers' },
+        ],
+        questions: [
+          {
+            type: 'single-choice',
+            text: 'In an in-order traversal of a BST, nodes are visited in which order?',
+            options: ['Root, Left, Right', 'Left, Root, Right', 'Left, Right, Root', 'Right, Root, Left'],
+            marks: 5,
+            correctAnswer: 'B',
+          },
+          {
+            type: 'single-choice',
+            text: 'Which traversal visits the root node first?',
+            options: ['In-order', 'Post-order', 'Pre-order', 'Level-order'],
+            marks: 5,
+            correctAnswer: 'C',
+          },
+          {
+            type: 'multiple-choice',
+            text: 'Which of the following statements about BST deletion are correct?',
+            options: [
+              'Deleting a leaf node requires no restructuring',
+              'Deleting a node with two children requires finding its in-order successor',
+              'Deleting a node always increases tree height',
+              'Deleting a node with one child replaces it with that child',
+            ],
+            marks: 5,
+            correctAnswer: ['A', 'B', 'D'],
+          },
+          {
+            type: 'open-ended',
+            text: 'Describe the steps to insert value 42 into a BST that already contains: 50, 30, 70, 20, 40, 60, 80.',
+            options: [],
+            marks: 10,
+          },
+        ],
+      },
     },
     {
       id: 'asn-t-06', offeringId: offeringIFN102.id, title: 'Problem Set 3 – Sorting Comparisons',
@@ -1093,7 +1184,7 @@ async function main() {
         weightPct: a.weight,
         rubricCriteria: JSON.stringify(a.rubric),
       },
-      update: {},
+      update: { rubricCriteria: JSON.stringify(a.rubric) },
     })
   }
 

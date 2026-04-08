@@ -53,6 +53,7 @@ interface Question {
   text: string
   options: string[]   // empty for open-ended
   marks: number
+  correctAnswer?: string | string[]  // string for single-choice, string[] for multiple-choice
 }
 
 interface CourseMaterial {
@@ -1311,23 +1312,57 @@ const LmsCourseDetailLecturer: React.FC = () => {
                   />
                   {q.type !== 'open-ended' && (
                     <div>
-                      {q.options.map((opt, oi) => (
-                        <div key={oi} style={{ display: 'flex', gap: 6, marginBottom: 4 }}>
-                          <span style={{ fontSize: 12, color: 'var(--color-gray-5)', padding: '6px 2px', minWidth: 16 }}>{String.fromCharCode(65 + oi)}.</span>
-                          <Input
-                            placeholder={t('lmsCourseDetailLecturer.optionText', { defaultValue: `Option ${String.fromCharCode(65 + oi)}` })}
-                            value={opt}
-                            onChange={e => setAsnQuestions(prev => prev.map((x, xi) => xi === qi ? {
-                              ...x, options: x.options.map((o, oi2) => oi2 === oi ? e.target.value : o)
-                            } : x))}
-                            style={{ flex: 1 }}
-                          />
-                          {q.options.length > 2 && (
-                            <Button size="sm" variant="ghost" icon={<Minus size={11} />}
-                              onClick={() => setAsnQuestions(prev => prev.map((x, xi) => xi === qi ? { ...x, options: x.options.filter((_, oi2) => oi2 !== oi) } : x))} />
-                          )}
-                        </div>
-                      ))}
+                      <div style={{ fontSize: 11, color: 'var(--color-gray-5)', marginBottom: 4 }}>
+                        {q.type === 'single-choice' ? '✓ Click radio to mark correct answer' : '✓ Click checkboxes to mark correct answers'}
+                      </div>
+                      {q.options.map((opt, oi) => {
+                        const optLabel = String.fromCharCode(65 + oi)
+                        const isCorrect = q.type === 'single-choice'
+                          ? q.correctAnswer === optLabel
+                          : Array.isArray(q.correctAnswer) && q.correctAnswer.includes(optLabel)
+                        return (
+                          <div key={oi} style={{ display: 'flex', gap: 6, marginBottom: 4, alignItems: 'center' }}>
+                            <input
+                              type={q.type === 'single-choice' ? 'radio' : 'checkbox'}
+                              name={`correct-${qi}`}
+                              checked={isCorrect}
+                              onChange={() => {
+                                setAsnQuestions(prev => prev.map((x, xi) => {
+                                  if (xi !== qi) return x
+                                  if (x.type === 'single-choice') {
+                                    return { ...x, correctAnswer: optLabel }
+                                  } else {
+                                    const prev2 = Array.isArray(x.correctAnswer) ? x.correctAnswer : []
+                                    return {
+                                      ...x,
+                                      correctAnswer: isCorrect
+                                        ? prev2.filter(a => a !== optLabel)
+                                        : [...prev2, optLabel]
+                                    }
+                                  }
+                                }))
+                              }}
+                              title="Mark as correct answer"
+                              style={{ cursor: 'pointer', accentColor: 'var(--color-success)' }}
+                            />
+                            <span style={{ fontSize: 12, color: isCorrect ? 'var(--color-success)' : 'var(--color-gray-5)', padding: '6px 2px', minWidth: 16, fontWeight: isCorrect ? 700 : 400 }}>
+                              {optLabel}.
+                            </span>
+                            <Input
+                              placeholder={t('lmsCourseDetailLecturer.optionText', { defaultValue: `Option ${optLabel}` })}
+                              value={opt}
+                              onChange={e => setAsnQuestions(prev => prev.map((x, xi) => xi === qi ? {
+                                ...x, options: x.options.map((o, oi2) => oi2 === oi ? e.target.value : o)
+                              } : x))}
+                              style={{ flex: 1, borderColor: isCorrect ? 'var(--color-success)' : undefined }}
+                            />
+                            {q.options.length > 2 && (
+                              <Button size="sm" variant="ghost" icon={<Minus size={11} />}
+                                onClick={() => setAsnQuestions(prev => prev.map((x, xi) => xi === qi ? { ...x, options: x.options.filter((_, oi2) => oi2 !== oi) } : x))} />
+                            )}
+                          </div>
+                        )
+                      })}
                       <Button size="sm" variant="ghost" icon={<Plus size={11} />}
                         onClick={() => setAsnQuestions(prev => prev.map((x, xi) => xi === qi ? { ...x, options: [...x.options, ''] } : x))}>
                         {t('lmsCourseDetailLecturer.addOption', { defaultValue: 'Add option' })}
