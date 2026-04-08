@@ -847,6 +847,7 @@ const zh = {
     sessionHistory: '历史会话',
     closed: '已关闭',
     open: '进行中',
+    openSession: '打开会话',
     // 学生
     manualCheckin: '令牌手动签到',
     manualCheckinHint: '粘贴讲师提供的会话令牌，手动记录出勤。',

@@ -846,6 +846,7 @@ const ms = {
     sessionHistory: 'Sejarah Sesi',
     closed: 'Ditutup',
     open: 'Aktif',
+    openSession: 'Buka Sesi',
     // Pelajar
     manualCheckin: 'Daftar Masuk dengan Token',
     manualCheckinHint: 'Tampal token sesi yang diberikan oleh pensyarah anda untuk merekod kehadiran secara manual.',

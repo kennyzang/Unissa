@@ -70,7 +70,7 @@ const CGPA_COLOR = (cgpa: number): 'green' | 'blue' | 'orange' | 'red' =>
   cgpa >= 3.5 ? 'green' : cgpa >= 3.0 ? 'blue' : cgpa >= 2.0 ? 'orange' : 'red'
 
 const fmtDate = (d: string | null) =>
-  d ? new Date(d).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }) : '—'
+  d ? new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '—'
 
 const isPast = (d: string | null) => !!d && new Date(d) < new Date()
 

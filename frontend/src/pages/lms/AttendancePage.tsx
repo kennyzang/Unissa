@@ -87,7 +87,7 @@ const fmtTime = (iso: string) =>
   new Date(iso).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
 
 const fmtDate = (iso: string) =>
-  new Date(iso).toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' })
+  new Date(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
 
 const fmtBytes = (bytes: number) => {
   if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(0)} KB`
@@ -424,6 +424,7 @@ const ActiveSessionPanel: React.FC<{
     mutationFn: () => apiClient.patch(`/lms/attendance/sessions/${session.id}/close`),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['attendance', 'sessions'] })
+      queryClient.invalidateQueries({ queryKey: ['attendance', 'active-sessions'] })
       onClose()
     },
   })
@@ -434,12 +435,19 @@ const ActiveSessionPanel: React.FC<{
       try {
         const { data } = await apiClient.get(`/lms/attendance/live-count/${session.id}`)
         setLiveCount(data.data.count)
-      } catch {}
+      } catch {
+        console.error('Failed to fetch live count')
+      }
     }
     fetch()
-    intervalRef.current = setInterval(fetch, 5000)
+    intervalRef.current = setInterval(fetch, 3000)
     return () => { if (intervalRef.current) clearInterval(intervalRef.current) }
   }, [session.id, expired, session.endedAt])
+
+  useEffect(() => {
+    const currentCount = session.records?.filter(r => r.status === 'present').length ?? 0
+    setLiveCount(currentCount)
+  }, [session.records])
 
   const handleCopy = () => {
     const done = () => { setCopied(true); setTimeout(() => setCopied(false), 2500) }
@@ -561,6 +569,27 @@ const LecturerView: React.FC<{ lecturerId: string }> = ({ lecturerId }) => {
     },
   })
 
+  const { data: activeSessionData } = useQuery<AttendanceSession[]>({
+    queryKey: ['attendance', 'active-sessions', lecturerId],
+    queryFn: async () => {
+      const { data } = await apiClient.get(`/lms/attendance/sessions/lecturer/${lecturerId}/active`)
+      return data.data
+    },
+    refetchInterval: 3000,
+  })
+
+  useEffect(() => {
+    if (activeSessionData && activeSessionData.length > 0) {
+      const session = activeSessionData[0]
+      if (!activeSession || activeSession.id !== session.id || 
+          (activeSession.records?.length ?? 0) !== (session.records?.length ?? 0)) {
+        setActiveSession(session)
+      }
+    } else if (activeSession && (!activeSessionData || activeSessionData.length === 0)) {
+      setActiveSession(null)
+    }
+  }, [activeSessionData, activeSession])
+
   const { data: sessionData } = useQuery<AttendanceSession[]>({
     queryKey: ['attendance', 'sessions', expandedOffering],
     queryFn: async () => {
@@ -599,7 +628,11 @@ const LecturerView: React.FC<{ lecturerId: string }> = ({ lecturerId }) => {
         <CreateSessionModal
           offeringId={createModalOffering.id}
           offeringLabel={`${createModalOffering.course.code} — ${createModalOffering.course.name}`}
-          onCreated={sess => setActiveSession(sess)}
+          onCreated={sess => {
+            setActiveSession(sess)
+            setExpandedOffering(createModalOffering.id)
+            setViewingSession(sess)
+          }}
           onClose={() => setCreateModalOfferingId(null)}
         />
       )}
@@ -686,6 +719,15 @@ const LecturerView: React.FC<{ lecturerId: string }> = ({ lecturerId }) => {
                               >
                                 <Eye size={13} /> {t('attendance.viewDetails')}
                               </button>
+                              {!sess.endedAt && (
+                                <button
+                                  className={styles.viewDetailsBtn}
+                                  onClick={() => setActiveSession(sess)}
+                                  title={t('attendance.openSession')}
+                                >
+                                  <Scan size={13} /> {t('attendance.open')}
+                                </button>
+                              )}
                             </div>
                           </div>
                         )

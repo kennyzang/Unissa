@@ -4,7 +4,7 @@ import { useParams, useNavigate } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import {
   ArrowLeft, Users, BookOpen, FileText, ClipboardList,
-  Star, Clock, CheckCircle, Video, Link, Calendar, Upload as UploadIcon, Trash2, Eye, Play, Download, Plus, Minus,
+  Star, Clock, CheckCircle, Video, Link, Calendar, Upload as UploadIcon, Trash2, Eye, Play, Download, Plus, Minus, Edit2,
 } from 'lucide-react'
 import { apiClient } from '@/lib/apiClient'
 import { useAuthStore } from '@/stores/authStore'
@@ -131,6 +131,7 @@ const LmsCourseDetailLecturer: React.FC = () => {
   const [viewSubmission, setViewSubmission]     = useState<SubmissionForGrading | null>(null)
   const [viewAIRubric, setViewAIRubric]         = useState<SubmissionForGrading | null>(null)
   const [materialModal, setMaterialModal]       = useState(false)
+  const [editMaterial, setEditMaterial]         = useState<CourseMaterial | null>(null)
   const [materialTitle, setMaterialTitle]       = useState('')
   const [materialDesc, setMaterialDesc]         = useState('')
   const [materialFile, setMaterialFile]         = useState<File | null>(null)
@@ -325,6 +326,50 @@ const LmsCourseDetailLecturer: React.FC = () => {
     },
     onError: (e: any) => {
       addToast({ type: 'error', message: e.response?.data?.message ?? 'Delete failed' })
+    },
+  })
+
+  // ── Material update mutation ────────────────────────────────────────────────
+  const updateMaterialMutation = useMutation({
+    mutationFn: async () => {
+      if (!materialTitle.trim()) throw new Error(t('lmsCourseDetailLecturer.titleRequired', { defaultValue: 'Title is required' }))
+      if (!editMaterial) throw new Error('Material not found')
+      
+      const fd = new FormData()
+      fd.append('title', materialTitle.trim())
+      fd.append('description', materialDesc.trim())
+      fd.append('isPublished', String(materialPublished))
+      if (materialFile) {
+        fd.append('file', materialFile)
+      }
+      
+      try {
+        const { data } = await apiClient.patch(`/lms/materials/${editMaterial.id}`, fd, {
+          headers: {
+            'Content-Type': 'multipart/form-data',
+          },
+        })
+        return data
+      } catch (error: any) {
+        console.error('Update material error:', error)
+        console.error('Response data:', error.response?.data)
+        throw error
+      }
+    },
+    onSuccess: () => {
+      addToast({ type: 'success', message: t('lmsCourseDetailLecturer.materialUpdated', { defaultValue: 'Material updated successfully' }) })
+      qc.invalidateQueries({ queryKey: ['lms', 'offering', offeringId] })
+      setMaterialModal(false)
+      setEditMaterial(null)
+      setMaterialTitle('')
+      setMaterialDesc('')
+      setMaterialFile(null)
+      setMaterialPublished(true)
+    },
+    onError: (e: any) => {
+      const errorMessage = e.response?.data?.message || e.message || 'Update failed'
+      console.error('Update material error:', errorMessage)
+      addToast({ type: 'error', message: errorMessage })
     },
   })
 
@@ -625,6 +670,20 @@ const LmsCourseDetailLecturer: React.FC = () => {
                   )}
                   <Button 
                     size="sm" 
+                    variant="ghost"
+                    onClick={() => {
+                      setEditMaterial(m)
+                      setMaterialTitle(m.title)
+                      setMaterialDesc(m.description || '')
+                      setMaterialPublished(m.isPublished)
+                      setMaterialFile(null)
+                      setMaterialModal(true)
+                    }}
+                  >
+                    <Edit2 size={14} />
+                  </Button>
+                  <Button 
+                    size="sm" 
                     variant="ghost" 
                     style={{ color: '#ff4d4f' }} 
                     onClick={() => {
@@ -669,7 +728,7 @@ const LmsCourseDetailLecturer: React.FC = () => {
                 <span className={styles.sessionCardTitle}>
                   {sess.name ?? `${t('lmsCourseDetailLecturer.session', { defaultValue: 'Session' })} ${idx + 1}`}
                 </span>
-                <span className={styles.sessionCardDate}>{new Date(sess.startedAt).toLocaleDateString()}</span>
+                <span className={styles.sessionCardDate}>{new Date(sess.startedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</span>
                 <Badge color={sess.endedAt ? 'green' : 'orange'} size="sm">
                   {sess.endedAt
                     ? t('lmsCourseDetailLecturer.closed', { defaultValue: 'Closed' })
@@ -1014,15 +1073,22 @@ const LmsCourseDetailLecturer: React.FC = () => {
         </Modal>
       )}
 
-      {/* ── Upload Material Modal ─────────────────────────────────────────────── */}
+      {/* ── Upload/Edit Material Modal ─────────────────────────────────────────────── */}
       {materialModal && (
         <Modal
           open
-          title={t('lmsCourseDetailLecturer.uploadMaterial', { defaultValue: 'Upload Material' })}
-          onClose={() => setMaterialModal(false)}
-          okText={t('lmsCourseDetailLecturer.upload', { defaultValue: 'Upload' })}
-          onOk={() => uploadMaterialMutation.mutate()}
-          okLoading={uploadMaterialMutation.isPending}
+          title={editMaterial ? t('lmsCourseDetailLecturer.editMaterial', { defaultValue: 'Edit Material' }) : t('lmsCourseDetailLecturer.uploadMaterial', { defaultValue: 'Upload Material' })}
+          onClose={() => {
+            setMaterialModal(false)
+            setEditMaterial(null)
+            setMaterialTitle('')
+            setMaterialDesc('')
+            setMaterialFile(null)
+            setMaterialPublished(true)
+          }}
+          okText={editMaterial ? t('lmsCourseDetailLecturer.update', { defaultValue: 'Update' }) : t('lmsCourseDetailLecturer.upload', { defaultValue: 'Upload' })}
+          onOk={() => editMaterial ? updateMaterialMutation.mutate() : uploadMaterialMutation.mutate()}
+          okLoading={editMaterial ? updateMaterialMutation.isPending : uploadMaterialMutation.isPending}
         >
           <div className={styles.uploadForm}>
             <div className={styles.formGroup}>
@@ -1043,7 +1109,7 @@ const LmsCourseDetailLecturer: React.FC = () => {
               />
             </div>
             <div className={styles.formGroup}>
-              <label className={styles.formLabel}>{t('lmsCourseDetailLecturer.file', { defaultValue: 'File' })} *</label>
+              <label className={styles.formLabel}>{t('lmsCourseDetailLecturer.file', { defaultValue: 'File' })} {editMaterial ? '' : '*'}</label>
               <Upload.Dragger
                 name="file"
                 multiple={false}
@@ -1065,6 +1131,7 @@ const LmsCourseDetailLecturer: React.FC = () => {
                 <p className="ant-upload-text">Click or drag file to this area to upload</p>
                 <p className="ant-upload-hint">
                   Support for a variety of file types including PDF, PPT, Word, Excel, images, and videos.
+                  {editMaterial && ' (Optional - leave blank to keep existing file)'}
                 </p>
               </Upload.Dragger>
             </div>

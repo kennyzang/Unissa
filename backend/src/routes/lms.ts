@@ -177,9 +177,14 @@ router.delete('/materials/:materialId', async (req: AuthRequest, res: Response) 
 })
 
 // PATCH /api/v1/lms/materials/:materialId - Update course material
-router.patch('/materials/:materialId', async (req: AuthRequest, res: Response) => {
+router.patch('/materials/:materialId', sessionMaterialUpload.single('file'), async (req: AuthRequest, res: Response) => {
   try {
     const { title, description, isPublished, orderIndex } = req.body
+    const file = req.file
+
+    // Parse boolean values from string
+    const parsedIsPublished = isPublished === 'true'
+    const parsedOrderIndex = orderIndex ? parseInt(orderIndex) : undefined
 
     const material = await prisma.courseMaterial.findUnique({
       where: { id: String(req.params.materialId) },
@@ -199,13 +204,35 @@ router.patch('/materials/:materialId', async (req: AuthRequest, res: Response) =
       return
     }
 
+    // Create file asset if new file uploaded
+    let assetId: string | null = material.assetId
+    if (file) {
+      // Delete old asset if exists
+      if (material.assetId) {
+        await prisma.fileAsset.delete({ where: { id: material.assetId } })
+      }
+      
+      const asset = await prisma.fileAsset.create({
+        data: {
+          fileName: file.filename,
+          originalName: file.originalname,
+          fileUrl: `/uploads/${file.filename}`,
+          mimeType: file.mimetype,
+          fileSizeBytes: file.size,
+          uploadedById: req.user?.userId || 'system',
+        },
+      })
+      assetId = asset.id
+    }
+
     const updated = await prisma.courseMaterial.update({
       where: { id: String(req.params.materialId) },
       data: {
         title: title ?? material.title,
         description: description ?? material.description,
-        isPublished: isPublished ?? material.isPublished,
-        orderIndex: orderIndex ?? material.orderIndex,
+        isPublished: isPublished !== undefined ? parsedIsPublished : material.isPublished,
+        orderIndex: parsedOrderIndex ?? material.orderIndex,
+        assetId: assetId,
       },
       include: {
         asset: true,
@@ -216,7 +243,7 @@ router.patch('/materials/:materialId', async (req: AuthRequest, res: Response) =
     res.json({ success: true, data: updated, message: 'Material updated successfully' })
   } catch (error) {
     console.error('Error updating material:', error)
-    res.status(500).json({ success: false, message: 'Failed to update material' })
+    res.status(500).json({ success: false, message: 'Failed to update material', error: process.env.NODE_ENV === 'development' ? (error as any).message : undefined })
   }
 })
 
@@ -1020,6 +1047,24 @@ router.get('/attendance/sessions/:sessionId', async (req: AuthRequest, res: Resp
   })
   if (!session) { res.status(404).json({ success: false, message: 'Session not found' }); return }
   res.json({ success: true, data: { ...session, qrData: session.sessionToken } })
+})
+
+// GET /api/v1/attendance/sessions/lecturer/:lecturerId/active  — Fetch active session for lecturer
+router.get('/attendance/sessions/lecturer/:lecturerId/active', async (req: AuthRequest, res: Response) => {
+  const lecturerId = String(req.params.lecturerId)
+  const sessions = await prisma.attendanceSession.findMany({
+    where: {
+      offering: { lecturerId },
+      endedAt: null,
+      qrExpiresAt: { gte: new Date() }
+    },
+    include: {
+      records: { select: { id: true, status: true, scannedAt: true, studentId: true } },
+    },
+    orderBy: { startedAt: 'desc' },
+    take: 1
+  })
+  res.json({ success: true, data: sessions.map(s => ({ ...s, qrData: s.sessionToken })) })
 })
 
 // POST /api/v1/attendance/sessions/:sessionId/materials  — Upload course materials

@@ -924,7 +924,7 @@ async function main() {
       offeringId: offeringIFN101.id,
       title: 'Case Study 1 – Algorithm Analysis',
       description: 'Analyse the time and space complexity of three sorting algorithms. Provide a comparative study with examples and Big-O notation.',
-      dueDate: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000),
+      dueDate: new Date('2026-04-20'),
       maxMarks: 100,
       weightPct: 20,
       rubricCriteria: JSON.stringify({
@@ -993,7 +993,7 @@ async function main() {
   })
 
   // ── 14 Assignments Due Today (LMS dashboard) ─────────────────
-  const dueToday = new Date(); dueToday.setHours(23, 59, 59, 0)
+  const dueToday = new Date('2026-04-25'); dueToday.setHours(23, 59, 59, 0)
   const todayAssignments = [
     {
       id: 'asn-t-01', offeringId: offeringIFN101.id, title: 'Weekly Quiz 1 – Variables & Loops',
@@ -1209,6 +1209,138 @@ async function main() {
       where: { sessionId_studentId: { sessionId: atSess1.id, studentId: s.id } },
       create: { sessionId: atSess1.id, studentId: s.id, status: 'present' },
       update: {},
+    })
+  }
+
+  // ── Course Materials ──────────────────────────────────────────
+  const courseMaterials = [
+    // IFN101 - Introduction to Programming
+    {
+      id: 'mat-ifn101-01',
+      offeringId: offeringIFN101.id,
+      title: 'Introduction to Programming Concepts',
+      description: 'Overview of programming fundamentals and problem-solving techniques',
+      materialType: 'document',
+      externalUrl: 'https://example.com/ifn101-intro.pdf',
+      orderIndex: 1,
+      isPublished: true,
+      uploadedById: uDrSiti.id,
+    },
+    {
+      id: 'mat-ifn101-02',
+      offeringId: offeringIFN101.id,
+      title: 'Variables and Data Types',
+      description: 'Understanding variables, data types, and type conversion',
+      materialType: 'video',
+      externalUrl: 'https://example.com/ifn101-variables.mp4',
+      duration: 1800, // 30 minutes
+      orderIndex: 2,
+      isPublished: true,
+      uploadedById: uDrSiti.id,
+    },
+    {
+      id: 'mat-ifn101-03',
+      offeringId: offeringIFN101.id,
+      title: 'Control Structures',
+      description: 'Loops, conditionals, and branching statements',
+      materialType: 'presentation',
+      externalUrl: 'https://example.com/ifn101-control-structures.pptx',
+      orderIndex: 3,
+      isPublished: true,
+      uploadedById: uDrSiti.id,
+    },
+    {
+      id: 'mat-ifn101-04',
+      offeringId: offeringIFN101.id,
+      title: 'Functions and Modular Programming',
+      description: 'Creating and using functions for code reuse',
+      materialType: 'document',
+      externalUrl: 'https://example.com/ifn101-functions.pdf',
+      orderIndex: 4,
+      isPublished: true,
+      uploadedById: uDrSiti.id,
+    },
+    
+    // IFN102 - Data Structures & Algorithms
+    {
+      id: 'mat-ifn102-01',
+      offeringId: offeringIFN102.id,
+      title: 'Introduction to Data Structures',
+      description: 'Overview of data structures and their importance',
+      materialType: 'document',
+      externalUrl: 'https://example.com/ifn102-intro.pdf',
+      orderIndex: 1,
+      isPublished: true,
+      uploadedById: uDrSiti.id,
+    },
+    {
+      id: 'mat-ifn102-02',
+      offeringId: offeringIFN102.id,
+      title: 'Arrays and Linked Lists',
+      description: 'Implementation and operations on arrays and linked lists',
+      materialType: 'video',
+      externalUrl: 'https://example.com/ifn102-arrays.mp4',
+      duration: 2100, // 35 minutes
+      orderIndex: 2,
+      isPublished: true,
+      uploadedById: uDrSiti.id,
+    },
+    
+    // IFN201 - Database Management Systems
+    {
+      id: 'mat-ifn201-01',
+      offeringId: offeringIFN201.id,
+      title: 'Database Fundamentals',
+      description: 'Introduction to database concepts and relational model',
+      materialType: 'document',
+      externalUrl: 'https://example.com/ifn201-fundamentals.pdf',
+      orderIndex: 1,
+      isPublished: true,
+      uploadedById: uDrSiti.id,
+    },
+    {
+      id: 'mat-ifn201-02',
+      offeringId: offeringIFN201.id,
+      title: 'SQL Query Language',
+      description: 'Structured Query Language for database operations',
+      materialType: 'presentation',
+      externalUrl: 'https://example.com/ifn201-sql.pptx',
+      orderIndex: 2,
+      isPublished: true,
+      uploadedById: uDrSiti.id,
+    },
+    
+    // IFN202 - Web Development Fundamentals
+    {
+      id: 'mat-ifn202-01',
+      offeringId: offeringIFN202.id,
+      title: 'Web Technologies Overview',
+      description: 'HTML, CSS, and JavaScript basics',
+      materialType: 'document',
+      externalUrl: 'https://example.com/ifn202-overview.pdf',
+      orderIndex: 1,
+      isPublished: true,
+      uploadedById: uDrSiti.id,
+    },
+    {
+      id: 'mat-ifn202-02',
+      offeringId: offeringIFN202.id,
+      title: 'HTML5 and CSS3 Fundamentals',
+      description: 'Modern web markup and styling',
+      materialType: 'video',
+      externalUrl: 'https://example.com/ifn202-html-css.mp4',
+      duration: 2400, // 40 minutes
+      orderIndex: 2,
+      isPublished: true,
+      uploadedById: uDrSiti.id,
+    },
+  ]
+  
+  for (const material of courseMaterials) {
+    await prisma.courseMaterial.upsert({
+      where: { id: material.id },
+      create: material,
+      update: { ...material, updatedAt: new Date() },
     })
   }
 

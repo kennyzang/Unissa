@@ -861,6 +861,7 @@ const en = {
     sessionHistory: 'Session History',
     closed: 'Closed',
     open: 'Open',
+    openSession: 'Open Session',
     // Student
     manualCheckin: 'Check In with Token',
     manualCheckinHint: 'Paste the session token provided by your lecturer to record attendance manually.',
