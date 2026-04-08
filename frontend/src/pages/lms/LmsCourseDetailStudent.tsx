@@ -4,7 +4,7 @@ import { useParams, useNavigate } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import {
   ArrowLeft, FileText, Upload, Star, CheckCircle, Clock, Video, Link, BookOpen, Download, Eye, Play,
-  QrCode, AlertTriangle, UserCheck,
+  Scan, AlertTriangle, UserCheck,
 } from 'lucide-react'
 import { apiClient } from '@/lib/apiClient'
 import { useAuthStore } from '@/stores/authStore'
@@ -789,7 +789,7 @@ const LmsCourseDetailStudent: React.FC = () => {
         <div className={styles.checkinCard}>
           <div className={styles.checkinHeader}>
             <div className={styles.checkinTitle}>
-              <QrCode size={20} />
+              <Scan size={20} />
               <span>{t('lmsCourseDetail.quickCheckin', { defaultValue: 'Quick Check-in' })}</span>
             </div>
             <Badge color="green" size="sm">

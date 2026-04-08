@@ -66,6 +66,7 @@ interface CourseForm {
   level: number
   isOpenToInternational: boolean
   maxSeats: number
+  lecturerId?: string
 }
 
 interface Enrolment {
@@ -93,7 +94,7 @@ interface Offering {
 
 const EMPTY_FORM: CourseForm = {
   code: '', name: '', departmentId: '',
-  creditHours: 3, level: 1, isOpenToInternational: true, maxSeats: 40,
+  creditHours: 3, level: 1, isOpenToInternational: true, maxSeats: 40, lecturerId: '',
 }
 
 const LEVEL_OPTIONS = [1, 2, 3, 4].map(n => ({ value: n, label: `Level ${n}` }))
@@ -154,9 +155,12 @@ const CourseManagementPage: React.FC = () => {
   })
 
   const createMutation = useMutation({
-    mutationFn: (payload: CourseForm) => apiClient.post('/admin/courses', payload),
-    onSuccess: () => {
-      message.success(t('courseManagement.createSuccess'))
+    mutationFn: (payload: CourseForm) => {
+      const { lecturerId, ...rest } = payload
+      return apiClient.post('/admin/courses', { ...rest, ...(lecturerId ? { lecturerId } : {}) })
+    },
+    onSuccess: (res) => {
+      message.success(res.data?.message ?? t('courseManagement.createSuccess'))
       qc.invalidateQueries({ queryKey: ['admin', 'courses'] })
       closeModal()
     },
@@ -573,8 +577,8 @@ const CourseManagementPage: React.FC = () => {
             <label>{t('courseManagement.fieldLecturer')}</label>
             <AntSelect
               style={{ width: '100%' }}
-              value={(form as any).lecturerId || undefined}
-              onChange={val => setForm(f => ({ ...f, lecturerId: val }))}
+              value={form.lecturerId || undefined}
+              onChange={val => setForm(f => ({ ...f, lecturerId: val ?? '' }))}
               placeholder={t('courseManagement.selectLecturer')}
               allowClear
               showSearch
@@ -584,7 +588,7 @@ const CourseManagementPage: React.FC = () => {
               options={lecturers.map(l => ({ value: l.id, label: `${l.fullName} (${l.staffId})` }))}
             />
             <div style={{ fontSize: 12, color: '#8c8c8c', marginTop: 4 }}>
-              {t('courseManagement.lecturerNote')}
+              {t('courseManagement.lecturerNote', { defaultValue: 'Assigning a lecturer will create a course offering for the active semester.' })}
             </div>
           </div>
         </div>

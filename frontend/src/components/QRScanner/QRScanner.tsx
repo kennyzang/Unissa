@@ -1,10 +1,11 @@
 import { useState, useEffect, useRef } from 'react'
-import { Button, Alert, Card, Spin, Result, message, Upload } from 'antd'
+import { Button, Alert, Card, Result, message, Upload } from 'antd'
 import { ScanOutlined, UploadOutlined } from '@ant-design/icons'
 import { X as XIcon } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import apiClient from '@/lib/apiClient'
 import { useAuthStore } from '@/stores/authStore'
+import { Html5Qrcode } from 'html5-qrcode'
 import styles from './QRScanner.module.scss'
 
 interface AttendanceData {
@@ -16,126 +17,57 @@ interface AttendanceData {
 const QRScanner = () => {
   const { t } = useTranslation()
   const user = useAuthStore(s => s.user)
-  const videoRef = useRef<HTMLVideoElement>(null)
-  const canvasRef = useRef<HTMLCanvasElement>(null)
+  const scannerRef = useRef<HTMLDivElement>(null)
+  const html5QrcodeRef = useRef<Html5Qrcode | null>(null)
   const [scanning, setScanning] = useState(false)
-  const [cameraActive, setCameraActive] = useState(false)
   const [scanResult, setScanResult] = useState<AttendanceData | null>(null)
   const [error, setError] = useState<string | null>(null)
-  const [stream, setStream] = useState<MediaStream | null>(null)
-  const scanIntervalRef = useRef<NodeJS.Timeout | null>(null)
 
-  const startCamera = async () => {
+  const handleScan = (decodedText: string) => {
     try {
-      const constraints = {
-        video: { 
-          facingMode: 'environment', // 后置摄像头优先
-          width: { ideal: 1280 },
-          height: { ideal: 720 }
-        }
-      }
-
-      const mediaStream = await navigator.mediaDevices.getUserMedia(constraints)
-      setStream(mediaStream)
+      let attendanceData: AttendanceData
       
-      if (videoRef.current) {
-        videoRef.current.srcObject = mediaStream
-        videoRef.current.play()
-        setCameraActive(true)
-        startScanning()
-      }
-    } catch (err) {
-      console.error('Error accessing camera:', err)
-      if (err instanceof Error && err.name === 'NotAllowedError') {
-        setError(t('attendance.cameraPermissionDenied'))
-      } else {
-        setError(t('attendance.cameraError'))
-      }
-    }
-  }
-
-  const stopCamera = () => {
-    if (stream) {
-      stream.getTracks().forEach(track => track.stop())
-      setStream(null)
-    }
-    if (scanIntervalRef.current) {
-      clearInterval(scanIntervalRef.current)
-    }
-    setCameraActive(false)
-    setScanning(false)
-  }
-
-  const startScanning = () => {
-    setScanning(true)
-    
-    scanIntervalRef.current = setInterval(() => {
-      if (videoRef.current && canvasRef.current) {
-        const video = videoRef.current
-        const canvas = canvasRef.current
-        const context = canvas.getContext('2d')
-        
-        if (context) {
-          canvas.width = video.videoWidth
-          canvas.height = video.videoHeight
-          context.drawImage(video, 0, 0, canvas.width, canvas.height)
-          
-          const imageData = context.getImageData(0, 0, canvas.width, canvas.height)
-          
-          // 尝试识别二维码（简化版本）
-          const qrData = detectQRCode(imageData)
-          if (qrData) {
-            handleScan(qrData)
-            stopCamera()
-          }
+      // 尝试解析为JSON格式
+      try {
+        attendanceData = JSON.parse(decodedText)
+        console.log('QRScanner: Scanned JSON format:', attendanceData)
+      } catch (jsonError) {
+        // 如果解析失败，说明是字符串格式的token
+        console.log('QRScanner: Scanned string format, using as sessionId:', decodedText)
+        attendanceData = {
+          sessionId: decodedText,
+          courseCode: '',
+          timestamp: new Date().toISOString()
         }
       }
-    }, 300)
-  }
-
-  const detectQRCode = (imageData: ImageData): string | null => {
-    // 这里使用简化的二维码检测逻辑
-    // 在实际项目中，建议使用成熟的二维码识别库，如jsQR
-    const data = imageData.data
-    const width = imageData.width
-    const height = imageData.height
-    
-    // 简单的二维码检测逻辑（仅作为示例）
-    // 实际应用中应使用更专业的库
-    try {
-      // 模拟识别到二维码数据
-      if (Math.random() > 0.95) { // 模拟识别成功率
-        return JSON.stringify({
-          sessionId: "session-" + Date.now(),
-          courseCode: "CS101",
-          timestamp: new Date().toISOString()
-        })
-      }
-    } catch (e) {
-      // 静默处理识别失败
-    }
-    
-    return null
-  }
-
-  const handleScan = (qrData: string) => {
-    try {
-      const attendanceData: AttendanceData = JSON.parse(qrData)
+      
       setScanResult(attendanceData)
       setError(null)
       setScanning(false)
       
+      if (html5QrcodeRef.current) {
+        html5QrcodeRef.current.stop().catch(err => console.error('Error stopping scanner:', err))
+      }
+      
       // 调用后端验证扫码结果
       verifyScanResult(attendanceData)
     } catch (e) {
+      console.error('QRScanner: Error processing scan result:', e)
       setError(t('attendance.invalidQRCode'))
       setScanning(false)
+      if (html5QrcodeRef.current) {
+        html5QrcodeRef.current.stop().catch(err => console.error('Error stopping scanner:', err))
+      }
     }
   }
 
   const verifyScanResult = async (data: AttendanceData) => {
     try {
-      const response = await apiClient.post('/lms/attendance/verify-scan', data)
+      console.log('QRScanner: Verifying scan result with token:', data.sessionId)
+      const response = await apiClient.post('/lms/attendance/check-in', {
+        token: data.sessionId
+      })
+      console.log('QRScanner: Verification response:', response.data)
       if (response.data.success) {
         message.success(t('attendance.scanSuccess'))
       } else {
@@ -143,8 +75,90 @@ const QRScanner = () => {
       }
     } catch (err) {
       console.error('Scan verification error:', err)
-      setError(t('attendance.scanVerificationFailed'))
+      // 显示更具体的错误信息
+      if (err instanceof Error) {
+        setError(`Verification error: ${err.message}`)
+      } else {
+        setError(t('attendance.scanVerificationFailed'))
+      }
     }
+  }
+
+  const startCamera = async () => {
+    console.log('QRScanner: startCamera called')
+    
+    // 先设置scanning为true，确保DOM元素渲染
+    setScanning(true)
+    setError(null)
+    
+    // 等待DOM更新
+    await new Promise(resolve => setTimeout(resolve, 100))
+    
+    if (!scannerRef.current) {
+      console.error('QRScanner: scannerRef is null after waiting')
+      setError('Scanner element not found')
+      setScanning(false)
+      return
+    }
+    
+    console.log('QRScanner: scannerRef found, starting camera...')
+    
+    try {
+      // 尝试使用后置摄像头
+      console.log('QRScanner: Creating Html5Qrcode instance...')
+      html5QrcodeRef.current = new Html5Qrcode('qr-code-scanner')
+      
+      console.log('QRScanner: Starting camera with environment facing mode...')
+      await html5QrcodeRef.current.start(
+        {
+          facingMode: 'environment'
+        },
+        {
+          fps: 10,
+          qrbox: { width: 250, height: 250 }
+        },
+        (decodedText) => {
+          console.log('QRScanner: QR code detected:', decodedText)
+          handleScan(decodedText)
+        },
+        (errorMessage) => {
+          // 忽略扫描错误，只在连续错误时显示
+          console.log('Scan error:', errorMessage)
+        }
+      )
+      console.log('QRScanner: Camera started successfully!')
+    } catch (err) {
+      console.error('Error starting camera:', err)
+      setScanning(false)
+      if (err instanceof Error) {
+        console.error('Error details:', {
+          name: err.name,
+          message: err.message,
+          stack: err.stack
+        })
+        if (err.name === 'NotAllowedError') {
+          setError(t('attendance.cameraPermissionDenied'))
+        } else if (err.name === 'NotFoundError') {
+          setError('No camera found')
+        } else {
+          setError(`Camera error: ${err.message}`)
+        }
+      } else {
+        setError(t('attendance.cameraError'))
+      }
+    }
+  }
+
+  const stopCamera = async () => {
+    if (html5QrcodeRef.current) {
+      try {
+        await html5QrcodeRef.current.stop()
+      } catch (err) {
+        console.error('Error stopping scanner:', err)
+      }
+      html5QrcodeRef.current = null
+    }
+    setScanning(false)
   }
 
   const handleFileUpload = (file: File) => {
@@ -159,12 +173,19 @@ const QRScanner = () => {
 
   const resetScan = () => {
     stopCamera()
-    setScanning(false)
     setScanResult(null)
     setError(null)
+    // 重置后重新启动相机
+    setTimeout(() => {
+      startCamera()
+    }, 100)
   }
 
   useEffect(() => {
+    // 页面加载时自动启动相机
+    console.log('QRScanner: Component mounted, starting camera...')
+    startCamera()
+    
     return () => {
       stopCamera()
     }
@@ -184,17 +205,6 @@ const QRScanner = () => {
 
   return (
     <div className={styles.scannerContainer}>
-      {/* 隐藏的视频元素 */}
-      <video 
-        ref={videoRef} 
-        playsInline 
-        muted 
-        style={{ display: 'none' }}
-      />
-      
-      {/* 隐藏的canvas元素 */}
-      <canvas ref={canvasRef} style={{ display: 'none' }} />
-
       <Card className={styles.scannerCard}>
         <div className={styles.scannerHeader}>
           <ScanOutlined className={styles.scannerIcon} />
@@ -203,21 +213,24 @@ const QRScanner = () => {
         </div>
 
         {/* 相机预览区域 */}
-        {cameraActive && (
+        {scanning && (
           <div className={styles.cameraPreview}>
-            <div className={styles.cameraOverlay}>
-              <div className={styles.cameraFrame}>
-                <div className={`${styles.cameraCorner} ${styles.topLeft}`}></div>
-                <div className={`${styles.cameraCorner} ${styles.topRight}`}></div>
-                <div className={`${styles.cameraCorner} ${styles.bottomLeft}`}></div>
-                <div className={`${styles.cameraCorner} ${styles.bottomRight}`}></div>
-              </div>
-              <div className={styles.cameraHint}>{t('attendance.alignQRCode')}</div>
+            <div
+              id="qr-code-scanner"
+              ref={scannerRef}
+              className={styles.scannerElement}
+            />
+            <div className={styles.cameraFrame}>
+              <div className={`${styles.cameraCorner} ${styles.topLeft}`}></div>
+              <div className={`${styles.cameraCorner} ${styles.topRight}`}></div>
+              <div className={`${styles.cameraCorner} ${styles.bottomLeft}`}></div>
+              <div className={`${styles.cameraCorner} ${styles.bottomRight}`}></div>
             </div>
+            <div className={styles.cameraHint}>{t('attendance.alignQRCode')}</div>
           </div>
         )}
 
-        {!cameraActive && (
+        {!scanning && !scanResult && !error && (
           <div className={styles.scannerPlaceholder}>
             <ScanOutlined className={styles.placeholderIcon} />
             <p>{t('attendance.cameraPlaceholder')}</p>
@@ -226,22 +239,7 @@ const QRScanner = () => {
 
         {/* 控制按钮 */}
         <div className={styles.scannerActions}>
-          {!cameraActive && !scanResult && (
-            <div className={styles.actionButtons}>
-              <Button
-                type="primary"
-                size="large"
-                icon={<ScanOutlined />}
-                onClick={startCamera}
-                loading={scanning}
-                className={styles.startCameraBtn}
-              >
-                {t('attendance.startCamera')}
-              </Button>
-            </div>
-          )}
-
-          {cameraActive && (
+          {scanning && (
             <div className={styles.cameraControls}>
               <Button
                 type="primary"

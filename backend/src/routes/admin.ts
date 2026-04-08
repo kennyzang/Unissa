@@ -183,9 +183,10 @@ router.get('/courses', requireRole('admin', 'manager'), async (_req: AuthRequest
 
 // POST /admin/courses — create course (admin only)
 router.post('/courses', requireRole('admin'), async (req: AuthRequest, res: Response) => {
-  const { code, name, departmentId, creditHours, level, isOpenToInternational, maxSeats } = req.body as {
+  const { code, name, departmentId, creditHours, level, isOpenToInternational, maxSeats, lecturerId } = req.body as {
     code: string; name: string; departmentId: string
     creditHours?: number; level?: number; isOpenToInternational?: boolean; maxSeats?: number
+    lecturerId?: string
   }
 
   if (!code || !name || !departmentId) {
@@ -211,7 +212,50 @@ router.post('/courses', requireRole('admin'), async (req: AuthRequest, res: Resp
       status:                 'published',
     },
   })
-  res.status(201).json({ success: true, data: course, message: 'Course created' })
+
+  // If a lecturer is assigned, create a CourseOffering in the active semester
+  if (lecturerId) {
+    try {
+      const activeSemester = await prisma.semester.findFirst({ where: { isActive: true } })
+      if (activeSemester) {
+        await prisma.courseOffering.create({
+          data: {
+            courseId:     course.id,
+            semesterId:   activeSemester.id,
+            lecturerId,
+            departmentId,
+            dayOfWeek:    'Monday',
+            startTime:    '08:00',
+            endTime:      '10:00',
+            room:         'TBD',
+          },
+        })
+
+        // Notify the assigned lecturer
+        const lecturer = await prisma.staff.findUnique({
+          where: { id: lecturerId },
+          select: { userId: true, fullName: true },
+        })
+        if (lecturer?.userId) {
+          await prisma.notification.create({
+            data: {
+              userId:            lecturer.userId,
+              type:              'course_assigned',
+              subject:           `New course assigned: ${code} – ${name}`,
+              body:              `You have been assigned to teach ${code} – ${name} for ${activeSemester.name}. Please log in to the LMS to review the course details and set up your materials.`,
+              status:            'pending',
+              triggeredByEvent:  'course_offering_created',
+            },
+          })
+        }
+      }
+    } catch (err) {
+      console.error('[admin/courses] Failed to create offering or notification:', err)
+      // Course was created successfully; offering failure is non-fatal
+    }
+  }
+
+  res.status(201).json({ success: true, data: course, message: lecturerId ? 'Course created and lecturer assigned' : 'Course created' })
 })
 
 // PUT /admin/courses/:id — update course (admin/manager)

@@ -3,107 +3,120 @@
   justify-content: center;
   align-items: center;
   min-height: 100vh;
-  padding: 20px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  padding: 16px;
+  background: #000;
 }
 
 .scannerCard {
   width: 100%;
-  max-width: 400px;
-  border-radius: 16px;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+  max-width: 480px;
+  border-radius: 12px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
   overflow: hidden;
+  background: #000;
 }
 
 .scannerHeader {
   text-align: center;
-  padding: 24px 20px;
-  border-bottom: 1px solid #f0f0f0;
+  padding: 16px;
+  background: #000;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .scannerIcon {
-  font-size: 48px;
-  color: #667eea;
-  margin-bottom: 16px;
+  font-size: 32px;
+  color: #fff;
+  margin-bottom: 8px;
 }
 
 .scannerTitle {
-  font-size: 24px;
+  font-size: 18px;
   font-weight: 600;
-  color: #1a1a1a;
-  margin: 0 0 12px 0;
+  color: #fff;
+  margin: 0 0 4px 0;
 }
 
 .scannerSubtitle {
-  font-size: 14px;
-  color: #666;
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.7);
   margin: 0;
-  line-height: 1.5;
+  line-height: 1.4;
 }
 
 .cameraPreview {
   position: relative;
-  height: 300px;
+  height: 500px;
   background: #000;
   display: flex;
   justify-content: center;
   align-items: center;
+  overflow: hidden;
 }
 
-.cameraOverlay {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  background: rgba(0, 0, 0, 0.3);
-}
-
-.cameraFrame {
+.scannerElement {
+  width: 100%;
+  height: 100%;
   position: relative;
-  width: 250px;
-  height: 250px;
+}
+
+.scannerElement video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transform: scale(1.2); /* 放大相机画面，增加扫描距离 */
+}
+
+/* 保留原有的相机框架样式，作为扫描框的视觉提示 */
+.cameraFrame {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 280px;
+  height: 280px;
   border: 2px solid #fff;
-  border-radius: 12px;
+  border-radius: 16px;
+  pointer-events: none;
+  z-index: 10;
 }
 
 .cameraCorner {
   position: absolute;
-  width: 20px;
-  height: 20px;
+  width: 24px;
+  height: 24px;
   border: 3px solid #fff;
+  pointer-events: none;
+  z-index: 10;
+  background: rgba(0, 0, 0, 0.3);
 }
 
 .topLeft {
-  top: -3px;
-  left: -3px;
+  top: calc(50% - 140px);
+  left: calc(50% - 140px);
   border-right: none;
   border-bottom: none;
   border-top-left-radius: 8px;
 }
 
 .topRight {
-  top: -3px;
-  right: -3px;
+  top: calc(50% - 140px);
+  right: calc(50% - 140px);
   border-left: none;
   border-bottom: none;
   border-top-right-radius: 8px;
 }
 
 .bottomLeft {
-  bottom: -3px;
-  left: -3px;
+  bottom: calc(50% - 140px);
+  left: calc(50% - 140px);
   border-right: none;
   border-top: none;
   border-bottom-left-radius: 8px;
 }
 
 .bottomRight {
-  bottom: -3px;
-  right: -3px;
+  bottom: calc(50% - 140px);
+  right: calc(50% - 140px);
   border-left: none;
   border-top: none;
   border-bottom-right-radius: 8px;
@@ -111,53 +124,60 @@
 
 .cameraHint {
   position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
+  bottom: 30px;
+  left: 0;
+  right: 0;
+  text-align: center;
   color: #fff;
   font-size: 14px;
-  text-align: center;
-  background: rgba(0, 0, 0, 0.7);
+  font-weight: 500;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
+  pointer-events: none;
+  z-index: 10;
+  background: rgba(0, 0, 0, 0.5);
   padding: 8px 16px;
   border-radius: 20px;
+  margin: 0 20px;
 }
 
 .scannerPlaceholder {
-  height: 200px;
+  height: 400px;
   display: flex;
   flex-direction: column;
   justify-content: center;
   align-items: center;
-  background: #f8f9fa;
+  background: #000;
   border-radius: 8px;
 }
 
 .placeholderIcon {
-  font-size: 64px;
-  color: #d3d3d3;
-  margin-bottom: 16px;
+  font-size: 48px;
+  color: rgba(255, 255, 255, 0.5);
+  margin-bottom: 12px;
 }
 
 .scannerPlaceholder p {
-  color: #666;
+  color: rgba(255, 255, 255, 0.7);
   margin: 0;
   font-size: 14px;
 }
 
 .scannerActions {
-  padding: 24px 20px;
+  padding: 16px;
+  background: #000;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .actionButtons {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 8px;
 }
 
 .startCameraBtn {
   width: 100%;
-  height: 48px;
-  font-size: 16px;
+  height: 44px;
+  font-size: 14px;
   font-weight: 600;
   border-radius: 12px;
 }
@@ -169,46 +189,53 @@
 
 .stopCameraBtn {
   width: 120px;
-  height: 48px;
-  font-size: 16px;
+  height: 44px;
+  font-size: 14px;
   border-radius: 12px;
 }
 
 .resultSection {
-  padding: 0 20px 24px;
+  padding: 0 16px 16px;
+  background: #000;
 }
 
 .errorAlert {
-  margin: 0 20px 20px;
+  margin: 0 16px 16px;
+  background: rgba(255, 0, 0, 0.1);
+  border: 1px solid rgba(255, 0, 0, 0.3);
 }
 
 .fallbackUpload {
-  padding: 0 20px 20px;
+  padding: 0 16px 16px;
   text-align: center;
+  background: #000;
 }
 
 .fallbackUploadBtn {
-  margin-bottom: 12px;
+  margin-bottom: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: #fff;
 }
 
 .fallbackNote {
   font-size: 12px;
-  color: #999;
+  color: rgba(255, 255, 255, 0.5);
   margin: 0;
   line-height: 1.4;
 }
 
 .scanDetails {
-  padding: 0 20px 20px;
-  background: #f9f9f9;
+  padding: 0 16px 16px;
+  background: rgba(255, 255, 255, 0.05);
   border-radius: 8px;
+  margin: 0 16px;
 }
 
 .detailItem {
   display: flex;
   justify-content: space-between;
-  padding: 12px 0;
-  border-bottom: 1px solid #e8e8e8;
+  padding: 8px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .detailItem:last-child {
@@ -217,47 +244,72 @@
 
 .detailLabel {
   font-weight: 600;
-  color: #333;
-  font-size: 14px;
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 12px;
 }
 
 .detailValue {
-  color: #666;
+  color: rgba(255, 255, 255, 0.6);
   font-family: 'Courier New', monospace;
-  font-size: 14px;
+  font-size: 12px;
+  word-break: break-all;
 }
 
 /* 移动端适配 */
 @media (max-width: 480px) {
   .scannerContainer {
-    padding: 16px;
+    padding: 8px;
   }
   
   .scannerCard {
     max-width: 100%;
-    border-radius: 12px;
+    border-radius: 8px;
   }
   
   .scannerHeader {
-    padding: 20px 16px;
+    padding: 12px 16px;
   }
   
   .scannerTitle {
-    font-size: 20px;
+    font-size: 16px;
+  }
+  
+  .cameraPreview {
+    height: 450px;
   }
   
   .cameraFrame {
-    width: 200px;
-    height: 200px;
+    width: 250px;
+    height: 250px;
   }
   
   .cameraCorner {
-    width: 16px;
-    height: 16px;
+    width: 20px;
+    height: 20px;
   }
   
   .scannerActions {
-    padding: 20px 16px;
+    padding: 12px 16px;
+  }
+  
+  .topLeft {
+    top: calc(50% - 125px);
+    left: calc(50% - 125px);
+  }
+  
+  .topRight {
+    top: calc(50% - 125px);
+    right: calc(50% - 125px);
+  }
+  
+  .bottomLeft {
+    bottom: calc(50% - 125px);
+    left: calc(50% - 125px);
+  }
+  
+  .bottomRight {
+    bottom: calc(50% - 125px);
+    right: calc(50% - 125px);
   }
 }
 

@@ -99,14 +99,15 @@ const LecturerCoursesView: React.FC = () => {
       departmentId: proposeForm.departmentId,
       creditHours:  Number(proposeForm.creditHours),
     }),
-    onSuccess: () => {
-      addToast({ type: 'success', message: t('lmsCourses.proposeSuccess', { defaultValue: 'Course proposal submitted for admin approval' }) })
+    onSuccess: (res) => {
+      const courseName = res.data?.data?.name ?? proposeForm.name
+      addToast({ type: 'success', message: `Course proposal "${courseName}" submitted — pending admin approval.` })
       setProposeModal(false)
       setProposeForm({ code: '', name: '', departmentId: '', creditHours: '3' })
       setProposeError('')
     },
     onError: (e: any) => {
-      setProposeError(e.response?.data?.message ?? t('lmsCourses.proposeFailed', { defaultValue: 'Failed to submit proposal' }))
+      setProposeError(e.response?.data?.message ?? t('lmsCourses.proposeFailed', { defaultValue: 'Failed to submit proposal. Please try again.' }))
     },
   })
 
@@ -131,7 +132,73 @@ const LecturerCoursesView: React.FC = () => {
           <BookOpen size={40} />
           <h3>{t('lmsCourses.noCoursesLecturer', { defaultValue: 'No courses assigned' })}</h3>
           <p>{t('lmsCourses.noCoursesLecturerNote', { defaultValue: 'You have no course offerings assigned for this semester.' })}</p>
+          <Button icon={<Plus size={14} />} onClick={() => setProposeModal(true)} style={{ marginTop: 16 }}>
+            {t('lmsCourses.proposeCourse', { defaultValue: 'Propose New Course' })}
+          </Button>
         </div>
+
+        {/* Propose Course Modal — also needed from empty state */}
+        <Modal
+          open={proposeModal}
+          title={t('lmsCourses.proposeCourseTitle', { defaultValue: 'Propose a New Course' })}
+          onClose={() => { setProposeModal(false); setProposeError('') }}
+          footer={null}
+        >
+          <p style={{ fontSize: 13, color: '#666', marginBottom: 16 }}>
+            {t('lmsCourses.proposeCourseNote', { defaultValue: 'Your proposal will be submitted to the admin for review. Once approved, the course will appear in the course catalogue.' })}
+          </p>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+            <Input
+              label={t('courseManagement.fieldCode')}
+              required
+              value={proposeForm.code}
+              onChange={e => setProposeForm(f => ({ ...f, code: (e.target as HTMLInputElement).value.toUpperCase() }))}
+              hint="Uppercase letters, digits and hyphens only (e.g. IFN401)"
+            />
+            <Input
+              label={t('courseManagement.fieldName')}
+              required
+              value={proposeForm.name}
+              onChange={e => setProposeForm(f => ({ ...f, name: (e.target as HTMLInputElement).value }))}
+            />
+            <div>
+              <label style={{ fontSize: 13, fontWeight: 500 }}>{t('courseManagement.fieldDepartment')} *</label>
+              <Select
+                style={{ width: '100%', marginTop: 4 }}
+                value={proposeForm.departmentId}
+                onChange={value => setProposeForm(f => ({ ...f, departmentId: value }))}
+              >
+                <Option value="">{t('courseManagement.selectDepartment')}</Option>
+                {departments.map(d => <Option key={d.id} value={d.id}>{d.name}</Option>)}
+              </Select>
+            </div>
+            <Input
+              label={t('courseManagement.fieldCredits')}
+              type="number"
+              value={proposeForm.creditHours}
+              onChange={e => setProposeForm(f => ({ ...f, creditHours: (e.target as HTMLInputElement).value }))}
+            />
+            {proposeError && <p style={{ color: '#ef4444', fontSize: 13, margin: 0 }}>{proposeError}</p>}
+            <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', marginTop: 8 }}>
+              <Button variant="secondary" type="button" onClick={() => { setProposeModal(false); setProposeError('') }}>
+                {t('common.cancel')}
+              </Button>
+              <Button
+                type="button"
+                loading={proposeMutation.isPending}
+                onClick={() => {
+                  if (!proposeForm.code || !proposeForm.name || !proposeForm.departmentId) {
+                    setProposeError('Code, name and department are required')
+                    return
+                  }
+                  proposeMutation.mutate()
+                }}
+              >
+                {t('lmsCourses.submitProposal', { defaultValue: 'Submit Proposal' })}
+              </Button>
+            </div>
+          </div>
+        </Modal>
       </div>
     )
   }

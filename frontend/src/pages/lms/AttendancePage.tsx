@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import {
-  QrCode, Users, CheckCircle, Clock, BookOpen, ChevronDown,
+  Scan, Users, CheckCircle, Clock, BookOpen, ChevronDown,
   ChevronUp, RefreshCw, X, UserCheck, AlertTriangle, Calendar,
   Copy, Check, FileText, Upload as UploadIcon, Eye,
 } from 'lucide-react'
@@ -256,10 +256,32 @@ const CreateSessionModal: React.FC<{
             onClick={handleCreate}
             disabled={creating || !name.trim()}
           >
-            <QrCode size={14} />
+            <Scan size={14} />
             {creating ? t('attendance.starting') : t('attendance.createSession')}
           </button>
         </div>
+      </div>
+    </Modal>
+  )
+}
+
+// ─── QR Code Modal ───────────────────────────────────────────────────────────
+const QRCodeModal: React.FC<{
+  token: string
+  onClose: () => void
+}> = ({ token, onClose }) => {
+  return (
+    <Modal
+      open
+      title="QR Code"
+      onClose={onClose}
+      footer={null}
+      width={320}
+      className={styles.qrModal}
+    >
+      <div style={{ textAlign: 'center', padding: '20px' }}>
+        <QRCode value={token} size={250} />
+        <p style={{ marginTop: '16px', color: '#666' }}>Tap to close</p>
       </div>
     </Modal>
   )
@@ -272,6 +294,7 @@ const SessionDetailsModal: React.FC<{
 }> = ({ session, onClose }) => {
   const { t } = useTranslation()
   const [copied, setCopied] = useState(false)
+  const [showQRModal, setShowQRModal] = useState(false)
   const token = session.qrData ?? session.sessionToken
   const expired = new Date(session.qrExpiresAt) < new Date()
   const presentCount = session.records?.filter(r => r.status === 'present').length ?? 0
@@ -286,50 +309,56 @@ const SessionDetailsModal: React.FC<{
   }
 
   return (
-    <Modal
-      open
-      title={session.name ?? t('attendance.sessionDetails')}
-      onClose={onClose}
-      footer={null}
-      width={580}
-    >
-      <div className={styles.detailsModal}>
-        <div className={styles.detailsMeta}>
-          <span className={styles.detailsDate}>
-            <Calendar size={13} /> {fmtDate(session.startedAt)} · {fmtTime(session.startedAt)}
-            {session.endedAt ? ` – ${fmtTime(session.endedAt)}` : ''}
-          </span>
-          <Badge color={session.endedAt ? 'gray' : expired ? 'orange' : 'green'} size="sm">
-            {session.endedAt
-              ? t('attendance.closed')
-              : expired
-              ? t('attendance.expired')
-              : t('attendance.open')}
-          </Badge>
-        </div>
-
-        {session.description && (
-          <p className={styles.detailsDesc}>{session.description}</p>
-        )}
-
-        <div className={styles.detailsQrRow}>
-          <div className={styles.qrWrapper}>
-            {expired || session.endedAt
-              ? (
-                <div className={styles.qrExpired}>
-                  <Clock size={28} />
-                  <span>{t('attendance.qrExpired')}</span>
-                </div>
-              )
-              : <QRCode value={token} size={160} />
-            }
-            <p className={styles.qrHint}>{t('attendance.qrHint')}</p>
+    <div>
+      <Modal
+        open
+        title={session.name ?? t('attendance.sessionDetails')}
+        onClose={onClose}
+        footer={null}
+        width={580}
+      >
+        <div className={styles.detailsModal}>
+          <div className={styles.detailsMeta}>
+            <span className={styles.detailsDate}>
+              <Calendar size={13} /> {fmtDate(session.startedAt)} · {fmtTime(session.startedAt)}
+              {session.endedAt ? ` – ${fmtTime(session.endedAt)}` : ''}
+            </span>
+            <Badge color={session.endedAt ? 'gray' : expired ? 'orange' : 'green'} size="sm">
+              {session.endedAt
+                ? t('attendance.closed')
+                : expired
+                ? t('attendance.expired')
+                : t('attendance.open')}
+            </Badge>
           </div>
+
+          {session.description && (
+            <p className={styles.detailsDesc}>{session.description}</p>
+          )}
+
+          <div className={styles.detailsQrRow}>
+            <div className={styles.qrWrapper}>
+              {expired || session.endedAt
+                ? (
+                  <div className={styles.qrExpired}>
+                    <Clock size={28} />
+                    <span>{t('attendance.qrExpired')}</span>
+                  </div>
+                )
+                : (
+                  <div style={{ cursor: 'pointer' }} onClick={() => setShowQRModal(true)}>
+                    <QRCode value={token} size={160} />
+                    <p style={{ marginTop: '8px', fontSize: '12px', color: '#1677ff', textAlign: 'center' }}>Tap to enlarge</p>
+                  </div>
+                )
+              }
+              <p className={styles.qrHint}>{t('attendance.qrHint')}</p>
+            </div>
 
           <div className={styles.detailsRight}>
             <div className={styles.tokenSection}>
               <div className={styles.tokenLabel}>
-                <QrCode size={13} /> {t('attendance.sessionToken')}
+                <Scan size={13} /> {t('attendance.sessionToken')}
               </div>
               <div className={styles.tokenBox}>
                 <span className={styles.tokenText}>{token}</span>
@@ -370,6 +399,10 @@ const SessionDetailsModal: React.FC<{
         )}
       </div>
     </Modal>
+      {showQRModal && (
+        <QRCodeModal token={token} onClose={() => setShowQRModal(false)} />
+      )}
+    </div>
   )
 }
 
@@ -382,6 +415,7 @@ const ActiveSessionPanel: React.FC<{
   const queryClient = useQueryClient()
   const [liveCount, setLiveCount] = useState(session.records?.length ?? 0)
   const [copied, setCopied] = useState(false)
+  const [showQRModal, setShowQRModal] = useState(false)
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const expired = new Date(session.qrExpiresAt) < new Date()
   const token = session.qrData ?? session.sessionToken
@@ -417,84 +451,94 @@ const ActiveSessionPanel: React.FC<{
   }
 
   return (
-    <div className={styles.activePanel}>
-      <div className={styles.activePanelHeader}>
-        <div>
-          <h3 className={styles.activePanelTitle}>
-            {session.name ?? t('attendance.activeSession')}
-          </h3>
-          <span className={styles.activePanelSub}>
-            {t('attendance.started')}: {fmtTime(session.startedAt)} &nbsp;·&nbsp;
+    <div>
+      <div className={styles.activePanel}>
+        <div className={styles.activePanelHeader}>
+          <div>
+            <h3 className={styles.activePanelTitle}>
+              {session.name ?? t('attendance.activeSession')}
+            </h3>
+            <span className={styles.activePanelSub}>
+              {t('attendance.started')}: {fmtTime(session.startedAt)} &nbsp;·&nbsp;
+              {expired
+                ? <span className={styles.expiredText}>{t('attendance.expired')}</span>
+                : <span className={styles.activeText}>{t('attendance.expiresAt')} {fmtTime(session.qrExpiresAt)}</span>
+              }
+            </span>
+            {session.description && (
+              <p className={styles.activePanelDesc}>{session.description}</p>
+            )}
+          </div>
+          <button
+            className={styles.closeSessionBtn}
+            onClick={() => closeMutation.mutate()}
+            disabled={closeMutation.isPending}
+          >
+            <X size={14} /> {t('attendance.closeSession')}
+          </button>
+        </div>
+
+        <div className={styles.activePanelBody}>
+          <div className={styles.qrWrapper}>
             {expired
-              ? <span className={styles.expiredText}>{t('attendance.expired')}</span>
-              : <span className={styles.activeText}>{t('attendance.expiresAt')} {fmtTime(session.qrExpiresAt)}</span>
+              ? <div className={styles.qrExpired}><Clock size={32} /><span>{t('attendance.qrExpired')}</span></div>
+              : (
+                <div style={{ cursor: 'pointer' }} onClick={() => setShowQRModal(true)}>
+                  <QRCode value={token} size={180} />
+                  <p style={{ marginTop: '8px', fontSize: '12px', color: '#1677ff', textAlign: 'center' }}>Tap to enlarge</p>
+                </div>
+              )
             }
-          </span>
-          {session.description && (
-            <p className={styles.activePanelDesc}>{session.description}</p>
-          )}
-        </div>
-        <button
-          className={styles.closeSessionBtn}
-          onClick={() => closeMutation.mutate()}
-          disabled={closeMutation.isPending}
-        >
-          <X size={14} /> {t('attendance.closeSession')}
-        </button>
-      </div>
-
-      <div className={styles.activePanelBody}>
-        <div className={styles.qrWrapper}>
-          {expired
-            ? <div className={styles.qrExpired}><Clock size={32} /><span>{t('attendance.qrExpired')}</span></div>
-            : <QRCode value={token} size={180} />
-          }
-          <p className={styles.qrHint}>{t('attendance.qrHint')}</p>
-        </div>
-
-        <div className={styles.tokenSection}>
-          <div className={styles.tokenLabel}>
-            <QrCode size={14} />
-            {t('attendance.sessionToken')}
+            <p className={styles.qrHint}>{t('attendance.qrHint')}</p>
           </div>
-          <div className={styles.tokenBox}>
-            <span className={styles.tokenText}>{token}</span>
-            <button
-              className={`${styles.copyBtn} ${copied ? styles.copyBtnDone : ''}`}
-              onClick={handleCopy}
-              title={t('attendance.copyToken')}
-            >
-              {copied ? <Check size={14} /> : <Copy size={14} />}
-              {copied ? t('attendance.copied') : t('attendance.copyToken')}
-            </button>
-          </div>
-          <p className={styles.tokenNote}>{t('attendance.tokenNote')}</p>
-        </div>
 
-        <div className={styles.liveStats}>
-          <div className={styles.liveCount}>
-            <UserCheck size={28} />
-            <span className={styles.liveCountNum}>{liveCount}</span>
-            <span className={styles.liveCountLabel}>{t('attendance.present')}</span>
-          </div>
-          {!expired && !session.endedAt && (
-            <div className={styles.liveIndicator}>
-              <span className={styles.liveDot} />
-              {t('attendance.liveUpdating')}
+          <div className={styles.tokenSection}>
+            <div className={styles.tokenLabel}>
+              <Scan size={14} />
+              {t('attendance.sessionToken')}
             </div>
-          )}
-        </div>
-      </div>
+            <div className={styles.tokenBox}>
+              <span className={styles.tokenText}>{token}</span>
+              <button
+                className={`${styles.copyBtn} ${copied ? styles.copyBtnDone : ''}`}
+                onClick={handleCopy}
+                title={t('attendance.copyToken')}
+              >
+                {copied ? <Check size={14} /> : <Copy size={14} />}
+                {copied ? t('attendance.copied') : t('attendance.copyToken')}
+              </button>
+            </div>
+            <p className={styles.tokenNote}>{t('attendance.tokenNote')}</p>
+          </div>
 
-      {session.materials && session.materials.length > 0 && (
-        <div className={styles.activePanelMaterials}>
-          <span className={styles.materialsInlineLabel}>
-            <FileText size={13} /> {t('attendance.materialsSection')}:
-          </span>
-          {session.materials.map((m, i) => (
-            <span key={i} className={styles.materialChip}>{m.filename}</span>
-          ))}
+          <div className={styles.liveStats}>
+            <div className={styles.liveCount}>
+              <UserCheck size={28} />
+              <span className={styles.liveCountNum}>{liveCount}</span>
+              <span className={styles.liveCountLabel}>{t('attendance.present')}</span>
+            </div>
+            {!expired && !session.endedAt && (
+              <div className={styles.liveIndicator}>
+                <span className={styles.liveDot} />
+                {t('attendance.liveUpdating')}
+              </div>
+            )}
+          </div>
         </div>
+
+        {session.materials && session.materials.length > 0 && (
+          <div className={styles.activePanelMaterials}>
+            <span className={styles.materialsInlineLabel}>
+              <FileText size={13} /> {t('attendance.materialsSection')}:
+            </span>
+            {session.materials.map((m, i) => (
+              <span key={i} className={styles.materialChip}>{m.filename}</span>
+            ))}
+          </div>
+        )}
+      </div>
+      {showQRModal && (
+        <QRCodeModal token={token} onClose={() => setShowQRModal(false)} />
       )}
     </div>
   )
@@ -593,7 +637,7 @@ const LecturerView: React.FC<{ lecturerId: string }> = ({ lecturerId }) => {
                     className={styles.startBtn}
                     onClick={() => setCreateModalOfferingId(off.id)}
                   >
-                    <QrCode size={14} />
+                    <Scan size={14} />
                     {t('attendance.startNewSession')}
                   </button>
                   <button
@@ -698,7 +742,7 @@ const StudentView: React.FC<{ studentId: string }> = ({ studentId }) => {
       {/* Manual token check-in */}
       <div className={styles.checkinCard}>
         <h3 className={styles.checkinTitle}>
-          <QrCode size={18} /> {t('attendance.manualCheckin')}
+          <Scan size={18} /> {t('attendance.manualCheckin')}
         </h3>
         <p className={styles.checkinHint}>{t('attendance.manualCheckinHint')}</p>
         <div className={styles.checkinRow}>
