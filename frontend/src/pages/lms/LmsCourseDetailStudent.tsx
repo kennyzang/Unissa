@@ -898,16 +898,19 @@ const LmsCourseDetailStudent: React.FC = () => {
           okText={aiLoading ? t('lmsCourseDetail.aiGrading', { defaultValue: 'AI grading…' }) : t('lmsCourseDetail.submitAssignment', { defaultValue: 'Submit Assignment' })}
           onOk={() => {
             const questions = parseAssignmentQuestions(submitModal)
-            const unanswered = questions.filter((_: any, qi: number) => {
-              const ans = questionAnswers[qi]
-              if (ans === undefined || ans === null) return true
-              if (typeof ans === 'string') return ans.trim() === ''
-              if (Array.isArray(ans)) return ans.length === 0
-              return true
-            })
-            if (unanswered.length > 0) {
-              addToast({ type: 'error', message: `Please answer all ${unanswered.length} required question(s) before submitting.` })
-              return
+            // Skip question validation if the student has uploaded files (file IS the answer)
+            if (submissionFiles.length === 0) {
+              const unanswered = questions.filter((_: any, qi: number) => {
+                const ans = questionAnswers[qi]
+                if (ans === undefined || ans === null) return true
+                if (typeof ans === 'string') return ans.trim() === ''
+                if (Array.isArray(ans)) return ans.length === 0
+                return true
+              })
+              if (unanswered.length > 0) {
+                addToast({ type: 'error', message: `Please answer all ${unanswered.length} required question(s) before submitting.` })
+                return
+              }
             }
             const answersArray = questions.map((_: any, qi: number) => ({
               questionIndex: qi,

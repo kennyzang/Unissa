@@ -93,8 +93,9 @@ export async function generateOfferLetterPDF(data: OfferLetterData): Promise<Buf
     ]
 
     dates.forEach(([label, value]) => {
-      doc.font('Helvetica-Bold').text(`${label}:`, 70, doc.y, { continued: true, width: 120 })
-      doc.font('Helvetica').text(` ${value}`, { width: 380 })
+      const rowY = doc.y
+      doc.font('Helvetica-Bold').text(`${label}:`, 70, rowY, { width: 155, lineBreak: false })
+      doc.font('Helvetica').text(`${value}`, 230, rowY, { width: 275 })
     })
 
     doc.moveDown(1)
@@ -122,6 +123,13 @@ export async function generateOfferLetterPDF(data: OfferLetterData): Promise<Buf
 
     doc.font('Helvetica-Bold').text('We look forward to welcoming you to UNISSA!')
     doc.moveDown(2)
+
+    // Ensure the signature block + footer lines fit on the same page (~140pt needed)
+    const footerEstimatedHeight = 140
+    const availableSpace = doc.page.height - doc.page.margins.bottom - doc.y
+    if (availableSpace < footerEstimatedHeight) {
+      doc.addPage()
+    }
 
     doc.font('Helvetica-Bold').text('Yours sincerely,')
     doc.moveDown(1.5)

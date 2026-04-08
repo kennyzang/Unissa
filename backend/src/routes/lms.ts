@@ -1051,6 +1051,16 @@ router.get('/attendance/sessions/:sessionId', async (req: AuthRequest, res: Resp
   res.json({ success: true, data: { ...session, qrData: session.sessionToken } })
 })
 
+// GET /api/v1/lms/attendance/active-sessions  — All currently open sessions (for students to detect check-in availability)
+router.get('/attendance/active-sessions', async (_req: AuthRequest, res: Response) => {
+  const sessions = await prisma.attendanceSession.findMany({
+    where: { endedAt: null, qrExpiresAt: { gte: new Date() } },
+    select: { id: true, offeringId: true, sessionToken: true, qrExpiresAt: true, startedAt: true, name: true },
+    orderBy: { startedAt: 'desc' },
+  })
+  res.json({ success: true, data: sessions })
+})
+
 // GET /api/v1/attendance/sessions/lecturer/:lecturerId/active  — Fetch active session for lecturer
 router.get('/attendance/sessions/lecturer/:lecturerId/active', async (req: AuthRequest, res: Response) => {
   const lecturerId = String(req.params.lecturerId)

@@ -411,6 +411,7 @@ model Submission {
   assignmentId     String
   studentId        String
   assetId          String?    @unique
+  content          String?
   answers          String?
   submittedAt      DateTime   @default(now())
   aiRubricScores   String?

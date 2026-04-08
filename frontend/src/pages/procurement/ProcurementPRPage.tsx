@@ -99,6 +99,21 @@ const ProcurementPRPage: React.FC = () => {
     },
   })
 
+  const generatePOMutation = useMutation({
+    mutationFn: async (prId: string) => {
+      const { data } = await apiClient.patch(`/procurement/pr/${prId}/generate-po`)
+      return data
+    },
+    onSuccess: (data) => {
+      addToast({ type: 'success', message: data.message })
+      qc.invalidateQueries({ queryKey: ['procurement', 'pr'] })
+      setViewPR(null)
+    },
+    onError: (e: any) => {
+      addToast({ type: 'error', message: e.response?.data?.message ?? 'Failed to generate PO' })
+    },
+  })
+
   const { data: glCodes = [] } = useQuery<GlCode[]>({
     queryKey: ['finance', 'gl-codes'],
     queryFn: async () => {
@@ -384,7 +399,20 @@ const ProcurementPRPage: React.FC = () => {
           open
           title={`PR: ${viewPR.prNumber}`}
           onClose={() => setViewPR(null)}
-          footer={<Button onClick={() => setViewPR(null)}>{t('common.close')}</Button>}
+          footer={
+            <div className={styles.modalFooter}>
+              {user?.role === 'admin' && viewPR.status === 'finance_approved' && (
+                <Button 
+                  variant="secondary" 
+                  onClick={() => generatePOMutation.mutate(viewPR.id)}
+                  loading={generatePOMutation.isPending}
+                >
+                  Generate PO
+                </Button>
+              )}
+              <Button onClick={() => setViewPR(null)}>{t('common.close')}</Button>
+            </div>
+          }
         >
           <div className={styles.prDetail}>
             <div className={styles.prDetailGrid}>

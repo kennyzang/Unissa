@@ -3,6 +3,7 @@ import { useMutation } from '@tanstack/react-query'
 import { Input } from 'antd'
 import { Send, Bot, User, Sparkles, RefreshCw } from 'lucide-react'
 import { apiClient } from '@/lib/apiClient'
+import { useAuthStore } from '@/stores/authStore'
 import styles from './ChatbotPage.module.scss'
 
 interface Message {
@@ -12,14 +13,50 @@ interface Message {
   timestamp: Date
 }
 
-const QUICK_PROMPTS = [
-  'When is the course registration deadline?',
-  'What is my current fee invoice?',
-  'Can I drop IFN102?',
-  'What is my CGPA?',
-  'Tell me about my campus card',
-  'What assignments are due soon?',
-]
+const QUICK_PROMPTS_BY_ROLE: Record<string, string[]> = {
+  student: [
+    'When is the course registration deadline?',
+    'What is my current fee invoice?',
+    'Can I drop IFN102?',
+    'What is my CGPA?',
+    'Tell me about my campus card',
+    'What assignments are due soon?',
+  ],
+  lecturer: [
+    'How many students do I have across all my courses this semester?',
+    'Which of my IFN101 students have not yet submitted Assignment 1?',
+    'Show me the attendance rate for my courses this week',
+    'Which students are at academic risk in my classes?',
+    'What is the grade distribution for my latest assignment?',
+    'How many students have incomplete submissions across all my courses?',
+  ],
+  admin: [
+    'How many purchase requests are currently pending approval, and what is the total value?',
+    'Which GL code has the least available budget remaining, and what percentage is utilized?',
+    'Which students have a risk score above 0.6 and have also not paid their tuition fees?',
+    'What is the total enrollment count across all active programmes this semester?',
+    'Which departments have exceeded their procurement budget this quarter?',
+    'Show me a summary of staff leave requests pending approval system-wide',
+  ],
+  finance: [
+    'How many purchase requests are currently pending approval, and what is the total value?',
+    'Which GL code has the least available budget remaining, and what percentage is utilized?',
+    'What is the total outstanding tuition fee balance across all students?',
+    'Which departments have the highest procurement spend this month?',
+    'Show me all invoices that are overdue by more than 30 days',
+    'What is the current payroll commitment versus budget for this semester?',
+  ],
+  manager: [
+    'How many staff are currently on approved leave this week?',
+    'Which purchase requests require my approval today?',
+    'What is the total budget utilization across my department?',
+    'Show me the headcount by department under my oversight',
+    'Which research grants are approaching their expenditure deadline?',
+    'What is the average attendance rate for courses in my faculty?',
+  ],
+}
+
+const DEFAULT_QUICK_PROMPTS = QUICK_PROMPTS_BY_ROLE.student
 
 function parseMarkdown(text: string): React.ReactNode {
   // Simple markdown: **bold**, *italic*, line breaks
@@ -36,12 +73,25 @@ function parseMarkdown(text: string): React.ReactNode {
   })
 }
 
+const WELCOME_BY_ROLE: Record<string, string> = {
+  student: "Hello! I'm UNIBOT, your UNISSA AI assistant. I can help you with course registration, fee enquiries, assignments, CGPA, and more. How can I help you today?",
+  lecturer: "Hello! I'm UNIBOT, your UNISSA AI assistant. I have access to your course enrolments, student submissions, attendance records, and academic analytics. What would you like to know?",
+  admin: "Hello! I'm UNIBOT, your UNISSA AI assistant. I have system-wide access to financial records, procurement data, student risk profiles, and institutional analytics. What insights can I surface for you?",
+  finance: "Hello! I'm UNIBOT, your UNISSA AI assistant. I can query live procurement records, GL budgets, tuition invoices, and payroll data. How can I assist you?",
+  manager: "Hello! I'm UNIBOT, your UNISSA AI assistant. I can help you with departmental analytics, staff management, procurement approvals, and research fund oversight. What do you need?",
+}
+
 const ChatbotPage: React.FC = () => {
+  const { user } = useAuthStore()
+  const userRole = user?.role ?? 'student'
+  const quickPrompts = QUICK_PROMPTS_BY_ROLE[userRole] ?? DEFAULT_QUICK_PROMPTS
+  const welcomeMessage = WELCOME_BY_ROLE[userRole] ?? WELCOME_BY_ROLE.student
+
   const [messages, setMessages] = useState<Message[]>([
     {
       id: 'welcome',
       role: 'assistant',
-      content: 'Hello! I\'m UNIBOT, your UNISSA AI assistant. I can help you with course registration, fee enquiries, assignments, CGPA, and more. How can I help you today?',
+      content: welcomeMessage,
       timestamp: new Date(),
     },
   ])
@@ -109,7 +159,7 @@ const ChatbotPage: React.FC = () => {
     setMessages([{
       id: 'welcome-new',
       role: 'assistant',
-      content: 'New conversation started. How can I help you?',
+      content: welcomeMessage,
       timestamp: new Date(),
     }])
   }
@@ -165,7 +215,7 @@ const ChatbotPage: React.FC = () => {
 
         {/* Quick prompts */}
         <div className={styles.quickPrompts}>
-          {QUICK_PROMPTS.map((p, i) => (
+          {quickPrompts.map((p, i) => (
             <button
               key={i}
               className={styles.quickBtn}
