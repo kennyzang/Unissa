@@ -191,6 +191,29 @@ router.patch('/grants/:id/review', requireRole('manager', 'admin'), async (req: 
   res.json({ success: true, data: updated, message: `Grant ${action} by department head` })
 })
 
+// PATCH /api/v1/research/grants/:id/committee  (L2: research committee / admin)
+router.patch('/grants/:id/committee', requireRole('admin', 'manager'), async (req: AuthRequest, res: Response) => {
+  const { action, remarks } = req.body as { action: 'committee_approved' | 'rejected'; remarks?: string }
+  const id = String(req.params.id)
+
+  const grant = await prisma.researchGrant.findUnique({ where: { id } })
+  if (!grant) { res.status(404).json({ success: false, message: 'Grant not found' }); return }
+  if (grant.status !== 'dept_approved') {
+    res.status(400).json({ success: false, message: 'Grant must be dept-approved before committee review' })
+    return
+  }
+
+  const updated = await prisma.researchGrant.update({
+    where: { id },
+    data: {
+      status:    action === 'committee_approved' ? 'committee_approved' : 'rejected',
+      l1Remarks: remarks ?? grant.l1Remarks,
+    },
+  })
+
+  res.json({ success: true, data: updated, message: `Grant ${action} by research committee` })
+})
+
 // PATCH /api/v1/research/grants/:id/finance  (L3: finance approve)
 router.patch('/grants/:id/finance', requireRole('finance', 'admin'), async (req: AuthRequest, res: Response) => {
   const { action, remarks } = req.body as { action: 'approved' | 'rejected'; remarks?: string }

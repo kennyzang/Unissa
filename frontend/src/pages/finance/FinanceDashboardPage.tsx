@@ -1,8 +1,8 @@
 import { useTranslation } from 'react-i18next'
-import React from 'react'
+import React, { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts'
-import { DollarSign, TrendingUp, AlertCircle, CreditCard, Wallet } from 'lucide-react'
+import { DollarSign, TrendingUp, AlertCircle, CreditCard, Wallet, X } from 'lucide-react'
 import { apiClient } from '@/lib/apiClient'
 import Card from '@/components/ui/Card'
 import Badge from '@/components/ui/Badge'
@@ -50,8 +50,27 @@ interface GlCodeRow {
   department?: { name: string }
 }
 
+interface PrRow {
+  id: string
+  title: string
+  amount: number
+  status: string
+  requester: string
+  submittedAt: string
+}
+
+const STATUS_COLOR: Record<string, 'blue' | 'green' | 'orange' | 'red' | 'gray'> = {
+  PENDING:          'orange',
+  FINANCE_APPROVED: 'blue',
+  APPROVED:         'green',
+  CONVERTED_TO_PO:  'green',
+  REJECTED:         'red',
+}
+
 const FinanceDashboardPage: React.FC = () => {
   const { t } = useTranslation()
+  const [drillGl, setDrillGl] = useState<GlCodeRow | null>(null)
+
   const { data, isLoading } = useQuery<BudgetSummary>({
     queryKey: ['finance', 'budget-summary'],
     queryFn: async () => {
@@ -66,6 +85,15 @@ const FinanceDashboardPage: React.FC = () => {
       const { data } = await apiClient.get('/finance/revenue-summary')
       return data.data
     },
+  })
+
+  const { data: drillPrs = [], isLoading: drillLoading } = useQuery<PrRow[]>({
+    queryKey: ['finance', 'gl-prs', drillGl?.id],
+    queryFn: async () => {
+      const { data } = await apiClient.get(`/finance/gl-codes/${drillGl!.id}/purchase-requests`)
+      return data.data
+    },
+    enabled: !!drillGl,
   })
 
   if (isLoading || !data) return <div className={styles.loading}>{t('financeDashboard.loading')}</div>
@@ -129,7 +157,12 @@ const FinanceDashboardPage: React.FC = () => {
             {glCodes.map(g => {
               const utilPct = g.totalBudget > 0 ? Math.round(((g.committedAmount + g.spentAmount) / g.totalBudget) * 100) : 0
               return (
-                <tr key={g.id}>
+                <tr
+                  key={g.id}
+                  onClick={() => setDrillGl(g)}
+                  style={{ cursor: 'pointer' }}
+                  title={t('financeDashboard.clickToViewPRs', { defaultValue: 'Click to view purchase requests' })}
+                >
                   <td className={styles.glCode}>{g.code}</td>
                   <td>{g.description}</td>
                   <td className={styles.dept}>{g.department?.name ?? '—'}</td>
@@ -146,6 +179,86 @@ const FinanceDashboardPage: React.FC = () => {
           </tbody>
         </table>
       </Card>
+
+      {/* GL Code Drill-Down Modal */}
+      {drillGl && (
+        <div
+          style={{
+            position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            zIndex: 1000,
+          }}
+          onClick={() => setDrillGl(null)}
+        >
+          <div
+            style={{
+              background: '#fff', borderRadius: '16px', padding: '28px 32px',
+              minWidth: '640px', maxWidth: '90vw', maxHeight: '80vh',
+              overflow: 'auto', boxShadow: '0 12px 40px rgba(0,0,0,0.2)',
+            }}
+            onClick={e => e.stopPropagation()}
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '20px' }}>
+              <div>
+                <h2 style={{ margin: 0, fontSize: '18px', fontWeight: 700 }}>{drillGl.code}</h2>
+                <p style={{ margin: '4px 0 0', fontSize: '13px', color: '#666' }}>{drillGl.description}</p>
+                <div style={{ display: 'flex', gap: '16px', marginTop: '8px', fontSize: '13px' }}>
+                  <span>Budget: <strong>BND {drillGl.totalBudget.toLocaleString()}</strong></span>
+                  <span>Committed: <strong>BND {drillGl.committedAmount.toLocaleString()}</strong></span>
+                  <span>Available: <strong>BND {drillGl.availableBalance.toLocaleString()}</strong></span>
+                </div>
+              </div>
+              <button
+                onClick={() => setDrillGl(null)}
+                style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '4px', color: '#666' }}
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            <h3 style={{ fontSize: '14px', fontWeight: 600, margin: '0 0 12px', color: '#333' }}>
+              {t('financeDashboard.purchaseRequests', { defaultValue: 'Purchase Requests' })}
+            </h3>
+
+            {drillLoading ? (
+              <p style={{ color: '#999', textAlign: 'center', padding: '24px' }}>Loading…</p>
+            ) : drillPrs.length === 0 ? (
+              <p style={{ color: '#999', textAlign: 'center', padding: '24px' }}>
+                {t('financeDashboard.noPRs', { defaultValue: 'No purchase requests against this GL code.' })}
+              </p>
+            ) : (
+              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
+                <thead>
+                  <tr style={{ borderBottom: '1px solid #e5e6eb' }}>
+                    <th style={{ textAlign: 'left', padding: '8px 12px', fontWeight: 600, color: '#666' }}>Title</th>
+                    <th style={{ textAlign: 'left', padding: '8px 12px', fontWeight: 600, color: '#666' }}>Requester</th>
+                    <th style={{ textAlign: 'right', padding: '8px 12px', fontWeight: 600, color: '#666' }}>Amount</th>
+                    <th style={{ textAlign: 'left', padding: '8px 12px', fontWeight: 600, color: '#666' }}>Status</th>
+                    <th style={{ textAlign: 'left', padding: '8px 12px', fontWeight: 600, color: '#666' }}>Submitted</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {drillPrs.map(pr => (
+                    <tr key={pr.id} style={{ borderBottom: '1px solid #f0f0f0' }}>
+                      <td style={{ padding: '10px 12px' }}>{pr.title}</td>
+                      <td style={{ padding: '10px 12px', color: '#555' }}>{pr.requester}</td>
+                      <td style={{ padding: '10px 12px', textAlign: 'right', fontWeight: 500 }}>BND {pr.amount.toLocaleString()}</td>
+                      <td style={{ padding: '10px 12px' }}>
+                        <Badge color={STATUS_COLOR[pr.status] ?? 'gray'} size="sm">
+                          {pr.status.replace(/_/g, ' ')}
+                        </Badge>
+                      </td>
+                      <td style={{ padding: '10px 12px', color: '#888' }}>
+                        {new Date(pr.submittedAt).toLocaleDateString()}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   )
 }

@@ -67,6 +67,7 @@ const NAV_STRUCTURE: NavGroup[] = [
       { key: 'attendance',    labelKey: 'nav.attendanceMgmt',   path: '/lms/attendance', icon: '🕒', roles: ['lecturer'] },
       { key: 'hr-leave',      labelKey: 'nav.leaveApproval',    path: '/hr/leave',       icon: '✅', roles: ['lecturer'] },
       { key: 'risk',          labelKey: 'nav.learningAnalysis', path: '/ai/risk',        icon: '📈', roles: ['lecturer'] },
+      { key: 'ai-chat',       labelKey: 'nav.aiChatbot',        path: '/ai/chat',        icon: '🤖', roles: ['lecturer'] },
     ],
   },
 
@@ -84,8 +85,11 @@ const NAV_STRUCTURE: NavGroup[] = [
     key: 'g-finance', labelKey: 'nav.financeControlCenter', icon: '💹',
     roles: ['finance'],
     children: [
-      { key: 'finance',  labelKey: 'nav.financeOverview', path: '/finance/dashboard', icon: '📊', roles: ['finance'] },
-      { key: 'payroll',  labelKey: 'nav.payrollMgmt',    path: '/finance/payroll',   icon: '💵', roles: ['finance'] },
+      { key: 'finance',   labelKey: 'nav.financeOverview',    path: '/finance/dashboard',  icon: '📊', roles: ['finance'] },
+      { key: 'budget',    labelKey: 'nav.budgetManagement',   path: '/finance/dashboard',  icon: '💰', roles: ['finance'] },
+      { key: 'fee-stmt',  labelKey: 'nav.feeStatement',       path: '/finance/statement',  icon: '🧾', roles: ['finance'] },
+      { key: 'payroll',   labelKey: 'nav.payrollMgmt',        path: '/finance/payroll',    icon: '💵', roles: ['finance'] },
+      { key: 'ai-chat',   labelKey: 'nav.aiChatbot',          path: '/ai/chat',            icon: '🤖', roles: ['finance'] },
     ],
   },
   {
@@ -144,9 +148,11 @@ const NAV_STRUCTURE: NavGroup[] = [
     key: 'g-admin-finance', labelKey: 'nav.globalOverview', icon: '📊',
     roles: ['admin'],
     children: [
-      { key: 'finance',  labelKey: 'nav.globalFinanceDashboard', path: '/finance/dashboard', icon: '💹', roles: ['admin'] },
-      { key: 'payroll',  labelKey: 'nav.payrollMgmt',            path: '/finance/payroll',   icon: '💵', roles: ['admin'] },
-      { key: 'risk',     labelKey: 'nav.globalRiskAnalysis',     path: '/ai/risk',           icon: '⚠️', roles: ['admin'] },
+      { key: 'finance',   labelKey: 'nav.globalFinanceDashboard', path: '/finance/dashboard', icon: '💹', roles: ['admin'] },
+      { key: 'payroll',   labelKey: 'nav.payrollMgmt',            path: '/finance/payroll',   icon: '💵', roles: ['admin'] },
+      { key: 'risk',      labelKey: 'nav.globalRiskAnalysis',     path: '/ai/risk',           icon: '⚠️', roles: ['admin'] },
+      { key: 'ai-chat',   labelKey: 'nav.aiChatbot',              path: '/ai/chat',           icon: '🤖', roles: ['admin'] },
+      { key: 'insights',  labelKey: 'nav.executiveInsights',      path: '/ai/insights',       icon: '💡', roles: ['admin'] },
     ],
   },
   {
@@ -217,7 +223,6 @@ const Sidebar = () => {
     enabled: user?.role === 'student',
   })
 
-  const isStudentEnrolled = user?.role === 'student' && !!studentProfile
   const isStudentUnenrolled = user?.role === 'student' && !studentLoading && studentProfile === null
 
   const [expanded, setExpanded] = useState<Set<string>>(

@@ -1,10 +1,5 @@
-// ============================================================
-// UNISSA Smart University Platform – Prisma Schema v2.0
-// Database: MySQL 8.0 (production)
-// ============================================================
-
 generator client {
-  provider = "prisma-client-js"
+  provider      = "prisma-client-js"
   binaryTargets = ["native", "debian-openssl-3.0.x"]
 }
 
@@ -13,165 +8,143 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// ============================================================
-// ORGANISATION
-// ============================================================
-
 model Department {
-  id          String   @id @default(cuid())
-  code        String   @unique
-  name        String
-  parentId    String?
-  parent      Department?  @relation("DeptParent", fields: [parentId], references: [id])
-  children    Department[] @relation("DeptParent")
-  headStaffId String?
-  isActive    Boolean  @default(true)
-  createdAt   DateTime @default(now())
-
-  staff             Staff[]
-  programmes        Programme[]
-  glCodes           GlCode[]
-  purchaseRequests  PurchaseRequest[]
-  researchGrants    ResearchGrant[]
-  facilityBookings  FacilityBooking[]
-  courseOfferings   CourseOffering[]
+  id               String            @id @default(cuid())
+  code             String            @unique
+  name             String
+  parentId         String?
+  headStaffId      String?
+  isActive         Boolean           @default(true)
+  createdAt        DateTime          @default(now())
+  courseOfferings  CourseOffering[]
+  parent           Department?       @relation("DeptParent", fields: [parentId], references: [id])
+  children         Department[]      @relation("DeptParent")
+  facilityBookings FacilityBooking[]
+  glCodes          GlCode[]
+  programmes       Programme[]
+  purchaseRequests PurchaseRequest[]
+  researchGrants   ResearchGrant[]
+  staff            Staff[]
 
   @@map("departments")
 }
 
 model AcademicYear {
-  id        String   @id @default(cuid())
-  year      Int      @unique
+  id        String     @id @default(cuid())
+  year      Int        @unique
   startDate DateTime
   endDate   DateTime
-  isCurrent Boolean  @default(false)
-  createdAt DateTime @default(now())
+  isCurrent Boolean    @default(false)
+  createdAt DateTime   @default(now())
   semesters Semester[]
 
   @@map("academic_years")
 }
 
 model Semester {
-  id             String   @id @default(cuid())
-  academicYearId String
-  academicYear   AcademicYear @relation(fields: [academicYearId], references: [id])
-  name           String
-  semesterNumber Int
-  startDate      DateTime
-  endDate        DateTime
-  addDropEnd     DateTime
-  isActive       Boolean  @default(false)
-  createdAt      DateTime @default(now())
-
-  intakes         Intake[]
+  id              String             @id @default(cuid())
+  academicYearId  String
+  name            String
+  semesterNumber  Int
+  startDate       DateTime
+  endDate         DateTime
+  addDropEnd      DateTime
+  isActive        Boolean            @default(false)
+  createdAt       DateTime           @default(now())
   courseOfferings CourseOffering[]
-  feeInvoices     FeeInvoice[]
-  gpaRecords      StudentGpaRecord[]
   enrolments      Enrolment[]
+  feeInvoices     FeeInvoice[]
+  intakes         Intake[]
+  academicYear    AcademicYear       @relation(fields: [academicYearId], references: [id])
+  gpaRecords      StudentGpaRecord[]
 
   @@unique([academicYearId, semesterNumber])
   @@map("semesters")
 }
 
-// ============================================================
-// AUTH & USERS
-// ============================================================
-
 model User {
-  id                 String   @id @default(cuid())
-  username           String   @unique
-  passwordHash       String
-  displayName        String
-  role               String   // student|lecturer|manager|finance|admissions|admin
-  email              String   @unique
-  isActive           Boolean  @default(true)
-  failedLoginCount   Int      @default(0)
-  lockedUntil        DateTime?
-  lastLoginAt        DateTime?
-  createdAt          DateTime @default(now())
-  updatedAt          DateTime @updatedAt
-
-  student              Student?
-  staff                Staff?
-  fileAssets           FileAsset[]
-  courseMaterials      CourseMaterial[]
-  chatbotConversations ChatbotConversation[]
-  notifications        Notification[]
+  id                   String                @id @default(cuid())
+  username             String                @unique
+  passwordHash         String
+  displayName          String
+  role                 String
+  email                String                @unique
+  isActive             Boolean               @default(true)
+  failedLoginCount     Int                   @default(0)
+  lockedUntil          DateTime?
+  lastLoginAt          DateTime?
+  createdAt            DateTime              @default(now())
+  updatedAt            DateTime              @updatedAt
   auditLogs            AuditLog[]
-  pushSubscriptions    PushSubscription[]
+  chatbotConversations ChatbotConversation[]
+  courseMaterials      CourseMaterial[]
   esignatures          Esignature[]
+  fileAssets           FileAsset[]
+  notifications        Notification[]
   prApprovals          PrApproval[]
+  pushSubscriptions    PushSubscription[]
+  staff                Staff?
+  student              Student?
 
   @@map("users")
 }
 
-// ============================================================
-// FILE ASSETS (centralised)
-// ============================================================
-
 model FileAsset {
-  id           String   @id @default(cuid())
-  fileName     String
-  originalName String
-  fileUrl      String  
-  mimeType     String
-  fileSizeBytes Int
-  uploadedById  String
-  uploadedBy    User   @relation(fields: [uploadedById], references: [id])
-  uploadedAt    DateTime @default(now())
-
-  applicantDocuments   ApplicantDocument[]
-  submissionAsset      Submission?
-  courseMaterial       CourseMaterial?
-  prQuotes             PrQuote[]
-  poAsset              PurchaseOrder?  @relation("PoAsset")
-  appointmentLetters   Staff[]         @relation("AppointmentLetter")
-  offerLetters         Applicant[]     @relation("OfferLetter")
-  receiptPayments      Payment[]
-  researchGrantFiles   ResearchGrantFile[]
+  id                 String              @id @default(cuid())
+  fileName           String
+  originalName       String
+  fileUrl            String
+  mimeType           String
+  fileSizeBytes      Int
+  uploadedById       String
+  uploadedAt         DateTime            @default(now())
+  applicantDocuments ApplicantDocument[]
+  offerLetters       Applicant[]         @relation("OfferLetter")
+  courseMaterial     CourseMaterial?
+  uploadedBy         User                @relation(fields: [uploadedById], references: [id])
+  receiptPayments    Payment[]
+  prQuotes           PrQuote[]
+  poAsset            PurchaseOrder?      @relation("PoAsset")
+  researchGrantFiles ResearchGrantFile[]
+  appointmentLetters Staff[]             @relation("AppointmentLetter")
+  submissionAsset    Submission?
 
   @@map("file_assets")
 }
 
-// ============================================================
-// ADMISSION & STUDENT
-// ============================================================
-
 model Programme {
-  id                      String   @id @default(cuid())
-  code                    String   @unique
-  name                    String
-  departmentId            String
-  department              Department @relation(fields: [departmentId], references: [id])
-  level                   String   // certificate|diploma|degree|masters|phd
-  durationYears           Int
-  minEntryGrade           String   @default("{}")
-  feeLocalPerCh           Float
-  feeInternationalPerCh   Float
-  isActive                Boolean  @default(true)
-  createdAt               DateTime @default(now())
-
-  intakes         Intake[]
-  students        Student[]
-  programmeCourses ProgrammeCourse[]
-  applicants      Applicant[]
+  id                    String            @id @default(cuid())
+  code                  String            @unique
+  name                  String
+  departmentId          String
+  level                 String
+  durationYears         Int
+  minEntryGrade         String            @default("{}")
+  feeLocalPerCh         Float
+  feeInternationalPerCh Float
+  isActive              Boolean           @default(true)
+  createdAt             DateTime          @default(now())
+  applicants            Applicant[]
+  intakes               Intake[]
+  programmeCourses      ProgrammeCourse[]
+  department            Department        @relation(fields: [departmentId], references: [id])
+  students              Student[]
 
   @@map("programmes")
 }
 
 model Intake {
-  id           String   @id @default(cuid())
-  programmeId  String
-  programme    Programme @relation(fields: [programmeId], references: [id])
-  semesterId   String
-  semester     Semester  @relation(fields: [semesterId], references: [id])
-  intakeStart  DateTime
-  intakeEnd    DateTime
-  isOpen       Boolean  @default(true)
-  maxCapacity  Int
-  createdAt    DateTime @default(now())
-
+  id          String      @id @default(cuid())
+  programmeId String
+  semesterId  String
+  intakeStart DateTime
+  intakeEnd   DateTime
+  isOpen      Boolean     @default(true)
+  maxCapacity Int
+  createdAt   DateTime    @default(now())
   applicants  Applicant[]
+  semester    Semester    @relation(fields: [semesterId], references: [id])
+  programme   Programme   @relation(fields: [programmeId], references: [id])
   students    Student[]
 
   @@unique([programmeId, semesterId])
@@ -179,57 +152,56 @@ model Intake {
 }
 
 model Applicant {
-  id                     String   @id @default(cuid())
-  userId                 String?  @unique
-  applicationRef         String   @unique
+  id                     String                  @id @default(cuid())
+  userId                 String?                 @unique
+  applicationRef         String                  @unique
   fullName               String
-  icPassport             String   @unique
+  icPassport             String                  @unique
   dateOfBirth            DateTime
   gender                 String
-  nationality            String   @default("Brunei Darussalam")
+  nationality            String                  @default("Brunei Darussalam")
   email                  String
   mobile                 String
-  homeAddress            String  
+  homeAddress            String
   highestQualification   String
   previousInstitution    String
   yearOfCompletion       Int
   cgpa                   Float?
   intakeId               String
-  intake                 Intake    @relation(fields: [intakeId], references: [id])
   programmeId            String
-  programme              Programme @relation(fields: [programmeId], references: [id])
-  modeOfStudy            String   // full_time|part_time
-  scholarshipApplied     Boolean  @default(false)
+  modeOfStudy            String
+  scholarshipApplied     Boolean                 @default(false)
   scholarshipType        String?
-  status                 String   @default("draft")
+  status                 String                  @default("draft")
   draftSavedAt           DateTime?
   submittedAt            DateTime?
-  eligibilityCheckResult String? 
-  officerRemarks         String? 
+  eligibilityCheckResult String?
+  officerRemarks         String?
   decisionMadeAt         DateTime?
   offerRef               String?
   offerLetterAssetId     String?
-  offerLetterAsset       FileAsset? @relation("OfferLetter", fields: [offerLetterAssetId], references: [id])
   offerLetterSentAt      DateTime?
-  accountCreated         Boolean  @default(false)
+  accountCreated         Boolean                 @default(false)
   accountCreatedAt       DateTime?
-  createdAt              DateTime @default(now())
-
-  subjectGrades  ApplicantSubjectGrade[]
-  documents      ApplicantDocument[]
-  student        Student?
-  history        ApplicantHistory[]
+  createdAt              DateTime                @default(now())
+  documents              ApplicantDocument[]
+  history                ApplicantHistory[]
+  subjectGrades          ApplicantSubjectGrade[]
+  offerLetterAsset       FileAsset?              @relation("OfferLetter", fields: [offerLetterAssetId], references: [id])
+  programme              Programme               @relation(fields: [programmeId], references: [id])
+  intake                 Intake                  @relation(fields: [intakeId], references: [id])
+  student                Student?
 
   @@map("applicants")
 }
 
 model ApplicantSubjectGrade {
-  id                String   @id @default(cuid())
+  id                String    @id @default(cuid())
   applicantId       String
-  applicant         Applicant @relation(fields: [applicantId], references: [id], onDelete: Cascade)
   subjectName       String
   grade             String
   qualificationType String
+  applicant         Applicant @relation(fields: [applicantId], references: [id], onDelete: Cascade)
 
   @@map("applicant_subject_grades")
 }
@@ -237,134 +209,127 @@ model ApplicantSubjectGrade {
 model ApplicantDocument {
   id          String    @id @default(cuid())
   applicantId String
-  applicant   Applicant @relation(fields: [applicantId], references: [id], onDelete: Cascade)
   assetId     String
-  asset       FileAsset @relation(fields: [assetId], references: [id])
-  docType     String    // transcript|ic_passport|passport_photo|supporting
+  docType     String
   uploadedAt  DateTime  @default(now())
+  asset       FileAsset @relation(fields: [assetId], references: [id])
+  applicant   Applicant @relation(fields: [applicantId], references: [id], onDelete: Cascade)
 
   @@map("applicant_documents")
 }
 
 model ApplicantHistory {
-  id              String   @id @default(cuid())
-  applicantId     String
-  applicant       Applicant @relation(fields: [applicantId], references: [id], onDelete: Cascade)
-  previousStatus  String
-  newStatus       String
-  reason          String?
-  changedBy       String?
-  changedAt       DateTime @default(now())
+  id             String    @id @default(cuid())
+  applicantId    String
+  previousStatus String
+  newStatus      String
+  reason         String?
+  changedBy      String?
+  changedAt      DateTime  @default(now())
+  applicant      Applicant @relation(fields: [applicantId], references: [id], onDelete: Cascade)
 
   @@map("applicant_history")
 }
 
 model Student {
-  id                    String   @id @default(cuid())
-  studentId             String   @unique
-  userId                String   @unique
-  user                  User     @relation(fields: [userId], references: [id])
-  applicantId           String   @unique
-  applicant             Applicant @relation(fields: [applicantId], references: [id])
-  programmeId           String
-  programme             Programme @relation(fields: [programmeId], references: [id])
-  intakeId              String
-  intake                Intake    @relation(fields: [intakeId], references: [id])
-  modeOfStudy           String
-  nationality           String
-  studentType           String   @default("standard")
-  currentCgpa           Float    @default(0.00)
-  scholarshipPct        Int      @default(0)
-  campusCardNo          String?  @unique
-  libraryAccountActive  Boolean  @default(false)
-  emailAccountActive    Boolean  @default(false)
-  status                String   @default("active")
-  enrolledAt            DateTime @default(now())
-  createdAt             DateTime @default(now())
-
-  enrolments       Enrolment[]
-  submissions      Submission[]
-  attendanceRecords AttendanceRecord[]
-  feeInvoices      FeeInvoice[]
-  riskScores       StudentRiskScore[]
-  gpaRecords       StudentGpaRecord[]
-  libraryAccount   LibraryAccount?
-  campusCard       CampusCard?
+  id                   String             @id @default(cuid())
+  studentId            String             @unique
+  userId               String             @unique
+  applicantId          String             @unique
+  programmeId          String
+  intakeId             String
+  modeOfStudy          String
+  nationality          String
+  studentType          String             @default("standard")
+  currentCgpa          Float              @default(0.00)
+  scholarshipPct       Int                @default(0)
+  campusCardNo         String?            @unique
+  libraryAccountActive Boolean            @default(false)
+  emailAccountActive   Boolean            @default(false)
+  status               String             @default("active")
+  enrolledAt           DateTime           @default(now())
+  createdAt            DateTime           @default(now())
+  attendanceRecords    AttendanceRecord[]
+  campusCard           CampusCard?
+  enrolments           Enrolment[]
+  feeInvoices          FeeInvoice[]
+  libraryAccount       LibraryAccount?
+  gpaRecords           StudentGpaRecord[]
+  riskScores           StudentRiskScore[]
+  intake               Intake             @relation(fields: [intakeId], references: [id])
+  programme            Programme          @relation(fields: [programmeId], references: [id])
+  applicant            Applicant          @relation(fields: [applicantId], references: [id])
+  user                 User               @relation(fields: [userId], references: [id])
+  submissions          Submission[]
 
   @@map("students")
 }
 
-// ============================================================
-// COURSES & LMS
-// ============================================================
-
 model Course {
-  id                     String   @id @default(cuid())
-  code                   String   @unique
-  name                   String
-  departmentId           String
-  creditHours            Int
-  level                  Int
-  isOpenToInternational  Boolean  @default(true)
-  maxSeats               Int
-  status                 String   @default("published") // published|draft|pending_approval
-  proposedByStaffId      String?
-  proposedBy             Staff?   @relation("CourseProposals", fields: [proposedByStaffId], references: [id])
-  createdAt              DateTime @default(now())
-
-  programmeCourses    ProgrammeCourse[]
-  prerequisites       CoursePrerequisite[] @relation("CoursePrereq")
-  requiredBy          CoursePrerequisite[] @relation("PrereqOf")
-  offerings           CourseOffering[]
+  id                    String               @id @default(cuid())
+  code                  String               @unique
+  name                  String
+  departmentId          String
+  creditHours           Int
+  level                 Int
+  isOpenToInternational Boolean              @default(true)
+  maxSeats              Int
+  status                String               @default("published")
+  proposedByStaffId     String?
+  createdAt             DateTime             @default(now())
+  offerings             CourseOffering[]
+  requiredBy            CoursePrerequisite[] @relation("PrereqOf")
+  prerequisites         CoursePrerequisite[] @relation("CoursePrereq")
+  proposedBy            Staff?               @relation("CourseProposals", fields: [proposedByStaffId], references: [id])
+  programmeCourses      ProgrammeCourse[]
 
   @@map("courses")
 }
 
 model ProgrammeCourse {
-  id          String   @id @default(cuid())
+  id          String    @id @default(cuid())
   programmeId String
-  programme   Programme @relation(fields: [programmeId], references: [id])
   courseId    String
-  course      Course    @relation(fields: [courseId], references: [id])
-  courseType  String    // core|elective|final_project
+  courseType  String
   yearLevel   Int
+  course      Course    @relation(fields: [courseId], references: [id])
+  programme   Programme @relation(fields: [programmeId], references: [id])
 
   @@unique([programmeId, courseId])
   @@map("programme_courses")
 }
 
 model CoursePrerequisite {
-  courseId           String
-  course             Course @relation("CoursePrereq", fields: [courseId], references: [id])
+  courseId             String
   prerequisiteCourseId String
-  prerequisite       Course @relation("PrereqOf", fields: [prerequisiteCourseId], references: [id])
-  minGrade           String @default("D")
+  minGrade             String @default("D")
+  prerequisite         Course @relation("PrereqOf", fields: [prerequisiteCourseId], references: [id])
+  course               Course @relation("CoursePrereq", fields: [courseId], references: [id])
 
   @@id([courseId, prerequisiteCourseId])
   @@map("course_prerequisites")
 }
 
 model CourseOffering {
-  id          String   @id @default(cuid())
-  courseId    String
-  course      Course   @relation(fields: [courseId], references: [id])
-  semesterId  String
-  semester    Semester @relation(fields: [semesterId], references: [id])
-  lecturerId  String
-  lecturer    Staff    @relation(fields: [lecturerId], references: [id])
-  departmentId String
-  department  Department @relation(fields: [departmentId], references: [id])
-  dayOfWeek   String
-  startTime   String
-  endTime     String
-  room        String
-  seatsTaken  Int      @default(0)
-  createdAt   DateTime @default(now())
-
-  enrolments         Enrolment[]
+  id                 String              @id @default(cuid())
+  courseId           String
+  semesterId         String
+  lecturerId         String
+  departmentId       String
+  dayOfWeek          String
+  startTime          String
+  endTime            String
+  room               String
+  seatsTaken         Int                 @default(0)
+  createdAt          DateTime            @default(now())
   assignments        Assignment[]
-  materials          CourseMaterial[]
   attendanceSessions AttendanceSession[]
+  materials          CourseMaterial[]
+  department         Department          @relation(fields: [departmentId], references: [id])
+  lecturer           Staff               @relation(fields: [lecturerId], references: [id])
+  semester           Semester            @relation(fields: [semesterId], references: [id])
+  course             Course              @relation(fields: [courseId], references: [id])
+  enrolments         Enrolment[]
   riskScores         StudentRiskScore[]
 
   @@unique([courseId, semesterId, dayOfWeek, startTime])
@@ -372,85 +337,81 @@ model CourseOffering {
 }
 
 model Enrolment {
-  id           String   @id @default(cuid())
+  id           String         @id @default(cuid())
   studentId    String
-  student      Student  @relation(fields: [studentId], references: [id])
   offeringId   String
-  offering     CourseOffering @relation(fields: [offeringId], references: [id])
   semesterId   String
-  semester     Semester @relation(fields: [semesterId], references: [id])
-  status       String   @default("registered")
+  status       String         @default("registered")
   finalGrade   String?
   gradePoints  Float?
-  registeredAt DateTime @default(now())
+  registeredAt DateTime       @default(now())
   droppedAt    DateTime?
+  semester     Semester       @relation(fields: [semesterId], references: [id])
+  offering     CourseOffering @relation(fields: [offeringId], references: [id])
+  student      Student        @relation(fields: [studentId], references: [id])
 
   @@unique([studentId, offeringId])
   @@map("enrolments")
 }
 
 model StudentGpaRecord {
-  id             String   @id @default(cuid())
-  studentId      String
-  student        Student  @relation(fields: [studentId], references: [id])
-  semesterId     String
-  semester       Semester @relation(fields: [semesterId], references: [id])
-  semesterGpa    Float
-  cumulativeGpa  Float
-  totalChPassed  Int
-  computedAt     DateTime @default(now())
+  id            String   @id @default(cuid())
+  studentId     String
+  semesterId    String
+  semesterGpa   Float
+  cumulativeGpa Float
+  totalChPassed Int
+  computedAt    DateTime @default(now())
+  semester      Semester @relation(fields: [semesterId], references: [id])
+  student       Student  @relation(fields: [studentId], references: [id])
 
   @@unique([studentId, semesterId])
   @@map("student_gpa_records")
 }
 
 model CourseMaterial {
-  id           String   @id @default(cuid())
+  id           String         @id @default(cuid())
   offeringId   String
-  offering     CourseOffering @relation(fields: [offeringId], references: [id])
   title        String
   description  String?
-  materialType String   // video|document|link|presentation
-  assetId      String?    @unique
-  asset        FileAsset? @relation(fields: [assetId], references: [id])
+  materialType String
+  assetId      String?        @unique
   externalUrl  String?
-  duration     Int?     // video duration in seconds
-  orderIndex   Int      @default(0)
-  isPublished  Boolean  @default(false)
+  duration     Int?
+  orderIndex   Int            @default(0)
+  isPublished  Boolean        @default(false)
   uploadedById String
-  uploadedBy   User     @relation(fields: [uploadedById], references: [id])
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+  uploadedBy   User           @relation(fields: [uploadedById], references: [id])
+  asset        FileAsset?     @relation(fields: [assetId], references: [id])
+  offering     CourseOffering @relation(fields: [offeringId], references: [id])
 
   @@map("course_materials")
 }
 
 model Assignment {
-  id             String   @id @default(cuid())
+  id             String         @id @default(cuid())
   offeringId     String
-  offering       CourseOffering @relation(fields: [offeringId], references: [id])
   title          String
-  description    String  
+  description    String
   dueDate        DateTime
-  maxMarks       Int      @default(100)
-  rubricCriteria String? 
+  maxMarks       Int            @default(100)
+  rubricCriteria String?
   weightPct      Float
-  createdAt      DateTime @default(now())
-
-  submissions Submission[]
+  createdAt      DateTime       @default(now())
+  offering       CourseOffering @relation(fields: [offeringId], references: [id])
+  submissions    Submission[]
 
   @@map("assignments")
 }
 
 model Submission {
-  id               String   @id @default(cuid())
+  id               String     @id @default(cuid())
   assignmentId     String
-  assignment       Assignment @relation(fields: [assignmentId], references: [id])
   studentId        String
-  student          Student    @relation(fields: [studentId], references: [id])
   assetId          String?    @unique
-  asset            FileAsset? @relation(fields: [assetId], references: [id])
-  answers          String?    // JSON: [{questionIndex, type, answer}]
+  answers          String?
   submittedAt      DateTime   @default(now())
   aiRubricScores   String?
   aiGeneratedAt    DateTime?
@@ -458,88 +419,84 @@ model Submission {
   finalMarks       Float?
   gradedAt         DateTime?
   gradedById       String?
+  asset            FileAsset? @relation(fields: [assetId], references: [id])
+  student          Student    @relation(fields: [studentId], references: [id])
+  assignment       Assignment @relation(fields: [assignmentId], references: [id])
 
   @@unique([assignmentId, studentId])
   @@map("submissions")
 }
 
 model AttendanceSession {
-  id           String   @id @default(cuid())
+  id           String             @id @default(cuid())
   offeringId   String
-  offering     CourseOffering @relation(fields: [offeringId], references: [id])
-  sessionToken String   @unique
+  sessionToken String             @unique
   qrExpiresAt  DateTime
-  startedAt    DateTime @default(now())
+  startedAt    DateTime           @default(now())
   endedAt      DateTime?
-  name         String?
   description  String?
-  materials    String?  // JSON-serialised array of { filename, path, size, mimetype, uploadedAt }
-
-  records AttendanceRecord[]
+  materials    String?
+  name         String?
+  records      AttendanceRecord[]
+  offering     CourseOffering     @relation(fields: [offeringId], references: [id])
 
   @@map("attendance_sessions")
 }
 
 model AttendanceRecord {
-  id        String   @id @default(cuid())
+  id        String            @id @default(cuid())
   sessionId String
-  session   AttendanceSession @relation(fields: [sessionId], references: [id])
   studentId String
-  student   Student  @relation(fields: [studentId], references: [id])
-  scannedAt DateTime @default(now())
-  status    String   @default("present")
+  scannedAt DateTime          @default(now())
+  status    String            @default("present")
+  student   Student           @relation(fields: [studentId], references: [id])
+  session   AttendanceSession @relation(fields: [sessionId], references: [id])
 
   @@unique([sessionId, studentId])
   @@map("attendance_records")
 }
 
 model LibraryAccount {
-  id           String   @id @default(cuid())
-  studentId    String   @unique
-  student      Student  @relation(fields: [studentId], references: [id])
-  accountNo    String   @unique
-  isActive     Boolean  @default(false)
-  activatedAt  DateTime?
-  booksBorrowed Int     @default(0)
-  maxBorrow    Int      @default(5)
+  id            String    @id @default(cuid())
+  studentId     String    @unique
+  accountNo     String    @unique
+  isActive      Boolean   @default(false)
+  activatedAt   DateTime?
+  booksBorrowed Int       @default(0)
+  maxBorrow     Int       @default(5)
+  student       Student   @relation(fields: [studentId], references: [id])
 
   @@map("library_accounts")
 }
 
-// ============================================================
-// FINANCE
-// ============================================================
-
 model FeeInvoice {
-  id                   String   @id @default(cuid())
-  invoiceNo            String   @unique
+  id                   String              @id @default(cuid())
+  invoiceNo            String              @unique
   studentId            String
-  student              Student  @relation(fields: [studentId], references: [id])
   semesterId           String
-  semester             Semester @relation(fields: [semesterId], references: [id])
   tuitionFee           Float
-  libraryFee           Float    @default(50.00)
-  hostelDeposit        Float    @default(0.00)
-  scholarshipDeduction Float    @default(0.00)
+  libraryFee           Float               @default(50.00)
+  hostelDeposit        Float               @default(0.00)
+  scholarshipDeduction Float               @default(0.00)
   totalAmount          Float
-  amountPaid           Float    @default(0.00)
+  amountPaid           Float               @default(0.00)
   outstandingBalance   Float
   dueDate              DateTime
-  status               String   @default("unpaid")
-  lateFeeAccrued       Float    @default(0.00)
-  generatedAt          DateTime @default(now())
-
-  payments     Payment[]
-  adjustments  InvoiceAdjustment[]
+  status               String              @default("unpaid")
+  lateFeeAccrued       Float               @default(0.00)
+  generatedAt          DateTime            @default(now())
+  semester             Semester            @relation(fields: [semesterId], references: [id])
+  student              Student             @relation(fields: [studentId], references: [id])
+  adjustments          InvoiceAdjustment[]
+  payments             Payment[]
 
   @@map("fee_invoices")
 }
 
 model Payment {
-  id             String   @id @default(cuid())
-  transactionRef String   @unique
+  id             String     @id @default(cuid())
+  transactionRef String     @unique
   invoiceId      String
-  invoice        FeeInvoice @relation(fields: [invoiceId], references: [id])
   amount         Float
   method         String
   cardLast4      String?
@@ -548,381 +505,356 @@ model Payment {
   status         String
   paidAt         DateTime?
   receiptAssetId String?
+  createdAt      DateTime   @default(now())
   receiptAsset   FileAsset? @relation(fields: [receiptAssetId], references: [id])
-  createdAt      DateTime @default(now())
+  invoice        FeeInvoice @relation(fields: [invoiceId], references: [id])
 
   @@map("payments")
 }
 
 model CampusCard {
-  id        String   @id @default(cuid())
-  studentId String   @unique
-  student   Student  @relation(fields: [studentId], references: [id])
-  balance   Float    @default(0.00)
-  status    String   @default("active")
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
+  id           String                  @id @default(cuid())
+  studentId    String                  @unique
+  balance      Float                   @default(0.00)
+  status       String                  @default("active")
+  createdAt    DateTime                @default(now())
+  updatedAt    DateTime                @updatedAt
   transactions CampusCardTransaction[]
+  student      Student                 @relation(fields: [studentId], references: [id])
 
   @@map("campus_cards")
 }
 
 model CampusCardTransaction {
-  id          String   @id @default(cuid())
-  cardId      String
-  card        CampusCard @relation(fields: [cardId], references: [id])
-  type        String
-  amount      Float
-  description String
+  id           String     @id @default(cuid())
+  cardId       String
+  type         String
+  amount       Float
+  description  String
   balanceAfter Float
-  createdAt   DateTime @default(now())
+  createdAt    DateTime   @default(now())
+  card         CampusCard @relation(fields: [cardId], references: [id])
 
   @@map("campus_card_transactions")
 }
 
 model PayrollRecord {
-  id           String   @id @default(cuid())
+  id           String    @id @default(cuid())
   staffId      String
-  staff        Staff    @relation(fields: [staffId], references: [id])
   payrollMonth DateTime
   basicSalary  Float
-  allowances   Float    @default(0.00)
-  deductions   Float    @default(0.00)
+  allowances   Float     @default(0.00)
+  deductions   Float     @default(0.00)
   netSalary    Float
-  status       String   @default("draft")
+  status       String    @default("draft")
   paidAt       DateTime?
-  createdAt    DateTime @default(now())
+  createdAt    DateTime  @default(now())
+  staff        Staff     @relation(fields: [staffId], references: [id])
 
   @@unique([staffId, payrollMonth])
   @@map("payroll_records")
 }
 
-// ============================================================
-// PROCUREMENT
-// ============================================================
-
 model GlCode {
-  id               String   @id @default(cuid())
-  code             String   @unique
+  id               String            @id @default(cuid())
+  code             String            @unique
   description      String
   departmentId     String
-  department       Department @relation(fields: [departmentId], references: [id])
   totalBudget      Float
-  committedAmount  Float    @default(0.00)
-  spentAmount      Float    @default(0.00)
+  committedAmount  Float             @default(0.00)
+  spentAmount      Float             @default(0.00)
   fiscalYear       Int
-  isActive         Boolean  @default(true)
-  createdAt        DateTime @default(now())
-
-  purchaseRequests PurchaseRequest[]
+  isActive         Boolean           @default(true)
+  createdAt        DateTime          @default(now())
+  department       Department        @relation(fields: [departmentId], references: [id])
   purchaseOrders   PurchaseOrder[]
+  purchaseRequests PurchaseRequest[]
 
   @@map("gl_codes")
 }
 
 model ItemCategory {
-  id       String   @id @default(cuid())
-  code     String   @unique
-  name     String
-  parentId String?
-
-  vendors            Vendor[]
-  vendorPriceHistory VendorPriceHistory[]
-  purchaseRequests   PurchaseRequest[]
+  id                 String               @id @default(cuid())
+  code               String               @unique
+  name               String
+  parentId           String?
   products           Product[]
+  purchaseRequests   PurchaseRequest[]
+  vendorPriceHistory VendorPriceHistory[]
+  vendors            Vendor[]
 
   @@map("item_categories")
 }
 
 model Product {
-  id               String   @id @default(cuid())
-  code             String   @unique
+  id               String            @id @default(cuid())
+  code             String            @unique
   name             String
   description      String?
-  unit             String   @default("pcs")
+  unit             String            @default("pcs")
   defaultUnitPrice Float
   categoryId       String?
-  category         ItemCategory? @relation(fields: [categoryId], references: [id])
-  isActive         Boolean  @default(true)
-  createdAt        DateTime @default(now())
-  updatedAt        DateTime @updatedAt
-
+  isActive         Boolean           @default(true)
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+  category         ItemCategory?     @relation(fields: [categoryId], references: [id])
   purchaseRequests PurchaseRequest[]
 
   @@map("products")
 }
 
 model Vendor {
-  id             String   @id @default(cuid())
-  name           String
-  registrationNo String?
-  contactEmail   String?
-  categoryId     String?
-  category       ItemCategory? @relation(fields: [categoryId], references: [id])
-  isActive       Boolean  @default(true)
-  totalOrdersYtd Int      @default(0)
-  createdAt      DateTime @default(now())
-
+  id                 String               @id @default(cuid())
+  name               String
+  registrationNo     String?
+  contactEmail       String?
+  categoryId         String?
+  isActive           Boolean              @default(true)
+  totalOrdersYtd     Int                  @default(0)
+  createdAt          DateTime             @default(now())
   prQuotes           PrQuote[]
   purchaseOrders     PurchaseOrder[]
-  vendorPriceHistory VendorPriceHistory[]
   recommendedPRs     PurchaseRequest[]    @relation("RecommendedVendor")
+  vendorPriceHistory VendorPriceHistory[]
+  category           ItemCategory?        @relation(fields: [categoryId], references: [id])
 
   @@map("vendors")
 }
 
 model VendorPriceHistory {
-  id         String   @id @default(cuid())
+  id         String       @id @default(cuid())
   vendorId   String
-  vendor     Vendor   @relation(fields: [vendorId], references: [id])
   categoryId String
-  category   ItemCategory @relation(fields: [categoryId], references: [id])
   itemDesc   String
   unitPrice  Float
   recordedAt DateTime
   sourcePrId String?
+  category   ItemCategory @relation(fields: [categoryId], references: [id])
+  vendor     Vendor       @relation(fields: [vendorId], references: [id])
 
   @@map("vendor_price_history")
 }
 
 model PurchaseRequest {
-  id                           String   @id @default(cuid())
-  prNumber                     String   @unique
+  id                           String               @id @default(cuid())
+  prNumber                     String               @unique
   requestorId                  String
-  requestor                    Staff    @relation(fields: [requestorId], references: [id])
   departmentId                 String
-  department                   Department @relation(fields: [departmentId], references: [id])
   itemCategoryId               String?
-  itemCategory                 ItemCategory? @relation(fields: [itemCategoryId], references: [id])
   productId                    String?
-  product                      Product?      @relation(fields: [productId], references: [id])
   itemDescription              String
   quantity                     Int
   estimatedUnitPrice           Float
   totalAmount                  Float
   glCodeId                     String
-  glCode                       GlCode   @relation(fields: [glCodeId], references: [id])
   requiredByDate               DateTime
   recommendedVendorId          String?
-  recommendedVendor            Vendor?  @relation("RecommendedVendor", fields: [recommendedVendorId], references: [id])
-  vendorSelectionJustification String? 
-  quoteTrafficLight            String   @default("red")
-  status                       String   @default("draft")
-  anomalyFlags                 String? 
+  vendorSelectionJustification String?
+  quoteTrafficLight            String               @default("red")
+  status                       String               @default("draft")
+  anomalyFlags                 String?
   submittedAt                  DateTime?
-  createdAt                    DateTime @default(now())
-
-  quotes     PrQuote[]
-  approvals  PrApproval[]
-  po         PurchaseOrder?
-  anomalies  ProcurementAnomaly[]
+  createdAt                    DateTime             @default(now())
+  approvals                    PrApproval[]
+  quotes                       PrQuote[]
+  anomalies                    ProcurementAnomaly[]
+  po                           PurchaseOrder?
+  recommendedVendor            Vendor?              @relation("RecommendedVendor", fields: [recommendedVendorId], references: [id])
+  glCode                       GlCode               @relation(fields: [glCodeId], references: [id])
+  product                      Product?             @relation(fields: [productId], references: [id])
+  itemCategory                 ItemCategory?        @relation(fields: [itemCategoryId], references: [id])
+  department                   Department           @relation(fields: [departmentId], references: [id])
+  requestor                    Staff                @relation(fields: [requestorId], references: [id])
 
   @@map("purchase_requests")
 }
 
 model PrQuote {
-  id          String   @id @default(cuid())
+  id          String          @id @default(cuid())
   prId        String
-  pr          PurchaseRequest @relation(fields: [prId], references: [id], onDelete: Cascade)
   quoteNumber Int
   vendorName  String
   vendorId    String?
-  vendor      Vendor?  @relation(fields: [vendorId], references: [id])
   quotedPrice Float
   assetId     String?
-  asset       FileAsset? @relation(fields: [assetId], references: [id])
-  uploadedAt  DateTime @default(now())
+  uploadedAt  DateTime        @default(now())
+  asset       FileAsset?      @relation(fields: [assetId], references: [id])
+  vendor      Vendor?         @relation(fields: [vendorId], references: [id])
+  pr          PurchaseRequest @relation(fields: [prId], references: [id], onDelete: Cascade)
 
   @@unique([prId, quoteNumber])
   @@map("pr_quotes")
 }
 
 model PrApproval {
-  id           String   @id @default(cuid())
+  id           String          @id @default(cuid())
   prId         String
-  pr           PurchaseRequest @relation(fields: [prId], references: [id])
   level        Int
   approverId   String
-  approver     User    @relation(fields: [approverId], references: [id])
-  action       String  // approved|rejected|escalated
+  action       String
   remarks      String?
-  actedAt      DateTime @default(now())
+  actedAt      DateTime        @default(now())
   esignatureId String?
-  esignature   Esignature? @relation(fields: [esignatureId], references: [id])
+  esignature   Esignature?     @relation(fields: [esignatureId], references: [id])
+  approver     User            @relation(fields: [approverId], references: [id])
+  pr           PurchaseRequest @relation(fields: [prId], references: [id])
 
   @@map("pr_approvals")
 }
 
 model PurchaseOrder {
-  id          String   @id @default(cuid())
-  poNumber    String   @unique
-  prId        String   @unique
-  pr          PurchaseRequest @relation(fields: [prId], references: [id])
+  id          String          @id @default(cuid())
+  poNumber    String          @unique
+  prId        String          @unique
   vendorId    String
-  vendor      Vendor   @relation(fields: [vendorId], references: [id])
   totalAmount Float
   glCodeId    String
-  glCode      GlCode   @relation(fields: [glCodeId], references: [id])
-  poAssetId   String?  @unique
-  poAsset     FileAsset? @relation("PoAsset", fields: [poAssetId], references: [id])
-  status      String   @default("issued")
-  issuedAt    DateTime @default(now())
+  poAssetId   String?         @unique
+  status      String          @default("issued")
+  issuedAt    DateTime        @default(now())
   paymentRef  String?
   paidAt      DateTime?
+  poAsset     FileAsset?      @relation("PoAsset", fields: [poAssetId], references: [id])
+  glCode      GlCode          @relation(fields: [glCodeId], references: [id])
+  vendor      Vendor          @relation(fields: [vendorId], references: [id])
+  pr          PurchaseRequest @relation(fields: [prId], references: [id])
 
   @@map("purchase_orders")
 }
 
 model Esignature {
-  id            String   @id @default(cuid())
+  id            String       @id @default(cuid())
   userId        String
-  user          User     @relation(fields: [userId], references: [id])
-  signatureData String  
-  signedAt      DateTime @default(now())
+  signatureData String
+  signedAt      DateTime     @default(now())
   ipAddress     String?
-
-  prApprovals PrApproval[]
+  user          User         @relation(fields: [userId], references: [id])
+  prApprovals   PrApproval[]
 
   @@map("esignatures")
 }
 
-// ============================================================
-// HR
-// ============================================================
-
 model Staff {
-  id                       String   @id @default(cuid())
-  staffId                  String   @unique
-  userId                   String   @unique
-  user                     User     @relation(fields: [userId], references: [id])
+  id                       String             @id @default(cuid())
+  staffId                  String             @unique
+  userId                   String             @unique
   fullName                 String
   icPassport               String
   dateOfBirth              DateTime
   gender                   String
   departmentId             String
-  department               Department @relation(fields: [departmentId], references: [id])
   designation              String
   employmentType           String
   joinDate                 DateTime
-  leaveBalanceAnnual       Int      @default(14)
-  leaveBalanceMedical      Int      @default(14)
+  leaveBalanceAnnual       Int                @default(14)
+  leaveBalanceMedical      Int                @default(14)
   payrollBasicSalary       Float
   appointmentLetterAssetId String?
-  appointmentLetter        FileAsset? @relation("AppointmentLetter", fields: [appointmentLetterAssetId], references: [id])
-  lmsInstructorActive      Boolean  @default(false)
-  status                   String   @default("active")
-  tempPassword             String?
+  lmsInstructorActive      Boolean            @default(false)
+  status                   String             @default("active")
+  createdAt                DateTime           @default(now())
   credentialsIssuedAt      DateTime?
-  createdAt                DateTime @default(now())
-
-  leaveRequests      LeaveRequest[]
-  onboardingRequest  OnboardingRequest?
-  payrollRecords     PayrollRecord[]
-  courseOfferings    CourseOffering[]
-  researchGrants     ResearchGrant[]
-  purchaseRequests   PurchaseRequest[]
-  proposedCourses    Course[]           @relation("CourseProposals")
+  tempPassword             String?
+  courseOfferings          CourseOffering[]
+  proposedCourses          Course[]           @relation("CourseProposals")
+  leaveRequests            LeaveRequest[]
+  onboardingRequest        OnboardingRequest?
+  payrollRecords           PayrollRecord[]
+  purchaseRequests         PurchaseRequest[]
+  researchGrants           ResearchGrant[]
+  appointmentLetter        FileAsset?         @relation("AppointmentLetter", fields: [appointmentLetterAssetId], references: [id])
+  department               Department         @relation(fields: [departmentId], references: [id])
+  user                     User               @relation(fields: [userId], references: [id])
 
   @@map("staff")
 }
 
 model LeaveRequest {
-  id                String   @id @default(cuid())
+  id                String    @id @default(cuid())
   staffId           String
-  staff             Staff    @relation(fields: [staffId], references: [id])
   leaveType         String
   startDate         DateTime
   endDate           DateTime
   durationDays      Int
-  reason            String  
+  reason            String
   coveringOfficerId String
-  status            String   @default("pending")
+  status            String    @default("pending")
   l1ApproverId      String?
   l1ActedAt         DateTime?
   l2ApproverId      String?
   l2ActedAt         DateTime?
-  rejectRemarks     String? 
-  submittedAt       DateTime @default(now())
+  rejectRemarks     String?
+  submittedAt       DateTime  @default(now())
+  staff             Staff     @relation(fields: [staffId], references: [id])
 
   @@map("leave_requests")
 }
 
 model OnboardingRequest {
-  id                           String   @id @default(cuid())
-  staffId                      String   @unique
-  staff                        Staff    @relation(fields: [staffId], references: [id])
-  initiatedById                String
-  status                       String   @default("pending_approval")
-  hrDirectorApprovedAt         DateTime?
-  loginCreated                 Boolean  @default(false)
-  lmsProvisioned               Boolean  @default(false)
-  payrollCreated               Boolean  @default(false)
-  appointmentLetterGenerated   Boolean  @default(false)
-  completedAt                  DateTime?
-  createdAt                    DateTime @default(now())
+  id                         String    @id @default(cuid())
+  staffId                    String    @unique
+  initiatedById              String
+  status                     String    @default("pending_approval")
+  hrDirectorApprovedAt       DateTime?
+  loginCreated               Boolean   @default(false)
+  lmsProvisioned             Boolean   @default(false)
+  payrollCreated             Boolean   @default(false)
+  appointmentLetterGenerated Boolean   @default(false)
+  completedAt                DateTime?
+  createdAt                  DateTime  @default(now())
+  staff                      Staff     @relation(fields: [staffId], references: [id])
 
   @@map("onboarding_requests")
 }
 
-// ============================================================
-// RESEARCH
-// ============================================================
-
 model ResearchGrant {
-  id                    String   @id @default(cuid())
-  referenceNo           String   @unique
-  title                 String
+  id                      String              @id @default(cuid())
+  referenceNo             String              @unique
+  title                   String
   principalInvestigatorId String
-  pi                    Staff    @relation(fields: [principalInvestigatorId], references: [id])
-  departmentId          String
-  department            Department @relation(fields: [departmentId], references: [id])
-  abstract              String  
-  durationMonths        Int
-  totalBudget           Float
-  amountUtilised        Float    @default(0.00)
-  status                String   @default("proposal_submitted")
-  l1DeptHeadId          String?
-  l1ActedAt             DateTime?
-  l1Remarks             String? 
-  l2CommitteeReview     String? 
-  l3FinanceApprovedById String?
-  l3ActedAt             DateTime?
-  l3Remarks             String? 
-  submittedAt           DateTime @default(now())
-
-  files ResearchGrantFile[]
+  departmentId            String
+  abstract                String
+  durationMonths          Int
+  totalBudget             Float
+  amountUtilised          Float               @default(0.00)
+  status                  String              @default("proposal_submitted")
+  l1DeptHeadId            String?
+  l1ActedAt               DateTime?
+  l1Remarks               String?
+  l2CommitteeReview       String?
+  l3FinanceApprovedById   String?
+  l3ActedAt               DateTime?
+  l3Remarks               String?
+  submittedAt             DateTime            @default(now())
+  files                   ResearchGrantFile[]
+  department              Department          @relation(fields: [departmentId], references: [id])
+  pi                      Staff               @relation(fields: [principalInvestigatorId], references: [id])
 
   @@map("research_grants")
 }
 
 model ResearchGrantFile {
-  id              String       @id @default(cuid())
+  id              String        @id @default(cuid())
   researchGrantId String
-  researchGrant   ResearchGrant @relation(fields: [researchGrantId], references: [id])
   fileAssetId     String
-  fileAsset       FileAsset    @relation(fields: [fileAssetId], references: [id])
-  createdAt       DateTime     @default(now())
+  createdAt       DateTime      @default(now())
+  fileAsset       FileAsset     @relation(fields: [fileAssetId], references: [id])
+  researchGrant   ResearchGrant @relation(fields: [researchGrantId], references: [id])
 
   @@unique([researchGrantId, fileAssetId])
   @@map("research_grant_files")
 }
 
-// ============================================================
-// CAMPUS FACILITIES
-// ============================================================
-
 model CampusFacility {
-  id          String   @id @default(cuid())
-  code        String   @unique
-  name        String
-  type        String   // lecture_hall|lab|office|meeting_room|facility
-  capacity    Int
-  building    String
-  floor       String?
-  isAvailable Boolean  @default(true)
-  features    String? 
-
+  id                 String              @id @default(cuid())
+  code               String              @unique
+  name               String
+  type               String
+  capacity           Int
+  building           String
+  floor              String?
+  isAvailable        Boolean             @default(true)
+  features           String?
   bookings           FacilityBooking[]
   maintenanceTickets MaintenanceTicket[]
 
@@ -930,68 +862,64 @@ model CampusFacility {
 }
 
 model FacilityBooking {
-  id           String   @id @default(cuid())
+  id           String         @id @default(cuid())
   facilityId   String
-  facility     CampusFacility @relation(fields: [facilityId], references: [id])
   bookedById   String
   departmentId String?
-  department   Department? @relation(fields: [departmentId], references: [id])
   bookingDate  DateTime
   startTime    String
   endTime      String
   purpose      String
-  status       String   @default("confirmed")
-  createdAt    DateTime @default(now())
+  status       String         @default("confirmed")
+  createdAt    DateTime       @default(now())
+  department   Department?    @relation(fields: [departmentId], references: [id])
+  facility     CampusFacility @relation(fields: [facilityId], references: [id])
 
   @@map("facility_bookings")
 }
 
 model MaintenanceTicket {
-  id          String   @id @default(cuid())
-  facilityId  String
-  facility    CampusFacility @relation(fields: [facilityId], references: [id])
+  id           String         @id @default(cuid())
+  facilityId   String
   reportedById String
-  title       String
-  description String? 
-  priority    String   @default("medium")
-  status      String   @default("open")
+  title        String
+  description  String?
+  priority     String         @default("medium")
+  status       String         @default("open")
   assignedToId String?
-  resolvedAt  DateTime?
-  createdAt   DateTime @default(now())
+  resolvedAt   DateTime?
+  createdAt    DateTime       @default(now())
+  facility     CampusFacility @relation(fields: [facilityId], references: [id])
 
   @@map("maintenance_tickets")
 }
 
 model CampusVehicle {
-  id          String   @id @default(cuid())
-  plateNo     String   @unique
-  model       String
-  vehicleType String
-  status      String   @default("available")
+  id           String   @id @default(cuid())
+  plateNo      String   @unique
+  model        String
+  vehicleType  String
+  status       String   @default("available")
   departmentId String?
-  createdAt   DateTime @default(now())
+  createdAt    DateTime @default(now())
 
   @@map("campus_vehicles")
 }
 
-// ============================================================
-// AI / ANALYTICS
-// ============================================================
-
 model StudentRiskScore {
-  id                  String   @id @default(cuid())
-  studentId           String
-  student             Student  @relation(fields: [studentId], references: [id])
-  offeringId          String
-  offering            CourseOffering @relation(fields: [offeringId], references: [id])
-  attendancePct       Float
-  quizAvg             Float
-  submissionRate      Float
-  riskScore           Float
-  predictedOutcome    String
-  confidence          Float
-  advisorNotifiedAt   DateTime?
-  computedAt          DateTime @default(now())
+  id                String         @id @default(cuid())
+  studentId         String
+  offeringId        String
+  attendancePct     Float
+  quizAvg           Float
+  submissionRate    Float
+  riskScore         Float
+  predictedOutcome  String
+  confidence        Float
+  advisorNotifiedAt DateTime?
+  computedAt        DateTime       @default(now())
+  offering          CourseOffering @relation(fields: [offeringId], references: [id])
+  student           Student        @relation(fields: [studentId], references: [id])
 
   @@unique([studentId, offeringId])
   @@map("student_risk_scores")
@@ -1000,26 +928,26 @@ model StudentRiskScore {
 model ChatbotConversation {
   id             String   @id @default(cuid())
   userId         String
-  user           User     @relation(fields: [userId], references: [id])
-  messages       String  
-  contextData    String? 
+  messages       String
+  contextData    String?
   startedAt      DateTime @default(now())
   lastActivityAt DateTime @default(now())
+  user           User     @relation(fields: [userId], references: [id])
 
   @@map("chatbot_conversations")
 }
 
 model ProcurementAnomaly {
-  id             String   @id @default(cuid())
+  id             String          @id @default(cuid())
   prId           String
-  pr             PurchaseRequest @relation(fields: [prId], references: [id])
   anomalyType    String
-  description    String  
-  severity       String   @default("medium")
+  description    String
+  severity       String          @default("medium")
   zScore         Float?
-  comparisonData String? 
-  status         String   @default("open")
-  detectedAt     DateTime @default(now())
+  comparisonData String?
+  status         String          @default("open")
+  detectedAt     DateTime        @default(now())
+  pr             PurchaseRequest @relation(fields: [prId], references: [id])
 
   @@map("procurement_anomalies")
 }
@@ -1027,56 +955,55 @@ model ProcurementAnomaly {
 model PushSubscription {
   id           String   @id @default(cuid())
   userId       String
-  user         User     @relation(fields: [userId], references: [id])
-  endpoint     String  
-  p256dh       String  
+  endpoint     String
+  p256dh       String
   authKey      String
   deviceType   String
   registeredAt DateTime @default(now())
+  user         User     @relation(fields: [userId], references: [id])
 
   @@map("push_subscriptions")
 }
 
 model NotificationTemplate {
-  id          String   @id @default(cuid())
-  eventKey    String   @unique
-  subjectTpl  String
-  bodyTpl     String  
-  channels    String  
-  createdAt   DateTime @default(now())
-
+  id            String         @id @default(cuid())
+  eventKey      String         @unique
+  subjectTpl    String
+  bodyTpl       String
+  channels      String
+  createdAt     DateTime       @default(now())
   notifications Notification[]
 
   @@map("notification_templates")
 }
 
 model Notification {
-  id                 String   @id @default(cuid())
-  userId             String
-  user               User     @relation(fields: [userId], references: [id])
-  templateId         String?
-  template           NotificationTemplate? @relation(fields: [templateId], references: [id])
-  type               String
-  subject            String
-  body               String  
-  status             String   @default("pending")
-  sentAt             DateTime?
-  triggeredByEvent   String?
-  isRead             Boolean  @default(false)
-  createdAt          DateTime @default(now())
+  id               String                @id @default(cuid())
+  userId           String
+  templateId       String?
+  type             String
+  subject          String
+  body             String
+  status           String                @default("pending")
+  sentAt           DateTime?
+  triggeredByEvent String?
+  isRead           Boolean               @default(false)
+  createdAt        DateTime              @default(now())
+  template         NotificationTemplate? @relation(fields: [templateId], references: [id])
+  user             User                  @relation(fields: [userId], references: [id])
 
   @@map("notifications")
 }
 
 model ExecutiveInsight {
-  id              String   @id @default(cuid())
-  insightType     String
-  title           String
-  body            String  
-  severity        String   @default("info")
-  metricSnapshot  String? 
-  generatedAt     DateTime @default(now())
-  expiresAt       DateTime
+  id             String   @id @default(cuid())
+  insightType    String
+  title          String
+  body           String
+  severity       String   @default("info")
+  metricSnapshot String?
+  generatedAt    DateTime @default(now())
+  expiresAt      DateTime
 
   @@map("executive_insights")
 }
@@ -1084,22 +1011,22 @@ model ExecutiveInsight {
 model AuditLog {
   id         String   @id @default(cuid())
   userId     String?
-  user       User?    @relation(fields: [userId], references: [id])
   action     String
   entityType String?
   entityId   String?
-  oldValue   String? 
-  newValue   String? 
+  oldValue   String?
+  newValue   String?
   ipAddress  String?
   userAgent  String?
   createdAt  DateTime @default(now())
+  user       User?    @relation(fields: [userId], references: [id])
 
   @@map("audit_logs")
 }
 
 model SystemConfig {
   key         String   @id
-  value       String  
+  value       String
   description String?
   updatedAt   DateTime @updatedAt
 
@@ -1122,19 +1049,19 @@ model EmailLog {
 }
 
 model InvoiceAdjustment {
-  id              String   @id @default(cuid())
-  invoiceId       String
-  invoice         FeeInvoice @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
-  adjustmentType  String
-  amount          Float
-  reason          String
-  previousAmount  Float
-  newAmount       Float
-  previousStatus  String
-  newStatus       String
-  operatedBy      String
-  operatedAt      DateTime @default(now())
-  createdAt       DateTime @default(now())
+  id             String     @id @default(cuid())
+  invoiceId      String
+  adjustmentType String
+  amount         Float
+  reason         String
+  previousAmount Float
+  newAmount      Float
+  previousStatus String
+  newStatus      String
+  operatedBy     String
+  operatedAt     DateTime   @default(now())
+  createdAt      DateTime   @default(now())
+  invoice        FeeInvoice @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
 
   @@map("invoice_adjustments")
 }

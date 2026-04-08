@@ -215,11 +215,10 @@ const RequiredLabel: React.FC<{ children: React.ReactNode }> = ({ children }) =>
 )
 
 // ── Pending application status card ──────────────────────────────────────────
-const PendingApplicationCard: React.FC<{ app: any }> = ({ app }) => {
+const PendingApplicationCard: React.FC<{ app: any; navigate: any }> = ({ app, navigate }) => {
   const { t } = useTranslation()
   const addToast = useUIStore(s => s.addToast)
   const qc = useQueryClient()
-  const navigate = useNavigate()
   const [previewImage, setPreviewImage] = useState<{ url: string; name: string } | null>(null)
 
   const { data: documents = [] } = useQuery<any[]>({
@@ -290,14 +289,9 @@ const PendingApplicationCard: React.FC<{ app: any }> = ({ app }) => {
   const isRejected = app.status === 'rejected'
 
   const handleResubmit = () => {
-    console.log('Resubmit button clicked')
-    console.log('App data:', app)
     // Use app.id as fallback if userId is not available
     const key = app.userId ? `admission-apply-resubmit-${app.userId}` : 'admission-apply-resubmit'
-    console.log('SessionStorage key:', key)
     sessionStorage.setItem(key, JSON.stringify(app))
-    console.log('SessionStorage set successfully')
-    console.log('Navigating to /admission/apply')
     navigate('/admission/apply')
   }
 
@@ -320,7 +314,7 @@ const PendingApplicationCard: React.FC<{ app: any }> = ({ app }) => {
       {/* Acceptance / Rejection notification banner */}
       {isOffered && (
         <div style={{
-          maxWidth: 760, margin: '0 auto 20px',
+          maxWidth: 900, margin: '0 auto 20px',
           background: 'linear-gradient(135deg, #e8f5e9 0%, #f6ffed 100%)',
           border: '2px solid #52c41a', borderRadius: 12, padding: '20px 24px',
           display: 'flex', alignItems: 'flex-start', gap: 16,
@@ -349,7 +343,7 @@ const PendingApplicationCard: React.FC<{ app: any }> = ({ app }) => {
 
       {isRejected && (
         <Alert
-          style={{ maxWidth: 760, margin: '0 auto 20px' }}
+          style={{ maxWidth: 900, margin: '0 auto 20px' }}
           type="error"
           icon={<CloseCircleOutlined />}
           showIcon
@@ -367,7 +361,7 @@ const PendingApplicationCard: React.FC<{ app: any }> = ({ app }) => {
       )}
 
       {/* Application summary card */}
-      <Card style={{ maxWidth: 760, margin: '0 auto' }} styles={{ body: { padding: 24 } }}>
+      <Card style={{ maxWidth: 900, margin: '0 auto' }} styles={{ body: { padding: 24 } }}>
         {/* Header row */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 24, paddingBottom: 16, borderBottom: '1px solid #f0f0f0' }}>
           <div style={{
@@ -796,6 +790,7 @@ const DocumentUploadSection: React.FC<DocumentUploadSectionProps> = ({
 const AdmissionApplyPage: React.FC = () => {
   const { t } = useTranslation()
   const user = useAuthStore(s => s.user)
+  const navigate = useNavigate()
 
   const { data: studentProfile, isLoading: studentLoading } = useQuery<any>({
     queryKey: ['student', 'me'],
@@ -846,6 +841,8 @@ const AdmissionApplyPage: React.FC = () => {
   const [previewSrc, setPreviewSrc] = useState<string | null>(null)
   const addToast                  = useUIStore(s => s.addToast)
   const qc                        = useQueryClient()
+
+
 
   const handleDocAdd = (items: UploadFileItem[]) => setDocFiles(p => [...p, ...items])
   const handleDocRemove = (id: string) => setDocFiles(p => p.filter(f => f.id !== id))
@@ -904,44 +901,7 @@ const AdmissionApplyPage: React.FC = () => {
     }
   }, [submitted, user?.id])
 
-  useEffect(() => {
-    try {
-      // Try to get resubmit data with user ID
-      let resubmit = sessionStorage.getItem(`admission-apply-resubmit-${user?.id}`)
-      
-      // Fallback: try without user ID for backward compatibility
-      if (!resubmit) {
-        resubmit = sessionStorage.getItem('admission-apply-resubmit')
-      }
-      
-      if (resubmit) {
-        const app = JSON.parse(resubmit)
-        setResubmitData(app)
-        setFormData({
-          fullName: app.fullName,
-          icPassport: app.icPassport,
-          dateOfBirth: app.dateOfBirth ? dayjs(app.dateOfBirth).format('YYYY-MM-DD') : '',
-          gender: app.gender,
-          nationality: app.nationality,
-          email: app.email,
-          mobile: app.mobile,
-          homeAddress: app.homeAddress,
-          highestQualification: app.highestQualification,
-          previousInstitution: app.previousInstitution,
-          yearOfCompletion: String(app.yearOfCompletion),
-          cgpa: app.cgpa ? String(app.cgpa) : '',
-          programmeId: app.programmeId,
-          intakeId: app.intakeId,
-          modeOfStudy: app.modeOfStudy,
-          scholarshipApplied: app.scholarshipApplied,
-          scholarshipType: app.scholarshipType,
-        })
-        setStep(0)
-      }
-    } catch (e) {
-      console.error('Failed to load resubmit data:', e)
-    }
-  }, [user?.id])
+
 
   // Animate auto-check steps after submission
   useEffect(() => {
@@ -1035,6 +995,64 @@ const AdmissionApplyPage: React.FC = () => {
   })
   const form2 = useForm<Step2>({ resolver: zodResolver(step2Schema), defaultValues: formData as Step2 })
   const form3 = useForm<Step3>({ resolver: zodResolver(step3Schema), defaultValues: formData as Step3 })
+
+  // Check for resubmit data
+  useEffect(() => {
+    try {
+      // Try to get resubmit data with user ID
+      let resubmit = sessionStorage.getItem(`admission-apply-resubmit-${user?.id}`)
+      
+      // Fallback: try without user ID for backward compatibility
+      if (!resubmit) {
+        resubmit = sessionStorage.getItem('admission-apply-resubmit')
+      }
+      
+      if (resubmit) {
+        const app = JSON.parse(resubmit)
+        console.log('Resubmit data:', app)
+        setResubmitData(app)
+        const formValues = {
+          fullName: app.fullName,
+          icPassport: app.icPassport,
+          dateOfBirth: app.dateOfBirth ? dayjs(app.dateOfBirth).format('YYYY-MM-DD') : '',
+          gender: app.gender,
+          nationality: app.nationality,
+          email: app.email,
+          mobile: app.mobile,
+          homeAddress: app.homeAddress,
+          highestQualification: app.highestQualification,
+          previousInstitution: app.previousInstitution,
+          yearOfCompletion: String(app.yearOfCompletion),
+          cgpa: app.cgpa ? String(app.cgpa) : '',
+          programmeId: app.programmeId || (app.programme?.id),
+          intakeId: app.intakeId,
+          modeOfStudy: app.modeOfStudy,
+          scholarshipApplied: app.scholarshipApplied,
+          scholarshipType: typeof app.scholarshipType === 'string' ? app.scholarshipType : undefined,
+        }
+        console.log('Form values to be set:', formValues)
+        setFormData(formValues)
+        // Update form values directly
+        setStep(0)
+        // Clear resubmit data after loading
+        sessionStorage.removeItem(`admission-apply-resubmit-${user?.id}`)
+        sessionStorage.removeItem('admission-apply-resubmit')
+        
+        // Reset forms after a small delay to ensure they are mounted
+        requestAnimationFrame(() => {
+          console.log('Resetting forms with values:', formValues)
+          form1.reset(formValues)
+          form2.reset(formValues)
+          form3.reset(formValues)
+          console.log('After reset - form3 programmeId:', form3.getValues('programmeId'))
+          console.log('After reset - form3 intakeId:', form3.getValues('intakeId'))
+          console.log('After reset - form3 isValid:', form3.formState.isValid)
+        })
+      }
+    } catch (e) {
+      console.error('Failed to load resubmit data:', e)
+    }
+  }, [user?.id])
 
   if (studentLoading || (appLoading && !studentProfile)) {
     return <div style={{ display: 'flex', justifyContent: 'center', padding: '80px 0' }}><Spin size="large" /></div>
@@ -1203,11 +1221,16 @@ const AdmissionApplyPage: React.FC = () => {
   }
 
   // Application submitted (waiting/accepted/rejected) — shown on page revisit
-  if (myApplication) return <PendingApplicationCard app={myApplication} />
+  if (myApplication && !resubmitData) return <PendingApplicationCard app={myApplication} navigate={navigate} />
 
   const handleNext1 = form1.handleSubmit(data => { setFormData(p => ({ ...p, ...data })); setStep(1) })
   const handleNext2 = form2.handleSubmit(data => { setFormData(p => ({ ...p, ...data })); setStep(2) })
-  const handleNext3 = form3.handleSubmit(data => { setFormData(p => ({ ...p, ...data })); setStep(3) })
+  const handleNext3 = form3.handleSubmit(data => { 
+    console.log('handleNext3 called with data:', data)
+    console.log('form3 errors:', form3.formState.errors)
+    console.log('formData:', formData)
+    setFormData(p => ({ ...p, ...data })); setStep(3) 
+  })
   const handleSubmit = () => {
     if (resubmitData) {
       resubmitMutation.mutate({ ...formData })
@@ -1232,6 +1255,24 @@ const AdmissionApplyPage: React.FC = () => {
           }
         </p>
       </div>
+
+      {/* Rejection reason alert for resubmission */}
+      {resubmitData && resubmitData.status === 'rejected' && resubmitData.officerRemarks && (
+        <Alert
+          style={{ maxWidth: 760, margin: '0 auto 20px' }}
+          type="error"
+          icon={<CloseCircleOutlined />}
+          showIcon
+          message={
+            <span style={{ fontWeight: 700, fontSize: 15 }}>
+              {t('admissionApply.sorryRejected', { defaultValue: 'Your previous application was rejected.' })}
+            </span>
+          }
+          description={
+            `${t('admissionApply.rejectionReason', { defaultValue: 'Reason' })}: ${resubmitData.officerRemarks}`
+          }
+        />
+      )}
 
       {/* Steps indicator */}
       <div className={styles.stepperCard}>
@@ -1473,7 +1514,15 @@ const AdmissionApplyPage: React.FC = () => {
                 <Col xs={24} md={12}>
                   <Form.Item label={t('admissionApply.scholarshipType')}>
                     <Controller name="scholarshipType" control={form3.control}
-                      render={({ field }) => <Input {...field} placeholder={t('admissionApply.scholarshipPlaceholder')} size="large" aria-label={t('admissionApply.scholarshipType')} />}
+                      render={({ field }) => (
+                        <Select {...field} size="large" placeholder={t('admissionApply.scholarshipPlaceholder')} aria-label={t('admissionApply.scholarshipType')}
+                          options={[
+                            { value: '25_excellence', label: t('admissionApply.scholarship25', { defaultValue: '25% Excellence Scholarship' }) },
+                            { value: '15_bursary', label: t('admissionApply.scholarship15', { defaultValue: '15% Bursary' }) },
+                            { value: '100_full', label: t('admissionApply.scholarship100', { defaultValue: '100% Full Scholarship' }) }
+                          ]}
+                        />
+                      )}
                     />
                   </Form.Item>
                 </Col>
@@ -1482,7 +1531,22 @@ const AdmissionApplyPage: React.FC = () => {
             <div className={styles.formActions}>
               <Space>
                 <Button size="large" onClick={() => setStep(1)}>{t('admissionApply.backBtn')}</Button>
-                <Button type="primary" htmlType="submit" size="large">{t('admissionApply.reviewSubmit')}</Button>
+                <Button 
+                  type="primary" 
+                  htmlType="submit" 
+                  size="large"
+                  onClick={() => {
+                    console.log('Submit button clicked')
+                    console.log('form3 values:', form3.getValues())
+                    console.log('programmeId:', form3.getValues('programmeId'))
+                    console.log('intakeId:', form3.getValues('intakeId'))
+                    console.log('modeOfStudy:', form3.getValues('modeOfStudy'))
+                    console.log('form3 errors:', form3.formState.errors)
+                    console.log('form3 isValid:', form3.formState.isValid)
+                  }}
+                >
+                  {t('admissionApply.reviewSubmit')}
+                </Button>
               </Space>
             </div>
           </Form>

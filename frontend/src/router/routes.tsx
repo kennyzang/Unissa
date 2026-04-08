@@ -61,7 +61,9 @@ const CameraScanPage           = lazy(() => import('@/pages/lms/CameraScanPage')
 const ProcurementPRPage        = lazy(() => import('@/pages/procurement/ProcurementPRPage'))
 const ApprovalInboxPage        = lazy(() => import('@/pages/procurement/ApprovalInboxPage'))
 const ProductsPage             = lazy(() => import('@/pages/procurement/ProductsPage'))
-const ProcurementAnomaliesPage = lazy(() => import('@/pages/ai/ProcurementAnomaliesPage'))
+const ProcurementAnomaliesPage  = lazy(() => import('@/pages/ai/ProcurementAnomaliesPage'))
+const ChatbotPage               = lazy(() => import('@/pages/ai/ChatbotPage'))
+const ExecutiveInsightsPage     = lazy(() => import('@/pages/ai/ExecutiveInsightsPage'))
 const HrStaffPage              = lazy(() => import('@/pages/hr/HrStaffPage'))
 const LeaveManagementPage      = lazy(() => import('@/pages/hr/LeaveManagementPage'))
 const HrOnboardingPage         = lazy(() => import('@/pages/hr/HrOnboardingPage'))
@@ -134,7 +136,9 @@ export const router = createBrowserRouter([
       { path: 'research/grants', element: r(['lecturer','manager','admin','finance'], <ResearchGrantsPage />) },
 
       // AI Analytics
-      { path: 'ai/risk', element: r(['lecturer','admin'], <RiskDashboardPage />) },
+      { path: 'ai/risk',     element: r(['lecturer','admin'], <RiskDashboardPage />) },
+      { path: 'ai/chat',     element: r(['lecturer','admin','manager','finance'], <ChatbotPage />) },
+      { path: 'ai/insights', element: r(['admin','manager'], <ExecutiveInsightsPage />) },
 
       // Campus
       { path: 'campus/services',   element: r(['student'], <CampusServicesPage />) },
@@ -147,8 +151,6 @@ export const router = createBrowserRouter([
       { path: 'admin/settings', element: r(['admin'], <SettingsPage />) },
       { path: 'admin/courses',  element: r(['admin'], <CourseManagementPage />) },
 
-      // Legacy redirect
-      { path: 'ai/chat', element: <Navigate to="/dashboard" replace /> },
     ],
   },
   { path: '*', element: <RoleRedirect /> },

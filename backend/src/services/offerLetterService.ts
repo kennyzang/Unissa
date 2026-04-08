@@ -77,8 +77,8 @@ export async function generateOfferLetterPDF(data: OfferLetterData): Promise<Buf
     ]
 
     details.forEach(([label, value]) => {
-      doc.font('Helvetica-Bold').text(`${label}:`, 70, doc.y, { continued: true, width: 150 })
-      doc.font('Helvetica').text(` ${value}`, { width: 350 })
+      doc.font('Helvetica-Bold').text(`${label}:`, 70, doc.y, { continued: true, width: 120 })
+      doc.font('Helvetica').text(` ${value}`, { width: 380 })
     })
 
     doc.moveDown(1)
@@ -93,8 +93,8 @@ export async function generateOfferLetterPDF(data: OfferLetterData): Promise<Buf
     ]
 
     dates.forEach(([label, value]) => {
-      doc.font('Helvetica-Bold').text(`${label}:`, 70, doc.y, { continued: true, width: 150 })
-      doc.font('Helvetica').text(` ${value}`, { width: 350 })
+      doc.font('Helvetica-Bold').text(`${label}:`, 70, doc.y, { continued: true, width: 120 })
+      doc.font('Helvetica').text(` ${value}`, { width: 380 })
     })
 
     doc.moveDown(1)

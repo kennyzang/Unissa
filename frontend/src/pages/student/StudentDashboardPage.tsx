@@ -11,8 +11,29 @@ import Button from '@/components/ui/Button'
 import styles from './StudentDashboardPage.module.scss'
 
 interface OnboardingStatus {
+  applicantId: string | null
+  userId: string | null
+  fullName: string | null
+  icPassport: string | null
+  dateOfBirth: string | null
+  gender: string | null
+  nationality: string | null
+  email: string | null
+  mobile: string | null
+  homeAddress: string | null
+  highestQualification: string | null
+  previousInstitution: string | null
+  yearOfCompletion: number | null
+  cgpa: number | null
+  programmeId: string | null
+  intakeId: string | null
+  modeOfStudy: string | null
+  scholarshipApplied: boolean | null
+  scholarshipType: string | null
   applicantStatus: string | null
+  officerRemarks: string | null
   offerRef: string | null
+  offerLetterUrl: string | null
   programmeName: string | null
   studentId: string | null
   isEnrolled: boolean
@@ -57,7 +78,7 @@ const StudentDashboardPage: React.FC = () => {
   }
 
   // Determine which steps are complete
-  const offerAccepted = status.isEnrolled || (status.applicantStatus === 'accepted')
+  const offerAccepted = (status.isEnrolled || status.applicantStatus === 'accepted') && status.applicantStatus !== 'rejected'
   const coursesRegistered = status.hasEnrolments
   const feesPaid = status.isEnrolled && !status.hasPendingInvoice && status.hasEnrolments
 
@@ -67,29 +88,77 @@ const StudentDashboardPage: React.FC = () => {
       icon: <FileText size={20} />,
       title: status.applicantStatus === 'submitted' 
         ? t('studentDashboard.stepApplicationTitle', { defaultValue: 'Application Submitted' })
-        : status.applicantStatus 
-          ? t('studentDashboard.stepOfferTitle', { defaultValue: 'Accept Offer Letter' })
-          : t('studentDashboard.stepNoApplicationTitle', { defaultValue: 'Submit Admission Application' }),
+        : status.applicantStatus === 'rejected'
+          ? t('studentDashboard.stepRejectedTitle', { defaultValue: 'Application Rejected' })
+          : status.applicantStatus 
+            ? t('studentDashboard.stepOfferTitle', { defaultValue: 'Accept Offer Letter' })
+            : t('studentDashboard.stepNoApplicationTitle', { defaultValue: 'Submit Admission Application' }),
       desc: status.applicantStatus === 'submitted'
         ? t('studentDashboard.stepApplicationDesc', { defaultValue: 'Your application has been submitted. The admissions team is reviewing it. You will receive an offer letter once approved.' })
-        : status.applicantStatus
-          ? status.offerRef
-            ? t('studentDashboard.stepOfferDesc', {
-                defaultValue: `Offer reference: {{ref}} — {{programme}}`,
-                ref: status.offerRef,
-                programme: status.programmeName ?? '',
-              })
-            : t('studentDashboard.stepOfferDescNoRef', { defaultValue: 'Review and accept your admission offer from UNISSA.' })
-          : t('studentDashboard.stepNoApplicationDesc', { defaultValue: 'You need to submit an admission application before you can enrol in courses.' }),
+        : status.applicantStatus === 'rejected'
+          ? (
+              <>
+                <p>{t('studentDashboard.stepRejectedDesc', { defaultValue: 'Your admission application has been rejected. Please contact the admissions office for more information.' })}</p>
+                {status.officerRemarks && (
+                  <p style={{ color: '#f5222d', marginTop: '8px' }}>
+                    <strong>Reason:</strong> {status.officerRemarks}
+                  </p>
+                )}
+              </>
+            )
+          : status.applicantStatus
+            ? status.offerRef
+              ? t('studentDashboard.stepOfferDesc', {
+                  defaultValue: `Offer reference: {{ref}} — {{programme}}`,
+                  ref: status.offerRef,
+                  programme: status.programmeName ?? '',
+                })
+              : t('studentDashboard.stepOfferDescNoRef', { defaultValue: 'Review and accept your admission offer from UNISSA.' })
+            : t('studentDashboard.stepNoApplicationDesc', { defaultValue: 'You need to submit an admission application before you can enrol in courses.' }),
       done: offerAccepted,
-      action: (offerAccepted || status.applicantStatus === 'submitted') 
-        ? null 
-        : status.applicantStatus 
-          ? () => acceptMutation.mutate()
-          : () => navigate('/admission/apply'),
-      actionLabel: status.applicantStatus 
-        ? t('studentDashboard.acceptOffer', { defaultValue: 'Accept Offer & Enrol' })
-        : t('studentDashboard.submitApplication', { defaultValue: 'Submit Application' }),
+      action: (offerAccepted || status.applicantStatus === 'submitted')
+        ? null
+        : status.applicantStatus === 'rejected'
+          ? () => {
+              // Store resubmit data in sessionStorage
+              const resubmitData = {
+                id: status.applicantId,
+                userId: status.userId,
+                fullName: status.fullName,
+                icPassport: status.icPassport,
+                dateOfBirth: status.dateOfBirth,
+                gender: status.gender,
+                nationality: status.nationality,
+                email: status.email,
+                mobile: status.mobile,
+                homeAddress: status.homeAddress,
+                highestQualification: status.highestQualification,
+                previousInstitution: status.previousInstitution,
+                yearOfCompletion: status.yearOfCompletion,
+                cgpa: status.cgpa,
+                programmeId: status.programmeId,
+                intakeId: status.intakeId,
+                modeOfStudy: status.modeOfStudy,
+                scholarshipApplied: status.scholarshipApplied,
+                scholarshipType: status.scholarshipType,
+                status: status.applicantStatus,
+                officerRemarks: status.officerRemarks
+              };
+              sessionStorage.setItem(`admission-apply-resubmit-${status.userId}`, JSON.stringify(resubmitData));
+              navigate('/admission/apply');
+            }
+          : status.applicantStatus
+            ? () => acceptMutation.mutate()
+            : () => navigate('/admission/apply'),
+      actionLabel: status.applicantStatus === 'rejected'
+        ? t('studentDashboard.resubmitApplication', { defaultValue: 'Resubmit Application' })
+        : status.applicantStatus
+          ? t('studentDashboard.acceptOffer', { defaultValue: 'Accept Offer & Enrol' })
+          : t('studentDashboard.submitApplication', { defaultValue: 'Submit Application' }),
+      secondaryAction: status.offerLetterUrl && !offerAccepted && status.applicantStatus && status.applicantStatus !== 'submitted' && status.applicantStatus !== 'rejected'
+        ? () => window.open(status.offerLetterUrl!, '_blank')
+        : null,
+      secondaryActionLabel: t('studentDashboard.viewOfferLetter', { defaultValue: 'View Offer Letter' }),
       loading: acceptMutation.isPending,
     },
     {
@@ -181,6 +250,17 @@ const StudentDashboardPage: React.FC = () => {
                 </div>
               </div>
               <p className={styles.stepDesc}>{step.desc}</p>
+              {('secondaryAction' in step) && step.secondaryAction && !step.done && (
+                <Button
+                  variant="ghost"
+                  onClick={(step as any).secondaryAction}
+                  icon={<FileText size={14} />}
+                  className={styles.stepBtn}
+                  style={{ marginBottom: 8 }}
+                >
+                  {(step as any).secondaryActionLabel}
+                </Button>
+              )}
               {step.action && !step.done && (
                 <Button
                   onClick={step.action}

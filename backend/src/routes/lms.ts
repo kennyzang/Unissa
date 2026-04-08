@@ -758,6 +758,7 @@ router.post('/submissions', upload.array('files', 5), async (req: AuthRequest, r
         assignmentId,
         studentId,
         ...(primaryAssetId ? { assetId: primaryAssetId } : {}),
+        content: trimmedContent || null,
         answers: studentAnswers.length > 0 ? JSON.stringify(studentAnswers) : null,
         aiRubricScores,
         aiGeneratedAt: new Date(),
@@ -765,6 +766,7 @@ router.post('/submissions', upload.array('files', 5), async (req: AuthRequest, r
       },
       update: {
         ...(primaryAssetId ? { assetId: primaryAssetId } : {}),
+        content: trimmedContent || null,
         answers: studentAnswers.length > 0 ? JSON.stringify(studentAnswers) : null,
         aiRubricScores,
         aiGeneratedAt: new Date(),

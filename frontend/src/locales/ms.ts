@@ -287,12 +287,15 @@ const ms = {
     yearPlaceholder: 'cth. 2024',
     cgpaPlaceholder: 'cth. 3.75',
     intakePlaceholder: 'Pilih program dan pengambilan',
-    scholarshipPlaceholder: 'cth. Biasiswa BIBD',
+    scholarshipPlaceholder: 'Pilih jenis biasiswa',
     uploadedDocuments: 'Dokumen Dimuat Naik',
     docTypeTranscript: 'Transkrip Akademik',
     docTypeIcPassport: 'IC / Pasport',
     docTypePassportPhoto: 'Gambar Pasport',
     docTypeSupporting: 'Dokumen Sokongan',
+    scholarship25: 'Biasiswa Kecemerlangan 25%',
+    scholarship15: 'Bantuan Kewangan 15%',
+    scholarship100: 'Biasiswa Penuh 100%',
   },
 
   admissionReview: {

@@ -12,7 +12,7 @@ router.get('/onboarding-status', async (req: AuthRequest, res: Response) => {
 
   const applicant = await prisma.applicant.findFirst({
     where: { userId },
-    include: { programme: true },
+    include: { programme: true, offerLetterAsset: { select: { fileUrl: true } } },
     orderBy: { createdAt: 'desc' },
   })
 
@@ -34,8 +34,29 @@ router.get('/onboarding-status', async (req: AuthRequest, res: Response) => {
   res.json({
     success: true,
     data: {
+      applicantId: applicant?.id ?? null,
+      userId: applicant?.userId ?? null,
+      fullName: applicant?.fullName ?? null,
+      icPassport: applicant?.icPassport ?? null,
+      dateOfBirth: applicant?.dateOfBirth ?? null,
+      gender: applicant?.gender ?? null,
+      nationality: applicant?.nationality ?? null,
+      email: applicant?.email ?? null,
+      mobile: applicant?.mobile ?? null,
+      homeAddress: applicant?.homeAddress ?? null,
+      highestQualification: applicant?.highestQualification ?? null,
+      previousInstitution: applicant?.previousInstitution ?? null,
+      yearOfCompletion: applicant?.yearOfCompletion ?? null,
+      cgpa: applicant?.cgpa ?? null,
+      programmeId: applicant?.programmeId ?? null,
+      intakeId: applicant?.intakeId ?? null,
+      modeOfStudy: applicant?.modeOfStudy ?? null,
+      scholarshipApplied: applicant?.scholarshipApplied ?? null,
+      scholarshipType: applicant?.scholarshipType ?? null,
       applicantStatus: applicant?.status ?? null,
+      officerRemarks: applicant?.officerRemarks ?? null,
       offerRef: applicant?.offerRef ?? null,
+      offerLetterUrl: applicant?.offerLetterAsset?.fileUrl ?? null,
       programmeName: applicant?.programme?.name ?? null,
       studentId: student?.studentId ?? null,
       isEnrolled: !!student,

@@ -539,11 +539,11 @@ async function main() {
   // ── Noor is a pre-enrollment applicant (offered status) — no Student/Enrolment/FeeInvoice records
   // Demo flow starts from receiving the offer letter
 
-  // ── Noor Aisyah (Scene-1 demo): clean state — no applicant, no student ───────
-  // noor_apply / Demo@2026 — always reset so demo starts from the very beginning.
+  // ── Noor Aisyah (Scene-1 demo): clean state — no student, but with applicant data ───────
+  // noor_apply / Demo@2026 — always reset student data but keep applicant data
   
-  // Reset demo account: wipe any prior student/applicant data so demo always starts clean
-  const existingStudentNoorApply = await prisma.student.findFirst({ where: { userId: uZara.id } })
+  // Reset demo account: wipe any prior student data but keep applicant data
+  const existingStudentNoorApply = await prisma.student.findFirst({ where: { userId: uNoor.id } })
   if (existingStudentNoorApply) {
     await prisma.studentGpaRecord.deleteMany({ where: { studentId: existingStudentNoorApply.id } })
     await prisma.studentRiskScore.deleteMany({ where: { studentId: existingStudentNoorApply.id } })
@@ -552,10 +552,41 @@ async function main() {
     await prisma.feeInvoice.deleteMany({ where: { studentId: existingStudentNoorApply.id } })
     await prisma.enrolment.deleteMany({ where: { studentId: existingStudentNoorApply.id } })
     await prisma.libraryAccount.deleteMany({ where: { studentId: existingStudentNoorApply.id } })
+    await prisma.student.delete({ where: { id: existingStudentNoorApply.id } })
   }
-  await prisma.student.deleteMany({ where: { userId: uZara.id } })
-  await prisma.notification.deleteMany({ where: { userId: uZara.id } })
-  await prisma.applicant.deleteMany({ where: { userId: uZara.id } })
+  await prisma.student.deleteMany({ where: { userId: uNoor.id } })
+  await prisma.notification.deleteMany({ where: { userId: uNoor.id } })
+  
+  // Recreate Noor's applicant data with offered status
+  await prisma.applicant.upsert({
+    where: { icPassport: '00-123456' },
+    create: {
+      applicationRef: 'APP-2026-0001',
+      userId: uNoor.id,
+      fullName: 'Noor Aisyah Binti Hassan',
+      icPassport: '00-123456',
+      dateOfBirth: new Date('2000-05-14'),
+      gender: 'female',
+      nationality: 'Brunei Darussalam',
+      email: 'noor@unissa.edu.bn',
+      mobile: '+673-8123456',
+      homeAddress: '12 Jalan Gadong, Bandar Seri Begawan, BS8411, Brunei Darussalam',
+      highestQualification: 'a_level',
+      previousInstitution: 'Maktab Sains Paduka Seri Begawan Sultan',
+      yearOfCompletion: 2025,
+      cgpa: null,
+      intakeId: intakeBSC.id,
+      programmeId: progBSC.id,
+      modeOfStudy: 'full_time',
+      scholarshipApplied: false,
+      status: 'offered',
+      offerRef: 'UNISSA-2026-0001',
+      offerLetterSentAt: new Date('2026-03-25'),
+      submittedAt: new Date('2026-03-10'),
+      decisionMadeAt: new Date('2026-03-25'),
+    },
+    update: { userId: uNoor.id, status: 'offered', offerRef: 'UNISSA-2026-0001', offerLetterSentAt: new Date('2026-03-25') },
+  })
 
   // ── Clean up existing new student records for clean seed ───────
   const newStudentUsernames = ['ali', 'fatimah', 'ahmad', 'aisyah', 'mohd', 'siti', 'hassan', 'nor', 'osman', 'halimah', 'rashid', 'zahra', 'farid', 'diana', 'kamil', 'linda', 'aziz', 'sarah', 'razi', 'maya', 'faisal', 'nadia', 'wafi', 'hanna']

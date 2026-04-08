@@ -120,6 +120,11 @@ const en = {
     smartPlatform: 'Smart Platform',
     commandCenter: 'Command Center',
     procurement: 'Procurement',
+    aiChatbot: 'AI Chatbot',
+    budgetManagement: 'Budget Management',
+    executiveInsights: 'Executive Insights',
+    aiAnalytics: 'AI Analytics',
+    feeStatement: 'Fee Statement',
   },
 
   // Navbar
@@ -294,12 +299,15 @@ const en = {
     yearPlaceholder: 'e.g. 2024',
     cgpaPlaceholder: 'e.g. 3.75',
     intakePlaceholder: 'Select a programme and intake',
-    scholarshipPlaceholder: 'e.g. BIBD Scholarship',
+    scholarshipPlaceholder: 'Select scholarship type',
     uploadedDocuments: 'Uploaded Documents',
     docTypeTranscript: 'Academic Transcript',
     docTypeIcPassport: 'IC / Passport',
     docTypePassportPhoto: 'Passport Photo',
     docTypeSupporting: 'Supporting Document',
+    scholarship25: '25% Excellence Scholarship',
+    scholarship15: '15% Bursary',
+    scholarship100: '100% Full Scholarship',
   },
 
   // Admission Review
@@ -1243,6 +1251,9 @@ const en = {
     financeApproval: 'Finance Approval',
     funded: 'Funded',
     deptApproved: 'Dept Approved',
+    committeeApproved: 'Committee Approved',
+    committeeReview: 'Committee Review',
+    committeeApproveBtn: 'Committee Approve',
     underReview: 'Under Review',
     rejected: 'Rejected',
     completed: 'Completed',

@@ -44,21 +44,23 @@ interface GrantForm {
 }
 
 const STATUS_COLOR: Record<string, 'blue' | 'green' | 'red' | 'orange' | 'gray' | 'purple'> = {
-  proposal_submitted: 'blue',
-  dept_approved:      'orange',
-  under_review:       'purple',
-  approved:           'green',
-  rejected:           'red',
-  completed:          'gray',
+  proposal_submitted:  'blue',
+  dept_approved:       'orange',
+  committee_approved:  'purple',
+  under_review:        'purple',
+  approved:            'green',
+  rejected:            'red',
+  completed:           'gray',
 }
 
 const STATUS_KEY: Record<string, string> = {
-  proposal_submitted: 'researchGrants.submitted',
-  dept_approved:      'researchGrants.deptApproved',
-  under_review:       'researchGrants.underReview',
-  approved:           'researchGrants.approved',
-  rejected:           'researchGrants.rejected',
-  completed:          'researchGrants.completed',
+  proposal_submitted:  'researchGrants.submitted',
+  dept_approved:       'researchGrants.deptApproved',
+  committee_approved:  'researchGrants.committeeApproved',
+  under_review:        'researchGrants.underReview',
+  approved:            'researchGrants.approved',
+  rejected:            'researchGrants.rejected',
+  completed:           'researchGrants.completed',
 }
 
 const ResearchGrantsPage: React.FC = () => {
@@ -67,7 +69,7 @@ const ResearchGrantsPage: React.FC = () => {
   const [search,      setSearch]      = useState('')
   const [submitModal, setSubmitModal] = useState(false)
   const [detailModal, setDetailModal] = useState<Grant | null>(null)
-  const [reviewModal, setReviewModal] = useState<{ grant: Grant; type: 'dept' | 'finance'; action: string } | null>(null)
+  const [reviewModal, setReviewModal] = useState<{ grant: Grant; type: 'dept' | 'committee' | 'finance'; action: string } | null>(null)
   const [remarks,     setRemarks]     = useState('')
   const [submissionFiles, setSubmissionFiles] = useState<File[]>([])
   const [fileErrors, setFileErrors] = useState<string[]>([])
@@ -109,6 +111,7 @@ const ResearchGrantsPage: React.FC = () => {
   const { user }   = useAuthStore()
   const addToast   = useUIStore(s => s.addToast)
   const qc         = useQueryClient()
+  const isAdmin    = user?.role === 'admin'
   const isManager  = user?.role === 'manager' || user?.role === 'admin'
   const isFinance  = user?.role === 'finance'  || user?.role === 'admin'
   const isLecturer = user?.role === 'lecturer'
@@ -175,8 +178,9 @@ const ResearchGrantsPage: React.FC = () => {
 
   const reviewMutation = useMutation({
     mutationFn: ({ id, type, action, remarks }: { id: string; type: string; action: string; remarks: string }) => {
-      if (type === 'dept') return apiClient.patch(`/research/grants/${id}/review`,  { action, remarks })
-      return                       apiClient.patch(`/research/grants/${id}/finance`, { action, remarks })
+      if (type === 'dept')      return apiClient.patch(`/research/grants/${id}/review`,    { action, remarks })
+      if (type === 'committee') return apiClient.patch(`/research/grants/${id}/committee`, { action, remarks })
+      return                           apiClient.patch(`/research/grants/${id}/finance`,   { action, remarks })
     },
     onSuccess: (_, vars) => {
       addToast({ type: 'success', message: t(STATUS_KEY[vars.action] as any ?? vars.action, { defaultValue: vars.action }) })
@@ -189,7 +193,7 @@ const ResearchGrantsPage: React.FC = () => {
 
   const statusLabel = (status: string) => t(STATUS_KEY[status] as any ?? status, { defaultValue: status })
 
-  const ACTIVE_STATUSES = ['proposal_submitted', 'dept_approved', 'under_review']
+  const ACTIVE_STATUSES = ['proposal_submitted', 'dept_approved', 'committee_approved', 'under_review']
   const DECIDED_STATUSES = ['approved', 'rejected', 'completed']
 
   const activeGrants = grants.filter(g => ACTIVE_STATUSES.includes(g.status))
@@ -266,7 +270,19 @@ const ResearchGrantsPage: React.FC = () => {
             </Button>
           </>
         )}
-        {isFinance && v.status === 'dept_approved' && (
+        {isAdmin && v.status === 'dept_approved' && (
+          <>
+            <Button size="sm" variant="ghost" icon={<CheckCircle size={13} />}
+              onClick={() => { setReviewModal({ grant: v, type: 'committee', action: 'committee_approved' }); setRemarks('') }}>
+              {t('researchGrants.committeeApproveBtn', { defaultValue: 'Committee Approve' })}
+            </Button>
+            <Button size="sm" variant="danger" icon={<XCircle size={13} />}
+              onClick={() => { setReviewModal({ grant: v, type: 'committee', action: 'rejected' }); setRemarks('') }}>
+              {t('researchGrants.rejectBtn')}
+            </Button>
+          </>
+        )}
+        {isFinance && v.status === 'committee_approved' && (
           <>
             <Button size="sm" variant="ghost" icon={<CheckCircle size={13} />}
               onClick={() => { setReviewModal({ grant: v, type: 'finance', action: 'approved' }); setRemarks('') }}>
@@ -310,7 +326,9 @@ const ResearchGrantsPage: React.FC = () => {
         <div className={styles.wfArrow}>→</div>
         <div className={styles.wfStep}><span className={styles.wfNum}>2</span><span>{t('researchGrants.deptHeadReview')}</span></div>
         <div className={styles.wfArrow}>→</div>
-        <div className={styles.wfStep}><span className={styles.wfNum}>3</span><span>{t('researchGrants.financeApproval')}</span></div>
+        <div className={styles.wfStep}><span className={styles.wfNum}>3</span><span>{t('researchGrants.committeeReview', { defaultValue: 'Committee Review' })}</span></div>
+        <div className={styles.wfArrow}>→</div>
+        <div className={styles.wfStep}><span className={styles.wfNum}>4</span><span>{t('researchGrants.financeApproval')}</span></div>
         <div className={styles.wfArrow}>→</div>
         <div className={styles.wfStep}><span className={`${styles.wfNum} ${styles.wfNumGreen}`}>✓</span><span>{t('researchGrants.funded')}</span></div>
       </div>
@@ -384,7 +402,11 @@ const ResearchGrantsPage: React.FC = () => {
                 <span className={styles.grantCardBudget}>BND {g.totalBudget.toLocaleString()}</span>
                 <span className={styles.grantCardDate}>{new Date(g.submittedAt).toLocaleDateString('en-GB')}</span>
               </div>
-              {(isManager && g.status === 'proposal_submitted') || (isFinance && g.status === 'dept_approved') ? (
+              {(
+                (isManager && g.status === 'proposal_submitted') ||
+                (isAdmin   && g.status === 'dept_approved') ||
+                (isFinance && g.status === 'committee_approved')
+              ) ? (
                 <div className={styles.grantCardActions} onClick={e => e.stopPropagation()}>
                   {isManager && g.status === 'proposal_submitted' && (
                     <>
@@ -398,7 +420,19 @@ const ResearchGrantsPage: React.FC = () => {
                       </Button>
                     </>
                   )}
-                  {isFinance && g.status === 'dept_approved' && (
+                  {isAdmin && g.status === 'dept_approved' && (
+                    <>
+                      <Button size="sm" variant="ghost" icon={<CheckCircle size={13} />}
+                        onClick={() => { setReviewModal({ grant: g, type: 'committee', action: 'committee_approved' }); setRemarks('') }}>
+                        {t('researchGrants.committeeApproveBtn', { defaultValue: 'Committee Approve' })}
+                      </Button>
+                      <Button size="sm" variant="danger" icon={<XCircle size={13} />}
+                        onClick={() => { setReviewModal({ grant: g, type: 'committee', action: 'rejected' }); setRemarks('') }}>
+                        {t('researchGrants.rejectBtn')}
+                      </Button>
+                    </>
+                  )}
+                  {isFinance && g.status === 'committee_approved' && (
                     <>
                       <Button size="sm" variant="ghost" icon={<CheckCircle size={13} />}
                         onClick={() => { setReviewModal({ grant: g, type: 'finance', action: 'approved' }); setRemarks('') }}>
@@ -661,6 +695,8 @@ const ResearchGrantsPage: React.FC = () => {
             ? t('researchGrants.rejectBtn')
             : reviewModal.type === 'finance'
             ? t('researchGrants.approveFunding')
+            : reviewModal.type === 'committee'
+            ? t('researchGrants.committeeApproveBtn', { defaultValue: 'Committee Approve' })
             : t('researchGrants.approveBtn')}
           onClose={() => setReviewModal(null)}
           okDanger={reviewModal.action === 'rejected'}
@@ -668,6 +704,8 @@ const ResearchGrantsPage: React.FC = () => {
             ? t('researchGrants.rejectBtn')
             : reviewModal.type === 'finance'
             ? t('researchGrants.approveFunding')
+            : reviewModal.type === 'committee'
+            ? t('researchGrants.committeeApproveBtn', { defaultValue: 'Committee Approve' })
             : t('researchGrants.approveBtn')}
           onOk={() => reviewMutation.mutate({ id: reviewModal.grant.id, type: reviewModal.type, action: reviewModal.action, remarks })}
           okLoading={reviewMutation.isPending}

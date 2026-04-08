@@ -288,12 +288,15 @@ const zh = {
     yearPlaceholder: '如：2024',
     cgpaPlaceholder: '如：3.75',
     intakePlaceholder: '请选择专业与入学期',
-    scholarshipPlaceholder: '如：BIBD奖学金',
+    scholarshipPlaceholder: '请选择奖学金类型',
     uploadedDocuments: '已上传文档',
     docTypeTranscript: '成绩单',
     docTypeIcPassport: '身份证/护照',
     docTypePassportPhoto: '证件照',
     docTypeSupporting: '支持文档',
+    scholarship25: '25% 优秀奖学金',
+    scholarship15: '15% 助学金',
+    scholarship100: '100% 全额奖学金',
   },
 
   admissionReview: {

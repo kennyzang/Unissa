@@ -10,6 +10,7 @@ import {
 } from 'lucide-react'
 import { apiClient } from '@/lib/apiClient'
 import { useUIStore } from '@/stores/uiStore'
+import { useAuthStore } from '@/stores/authStore'
 import Card from '@/components/ui/Card'
 import Badge from '@/components/ui/Badge'
 import Button from '@/components/ui/Button'
@@ -166,15 +167,37 @@ const STATUS_BADGE: Record<string, { color: 'green' | 'red' | 'orange' | 'gray';
   partial: { color: 'orange', label: 'Partial' },
 }
 
+interface StudentSearchResult {
+  id: string
+  studentId: string
+  user: { displayName: string }
+  programme: { name: string } | null
+}
+
 const FeeStatementPage: React.FC = () => {
   const { t } = useTranslation()
+  const { user } = useAuthStore()
+  const isFinanceOrAdmin = user?.role === 'finance' || user?.role === 'admin'
   const [payModal, setPayModal] = useState<Invoice | null>(null)
   const [receipt, setReceipt] = useState<any>(null)
   const [previewInvoice, setPreviewInvoice] = useState<Invoice | null>(null)
+  const [studentSearch, setStudentSearch] = useState('')
+  const [selectedStudent, setSelectedStudent] = useState<StudentSearchResult | null>(null)
   const addToast = useUIStore(s => s.addToast)
   const qc = useQueryClient()
 
-  // Get current student's ID dynamically
+  // Finance/admin: search students
+  const { data: searchResults = [], isLoading: searchLoading } = useQuery<StudentSearchResult[]>({
+    queryKey: ['finance', 'student-search', studentSearch],
+    queryFn: async () => {
+      if (!studentSearch.trim()) return []
+      const { data } = await apiClient.get(`/finance/students-search?q=${encodeURIComponent(studentSearch)}`)
+      return data.data
+    },
+    enabled: isFinanceOrAdmin && studentSearch.trim().length > 0,
+  })
+
+  // Get current student's ID dynamically (for student role)
   const { data: studentProfile, isLoading: studentLoading } = useQuery<{ studentId: string }>({
     queryKey: ['student', 'me'],
     queryFn: async () => {
@@ -182,18 +205,23 @@ const FeeStatementPage: React.FC = () => {
       return data.data
     },
     retry: false,
+    enabled: !isFinanceOrAdmin,
   })
+
+  const effectiveStudentId = isFinanceOrAdmin
+    ? selectedStudent?.studentId
+    : studentProfile?.studentId
 
   const { data: invoices = [], isLoading: invoicesLoading } = useQuery<Invoice[]>({
-    queryKey: ['invoices', studentProfile?.studentId],
+    queryKey: ['invoices', effectiveStudentId],
     queryFn: async () => {
-      const { data } = await apiClient.get(`/finance/invoices/${studentProfile!.studentId}`)
+      const { data } = await apiClient.get(`/finance/invoices/${effectiveStudentId}`)
       return data.data
     },
-    enabled: !!studentProfile?.studentId,
+    enabled: !!effectiveStudentId,
   })
 
-  const isLoading = studentLoading || invoicesLoading
+  const isLoading = (isFinanceOrAdmin ? false : studentLoading) || invoicesLoading
 
   const { register, handleSubmit, watch, control, formState: { errors }, reset } = useForm<PayForm>({
     resolver: zodResolver(paySchema),
@@ -246,8 +274,8 @@ const FeeStatementPage: React.FC = () => {
 
   const totalOutstanding = invoices.reduce((s, i) => s + i.outstandingBalance, 0)
 
-  // Not yet enrolled
-  if (!studentLoading && !studentProfile) {
+  // Not yet enrolled (student role only)
+  if (!isFinanceOrAdmin && !studentLoading && !studentProfile) {
     return (
       <div className={styles.page}>
         <div style={{ maxWidth: 480, margin: '80px auto', textAlign: 'center', padding: '0 16px' }}>
@@ -283,6 +311,49 @@ const FeeStatementPage: React.FC = () => {
           </div>
         )}
       </div>
+
+      {/* Finance/Admin: Student search */}
+      {isFinanceOrAdmin && (
+        <Card title="Student Fee Lookup">
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+            <input
+              type="text"
+              placeholder="Search by student name or ID…"
+              value={studentSearch}
+              onChange={e => { setStudentSearch(e.target.value); setSelectedStudent(null) }}
+              style={{
+                width: '100%', padding: '8px 12px', borderRadius: 8,
+                border: '1px solid #d9d9d9', fontSize: 14, outline: 'none',
+              }}
+            />
+            {searchLoading && <div style={{ fontSize: 13, color: '#888' }}>Searching…</div>}
+            {searchResults.length > 0 && !selectedStudent && (
+              <div style={{ border: '1px solid #e5e6eb', borderRadius: 8, overflow: 'hidden' }}>
+                {searchResults.map(s => (
+                  <div
+                    key={s.id}
+                    onClick={() => { setSelectedStudent(s); setStudentSearch(s.user.displayName) }}
+                    style={{
+                      padding: '10px 14px', cursor: 'pointer', borderBottom: '1px solid #f0f0f0',
+                      fontSize: 14, display: 'flex', justifyContent: 'space-between',
+                    }}
+                    onMouseEnter={e => (e.currentTarget.style.background = '#f5f5f5')}
+                    onMouseLeave={e => (e.currentTarget.style.background = '')}
+                  >
+                    <span>{s.user.displayName} <span style={{ color: '#888' }}>({s.studentId})</span></span>
+                    <span style={{ color: '#888', fontSize: 12 }}>{s.programme?.name}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+            {selectedStudent && (
+              <div style={{ fontSize: 13, color: '#52c41a' }}>
+                Viewing invoices for: <strong>{selectedStudent.user.displayName}</strong> ({selectedStudent.studentId})
+              </div>
+            )}
+          </div>
+        </Card>
+      )}
 
       {/* Receipt modal */}
       {receipt && (

@@ -132,6 +132,28 @@ Welcome to cashless campus life! 🎓
 }
 
 // GET /api/v1/finance/invoices/:studentId
+// GET /api/v1/finance/students-search?q=noor  (finance/admin only)
+router.get('/students-search', requireRole('finance', 'admin'), async (req: AuthRequest, res: Response) => {
+  const q = String(req.query.q ?? '').trim()
+  const students = await prisma.student.findMany({
+    where: q ? {
+      OR: [
+        { user: { displayName: { contains: q } } },
+        { studentId: { contains: q } },
+      ],
+    } : {},
+    select: {
+      id: true,
+      studentId: true,
+      user: { select: { displayName: true } },
+      programme: { select: { name: true } },
+    },
+    take: 20,
+    orderBy: { studentId: 'asc' },
+  })
+  res.json({ success: true, data: students })
+})
+
 router.get('/invoices/:studentId', async (req: AuthRequest, res: Response) => {
   const studentId = Array.isArray(req.params.studentId) ? req.params.studentId[0] : req.params.studentId
   const student = await prisma.student.findFirst({
@@ -331,6 +353,27 @@ router.get('/gl-codes', async (_req, res: Response) => {
     data: codes.map(g => ({
       ...g,
       availableBalance: g.totalBudget - g.committedAmount - g.spentAmount,
+    })),
+  })
+})
+
+// GET /api/v1/finance/gl-codes/:id/purchase-requests
+router.get('/gl-codes/:id/purchase-requests', requireRole('finance', 'admin', 'manager'), async (req, res: Response) => {
+  const id = String(req.params.id)
+  const prs = await prisma.purchaseRequest.findMany({
+    where: { glCodeId: id },
+    include: { requestor: { select: { fullName: true } } },
+    orderBy: { submittedAt: 'desc' },
+  })
+  res.json({
+    success: true,
+    data: prs.map(pr => ({
+      id: pr.id,
+      title: pr.itemDescription,
+      amount: pr.totalAmount,
+      status: pr.status,
+      requester: pr.requestor?.fullName ?? '—',
+      submittedAt: pr.submittedAt,
     })),
   })
 })

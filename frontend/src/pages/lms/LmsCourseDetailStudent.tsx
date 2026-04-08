@@ -922,6 +922,8 @@ const LmsCourseDetailStudent: React.FC = () => {
             })
           }}
           okLoading={submitMutation.isPending || aiLoading}
+          style={{ maxHeight: '80vh' }}
+          bodyStyle={{ maxHeight: '60vh', overflowY: 'auto' }}
         >
           {aiLoading ? (
             <div className={styles.aiLoadingContainer}>
