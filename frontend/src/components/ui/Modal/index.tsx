@@ -14,11 +14,13 @@ interface ModalProps {
   footer?: React.ReactNode | null
   children: React.ReactNode
   className?: string
+  style?: React.CSSProperties
+  bodyStyle?: React.CSSProperties
 }
 
 const Modal: React.FC<ModalProps> = ({
   open, title, onClose, onOk, okText = 'Confirm', cancelText = 'Cancel',
-  okLoading, okDanger, width = 520, footer, children, className,
+  okLoading, okDanger, width = 520, footer, children, className, style, bodyStyle,
 }) => (
   <AntModal
     open={open}
@@ -32,6 +34,8 @@ const Modal: React.FC<ModalProps> = ({
     width={width}
     footer={footer === null ? null : footer ?? undefined}
     className={className}
+    style={style}
+    styles={{ body: bodyStyle }}
     destroyOnClose
   >
     {children}
