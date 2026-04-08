@@ -1,4 +1,4 @@
-import React, { forwardRef } from 'react'
+import React, { forwardRef, useCallback } from 'react'
 import { Input as AntInput } from 'antd'
 import type { InputRef } from 'antd'
 
@@ -14,11 +14,23 @@ interface InputProps extends Omit<React.InputHTMLAttributes<HTMLInputElement>, '
 
 const SIZE_MAP = { sm: 'small', md: 'middle', lg: 'large' } as const
 
-const Input = forwardRef<InputRef, InputProps>(({
+// Ant Design's InputRef wraps the native <input> element inside a `.input` property.
+// react-hook-form's `register` expects a ref pointing to the actual HTMLInputElement,
+// not InputRef, so we bridge them here to ensure `{...register(...)}` works correctly.
+const Input = forwardRef<HTMLInputElement, InputProps>(({
   label, error, hint, required, prefixIcon, suffixIcon,
   inputSize = 'md', type, className, style, ...rest
 }, ref) => {
   const size = SIZE_MAP[inputSize]
+
+  const setAntRef = useCallback((antInput: InputRef | null) => {
+    const nativeEl = antInput?.input ?? null
+    if (typeof ref === 'function') {
+      ref(nativeEl)
+    } else if (ref) {
+      (ref as React.MutableRefObject<HTMLInputElement | null>).current = nativeEl
+    }
+  }, [ref])
 
   const sharedProps = {
     size,
@@ -39,9 +51,9 @@ const Input = forwardRef<InputRef, InputProps>(({
         </label>
       )}
       {type === 'password' ? (
-        <AntInput.Password ref={ref} {...sharedProps} />
+        <AntInput.Password ref={setAntRef} {...sharedProps} />
       ) : (
-        <AntInput ref={ref} type={type} {...sharedProps} />
+        <AntInput ref={setAntRef} type={type} {...sharedProps} />
       )}
       {error && <span style={{ fontSize: 12, color: '#F53F3F' }}>{error}</span>}
       {hint && !error && <span style={{ fontSize: 12, color: '#86909C' }}>{hint}</span>}
