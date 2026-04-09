@@ -411,7 +411,6 @@ model Submission {
   assignmentId     String
   studentId        String
   assetId          String?    @unique
-  content          String?
   answers          String?
   submittedAt      DateTime   @default(now())
   aiRubricScores   String?
@@ -420,6 +419,7 @@ model Submission {
   finalMarks       Float?
   gradedAt         DateTime?
   gradedById       String?
+  content          String?
   asset            FileAsset? @relation(fields: [assetId], references: [id])
   student          Student    @relation(fields: [studentId], references: [id])
   assignment       Assignment @relation(fields: [assignmentId], references: [id])

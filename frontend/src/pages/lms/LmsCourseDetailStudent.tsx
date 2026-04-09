@@ -1275,7 +1275,7 @@ const LmsCourseDetailStudent: React.FC = () => {
                 <video
                   controls
                   className={styles.videoPlayer}
-                  src={materialPreview.asset.fileUrl}
+                  src={materialPreview.asset.fileUrl.includes('session-materials') ? materialPreview.asset.fileUrl : `/uploads/session-materials/${materialPreview.asset.fileUrl.split('/').pop()}`}
                 >
                   {t('lmsCourseDetail.videoNotSupported', { defaultValue: 'Your browser does not support video playback.' })}
                 </video>

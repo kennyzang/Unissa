@@ -59,7 +59,30 @@ export const sessionMaterialUpload = multer({
   limits: { fileSize: 500 * 1024 * 1024 }, // 500 MB for videos
   fileFilter: (req, file, cb) => {
     const allowedExt = /\.(pdf|ppt|pptx|doc|docx|xls|xlsx|txt|zip|png|jpg|jpeg|mp4|webm|mov|avi|mkv)$/i
-    if (allowedExt.test(path.extname(file.originalname))) {
+    const allowedMimeTypes = [
+      'application/pdf',
+      'application/msword',
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      'application/vnd.ms-powerpoint',
+      'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+      'application/vnd.ms-excel',
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      'text/plain',
+      'application/zip',
+      'image/jpeg',
+      'image/png',
+      'video/mp4',
+      'video/webm',
+      'video/quicktime',
+      'video/x-msvideo',
+      'video/x-matroska',
+      'application/octet-stream' // 允许二进制流，以支持某些浏览器的视频文件上传
+    ]
+    
+    const hasValidExt = allowedExt.test(path.extname(file.originalname))
+    const hasValidMime = allowedMimeTypes.includes(file.mimetype)
+    
+    if (hasValidExt || hasValidMime) {
       return cb(null, true)
     }
     cb(new Error('Unsupported file type. Allowed: PDF, PPT, DOC, XLS, TXT, ZIP, images, and videos (MP4, WebM, MOV, AVI, MKV).'))
