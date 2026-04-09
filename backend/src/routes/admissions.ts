@@ -93,20 +93,107 @@ router.post('/apply', authenticate, async (req: AuthRequest, res: Response) => {
   } = req.body
 
   // Input validation
-  const missing = (['fullName', 'icPassport', 'dateOfBirth', 'gender', 'intakeId', 'programmeId', 'modeOfStudy'] as const)
-    .filter(f => !req.body[f])
+  const requiredFields = ['fullName', 'icPassport', 'dateOfBirth', 'gender', 'intakeId', 'programmeId', 'modeOfStudy'] as const
+  const missing = requiredFields.filter(f => !req.body[f])
   if (missing.length > 0) {
     res.status(400).json({ success: false, message: `Missing required fields: ${missing.join(', ')}` })
     return
   }
-  if (isNaN(Date.parse(dateOfBirth))) {
+
+  // Type validation
+  if (typeof fullName !== 'string' || fullName.trim().length === 0) {
+    res.status(400).json({ success: false, message: 'Full name must be a non-empty string' })
+    return
+  }
+
+  if (typeof icPassport !== 'string' || icPassport.trim().length === 0) {
+    res.status(400).json({ success: false, message: 'IC/Passport must be a non-empty string' })
+    return
+  }
+
+  if (!dateOfBirth || isNaN(Date.parse(dateOfBirth))) {
     res.status(400).json({ success: false, message: 'Invalid dateOfBirth format' })
     return
   }
+
+  if (typeof gender !== 'string' || !['male', 'female', 'other'].includes(gender.toLowerCase())) {
+    res.status(400).json({ success: false, message: 'Gender must be male, female, or other' })
+    return
+  }
+
+  if (typeof intakeId !== 'string' || intakeId.trim().length === 0) {
+    res.status(400).json({ success: false, message: 'Invalid intake ID' })
+    return
+  }
+
+  if (typeof programmeId !== 'string' || programmeId.trim().length === 0) {
+    res.status(400).json({ success: false, message: 'Invalid programme ID' })
+    return
+  }
+
+  if (typeof modeOfStudy !== 'string' || !['full_time', 'part_time'].includes(modeOfStudy.toLowerCase())) {
+    res.status(400).json({ success: false, message: 'Mode of study must be full_time or part_time' })
+    return
+  }
+
+  // Optional field validation
+  if (email && (typeof email !== 'string' || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))) {
+    res.status(400).json({ success: false, message: 'Invalid email format' })
+    return
+  }
+
+  if (mobile && typeof mobile !== 'string') {
+    res.status(400).json({ success: false, message: 'Mobile number must be a string' })
+    return
+  }
+
+  if (highestQualification && typeof highestQualification !== 'string') {
+    res.status(400).json({ success: false, message: 'Highest qualification must be a string' })
+    return
+  }
+
+  if (yearOfCompletion && (isNaN(Number(yearOfCompletion)) || Number(yearOfCompletion) < 1900 || Number(yearOfCompletion) > new Date().getFullYear())) {
+    res.status(400).json({ success: false, message: 'Invalid year of completion' })
+    return
+  }
+
   const cgpaNum = cgpa !== undefined && cgpa !== null && cgpa !== '' ? Number(cgpa) : null
   if (cgpaNum !== null && (isNaN(cgpaNum) || cgpaNum < 0 || cgpaNum > 4)) {
     res.status(400).json({ success: false, message: 'CGPA must be between 0 and 4' })
     return
+  }
+
+  if (scholarshipApplied && typeof scholarshipApplied !== 'boolean') {
+    res.status(400).json({ success: false, message: 'Scholarship applied must be a boolean' })
+    return
+  }
+
+  if (scholarshipApplied && scholarshipType && !['25', '15', '100'].includes(scholarshipType)) {
+    res.status(400).json({ success: false, message: 'Scholarship type must be 25, 15, or 100' })
+    return
+  }
+
+  // Subject grades validation
+  if (subjectGrades && !Array.isArray(subjectGrades)) {
+    res.status(400).json({ success: false, message: 'Subject grades must be an array' })
+    return
+  }
+
+  if (Array.isArray(subjectGrades)) {
+    for (const grade of subjectGrades) {
+      if (!grade || typeof grade !== 'object') {
+        res.status(400).json({ success: false, message: 'Each subject grade must be an object' })
+        return
+      }
+      if (!grade.subjectName || typeof grade.subjectName !== 'string' || grade.subjectName.trim().length === 0) {
+        res.status(400).json({ success: false, message: 'Each subject grade must have a subject name' })
+        return
+      }
+      if (!grade.grade || typeof grade.grade !== 'string' || grade.grade.trim().length === 0) {
+        res.status(400).json({ success: false, message: 'Each subject grade must have a grade' })
+        return
+      }
+    }
   }
 
   // Validate intake is open

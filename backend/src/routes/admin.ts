@@ -1,7 +1,9 @@
 import { Router, Response } from 'express'
 import prisma from '../lib/prisma'
 import { authenticate, requireRole, AuthRequest } from '../middleware/auth'
-import { emailService, initEmailService } from '../services/emailService'
+import { emailService } from '../services/emailService'
+import fs from 'fs'
+import path from 'path'
 
 const router = Router()
 router.use(authenticate)
@@ -553,38 +555,89 @@ router.post('/reset-student-enrollment', requireRole('admin'), async (req: AuthR
       deleted.applicants += applicantCount
     }
 
-    // After reset, set up initial state for noor (admitted) and zara (no application)
+    // After reset, set up initial state for noor (offered) and zara (no application)
     for (const user of users) {
       if (user.username === 'noor') {
-        // Create applicant record for noor with admitted status
+        // Create applicant record for noor with offered status and generate offer letter
         const intake = await prisma.intake.findFirst({ orderBy: { id: 'desc' } })
         if (intake) {
-          await prisma.applicant.create({
+          const programme = await prisma.programme.findUnique({ where: { id: intake.programmeId } })
+          const dept = programme ? await prisma.department.findUnique({ where: { id: programme.departmentId } }) : null
+          
+          const applicant = await prisma.applicant.create({
             data: {
               userId: user.id,
-              applicationRef: `APP-${Date.now()}-NOOR`,
-              fullName: 'Noor Ahmad',
-              icPassport: '123456789',
-              dateOfBirth: new Date('2000-01-01'),
-              gender: 'male',
+              applicationRef: 'APP-2026-0001',
+              fullName: 'Noor Aisyah Binti Hassan',
+              icPassport: '00-123456',
+              dateOfBirth: new Date('2000-05-14'),
+              gender: 'female',
               nationality: 'Brunei Darussalam',
-              email: user.email,
-              mobile: '8888888',
-              homeAddress: 'Bandar Seri Begawan, Brunei',
-              highestQualification: 'High School',
-              previousInstitution: 'Sultan Omar Ali Saifuddien College',
-              yearOfCompletion: 2024,
+              email: 'noor@unissa.edu.bn',
+              mobile: '+673-8123456',
+              homeAddress: '12 Jalan Gadong, Bandar Seri Begawan, BS8411, Brunei Darussalam',
+              highestQualification: 'a_level',
+              previousInstitution: 'Maktab Sains Paduka Seri Begawan Sultan',
+              yearOfCompletion: 2025,
+              cgpa: null,
               intakeId: intake.id,
               programmeId: intake.programmeId,
               modeOfStudy: 'full_time',
               scholarshipApplied: false,
-              status: 'admitted',
-              submittedAt: new Date(),
-              decisionMadeAt: new Date(),
-              accountCreated: true,
-              accountCreatedAt: new Date()
+              status: 'offered',
+              offerRef: 'UNISSA-2026-0001',
+              offerLetterSentAt: new Date('2026-03-25'),
+              submittedAt: new Date('2026-03-10'),
+              decisionMadeAt: new Date('2026-03-25'),
             }
           })
+          
+          // Generate offer letter PDF for Noor
+          const { generateOfferLetterPDF } = await import('../services/offerLetterService')
+          const uploadDir = process.env.UPLOAD_DIR || path.resolve(__dirname, '../../uploads')
+          if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir, { recursive: true })
+          
+          const offerRef = 'UNISSA-2026-0001'
+          const fileName = `offer-letter-${offerRef}.pdf`
+          const filePath = path.join(uploadDir, fileName)
+          
+          if (programme && dept) {
+            const pdfBuffer = await generateOfferLetterPDF({
+              applicant,
+              programme: { ...programme, department: dept },
+              intake: { ...intake, semester: await prisma.semester.findUnique({ where: { id: intake.semesterId } }) },
+              offerRef,
+              offerDate: new Date('2026-03-25'),
+              confirmDeadline: new Date('2026-04-15'),
+            })
+            
+            fs.writeFileSync(filePath, pdfBuffer)
+            
+            // Remove stale FileAsset
+            const existing = await prisma.fileAsset.findFirst({ where: { fileName } })
+            if (existing) {
+              await prisma.applicant.updateMany({ where: { offerLetterAssetId: existing.id }, data: { offerLetterAssetId: null } })
+              await prisma.fileAsset.delete({ where: { id: existing.id } })
+            }
+            
+            // Create new FileAsset for offer letter
+            const offerAsset = await prisma.fileAsset.create({
+              data: {
+                fileName,
+                originalName: `Offer Letter - ${offerRef}.pdf`,
+                mimeType: 'application/pdf',
+                fileSizeBytes: pdfBuffer.length,
+                fileUrl: `/uploads/${fileName}`,
+                uploadedById: req.user!.userId,
+              },
+            })
+            
+            // Update applicant with offer letter asset
+            await prisma.applicant.update({
+              where: { id: applicant.id },
+              data: { offerLetterAssetId: offerAsset.id },
+            })
+          }
         }
       }
       // zara remains with no application record

@@ -10,12 +10,19 @@ const router = Router()
 router.post('/login', async (req: Request, res: Response) => {
   const { username, password } = req.body as { username: string; password: string }
 
-  if (!username || !password) {
-    res.status(400).json({ success: false, message: 'Username and password are required' })
+  // Input validation
+  if (!username || typeof username !== 'string' || username.trim().length === 0) {
+    res.status(400).json({ success: false, message: 'Username is required' })
+    return
+  }
+  
+  if (!password || typeof password !== 'string' || password.length < 6) {
+    res.status(400).json({ success: false, message: 'Password must be at least 6 characters' })
     return
   }
 
-  const user = await prisma.user.findUnique({ where: { username: username.toLowerCase().trim() } })
+  const normalizedUsername = username.toLowerCase().trim()
+  const user = await prisma.user.findUnique({ where: { username: normalizedUsername } })
 
   if (!user || !user.isActive) {
     res.status(401).json({ success: false, message: 'Invalid credentials' })

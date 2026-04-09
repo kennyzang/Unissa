@@ -633,8 +633,63 @@ async function main() {
       submittedAt: new Date('2026-03-10'),
       decisionMadeAt: new Date('2026-03-25'),
     },
-    update: { userId: uNoor.id, status: 'offered', offerRef: 'UNISSA-2026-0001', offerLetterSentAt: new Date('2026-03-25') },
+    update: {
+      userId: uNoor.id,
+      status: 'offered',
+      offerRef: 'UNISSA-2026-0001',
+      offerLetterSentAt: new Date('2026-03-25'),
+      offerLetterAssetId: null // Ensure offer letter asset can be recreated
+    },
   })
+
+  // Regenerate offer letter PDF for Noor to ensure it exists
+  {
+    const uploadDir = process.env.UPLOAD_DIR || path.resolve(__dirname, '../uploads')
+    if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir, { recursive: true })
+
+    const offerRef  = 'UNISSA-2026-0001'
+    const fileName  = `offer-letter-${offerRef}.pdf`
+    const filePath  = path.join(uploadDir, fileName)
+
+    // Find Noor's applicant record by userId to ensure we get the correct one
+    const applicantNoor = await prisma.applicant.findFirst({ where: { userId: uNoor.id } })
+    if (applicantNoor) {
+      const pdfBuffer = await generateOfferLetterPDF({
+        applicant:       applicantNoor,
+        programme:       { ...progBSC,   department: deptIFN   },
+        intake:          { ...intakeBSC, semester:   semSep2026 },
+        offerRef,
+        offerDate:       new Date('2026-03-25'),
+        confirmDeadline: new Date('2026-04-15'),
+      })
+
+      fs.writeFileSync(filePath, pdfBuffer)
+
+      // Remove stale FileAsset from previous runs (idempotent)
+      const existing = await prisma.fileAsset.findFirst({ where: { fileName } })
+      if (existing) {
+        await prisma.applicant.updateMany({ where: { offerLetterAssetId: existing.id }, data: { offerLetterAssetId: null } })
+        await prisma.fileAsset.delete({ where: { id: existing.id } })
+      }
+
+      const offerAsset = await prisma.fileAsset.create({
+        data: {
+          fileName,
+          originalName: `Offer Letter - ${offerRef}.pdf`,
+          mimeType:     'application/pdf',
+          fileSizeBytes: pdfBuffer.length,
+          fileUrl:      `/uploads/${fileName}`,
+          uploadedById: uAdmin.id,
+        },
+      })
+
+      // Update Noor's applicant record with the new offer letter asset
+      await prisma.applicant.update({
+        where: { userId: uNoor.id },
+        data:  { offerLetterAssetId: offerAsset.id },
+      })
+    }
+  }
 
   // ── Clean up existing new student records for clean seed ───────
   const newStudentUsernames = ['ali', 'fatimah', 'ahmad', 'aisyah', 'mohd', 'siti', 'hassan', 'nor', 'osman', 'halimah', 'rashid', 'zahra', 'farid', 'diana', 'kamil', 'linda', 'aziz', 'sarah', 'razi', 'maya', 'faisal', 'nadia', 'wafi', 'hanna']
